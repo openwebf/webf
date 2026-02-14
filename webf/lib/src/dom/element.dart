@@ -361,8 +361,11 @@ abstract class Element extends ContainerNode
   }
 
   void focus() {
-    if (!_isProgrammaticallyFocusable()) return;
     ownerDocument.updateFocusTarget(this);
+    if (!isFocused) {
+      // Fallback: ensure pseudo state is updated even if focus target routing failed.
+      updateFocusState(true);
+    }
   }
 
   void blur() {

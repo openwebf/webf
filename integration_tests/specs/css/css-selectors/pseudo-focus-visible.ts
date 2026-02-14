@@ -76,8 +76,8 @@ describe('css selector :focus', () => {
 
     div.focus();
 
-    // await snapshot();
-    // expect(div.matches(':focus')).toBe(true);
+    await snapshot();
+    expect(div.matches(':focus')).toBe(true);
   });
 
   it(':focus styling for form elements', async () => {

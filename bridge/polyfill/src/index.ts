@@ -71,12 +71,16 @@ document.hasFocus = function () {
   return true;
 }
 
-globalThis.HTMLElement.prototype.focus = function () {
-  // No-op for now.
+if (typeof globalThis.HTMLElement.prototype.focus !== 'function') {
+  globalThis.HTMLElement.prototype.focus = function () {
+    // No-op for now.
+  }
 }
 
-globalThis.HTMLElement.prototype.blur = function () {
-  // No-op for now.
+if (typeof globalThis.HTMLElement.prototype.blur !== 'function') {
+  globalThis.HTMLElement.prototype.blur = function () {
+    // No-op for now.
+  }
 }
 
 class ShadowRoot {
