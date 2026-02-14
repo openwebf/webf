@@ -1,19 +1,7 @@
 import React, { EventHandler, FC, ReactNode, SyntheticEvent, useState, useEffect, useRef } from "react";
+import { createWebFComponent } from "@openwebf/react-core-ui";
 import { isWebF } from "../platform";
 import { getBrowserHistory } from "../platform/browserHistory";
-
-// Conditionally import createWebFComponent only when needed
-let createWebFComponent: any = null;
-let WebFElementWithMethods: any = null;
-
-// Try to import @openwebf/react-core-ui, but don't fail if it's not available in browser
-try {
-  const coreUi = require("@openwebf/react-core-ui");
-  createWebFComponent = coreUi.createWebFComponent;
-  WebFElementWithMethods = coreUi.WebFElementWithMethods;
-} catch (e) {
-  // In browser environment without @openwebf/react-core-ui, we'll use the fallback
-}
 
 export interface HybridRouterChangeEvent extends SyntheticEvent {
   readonly state: any;
@@ -47,10 +35,6 @@ let RawWebFRouterLink: FC<WebFHybridRouterProps> | null = null;
 
 function getRawWebFRouterLink(): FC<WebFHybridRouterProps> {
   if (RawWebFRouterLink) return RawWebFRouterLink;
-
-  if (!createWebFComponent) {
-    throw new Error('@openwebf/react-core-ui is required in WebF environment');
-  }
 
   RawWebFRouterLink = createWebFComponent<WebFRouterLinkElement, WebFHybridRouterProps>({
     tagName: 'webf-router-link',

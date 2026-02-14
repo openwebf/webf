@@ -21,8 +21,8 @@ importers:
         specifier: ^0.1.0
         version: 0.1.0(@openwebf/react-core-ui@0.24.2(react-dom@19.2.0(react@19.2.0))(react@19.2.0))(react-dom@19.2.0(react@19.2.0))(react@19.2.0)
       '@openwebf/react-router':
-        specifier: 1.0.0
-        version: 1.0.0(react-dom@19.2.0(react@19.2.0))(react@19.2.0)
+        specifier: 1.0.1
+        version: 1.0.1(react-dom@19.2.0(react@19.2.0))(react@19.2.0)
       '@openwebf/react-shadcn-ui':
         specifier: ^0.1.0
         version: 0.1.0(@openwebf/react-core-ui@0.24.2(react-dom@19.2.0(react@19.2.0))(react@19.2.0))(react-dom@19.2.0(react@19.2.0))(react@19.2.0)
@@ -1247,8 +1247,8 @@ packages:
       react: '>=16.8.0'
       react-dom: '>=16.8.0'
 
-  '@openwebf/react-router@1.0.0':
-    resolution: {integrity: sha512-d5vHkmRdjnCiL/l3Zwr6Rq2nS90SZ0OK3K281tuy+iEvU56jtJU4RUazfMfhjHayPUrIus989VZf4WQBhTUx2g==}
+  '@openwebf/react-router@1.0.1':
+    resolution: {integrity: sha512-7D6VhZDtmW1gLC5ZIhSF0jJI1FmeT4GxNs0fB2GJRJaT4L1q8Huzio4+QqqSlJrR0TUTjPPcl9dyRCCmi0Fu8A==}
     peerDependencies:
       react: '>=16.8.0'
       react-dom: '>=16.8.0'
@@ -7500,7 +7500,7 @@ snapshots:
       react: 19.2.0
       react-dom: 19.2.0(react@19.2.0)
 
-  '@openwebf/react-router@1.0.0(react-dom@19.2.0(react@19.2.0))(react@19.2.0)':
+  '@openwebf/react-router@1.0.1(react-dom@19.2.0(react@19.2.0))(react@19.2.0)':
     dependencies:
       '@openwebf/react-core-ui': 0.2.13(react-dom@19.2.0(react@19.2.0))(react@19.2.0)
       '@openwebf/webf-enterprise-typings': 0.23.7(react@19.2.0)

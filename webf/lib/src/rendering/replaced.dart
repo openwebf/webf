@@ -244,8 +244,69 @@ class RenderReplaced extends RenderBoxModel with RenderObjectWithChildMixin<Rend
       setMaxScrollableSize(childSize);
       size = getBoxSize(childSize);
 
-      minContentWidth = renderStyle.intrinsicWidth;
-      minContentHeight = renderStyle.intrinsicHeight;
+      // Min-content contribution for replaced elements is used by flexbox's
+      // automatic minimum size (min-width/height:auto).
+      //
+      // When a definite CSS width/height is provided, it should cap the intrinsic
+      // min-content contribution *down* (e.g. a 200px intrinsic SVG with width:16px
+      // should not force 200px in flex layouts). However, scaling up via CSS width
+      // should NOT inflate min-content (e.g. 60px image with width:100px still has
+      // a 60px min-content size).
+      //
+      // When no definite size is provided, fall back to intrinsic size (and finally
+      // to the laid-out child size if intrinsic size is unavailable).
+      //
+      // IMPORTANT: do NOT derive min-content from `childSize` because `childSize`
+      // is already clamped by the current layout constraints (e.g. flex container
+      // width=10px). Using it here would make min-content depend on the current
+      // constraints and break flexbox minimum-size behavior.
+      double resolveMinContentWidth() {
+        final CSSLengthValue w = renderStyle.width;
+        final bool hasDefiniteWidth =
+            w.isNotAuto && w.type != CSSLengthType.PERCENTAGE && !w.isIntrinsic;
+        if (hasDefiniteWidth) {
+          final double borderBoxW = w.computedValue;
+          if (borderBoxW.isFinite) {
+            double contentBoxW = renderStyle.deflatePaddingBorderWidth(borderBoxW);
+            if (!contentBoxW.isFinite || contentBoxW < 0) contentBoxW = 0;
+            // When width is specified, clamp the intrinsic min-content contribution
+            // *down* to the specified size, but do not inflate it when authors scale
+            // up (e.g. 60px image with width:100px still has a 60px min-content size).
+            final double iw = renderStyle.intrinsicWidth;
+            if (iw.isFinite && iw > 0) {
+              return iw < contentBoxW ? iw : contentBoxW;
+            }
+            return contentBoxW;
+          }
+        }
+        final double iw = renderStyle.intrinsicWidth;
+        if (iw.isFinite && iw > 0) return iw;
+        return childSize.width;
+      }
+
+      double resolveMinContentHeight() {
+        final CSSLengthValue h = renderStyle.height;
+        final bool hasDefiniteHeight =
+            h.isNotAuto && h.type != CSSLengthType.PERCENTAGE && !h.isIntrinsic;
+        if (hasDefiniteHeight) {
+          final double borderBoxH = h.computedValue;
+          if (borderBoxH.isFinite) {
+            double contentBoxH = renderStyle.deflatePaddingBorderHeight(borderBoxH);
+            if (!contentBoxH.isFinite || contentBoxH < 0) contentBoxH = 0;
+            final double ih = renderStyle.intrinsicHeight;
+            if (ih.isFinite && ih > 0) {
+              return ih < contentBoxH ? ih : contentBoxH;
+            }
+            return contentBoxH;
+          }
+        }
+        final double ih = renderStyle.intrinsicHeight;
+        if (ih.isFinite && ih > 0) return ih;
+        return childSize.height;
+      }
+
+      minContentWidth = resolveMinContentWidth();
+      minContentHeight = resolveMinContentHeight();
 
       // Cache CSS baselines for replaced elements (inline-level):
       // CSS baseline for replaced inline elements is the bottom border edge
