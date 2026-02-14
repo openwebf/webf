@@ -125,6 +125,7 @@ type QuickStartItem = {
   to: string;
   icon: LucideIcons;
   gradient: string;
+  hidden?: boolean;
 };
 
 const quickStart: QuickStartItem[] = [
@@ -142,6 +143,14 @@ const quickStart: QuickStartItem[] = [
     icon: LucideIcons.sparkles,
     gradient: 'linear-gradient(135deg, #f97316, #f59e0b)',
   },
+  {
+    title: 'Shadcn UI',
+    desc: 'Popular React component library',
+    to: '/shadcn-showcase',
+    icon: LucideIcons.box,
+    gradient: 'linear-gradient(135deg, #8b5cf6, #ec4899)',
+    hidden: !import.meta.env.DEV,
+  }
 ];
 
 export const HomePage: React.FC = () => {
@@ -152,10 +161,10 @@ export const HomePage: React.FC = () => {
       style={{
         background: item.gradient,
         borderRadius: '16px',
-        padding: '20px 16px',
+        padding: '14px 12px',
         cursor: 'pointer',
         flex: '1',
-        minWidth: '0',
+        minWidth: '130px',
         display: 'flex',
         flexDirection: 'column',
         gap: '10px',
@@ -175,7 +184,7 @@ export const HomePage: React.FC = () => {
       </div>
       <div>
         <div style={{
-          fontSize: '16px',
+          fontSize: '15px',
           fontWeight: 700,
           color: '#fff',
           marginBottom: '2px',
@@ -348,9 +357,10 @@ export const HomePage: React.FC = () => {
           }}>Quick Start</div>
           <div style={{
             display: 'flex',
-            gap: '12px',
+            gap: '10px',
+            overflowX: 'auto' as const,
           }}>
-            {quickStart.map((qs) => (
+            {quickStart.filter((qs) => !qs.hidden).map((qs) => (
               <QuickStartCard key={qs.to} item={qs} />
             ))}
           </div>
