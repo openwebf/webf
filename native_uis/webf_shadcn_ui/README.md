@@ -58,7 +58,7 @@ void main() {
 - `<flutter-shadcn-input>` - Text input field
 - `<flutter-shadcn-textarea>` - Multi-line text input
 - `<flutter-shadcn-checkbox>` - Checkbox control
-- `<flutter-shadcn-radio>` - Radio button group
+- `<flutter-shadcn-radio-group>` - Radio button group
 - `<flutter-shadcn-switch>` - Toggle switch
 - `<flutter-shadcn-select>` - Dropdown select
 - `<flutter-shadcn-slider>` - Range slider
