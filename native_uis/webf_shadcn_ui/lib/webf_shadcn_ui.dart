@@ -45,7 +45,7 @@ export 'src/components/icon_button.dart';
 export 'src/components/input.dart';
 export 'src/components/textarea.dart';
 export 'src/components/checkbox.dart';
-export 'src/components/radio.dart';
+export 'src/components/radio_group.dart';
 export 'src/components/switch.dart';
 export 'src/components/select.dart';
 export 'src/components/slider.dart';
@@ -93,7 +93,7 @@ import 'src/components/icon_button.dart';
 import 'src/components/input.dart';
 import 'src/components/textarea.dart';
 import 'src/components/checkbox.dart';
-import 'src/components/radio.dart';
+import 'src/components/radio_group.dart';
 import 'src/components/switch.dart';
 import 'src/components/select.dart';
 import 'src/components/slider.dart';
@@ -155,9 +155,9 @@ void installWebFShadcnUI() {
   WebF.defineCustomElement(
       'flutter-shadcn-checkbox', (context) => FlutterShadcnCheckbox(context));
   WebF.defineCustomElement(
-      'flutter-shadcn-radio', (context) => FlutterShadcnRadio(context));
+      'flutter-shadcn-radio-group', (context) => FlutterShadcnRadioGroup(context));
   WebF.defineCustomElement(
-      'flutter-shadcn-radio-item', (context) => FlutterShadcnRadioItem(context));
+      'flutter-shadcn-radio-group-item', (context) => FlutterShadcnRadioGroupItem(context));
   WebF.defineCustomElement(
       'flutter-shadcn-switch', (context) => FlutterShadcnSwitch(context));
   WebF.defineCustomElement(

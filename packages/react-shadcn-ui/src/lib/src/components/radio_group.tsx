@@ -1,7 +1,7 @@
 import React from "react";
 import { createWebFComponent, WebFElementWithMethods } from "@openwebf/react-core-ui";
 import * as __webfTypes from "../../../types";
-export interface FlutterShadcnRadioProps {
+export interface FlutterShadcnRadioGroupProps {
   /**
    * Currently selected value.
    */
@@ -37,7 +37,7 @@ export interface FlutterShadcnRadioProps {
    */
   className?: string;
 }
-export interface FlutterShadcnRadioElement extends WebFElementWithMethods<{
+export interface FlutterShadcnRadioGroupElement extends WebFElementWithMethods<{
 }> {
   /** Currently selected value. */
   value?: string;
@@ -47,29 +47,29 @@ export interface FlutterShadcnRadioElement extends WebFElementWithMethods<{
   orientation?: string;
 }
 /**
- * Properties for <flutter-shadcn-radio>
-Container for radio button groups.
-@example
-```html
-<flutter-shadcn-radio value="option1" onchange="handleChange(event)">
-  <flutter-shadcn-radio-item value="option1">Option 1</flutter-shadcn-radio-item>
-  <flutter-shadcn-radio-item value="option2">Option 2</flutter-shadcn-radio-item>
-</flutter-shadcn-radio>
-```
- * 
+ * Properties for <flutter-shadcn-radio-group>
+ * Container for radio button groups.
+ * @example
+ * ```html
+ * <flutter-shadcn-radio-group value="option1" onchange="handleChange(event)">
+ *   <flutter-shadcn-radio-group-item value="option1">Option 1</flutter-shadcn-radio-group-item>
+ *   <flutter-shadcn-radio-group-item value="option2">Option 2</flutter-shadcn-radio-group-item>
+ * </flutter-shadcn-radio-group>
+ * ```
+ *
  * @example
  * ```tsx
- * 
- * <FlutterShadcnRadio
+ *
+ * <FlutterShadcnRadioGroup
  *   // Add props here
  * >
  *   Content
- * </FlutterShadcnRadio>
+ * </FlutterShadcnRadioGroup>
  * ```
  */
-export const FlutterShadcnRadio = createWebFComponent<FlutterShadcnRadioElement, FlutterShadcnRadioProps>({
-  tagName: 'flutter-shadcn-radio',
-  displayName: 'FlutterShadcnRadio',
+export const FlutterShadcnRadioGroup = createWebFComponent<FlutterShadcnRadioGroupElement, FlutterShadcnRadioGroupProps>({
+  tagName: 'flutter-shadcn-radio-group',
+  displayName: 'FlutterShadcnRadioGroup',
   // Map props to attributes
   attributeProps: [
     'value',
@@ -94,7 +94,7 @@ export const FlutterShadcnRadio = createWebFComponent<FlutterShadcnRadioElement,
     // Add default values here
   },
 });
-export interface FlutterShadcnRadioItemProps {
+export interface FlutterShadcnRadioGroupItemProps {
   /**
    * Value of this radio option.
    */
@@ -120,7 +120,7 @@ export interface FlutterShadcnRadioItemProps {
    */
   className?: string;
 }
-export interface FlutterShadcnRadioItemElement extends WebFElementWithMethods<{
+export interface FlutterShadcnRadioGroupItemElement extends WebFElementWithMethods<{
 }> {
   /** Value of this radio option. */
   value: string;
@@ -128,22 +128,22 @@ export interface FlutterShadcnRadioItemElement extends WebFElementWithMethods<{
   disabled?: boolean;
 }
 /**
- * Properties for <flutter-shadcn-radio-item>
-Individual radio button option.
- * 
+ * Properties for <flutter-shadcn-radio-group-item>
+ * Individual radio button option.
+ *
  * @example
  * ```tsx
- * 
- * <FlutterShadcnRadioItem
+ *
+ * <FlutterShadcnRadioGroupItem
  *   // Add props here
  * >
  *   Content
- * </FlutterShadcnRadioItem>
+ * </FlutterShadcnRadioGroupItem>
  * ```
  */
-export const FlutterShadcnRadioItem = createWebFComponent<FlutterShadcnRadioItemElement, FlutterShadcnRadioItemProps>({
-  tagName: 'flutter-shadcn-radio-item',
-  displayName: 'FlutterShadcnRadioItem',
+export const FlutterShadcnRadioGroupItem = createWebFComponent<FlutterShadcnRadioGroupItemElement, FlutterShadcnRadioGroupItemProps>({
+  tagName: 'flutter-shadcn-radio-group-item',
+  displayName: 'FlutterShadcnRadioGroupItem',
   // Map props to attributes
   attributeProps: [
     'value',

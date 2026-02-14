@@ -12,9 +12,22 @@ export const BasicFormElementsPage: React.FC = () => {
     setTextValue(e.target.value);
   };
 
+  const selectRadioValue = (value: string) => {
+    console.log('selectRadioValue', value);
+    setRadioValue(value);
+  };
+
   const handleRadioChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     console.log('handleRadioChange', e.target.value);
-    setRadioValue(e.target.value);
+    selectRadioValue(e.target.value);
+  };
+
+  const handleRadioInput = (e: React.FormEvent<HTMLInputElement>) => {
+    // WebF radio controls dispatch native "input" reliably; keep this as a fallback
+    // so selection still updates when React's radio onChange path is not triggered.
+    const value = e.currentTarget.value;
+    console.log('handleRadioInput', value);
+    selectRadioValue(value);
   };
 
   const handleCheckboxChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -35,7 +48,7 @@ export const BasicFormElementsPage: React.FC = () => {
   // Test functions to change states programmatically
   const testRadioChange = (value: string) => {
     console.log('Programmatically changing radio from', radioValue, 'to:', value);
-    setRadioValue(value);
+    selectRadioValue(value);
   };
 
   const testCheckboxToggle = (value: string) => {
@@ -79,42 +92,45 @@ export const BasicFormElementsPage: React.FC = () => {
           <div className={styles.inputGroup}>
             <div className={styles.label}>Choose your favorite color:</div>
             <div className={styles.radioGroup}>
-              <label className={styles.radioLabel}>
+              <label className={styles.radioLabel} onClick={() => selectRadioValue('red')}>
                 <input
                   type="radio"
                   name="color"
                   value="red"
                   checked={radioValue === 'red'}
                   onChange={handleRadioChange}
+                  onInput={handleRadioInput}
                   className={styles.radioInput}
                 />
                 Red
               </label>
-              <label className={styles.radioLabel}>
+              <label className={styles.radioLabel} onClick={() => selectRadioValue('blue')}>
                 <input
                   type="radio"
                   name="color"
                   value="blue"
                   checked={radioValue === 'blue'}
                   onChange={handleRadioChange}
+                  onInput={handleRadioInput}
                   className={styles.radioInput}
                 />
                 Blue
               </label>
-              <label className={styles.radioLabel}>
+              <label className={styles.radioLabel} onClick={() => selectRadioValue('green')}>
                 <input
                   type="radio"
                   name="color"
                   value="green"
                   checked={radioValue === 'green'}
                   onChange={handleRadioChange}
+                  onInput={handleRadioInput}
                   className={styles.radioInput}
                 />
                 Green
               </label>
             </div>
             <div className={styles.inputValue}>Selected: "{radioValue}"</div>
-            
+
             {/* Test buttons for radio */}
             <div className={styles.testButtons}>
               <h3>Test Radio Programmatically:</h3>
@@ -122,7 +138,7 @@ export const BasicFormElementsPage: React.FC = () => {
                 Set Red
               </button>
               <button onClick={() => testRadioChange('blue')} className={styles.testButton}>
-                Set Blue  
+                Set Blue
               </button>
               <button onClick={() => testRadioChange('green')} className={styles.testButton}>
                 Set Green
@@ -181,7 +197,7 @@ export const BasicFormElementsPage: React.FC = () => {
             <div className={styles.inputValue}>
               Selected: [{checkboxValues.join(', ')}]
             </div>
-            
+
             {/* Test buttons for checkboxes */}
             <div className={styles.testButtons}>
               <h3>Test Checkboxes Programmatically:</h3>

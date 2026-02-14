@@ -31,8 +31,8 @@ export { FlutterShadcnSelect, FlutterShadcnSelectTrigger, FlutterShadcnSelectCon
 export type { FlutterShadcnSelectElement, FlutterShadcnSelectTriggerElement, FlutterShadcnSelectContentElement, FlutterShadcnSelectItemElement, FlutterShadcnSelectGroupElement, FlutterShadcnSelectLabelElement, FlutterShadcnSelectSeparatorElement } from "./lib/src/components/select";
 export { FlutterShadcnScrollArea } from "./lib/src/components/scroll_area";
 export type { FlutterShadcnScrollAreaElement } from "./lib/src/components/scroll_area";
-export { FlutterShadcnRadio, FlutterShadcnRadioItem } from "./lib/src/components/radio";
-export type { FlutterShadcnRadioElement, FlutterShadcnRadioItemElement } from "./lib/src/components/radio";
+export { FlutterShadcnRadioGroup, FlutterShadcnRadioGroupItem } from "./lib/src/components/radio_group";
+export type { FlutterShadcnRadioGroupElement, FlutterShadcnRadioGroupItemElement } from "./lib/src/components/radio_group";
 export { FlutterShadcnProgress } from "./lib/src/components/progress";
 export type { FlutterShadcnProgressElement } from "./lib/src/components/progress";
 export { FlutterShadcnPopover, FlutterShadcnPopoverTrigger, FlutterShadcnPopoverContent } from "./lib/src/components/popover";

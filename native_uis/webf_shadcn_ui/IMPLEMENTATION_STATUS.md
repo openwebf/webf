@@ -29,7 +29,7 @@ native_uis/webf_shadcn_ui/
 | Input | `<flutter-shadcn-input>` | input.dart | input.d.ts | Done |
 | Textarea | `<flutter-shadcn-textarea>` | textarea.dart | textarea.d.ts | Done |
 | Checkbox | `<flutter-shadcn-checkbox>` | checkbox.dart | checkbox.d.ts | Done |
-| Radio | `<flutter-shadcn-radio>` | radio.dart | radio.d.ts | Done |
+| RadioGroup | `<flutter-shadcn-radio-group>` | radio_group.dart | radio_group.d.ts | Done |
 | Switch | `<flutter-shadcn-switch>` | switch.dart | switch.d.ts | Done |
 | Select | `<flutter-shadcn-select>` | select.dart | select.d.ts | Done |
 | Slider | `<flutter-shadcn-slider>` | slider.dart | slider.d.ts | Done |
@@ -144,7 +144,7 @@ The following slot elements are implemented for compositional components:
 - `<flutter-shadcn-table-cell>`
 
 ### Other Slots
-- `<flutter-shadcn-radio-item>`
+- `<flutter-shadcn-radio-group-item>`
 - `<flutter-shadcn-combobox-item>`
 - `<flutter-shadcn-popover-trigger>`
 - `<flutter-shadcn-popover-content>`
