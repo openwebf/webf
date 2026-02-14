@@ -10,7 +10,7 @@
 import 'package:webf/webf.dart';
 abstract class FlutterShadcnInputOtpBindings extends WidgetElement {
   FlutterShadcnInputOtpBindings(super.context);
-  String? get maxlength;
+  String get maxlength;
   set maxlength(value);
   String? get value;
   set value(value);
@@ -20,9 +20,9 @@ abstract class FlutterShadcnInputOtpBindings extends WidgetElement {
   void initializeAttributes(Map<String, ElementAttributeProperty> attributes) {
     super.initializeAttributes(attributes);
     attributes['maxlength'] = ElementAttributeProperty(
-      getter: () => maxlength?.toString(),
+      getter: () => maxlength.toString(),
       setter: (value) => maxlength = value,
-      deleter: () => maxlength = null
+      deleter: () => maxlength = ''
     );
     attributes['value'] = ElementAttributeProperty(
       getter: () => value?.toString(),
