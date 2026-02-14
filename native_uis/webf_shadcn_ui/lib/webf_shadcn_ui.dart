@@ -71,6 +71,7 @@ export 'src/components/popover.dart';
 export 'src/components/breadcrumb.dart';
 export 'src/components/dropdown_menu.dart';
 export 'src/components/context_menu.dart';
+export 'src/components/menubar.dart';
 
 // Data Display
 export 'src/components/table.dart';
@@ -114,6 +115,7 @@ import 'src/components/popover.dart';
 import 'src/components/breadcrumb.dart';
 import 'src/components/dropdown_menu.dart';
 import 'src/components/context_menu.dart';
+import 'src/components/menubar.dart';
 import 'src/components/table.dart';
 import 'src/components/accordion.dart';
 import 'src/components/calendar.dart';
@@ -316,6 +318,32 @@ void installWebFShadcnUI() {
       'flutter-shadcn-context-menu-radio-group', (context) => FlutterShadcnContextMenuRadioGroup(context));
   WebF.defineCustomElement(
       'flutter-shadcn-context-menu-radio-item', (context) => FlutterShadcnContextMenuRadioItem(context));
+  WebF.defineCustomElement(
+      'flutter-shadcn-menubar', (context) => FlutterShadcnMenubar(context));
+  WebF.defineCustomElement(
+      'flutter-shadcn-menubar-menu', (context) => FlutterShadcnMenubarMenu(context));
+  WebF.defineCustomElement(
+      'flutter-shadcn-menubar-trigger', (context) => FlutterShadcnMenubarTrigger(context));
+  WebF.defineCustomElement(
+      'flutter-shadcn-menubar-content', (context) => FlutterShadcnMenubarContent(context));
+  WebF.defineCustomElement(
+      'flutter-shadcn-menubar-item', (context) => FlutterShadcnMenubarItem(context));
+  WebF.defineCustomElement(
+      'flutter-shadcn-menubar-separator', (context) => FlutterShadcnMenubarSeparator(context));
+  WebF.defineCustomElement(
+      'flutter-shadcn-menubar-label', (context) => FlutterShadcnMenubarLabel(context));
+  WebF.defineCustomElement(
+      'flutter-shadcn-menubar-sub', (context) => FlutterShadcnMenubarSub(context));
+  WebF.defineCustomElement(
+      'flutter-shadcn-menubar-sub-trigger', (context) => FlutterShadcnMenubarSubTrigger(context));
+  WebF.defineCustomElement(
+      'flutter-shadcn-menubar-sub-content', (context) => FlutterShadcnMenubarSubContent(context));
+  WebF.defineCustomElement(
+      'flutter-shadcn-menubar-checkbox-item', (context) => FlutterShadcnMenubarCheckboxItem(context));
+  WebF.defineCustomElement(
+      'flutter-shadcn-menubar-radio-group', (context) => FlutterShadcnMenubarRadioGroup(context));
+  WebF.defineCustomElement(
+      'flutter-shadcn-menubar-radio-item', (context) => FlutterShadcnMenubarRadioItem(context));
 
   // Data Display
   WebF.defineCustomElement(
