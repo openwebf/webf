@@ -69,6 +69,7 @@ export const ShadcnShowcasePage: React.FC = () => {
           <div className="mb-5 bg-surface-secondary rounded-xl shadow overflow-hidden border border-line">
             <Item label="Dropdown Menu" desc="Action menu dropdowns" to="/shadcn/dropdown" />
             <Item label="Context Menu" desc="Right-click context menus" to="/shadcn/context-menu" />
+            <Item label="Menubar" desc="Horizontal menu with dropdowns" to="/shadcn/menubar" />
             <Item label="Popover & Tooltip" desc="Floating content and hints" to="/shadcn/popover" />
           </div>
         </div>
