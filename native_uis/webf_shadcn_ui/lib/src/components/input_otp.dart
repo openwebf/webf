@@ -15,16 +15,16 @@ import 'input_otp_bindings_generated.dart';
 class FlutterShadcnInputOtp extends FlutterShadcnInputOtpBindings {
   FlutterShadcnInputOtp(super.context);
 
-  String? _maxlength;
+  String _maxlength = '';
   String? _value;
   bool _disabled = false;
 
   @override
-  String? get maxlength => _maxlength;
+  String get maxlength => _maxlength;
 
   @override
   set maxlength(value) {
-    final String? v = value?.toString();
+    final String v = value?.toString() ?? '';
     if (v != _maxlength) {
       _maxlength = v;
       state?.requestUpdateState(() {});
@@ -55,7 +55,7 @@ class FlutterShadcnInputOtp extends FlutterShadcnInputOtpBindings {
     }
   }
 
-  int get maxLength => int.tryParse(_maxlength ?? '') ?? 6;
+  int get maxLength => int.tryParse(_maxlength) ?? 6;
 
   @override
   WebFWidgetElementState createState() => FlutterShadcnInputOtpState(this);

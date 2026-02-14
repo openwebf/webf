@@ -7,22 +7,14 @@ export interface FlutterShadcnPopoverProps {
    */
   open?: boolean;
   /**
-   * Placement of the popover relative to the trigger.
-   * Supported values: 'top', 'bottom', 'left', 'right',
-   * 'top-start', 'top-end', 'bottom-start', 'bottom-end',
-   * 'left-start', 'left-end', 'right-start', 'right-end'.
-   * @default 'bottom'
+   * Placement of the popover.
+   * Options: 'top', 'bottom', 'left', 'right'
+   * Default: 'bottom'
    */
   placement?: string;
   /**
-   * Alignment of the popover within its placement direction.
-   * Supported values: 'start', 'center', 'end'.
-   * @default 'center'
-   */
-  align?: string;
-  /**
-   * Whether to close the popover when clicking outside.
-   * @default true
+   * Close when clicking outside.
+   * Default: true
    */
   closeOnOutsideClick?: boolean;
   /**
@@ -56,9 +48,7 @@ export interface FlutterShadcnPopoverElement extends WebFElementWithMethods<{
   open?: boolean;
   /** Placement of the popover. */
   placement?: string;
-  /** Alignment within placement direction. */
-  align?: string;
-  /** Whether to close when clicking outside. */
+  /** Close when clicking outside. */
   closeOnOutsideClick?: boolean;
 }
 /**
@@ -93,7 +83,6 @@ export const FlutterShadcnPopover = createWebFComponent<FlutterShadcnPopoverElem
   attributeProps: [
     'open',
     'placement',
-    'align',
     'closeOnOutsideClick',
   ],
   // Convert prop names to attribute names if needed

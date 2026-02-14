@@ -41,7 +41,7 @@ export interface FlutterShadcnInputOtpProps {
 }
 export interface FlutterShadcnInputOtpElement extends WebFElementWithMethods<{
 }> {
-  /** Maximum number of characters. */
+  /** Maximum number of characters (required). */
   maxlength: string;
   /** Current OTP value. */
   value?: string;
@@ -50,26 +50,31 @@ export interface FlutterShadcnInputOtpElement extends WebFElementWithMethods<{
 }
 /**
  * Properties for <flutter-shadcn-input-otp>
- * Accessible one-time password input with individual character slots.
- *
+Accessible one-time password input with individual character slots.
+@example
+```html
+<flutter-shadcn-input-otp maxlength="6" onchange="handleChange(event)">
+  <flutter-shadcn-input-otp-group>
+    <flutter-shadcn-input-otp-slot></flutter-shadcn-input-otp-slot>
+    <flutter-shadcn-input-otp-slot></flutter-shadcn-input-otp-slot>
+    <flutter-shadcn-input-otp-slot></flutter-shadcn-input-otp-slot>
+  </flutter-shadcn-input-otp-group>
+  <flutter-shadcn-input-otp-separator></flutter-shadcn-input-otp-separator>
+  <flutter-shadcn-input-otp-group>
+    <flutter-shadcn-input-otp-slot></flutter-shadcn-input-otp-slot>
+    <flutter-shadcn-input-otp-slot></flutter-shadcn-input-otp-slot>
+    <flutter-shadcn-input-otp-slot></flutter-shadcn-input-otp-slot>
+  </flutter-shadcn-input-otp-group>
+</flutter-shadcn-input-otp>
+```
+ * 
  * @example
  * ```tsx
- *
+ * 
  * <FlutterShadcnInputOtp
- *   maxlength="6"
- *   onChange={handleChange}
+ *   // Add props here
  * >
- *   <FlutterShadcnInputOtpGroup>
- *     <FlutterShadcnInputOtpSlot />
- *     <FlutterShadcnInputOtpSlot />
- *     <FlutterShadcnInputOtpSlot />
- *   </FlutterShadcnInputOtpGroup>
- *   <FlutterShadcnInputOtpSeparator />
- *   <FlutterShadcnInputOtpGroup>
- *     <FlutterShadcnInputOtpSlot />
- *     <FlutterShadcnInputOtpSlot />
- *     <FlutterShadcnInputOtpSlot />
- *   </FlutterShadcnInputOtpGroup>
+ *   Content
  * </FlutterShadcnInputOtp>
  * ```
  */
@@ -104,6 +109,7 @@ export const FlutterShadcnInputOtp = createWebFComponent<FlutterShadcnInputOtpEl
   ],
   // Default prop values
   defaultProps: {
+    // Add default values here
   },
 });
 export interface FlutterShadcnInputOtpGroupProps {
@@ -129,15 +135,15 @@ export interface FlutterShadcnInputOtpGroupElement extends WebFElementWithMethod
 }
 /**
  * Properties for <flutter-shadcn-input-otp-group>
- * Groups OTP slots together visually.
- *
+Groups OTP slots together visually.
+ * 
  * @example
  * ```tsx
- *
- * <FlutterShadcnInputOtpGroup>
- *   <FlutterShadcnInputOtpSlot />
- *   <FlutterShadcnInputOtpSlot />
- *   <FlutterShadcnInputOtpSlot />
+ * 
+ * <FlutterShadcnInputOtpGroup
+ *   // Add props here
+ * >
+ *   Content
  * </FlutterShadcnInputOtpGroup>
  * ```
  */
@@ -155,6 +161,7 @@ export const FlutterShadcnInputOtpGroup = createWebFComponent<FlutterShadcnInput
   ],
   // Default prop values
   defaultProps: {
+    // Add default values here
   },
 });
 export interface FlutterShadcnInputOtpSlotProps {
@@ -180,12 +187,16 @@ export interface FlutterShadcnInputOtpSlotElement extends WebFElementWithMethods
 }
 /**
  * Properties for <flutter-shadcn-input-otp-slot>
- * Individual character slot managed by the parent input.
- *
+Individual character slot managed by the parent input.
+ * 
  * @example
  * ```tsx
- *
- * <FlutterShadcnInputOtpSlot />
+ * 
+ * <FlutterShadcnInputOtpSlot
+ *   // Add props here
+ * >
+ *   Content
+ * </FlutterShadcnInputOtpSlot>
  * ```
  */
 export const FlutterShadcnInputOtpSlot = createWebFComponent<FlutterShadcnInputOtpSlotElement, FlutterShadcnInputOtpSlotProps>({
@@ -202,6 +213,7 @@ export const FlutterShadcnInputOtpSlot = createWebFComponent<FlutterShadcnInputO
   ],
   // Default prop values
   defaultProps: {
+    // Add default values here
   },
 });
 export interface FlutterShadcnInputOtpSeparatorProps {
@@ -227,12 +239,16 @@ export interface FlutterShadcnInputOtpSeparatorElement extends WebFElementWithMe
 }
 /**
  * Properties for <flutter-shadcn-input-otp-separator>
- * Visual separator between OTP groups.
- *
+Visual separator between OTP groups.
+ * 
  * @example
  * ```tsx
- *
- * <FlutterShadcnInputOtpSeparator />
+ * 
+ * <FlutterShadcnInputOtpSeparator
+ *   // Add props here
+ * >
+ *   Content
+ * </FlutterShadcnInputOtpSeparator>
  * ```
  */
 export const FlutterShadcnInputOtpSeparator = createWebFComponent<FlutterShadcnInputOtpSeparatorElement, FlutterShadcnInputOtpSeparatorProps>({
@@ -249,5 +265,6 @@ export const FlutterShadcnInputOtpSeparator = createWebFComponent<FlutterShadcnI
   ],
   // Default prop values
   defaultProps: {
+    // Add default values here
   },
 });
