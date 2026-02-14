@@ -44,6 +44,7 @@ class FlutterShadcnDropdownMenuState extends WebFWidgetElementState {
   FlutterShadcnDropdownMenuState(super.widgetElement);
 
   final _popoverController = ShadPopoverController();
+  Offset? _tapDownPosition;
 
   @override
   FlutterShadcnDropdownMenu get widgetElement =>
@@ -87,9 +88,24 @@ class FlutterShadcnDropdownMenuState extends WebFWidgetElementState {
     return ShadPopover(
       controller: _popoverController,
       popover: (context) => content ?? const SizedBox.shrink(),
-      child: GestureDetector(
-        onTap: () {
-          widgetElement.open = !widgetElement.open;
+      // Use Listener instead of GestureDetector to avoid gesture arena
+      // conflicts with interactive child widgets (e.g. ShadButton).
+      child: Listener(
+        behavior: HitTestBehavior.opaque,
+        onPointerDown: (event) {
+          _tapDownPosition = event.position;
+        },
+        onPointerUp: (event) {
+          if (_tapDownPosition != null) {
+            final distance = (event.position - _tapDownPosition!).distance;
+            _tapDownPosition = null;
+            if (distance < 20) {
+              widgetElement.open = !widgetElement.open;
+            }
+          }
+        },
+        onPointerCancel: (_) {
+          _tapDownPosition = null;
         },
         child: trigger,
       ),

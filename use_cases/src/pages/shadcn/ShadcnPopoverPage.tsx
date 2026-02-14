@@ -116,6 +116,100 @@ export const ShadcnPopoverPage: React.FC = () => {
           </div>
 
           <div className="mb-8">
+            <h2 className="text-lg font-semibold mb-4">Popover Placement</h2>
+            <p className="text-sm text-gray-600 mb-4">
+              Use the <code>placement</code> prop to control where the popover appears.
+            </p>
+            <div className="flex flex-wrap gap-4">
+              <FlutterShadcnPopover placement="top">
+                <FlutterShadcnPopoverTrigger>
+                  <FlutterShadcnButton variant="outline">Top</FlutterShadcnButton>
+                </FlutterShadcnPopoverTrigger>
+                <FlutterShadcnPopoverContent>
+                  <div><p className="text-sm">Placed on top</p></div>
+                </FlutterShadcnPopoverContent>
+              </FlutterShadcnPopover>
+              <FlutterShadcnPopover placement="bottom">
+                <FlutterShadcnPopoverTrigger>
+                  <FlutterShadcnButton variant="outline">Bottom</FlutterShadcnButton>
+                </FlutterShadcnPopoverTrigger>
+                <FlutterShadcnPopoverContent>
+                  <div><p className="text-sm">Placed on bottom</p></div>
+                </FlutterShadcnPopoverContent>
+              </FlutterShadcnPopover>
+              <FlutterShadcnPopover placement="left">
+                <FlutterShadcnPopoverTrigger>
+                  <FlutterShadcnButton variant="outline">Left</FlutterShadcnButton>
+                </FlutterShadcnPopoverTrigger>
+                <FlutterShadcnPopoverContent>
+                  <div><p className="text-sm">Placed on left</p></div>
+                </FlutterShadcnPopoverContent>
+              </FlutterShadcnPopover>
+              <FlutterShadcnPopover placement="right">
+                <FlutterShadcnPopoverTrigger>
+                  <FlutterShadcnButton variant="outline">Right</FlutterShadcnButton>
+                </FlutterShadcnPopoverTrigger>
+                <FlutterShadcnPopoverContent>
+                  <div><p className="text-sm">Placed on right</p></div>
+                </FlutterShadcnPopoverContent>
+              </FlutterShadcnPopover>
+            </div>
+          </div>
+
+          <div className="mb-8">
+            <h2 className="text-lg font-semibold mb-4">Popover Alignment</h2>
+            <p className="text-sm text-gray-600 mb-4">
+              Use the <code>align</code> prop to fine-tune positioning within the placement direction.
+            </p>
+            <div className="flex flex-wrap gap-4">
+              <FlutterShadcnPopover placement="bottom" align="start">
+                <FlutterShadcnPopoverTrigger>
+                  <FlutterShadcnButton variant="outline">Bottom Start</FlutterShadcnButton>
+                </FlutterShadcnPopoverTrigger>
+                <FlutterShadcnPopoverContent>
+                  <div><p className="text-sm">Aligned to start</p></div>
+                </FlutterShadcnPopoverContent>
+              </FlutterShadcnPopover>
+              <FlutterShadcnPopover placement="bottom" align="center">
+                <FlutterShadcnPopoverTrigger>
+                  <FlutterShadcnButton variant="outline">Bottom Center</FlutterShadcnButton>
+                </FlutterShadcnPopoverTrigger>
+                <FlutterShadcnPopoverContent>
+                  <div><p className="text-sm">Aligned to center</p></div>
+                </FlutterShadcnPopoverContent>
+              </FlutterShadcnPopover>
+              <FlutterShadcnPopover placement="bottom" align="end">
+                <FlutterShadcnPopoverTrigger>
+                  <FlutterShadcnButton variant="outline">Bottom End</FlutterShadcnButton>
+                </FlutterShadcnPopoverTrigger>
+                <FlutterShadcnPopoverContent>
+                  <div><p className="text-sm">Aligned to end</p></div>
+                </FlutterShadcnPopoverContent>
+              </FlutterShadcnPopover>
+            </div>
+          </div>
+
+          <div className="mb-8">
+            <h2 className="text-lg font-semibold mb-4">Controlled Popover</h2>
+            <p className="text-sm text-gray-600 mb-4">
+              Use <code>closeOnOutsideClick=&#123;false&#125;</code> to prevent closing when clicking outside.
+            </p>
+            <FlutterShadcnPopover closeOnOutsideClick={false}>
+              <FlutterShadcnPopoverTrigger>
+                <FlutterShadcnButton variant="outline">Sticky Popover</FlutterShadcnButton>
+              </FlutterShadcnPopoverTrigger>
+              <FlutterShadcnPopoverContent>
+                <div>
+                  <p className="text-sm font-medium mb-1">Sticky popover</p>
+                  <p className="text-sm text-gray-600">
+                    This won't close when clicking outside. Click the trigger again to close.
+                  </p>
+                </div>
+              </FlutterShadcnPopoverContent>
+            </FlutterShadcnPopover>
+          </div>
+
+          <div className="mb-8">
             <h2 className="text-lg font-semibold mb-4">Popover with Actions</h2>
             <FlutterShadcnPopover>
               <FlutterShadcnPopoverTrigger>
