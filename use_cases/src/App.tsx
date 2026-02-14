@@ -140,6 +140,7 @@ import { ShadcnContextMenuPage } from './pages/shadcn/ShadcnContextMenuPage';
 import { ShadcnPopoverPage } from './pages/shadcn/ShadcnPopoverPage';
 import { ShadcnFormPage } from './pages/shadcn/ShadcnFormPage';
 import { ShadcnIconButtonPage } from './pages/shadcn/ShadcnIconButtonPage';
+import { ShadcnInputOtpPage } from './pages/shadcn/ShadcnInputOtpPage';
 // Lucide Icons imports
 import { LucideShowcasePage } from './pages/LucideShowcasePage';
 import { LucideIconsPage } from './pages/lucide/LucideIconsPage';
@@ -256,6 +257,7 @@ function App() {
             <Route path="/shadcn/context-menu" title="Shadcn Context Menu" element={<ShadcnContextMenuPage />} />
             <Route path="/shadcn/popover" title="Shadcn Popover & Tooltip" element={<ShadcnPopoverPage />} />
             <Route path="/shadcn/form" title="Shadcn Form" element={<ShadcnFormPage />} />
+            <Route path="/shadcn/input-otp" title="Shadcn Input OTP" element={<ShadcnInputOtpPage />} />
           </>
         )}
 

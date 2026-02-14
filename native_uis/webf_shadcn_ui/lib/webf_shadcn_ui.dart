@@ -51,6 +51,7 @@ export 'src/components/select.dart';
 export 'src/components/slider.dart';
 export 'src/components/combobox.dart';
 export 'src/components/form.dart';
+export 'src/components/input_otp.dart';
 
 // Display Components
 export 'src/components/card.dart';
@@ -97,6 +98,7 @@ import 'src/components/select.dart';
 import 'src/components/slider.dart';
 import 'src/components/combobox.dart';
 import 'src/components/form.dart';
+import 'src/components/input_otp.dart';
 import 'src/components/card.dart';
 import 'src/components/alert.dart';
 import 'src/components/badge.dart';
@@ -180,6 +182,14 @@ void installWebFShadcnUI() {
       'flutter-shadcn-form-description', (context) => FlutterShadcnFormDescription(context));
   WebF.defineCustomElement(
       'flutter-shadcn-form-message', (context) => FlutterShadcnFormMessage(context));
+  WebF.defineCustomElement(
+      'flutter-shadcn-input-otp', (context) => FlutterShadcnInputOtp(context));
+  WebF.defineCustomElement(
+      'flutter-shadcn-input-otp-group', (context) => FlutterShadcnInputOtpGroup(context));
+  WebF.defineCustomElement(
+      'flutter-shadcn-input-otp-slot', (context) => FlutterShadcnInputOtpSlot(context));
+  WebF.defineCustomElement(
+      'flutter-shadcn-input-otp-separator', (context) => FlutterShadcnInputOtpSeparator(context));
 
   // Display Components
   WebF.defineCustomElement(

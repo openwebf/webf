@@ -37,6 +37,8 @@ export { FlutterShadcnProgress } from "./lib/src/components/progress";
 export type { FlutterShadcnProgressElement } from "./lib/src/components/progress";
 export { FlutterShadcnPopover, FlutterShadcnPopoverTrigger, FlutterShadcnPopoverContent } from "./lib/src/components/popover";
 export type { FlutterShadcnPopoverElement, FlutterShadcnPopoverTriggerElement, FlutterShadcnPopoverContentElement } from "./lib/src/components/popover";
+export { FlutterShadcnInputOtp, FlutterShadcnInputOtpGroup, FlutterShadcnInputOtpSlot, FlutterShadcnInputOtpSeparator } from "./lib/src/components/input_otp";
+export type { FlutterShadcnInputOtpElement, FlutterShadcnInputOtpGroupElement, FlutterShadcnInputOtpSlotElement, FlutterShadcnInputOtpSeparatorElement } from "./lib/src/components/input_otp";
 export { FlutterShadcnInput } from "./lib/src/components/input";
 export type { FlutterShadcnInputElement } from "./lib/src/components/input";
 export { FlutterShadcnImage } from "./lib/src/components/image";

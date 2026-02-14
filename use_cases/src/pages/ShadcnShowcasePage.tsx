@@ -38,6 +38,7 @@ export const ShadcnShowcasePage: React.FC = () => {
             <Item label="Select & Combobox" desc="Dropdown selection components" to="/shadcn/select" />
             <Item label="Slider" desc="Range selection slider" to="/shadcn/slider" />
             <Item label="Radio Group" desc="Single selection from multiple options" to="/shadcn/radio" />
+            <Item label="Input OTP" desc="One-time password input with grouped slots" to="/shadcn/input-otp" />
             <Item label="Form" desc="Form state management with validation" to="/shadcn/form" />
           </div>
 
