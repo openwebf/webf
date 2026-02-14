@@ -10,6 +10,7 @@ import {
 export const ShadcnInputPage: React.FC = () => {
   const [inputValue, setInputValue] = useState('');
   const [textareaValue, setTextareaValue] = useState('');
+  const [submitted, setSubmitted] = useState('');
 
   return (
     <FlutterShadcnTheme colorScheme="zinc" brightness="light">
@@ -40,6 +41,14 @@ export const ShadcnInputPage: React.FC = () => {
                 <FlutterShadcnInput
                   type="password"
                   placeholder="Enter password"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-2">Password (custom mask '*')</label>
+                <FlutterShadcnInput
+                  type="password"
+                  placeholder="Enter password"
+                  obscuringcharacter="*"
                 />
               </div>
             </div>
@@ -73,6 +82,100 @@ export const ShadcnInputPage: React.FC = () => {
           </div>
 
           <div className="mb-8">
+            <h2 className="text-lg font-semibold mb-4">Text Alignment</h2>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium mb-2">Left (default)</label>
+                <FlutterShadcnInput placeholder="Left aligned" textalign="left" />
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-2">Center</label>
+                <FlutterShadcnInput placeholder="Center aligned" textalign="center" />
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-2">Right</label>
+                <FlutterShadcnInput placeholder="Right aligned" textalign="right" />
+              </div>
+            </div>
+          </div>
+
+          <div className="mb-8">
+            <h2 className="text-lg font-semibold mb-4">Keyboard & Input Behavior</h2>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium mb-2">Autocapitalize: words</label>
+                <FlutterShadcnInput
+                  placeholder="Each Word Capitalized"
+                  autocapitalize="words"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-2">No autocorrect / suggestions</label>
+                <FlutterShadcnInput
+                  placeholder="Raw input"
+                  autocorrect={false}
+                  enablesuggestions={false}
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-2">Enter key: search</label>
+                <FlutterShadcnInput
+                  placeholder="Search..."
+                  type="search"
+                  enterkeyhint="search"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-2">
+                  Submit event (enterkeyhint: done)
+                </label>
+                <FlutterShadcnInput
+                  placeholder="Press Enter to submit"
+                  enterkeyhint="done"
+                  onSubmit={() => setSubmitted('Submitted!')}
+                />
+                {submitted && (
+                  <span className="text-sm text-green-600 mt-1 block">{submitted}</span>
+                )}
+              </div>
+            </div>
+          </div>
+
+          <div className="mb-8">
+            <h2 className="text-lg font-semibold mb-4">Multi-line Input</h2>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium mb-2">Min 2 / Max 5 lines</label>
+                <FlutterShadcnInput
+                  placeholder="Grows from 2 to 5 lines..."
+                  minlines="2"
+                  maxlines="5"
+                />
+              </div>
+            </div>
+          </div>
+
+          <div className="mb-8">
+            <h2 className="text-lg font-semibold mb-4">Cursor & Selection Colors</h2>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium mb-2">Red cursor</label>
+                <FlutterShadcnInput
+                  placeholder="Type here..."
+                  cursorcolor="#FF0000"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-2">Blue selection</label>
+                <FlutterShadcnInput
+                  placeholder="Select some text..."
+                  selectioncolor="#4488FF"
+                />
+              </div>
+            </div>
+          </div>
+
+          <div className="mb-8">
             <h2 className="text-lg font-semibold mb-4">Textarea</h2>
             <div className="space-y-4">
               <div>
@@ -100,11 +203,16 @@ export const ShadcnInputPage: React.FC = () => {
             <div className="space-y-4 p-4 border rounded-lg">
               <div>
                 <label className="block text-sm font-medium mb-2">Username</label>
-                <FlutterShadcnInput placeholder="johndoe" />
+                <FlutterShadcnInput placeholder="johndoe" enterkeyhint="next" />
               </div>
               <div>
                 <label className="block text-sm font-medium mb-2">Email</label>
-                <FlutterShadcnInput type="email" placeholder="john@example.com" />
+                <FlutterShadcnInput
+                  type="email"
+                  placeholder="john@example.com"
+                  enterkeyhint="next"
+                  autocapitalize="none"
+                />
               </div>
               <div>
                 <label className="block text-sm font-medium mb-2">Bio</label>

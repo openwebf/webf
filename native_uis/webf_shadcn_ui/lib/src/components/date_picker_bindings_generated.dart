@@ -23,22 +23,22 @@ abstract class FlutterShadcnDatePickerBindings extends WidgetElement {
     super.initializeAttributes(attributes);
     attributes['value'] = ElementAttributeProperty(
       getter: () => value?.toString(),
-      setter: (value) => this.value = value,
+      setter: (value) => value = value,
       deleter: () => value = null
     );
     attributes['placeholder'] = ElementAttributeProperty(
       getter: () => placeholder?.toString(),
-      setter: (value) => this.placeholder = value,
+      setter: (value) => placeholder = value,
       deleter: () => placeholder = null
     );
     attributes['disabled'] = ElementAttributeProperty(
       getter: () => disabled.toString(),
-      setter: (value) => this.disabled = value == 'true' || value == '',
+      setter: (value) => disabled = value == 'true' || value == '',
       deleter: () => disabled = false
     );
     attributes['format'] = ElementAttributeProperty(
       getter: () => format?.toString(),
-      setter: (value) => this.format = value,
+      setter: (value) => format = value,
       deleter: () => format = null
     );
   }
