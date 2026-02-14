@@ -177,6 +177,9 @@ class RenderEventListener extends RenderBoxModel
       document.notePointerInteraction();
       document.updateActiveTarget(target);
       document.updateHoverTarget(target);
+      if (target.isUserFocusable) {
+        target.focus();
+      }
     } else if (event is PointerUpEvent || event is PointerCancelEvent) {
       document.updateActiveTarget(null);
     } else if (event is PointerHoverEvent ||

@@ -385,6 +385,24 @@ abstract class Element extends ContainerNode
     }
   }
 
+  // Whether this element should receive focus from user pointer interaction.
+  bool get isUserFocusable {
+    if (_hasAttributeIgnoreCase('disabled')) return false;
+    if (tabIndex >= 0) return true;
+    final String tag = tagName.toUpperCase();
+    switch (tag) {
+      case 'INPUT':
+      case 'TEXTAREA':
+      case 'SELECT':
+      case 'BUTTON':
+        return true;
+      case 'A':
+        return _hasAttributeIgnoreCase('href');
+      default:
+        return false;
+    }
+  }
+
   bool _hasAttributeIgnoreCase(String name) {
     if (attributes.containsKey(name)) return true;
     final String lower = name.toLowerCase();
