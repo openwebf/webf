@@ -74,6 +74,123 @@ app.post('/upload', upload.any(), (req, res) => {
     }
 });
 
+// --- SSE (Server-Sent Events) endpoints ---
+
+// Sends a fixed number of messages then closes.
+app.get('/sse/basic', (req, res) => {
+    res.writeHead(200, {
+        'Content-Type': 'text/event-stream',
+        'Cache-Control': 'no-cache',
+        'Connection': 'keep-alive',
+    });
+
+    const messages = ['hello', 'world', 'done'];
+    let i = 0;
+    const interval = setInterval(() => {
+        if (i < messages.length) {
+            res.write(`data: ${messages[i]}\n\n`);
+            i++;
+        } else {
+            clearInterval(interval);
+            res.end();
+        }
+    }, 50);
+
+    req.on('close', () => clearInterval(interval));
+});
+
+// Sends named events with event type field.
+app.get('/sse/named-events', (req, res) => {
+    res.writeHead(200, {
+        'Content-Type': 'text/event-stream',
+        'Cache-Control': 'no-cache',
+        'Connection': 'keep-alive',
+    });
+
+    const events = [
+        { type: 'update', data: 'first-update' },
+        { type: 'alert', data: 'important-alert' },
+        { data: 'default-message' }, // No event type = 'message'
+    ];
+    let i = 0;
+    const interval = setInterval(() => {
+        if (i < events.length) {
+            const evt = events[i];
+            if (evt.type) {
+                res.write(`event: ${evt.type}\n`);
+            }
+            res.write(`data: ${evt.data}\n\n`);
+            i++;
+        } else {
+            clearInterval(interval);
+            res.end();
+        }
+    }, 50);
+
+    req.on('close', () => clearInterval(interval));
+});
+
+// Sends multi-line data fields.
+app.get('/sse/multiline', (req, res) => {
+    res.writeHead(200, {
+        'Content-Type': 'text/event-stream',
+        'Cache-Control': 'no-cache',
+        'Connection': 'keep-alive',
+    });
+
+    // Multi-line data: two "data:" lines become one event with \n
+    res.write('data: line1\ndata: line2\n\n');
+
+    setTimeout(() => res.end(), 100);
+
+    req.on('close', () => {});
+});
+
+// Sends id and retry fields.
+app.get('/sse/id-and-retry', (req, res) => {
+    res.writeHead(200, {
+        'Content-Type': 'text/event-stream',
+        'Cache-Control': 'no-cache',
+        'Connection': 'keep-alive',
+    });
+
+    res.write('retry: 500\n');
+    res.write('id: evt-1\n');
+    res.write('data: first\n\n');
+    res.write('id: evt-2\n');
+    res.write('data: second\n\n');
+
+    setTimeout(() => res.end(), 100);
+
+    req.on('close', () => {});
+});
+
+// Sends comments (lines starting with :) which should be ignored.
+app.get('/sse/comments', (req, res) => {
+    res.writeHead(200, {
+        'Content-Type': 'text/event-stream',
+        'Cache-Control': 'no-cache',
+        'Connection': 'keep-alive',
+    });
+
+    res.write(': this is a comment\n');
+    res.write('data: after-comment\n\n');
+
+    setTimeout(() => res.end(), 100);
+
+    req.on('close', () => {});
+});
+
+// Immediately closes connection to test error handling.
+app.get('/sse/immediate-close', (req, res) => {
+    res.writeHead(200, {
+        'Content-Type': 'text/event-stream',
+        'Cache-Control': 'no-cache',
+        'Connection': 'keep-alive',
+    });
+    res.end();
+});
+
 const port = process.env.PORT || 3000;
 app.listen(port, () => {
     console.log(`Mock HTTP server listening on port ${port}`)

@@ -58,6 +58,7 @@ void _defineModuleCreator() {
   _defineModule((ModuleManager? moduleManager) => LocalStorageModule(moduleManager));
   _defineModule((ModuleManager? moduleManager) => SessionStorageModule(moduleManager));
   _defineModule((ModuleManager? moduleManager) => WebSocketModule(moduleManager));
+  _defineModule((ModuleManager? moduleManager) => EventSourceModule(moduleManager));
   _defineModule((ModuleManager? moduleManager) => DOMMatrixModule(moduleManager));
   _defineModule((ModuleManager? moduleManager) => DOMPointModule(moduleManager));
   _defineModule((ModuleManager? moduleManager) => TextCodecModule(moduleManager));

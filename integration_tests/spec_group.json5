@@ -14,7 +14,8 @@
       "specs/timer/**/*.{js,jsx,ts,tsx,html}",
       "specs/window/**/*.{js,jsx,ts,tsx,html}",
       "specs/xhr/**/*.{js,jsx,ts,tsx,html}",
-      "specs/text-codec/**/*.{js,jsx,ts,tsx,html}"
+      "specs/text-codec/**/*.{js,jsx,ts,tsx,html}",
+      "specs/eventsource/**/*.{js,jsx,ts,tsx,html}"
     ]
   },
   {
