@@ -20,6 +20,7 @@ import {Storage, StorageInterface} from './storage';
 import { URL } from './url';
 import {Webf, webf} from './webf';
 import { WebSocket } from './websocket'
+import { EventSource } from './event-source'
 import { ResizeObserver } from './resize-observer';
 import { _AbortController, _AbortSignal } from './abort-signal';
 import { BroadcastChannel } from './broadcast-channel';
@@ -45,6 +46,7 @@ defineGlobalProperty('DOMException', DOMException);
 defineGlobalProperty('URL', URL);
 defineGlobalProperty('webf', webf);
 defineGlobalProperty('WebSocket', WebSocket);
+defineGlobalProperty('EventSource', EventSource);
 defineGlobalProperty('ResizeObserver', ResizeObserver);
 defineGlobalProperty('AbortSignal', _AbortSignal);
 defineGlobalProperty('AbortController', _AbortController);
@@ -110,6 +112,7 @@ export type PolyFillGlobal = {
   DOMException: DOMException,
   URL: URL,
   WebSocket: WebSocket,
+  EventSource: EventSource,
   ResizeObserver: ResizeObserver,
   AbortSignal: _AbortSignal,
   AbortController: _AbortController,
@@ -141,6 +144,7 @@ export {
   webf,
   Webf,
   WebSocket,
+  EventSource,
   ResizeObserver,
   TextDecoder,
   TextEncoder,

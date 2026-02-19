@@ -89,6 +89,7 @@ const sections: Section[] = [
     items: [
       { label: 'Fetch / XHR', path: '/network' },
       { label: 'WebSocket', path: '/websocket' },
+      { label: 'EventSource (SSE)', path: '/eventsource' },
       { label: 'localStorage', path: '/web-storage' },
       { label: 'Cookies', path: '/cookies' },
       { label: 'URL / Base64', path: '/url-encoding' },
