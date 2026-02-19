@@ -32,7 +32,8 @@ When asked about a specific API or CSS feature, I will:
 #### Networking
 - `fetch()` - Full support with async/await
 - `XMLHttpRequest` - For legacy code
-- `WebSocket` - Real-time communication
+- `WebSocket` - Real-time bidirectional communication
+- `EventSource` - Server-Sent Events (SSE) for real-time server push
 - `URL` and `URLSearchParams` - URL manipulation
 
 #### Storage
@@ -398,6 +399,15 @@ JavaScript in WebF already runs on a **dedicated thread**, separate from the Flu
 - ✅ TanStack Query
 - ✅ Apollo Client (if using fetch)
 
+### "Can I use AI streaming APIs (OpenAI, etc.)?"
+
+**Yes!** WebF supports both `EventSource` (SSE) and `fetch()` streaming, which are the two main approaches used by AI SDKs:
+
+- ✅ OpenAI streaming (uses SSE)
+- ✅ Vercel AI SDK (uses SSE / fetch streaming)
+- ✅ Any SSE-based streaming API
+- ✅ `EventSource` with named events, auto-reconnect, and `lastEventId`
+
 ### "What about CSS-in-JS libraries?"
 
 Most work fine as they generate standard CSS:
@@ -461,7 +471,9 @@ Need graphics?
 
 Need networking?
 ├─ HTTP requests → fetch ✅
-├─ Real-time → WebSockets ✅
+├─ Real-time (bidirectional) → WebSocket ✅
+├─ Real-time (server push) → EventSource (SSE) ✅
+├─ AI streaming → EventSource or fetch ✅
 └─ GraphQL → fetch-based clients ✅
 
 Need native features?

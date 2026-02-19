@@ -28,7 +28,8 @@ Complete compatibility tables for quick reference when building WebF application
 |-----|--------|-------|
 | `fetch()` | ✅ | Full async/await support |
 | `XMLHttpRequest` | ✅ | For legacy code |
-| `WebSocket` | ✅ | Real-time communication |
+| `WebSocket` | ✅ | Real-time bidirectional communication |
+| `EventSource` | ✅ | Server-Sent Events (SSE) — server push, auto-reconnect, named events |
 | `URL` | ✅ | URL parsing and manipulation |
 | `URLSearchParams` | ✅ | Query string handling |
 
@@ -272,13 +273,15 @@ Complete compatibility tables for quick reference when building WebF application
 | Recoil | ✅ | Full support |
 | MobX | ✅ | Full support |
 
-### Data Fetching
+### Data Fetching & Streaming
 | Library | Support | Notes |
 |---------|---------|-------|
 | React Query (TanStack Query) | ✅ | Full support |
 | SWR | ✅ | Full support |
 | Axios | ✅ | Full support |
 | Apollo Client | ✅ | Works if using fetch transport |
+| Vercel AI SDK | ✅ | SSE streaming via EventSource |
+| OpenAI SDK (streaming) | ✅ | SSE streaming supported |
 
 ### CSS-in-JS
 | Library | Support | Notes |
@@ -323,6 +326,7 @@ const webfFeatures = {
   // Networking
   fetch: typeof fetch !== 'undefined',
   websocket: typeof WebSocket !== 'undefined',
+  eventSource: typeof EventSource !== 'undefined',
 
   // Workers
   webWorkers: typeof Worker !== 'undefined', // Will be false

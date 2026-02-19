@@ -88,7 +88,7 @@ See [WebF Integration Guide](https://openwebf.com/en/docs/developer-guide/integr
 **Use when**: Planning features, debugging why APIs don't work, or finding alternatives for unsupported features
 
 **What it covers**:
-- JavaScript API compatibility (fetch ✅, IndexedDB ❌, WebGL ❌)
+- JavaScript API compatibility (fetch ✅, EventSource ✅, IndexedDB ❌, WebGL ❌)
 - CSS feature support (Flexbox ✅, float ❌, Grid ⏳)
 - Framework compatibility (React, Vue, Svelte, Tailwind CSS)
 - Native plugin alternatives (@openwebf/webf-share, custom plugins)
