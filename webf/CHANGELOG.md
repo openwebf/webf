@@ -1,3 +1,31 @@
+## 0.24.13
+
+### Major Features
+
+- **Networking**: add `EventSource` (Server-Sent Events) API support, including named events and
+  integration coverage and a use-cases demo page.
+
+### Performance Improvements
+
+- **Bridge/DOM**: avoid style invalidation work when attributes are re-applied without value
+  changes (common in React).
+
+### Bug Fixes
+
+- **Blink/Rendering**: defer first paint for newly inserted elements until Blink style-sync starts
+  to prevent 1-frame unstyled flashes (FOUC).
+- **Scrolling**: use a custom overflow `ScrollController` to avoid layout-time ballistic
+  simulations that can trigger asserts with some physics.
+- **Routing**: use `HybridHistoryDelegate.state()` for `RouteAware` callbacks in `WebF` and
+  `WebFRouterView` (#855).
+- **Routing/React**: bump `@openwebf/react-router` to `1.0.1` and align `RouterLink` with
+  `@openwebf/react-core-ui` component wiring.
+- **Flexbox**: include gap and border-box extents when computing flex scrollable area; add
+  regression snapshots.
+- **CSS/Parsing**: accept `calc(...)` in `flex` shorthand basis parsing; add integration coverage.
+- **DOM/Blink**: bypass stale CSS batch dirties when Blink is enabled to avoid redundant style
+  work.
+
 ## 0.24.12
 
 ### Major Features
