@@ -19,11 +19,6 @@
 *.orig
 *.rej
 
-# The .vscode folder contains launch configuration and tasks you configure in
-# VS Code which you may wish to be included in version control, so this line
-# is commented out by default.
-#.vscode/
-
 # Flutter/Dart/Pub related
 **/doc/api/
 .dart_tool/
@@ -84,6 +79,5 @@ pubspec.lock
 
 .flutter-plugins-dependencies
 
-# Dylibs should not be committed
-/macos/libquickjs.dylib
-/macos/libwebf.dylib
+# NOTE: dylib files are NOT ignored here (unlike .gitignore)
+# so they get included when publishing to pub.dev
