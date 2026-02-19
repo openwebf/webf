@@ -1,3 +1,9 @@
+## 0.24.13+1
+
+### Major Features
+
+- Add flutter 3.41.x support.
+
 ## 0.24.13
 
 ### Major Features
