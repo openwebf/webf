@@ -1398,6 +1398,12 @@ class WebFViewController with Diagnosticable implements WidgetsBindingObserver {
   void didChangeViewFocus(event) {}
 
   @override
+  void handleStatusBarTap() {
+    // Matches iOS browser behavior: tapping the status bar scrolls the page to the top.
+    window.scrollTo(0, 0, true);
+  }
+
+  @override
   String toStringShort() {
     return describeIdentity(this);
   }
