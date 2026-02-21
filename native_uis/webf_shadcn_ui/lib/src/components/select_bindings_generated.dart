@@ -31,42 +31,42 @@ abstract class FlutterShadcnSelectBindings extends WidgetElement {
     super.initializeAttributes(attributes);
     attributes['value'] = ElementAttributeProperty(
       getter: () => value?.toString(),
-      setter: (value) => this.value = value,
+      setter: (value) => value = value,
       deleter: () => value = null
     );
     attributes['placeholder'] = ElementAttributeProperty(
       getter: () => placeholder?.toString(),
-      setter: (value) => this.placeholder = value,
+      setter: (value) => placeholder = value,
       deleter: () => placeholder = null
     );
     attributes['disabled'] = ElementAttributeProperty(
       getter: () => disabled.toString(),
-      setter: (value) => this.disabled = value == 'true' || value == '',
+      setter: (value) => disabled = value == 'true' || value == '',
       deleter: () => disabled = false
     );
     attributes['multiple'] = ElementAttributeProperty(
       getter: () => multiple.toString(),
-      setter: (value) => this.multiple = value == 'true' || value == '',
+      setter: (value) => multiple = value == 'true' || value == '',
       deleter: () => multiple = false
     );
     attributes['searchable'] = ElementAttributeProperty(
       getter: () => searchable.toString(),
-      setter: (value) => this.searchable = value == 'true' || value == '',
+      setter: (value) => searchable = value == 'true' || value == '',
       deleter: () => searchable = false
     );
     attributes['search-placeholder'] = ElementAttributeProperty(
       getter: () => searchPlaceholder?.toString(),
-      setter: (value) => this.searchPlaceholder = value,
+      setter: (value) => searchPlaceholder = value,
       deleter: () => searchPlaceholder = null
     );
     attributes['allow-deselection'] = ElementAttributeProperty(
       getter: () => allowDeselection.toString(),
-      setter: (value) => this.allowDeselection = value == 'true' || value == '',
+      setter: (value) => allowDeselection = value == 'true' || value == '',
       deleter: () => allowDeselection = false
     );
     attributes['close-on-select'] = ElementAttributeProperty(
       getter: () => closeOnSelect.toString(),
-      setter: (value) => this.closeOnSelect = value == 'true' || value == '',
+      setter: (value) => closeOnSelect = value == 'true' || value == '',
       deleter: () => closeOnSelect = false
     );
   }

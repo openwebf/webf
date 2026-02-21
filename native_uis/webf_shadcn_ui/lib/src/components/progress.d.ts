@@ -31,6 +31,31 @@ interface FlutterShadcnProgressProperties {
    * Default: 'default'
    */
   variant?: string;
+
+  /**
+   * Background color of the progress track.
+   * Accepts hex color string (e.g. '#e0e0e0', '#FF808080').
+   */
+  backgroundColor?: string;
+
+  /**
+   * Color of the progress indicator.
+   * Accepts hex color string (e.g. '#3b82f6', '#FF0000FF').
+   */
+  color?: string;
+
+  /**
+   * Minimum height of the progress bar in logical pixels.
+   * Default: 16
+   */
+  minHeight?: string;
+
+  /**
+   * Border radius of the progress bar in logical pixels.
+   * Applied uniformly to all corners.
+   * Default: 16
+   */
+  borderRadius?: string;
 }
 
 interface FlutterShadcnProgressEvents {}

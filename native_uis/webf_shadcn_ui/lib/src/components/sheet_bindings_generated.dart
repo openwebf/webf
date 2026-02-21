@@ -21,17 +21,17 @@ abstract class FlutterShadcnSheetBindings extends WidgetElement {
     super.initializeAttributes(attributes);
     attributes['open'] = ElementAttributeProperty(
       getter: () => open.toString(),
-      setter: (value) => this.open = value == 'true' || value == '',
+      setter: (value) => open = value == 'true' || value == '',
       deleter: () => open = false
     );
     attributes['side'] = ElementAttributeProperty(
       getter: () => side?.toString(),
-      setter: (value) => this.side = value,
+      setter: (value) => side = value,
       deleter: () => side = null
     );
     attributes['close-on-outside-click'] = ElementAttributeProperty(
       getter: () => closeOnOutsideClick.toString(),
-      setter: (value) => this.closeOnOutsideClick = value == 'true' || value == '',
+      setter: (value) => closeOnOutsideClick = value == 'true' || value == '',
       deleter: () => closeOnOutsideClick = false
     );
   }

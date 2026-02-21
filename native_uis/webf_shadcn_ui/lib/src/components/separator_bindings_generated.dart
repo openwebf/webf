@@ -17,7 +17,7 @@ abstract class FlutterShadcnSeparatorBindings extends WidgetElement {
     super.initializeAttributes(attributes);
     attributes['orientation'] = ElementAttributeProperty(
       getter: () => orientation?.toString(),
-      setter: (value) => this.orientation = value,
+      setter: (value) => orientation = value,
       deleter: () => orientation = null
     );
   }

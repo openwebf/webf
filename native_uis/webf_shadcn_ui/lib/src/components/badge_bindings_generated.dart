@@ -17,7 +17,7 @@ abstract class FlutterShadcnBadgeBindings extends WidgetElement {
     super.initializeAttributes(attributes);
     attributes['variant'] = ElementAttributeProperty(
       getter: () => variant?.toString(),
-      setter: (value) => this.variant = value,
+      setter: (value) => variant = value,
       deleter: () => variant = null
     );
   }

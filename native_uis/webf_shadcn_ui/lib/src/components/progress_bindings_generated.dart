@@ -16,23 +16,51 @@ abstract class FlutterShadcnProgressBindings extends WidgetElement {
   set max(value);
   String? get variant;
   set variant(value);
+  String? get backgroundColor;
+  set backgroundColor(value);
+  String? get color;
+  set color(value);
+  String? get minHeight;
+  set minHeight(value);
+  String? get borderRadius;
+  set borderRadius(value);
   @override
   void initializeAttributes(Map<String, ElementAttributeProperty> attributes) {
     super.initializeAttributes(attributes);
     attributes['value'] = ElementAttributeProperty(
       getter: () => value?.toString(),
-      setter: (value) => this.value = value,
+      setter: (value) => value = value,
       deleter: () => value = null
     );
     attributes['max'] = ElementAttributeProperty(
       getter: () => max?.toString(),
-      setter: (value) => this.max = value,
+      setter: (value) => max = value,
       deleter: () => max = null
     );
     attributes['variant'] = ElementAttributeProperty(
       getter: () => variant?.toString(),
-      setter: (value) => this.variant = value,
+      setter: (value) => variant = value,
       deleter: () => variant = null
+    );
+    attributes['background-color'] = ElementAttributeProperty(
+      getter: () => backgroundColor?.toString(),
+      setter: (value) => backgroundColor = value,
+      deleter: () => backgroundColor = null
+    );
+    attributes['color'] = ElementAttributeProperty(
+      getter: () => color?.toString(),
+      setter: (value) => color = value,
+      deleter: () => color = null
+    );
+    attributes['min-height'] = ElementAttributeProperty(
+      getter: () => minHeight?.toString(),
+      setter: (value) => minHeight = value,
+      deleter: () => minHeight = null
+    );
+    attributes['border-radius'] = ElementAttributeProperty(
+      getter: () => borderRadius?.toString(),
+      setter: (value) => borderRadius = value,
+      deleter: () => borderRadius = null
     );
   }
   static StaticDefinedBindingPropertyMap flutterShadcnProgressProperties = {
@@ -50,6 +78,26 @@ abstract class FlutterShadcnProgressBindings extends WidgetElement {
       getter: (element) => castToType<FlutterShadcnProgressBindings>(element).variant,
       setter: (element, value) =>
       castToType<FlutterShadcnProgressBindings>(element).variant = value,
+    ),
+    'backgroundColor': StaticDefinedBindingProperty(
+      getter: (element) => castToType<FlutterShadcnProgressBindings>(element).backgroundColor,
+      setter: (element, value) =>
+      castToType<FlutterShadcnProgressBindings>(element).backgroundColor = value,
+    ),
+    'color': StaticDefinedBindingProperty(
+      getter: (element) => castToType<FlutterShadcnProgressBindings>(element).color,
+      setter: (element, value) =>
+      castToType<FlutterShadcnProgressBindings>(element).color = value,
+    ),
+    'minHeight': StaticDefinedBindingProperty(
+      getter: (element) => castToType<FlutterShadcnProgressBindings>(element).minHeight,
+      setter: (element, value) =>
+      castToType<FlutterShadcnProgressBindings>(element).minHeight = value,
+    ),
+    'borderRadius': StaticDefinedBindingProperty(
+      getter: (element) => castToType<FlutterShadcnProgressBindings>(element).borderRadius,
+      setter: (element, value) =>
+      castToType<FlutterShadcnProgressBindings>(element).borderRadius = value,
     ),
   };
   @override

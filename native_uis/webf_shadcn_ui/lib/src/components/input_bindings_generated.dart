@@ -30,58 +30,128 @@ abstract class FlutterShadcnInputBindings extends WidgetElement {
   set required(value);
   bool get autofocus;
   set autofocus(value);
+  String? get textalign;
+  set textalign(value);
+  String? get autocapitalize;
+  set autocapitalize(value);
+  bool get autocorrect;
+  set autocorrect(value);
+  bool get enablesuggestions;
+  set enablesuggestions(value);
+  String? get enterkeyhint;
+  set enterkeyhint(value);
+  String? get maxlines;
+  set maxlines(value);
+  String? get minlines;
+  set minlines(value);
+  String? get cursorcolor;
+  set cursorcolor(value);
+  String? get selectioncolor;
+  set selectioncolor(value);
+  String? get obscuringcharacter;
+  set obscuringcharacter(value);
   @override
   void initializeAttributes(Map<String, ElementAttributeProperty> attributes) {
     super.initializeAttributes(attributes);
     attributes['value'] = ElementAttributeProperty(
       getter: () => value?.toString(),
-      setter: (value) => this.value = value,
+      setter: (value) => value = value,
       deleter: () => value = null
     );
     attributes['placeholder'] = ElementAttributeProperty(
       getter: () => placeholder?.toString(),
-      setter: (value) => this.placeholder = value,
+      setter: (value) => placeholder = value,
       deleter: () => placeholder = null
     );
     attributes['type'] = ElementAttributeProperty(
       getter: () => type?.toString(),
-      setter: (value) => this.type = value,
+      setter: (value) => type = value,
       deleter: () => type = null
     );
     attributes['disabled'] = ElementAttributeProperty(
       getter: () => disabled.toString(),
-      setter: (value) => this.disabled = value == 'true' || value == '',
+      setter: (value) => disabled = value == 'true' || value == '',
       deleter: () => disabled = false
     );
     attributes['readonly'] = ElementAttributeProperty(
       getter: () => readonly.toString(),
-      setter: (value) => this.readonly = value == 'true' || value == '',
+      setter: (value) => readonly = value == 'true' || value == '',
       deleter: () => readonly = false
     );
     attributes['maxlength'] = ElementAttributeProperty(
       getter: () => maxlength?.toString(),
-      setter: (value) => this.maxlength = value,
+      setter: (value) => maxlength = value,
       deleter: () => maxlength = null
     );
     attributes['minlength'] = ElementAttributeProperty(
       getter: () => minlength?.toString(),
-      setter: (value) => this.minlength = value,
+      setter: (value) => minlength = value,
       deleter: () => minlength = null
     );
     attributes['pattern'] = ElementAttributeProperty(
       getter: () => pattern?.toString(),
-      setter: (value) => this.pattern = value,
+      setter: (value) => pattern = value,
       deleter: () => pattern = null
     );
     attributes['required'] = ElementAttributeProperty(
       getter: () => required.toString(),
-      setter: (value) => this.required = value == 'true' || value == '',
+      setter: (value) => required = value == 'true' || value == '',
       deleter: () => required = false
     );
     attributes['autofocus'] = ElementAttributeProperty(
       getter: () => autofocus.toString(),
-      setter: (value) => this.autofocus = value == 'true' || value == '',
+      setter: (value) => autofocus = value == 'true' || value == '',
       deleter: () => autofocus = false
+    );
+    attributes['textalign'] = ElementAttributeProperty(
+      getter: () => textalign?.toString(),
+      setter: (value) => textalign = value,
+      deleter: () => textalign = null
+    );
+    attributes['autocapitalize'] = ElementAttributeProperty(
+      getter: () => autocapitalize?.toString(),
+      setter: (value) => autocapitalize = value,
+      deleter: () => autocapitalize = null
+    );
+    attributes['autocorrect'] = ElementAttributeProperty(
+      getter: () => autocorrect.toString(),
+      setter: (value) => autocorrect = value == 'true' || value == '',
+      deleter: () => autocorrect = false
+    );
+    attributes['enablesuggestions'] = ElementAttributeProperty(
+      getter: () => enablesuggestions.toString(),
+      setter: (value) => enablesuggestions = value == 'true' || value == '',
+      deleter: () => enablesuggestions = false
+    );
+    attributes['enterkeyhint'] = ElementAttributeProperty(
+      getter: () => enterkeyhint?.toString(),
+      setter: (value) => enterkeyhint = value,
+      deleter: () => enterkeyhint = null
+    );
+    attributes['maxlines'] = ElementAttributeProperty(
+      getter: () => maxlines?.toString(),
+      setter: (value) => maxlines = value,
+      deleter: () => maxlines = null
+    );
+    attributes['minlines'] = ElementAttributeProperty(
+      getter: () => minlines?.toString(),
+      setter: (value) => minlines = value,
+      deleter: () => minlines = null
+    );
+    attributes['cursorcolor'] = ElementAttributeProperty(
+      getter: () => cursorcolor?.toString(),
+      setter: (value) => cursorcolor = value,
+      deleter: () => cursorcolor = null
+    );
+    attributes['selectioncolor'] = ElementAttributeProperty(
+      getter: () => selectioncolor?.toString(),
+      setter: (value) => selectioncolor = value,
+      deleter: () => selectioncolor = null
+    );
+    attributes['obscuringcharacter'] = ElementAttributeProperty(
+      getter: () => obscuringcharacter?.toString(),
+      setter: (value) => obscuringcharacter = value,
+      deleter: () => obscuringcharacter = null
     );
   }
   static StaticDefinedBindingPropertyMap flutterShadcnInputProperties = {
@@ -134,6 +204,56 @@ abstract class FlutterShadcnInputBindings extends WidgetElement {
       getter: (element) => castToType<FlutterShadcnInputBindings>(element).autofocus,
       setter: (element, value) =>
       castToType<FlutterShadcnInputBindings>(element).autofocus = value,
+    ),
+    'textalign': StaticDefinedBindingProperty(
+      getter: (element) => castToType<FlutterShadcnInputBindings>(element).textalign,
+      setter: (element, value) =>
+      castToType<FlutterShadcnInputBindings>(element).textalign = value,
+    ),
+    'autocapitalize': StaticDefinedBindingProperty(
+      getter: (element) => castToType<FlutterShadcnInputBindings>(element).autocapitalize,
+      setter: (element, value) =>
+      castToType<FlutterShadcnInputBindings>(element).autocapitalize = value,
+    ),
+    'autocorrect': StaticDefinedBindingProperty(
+      getter: (element) => castToType<FlutterShadcnInputBindings>(element).autocorrect,
+      setter: (element, value) =>
+      castToType<FlutterShadcnInputBindings>(element).autocorrect = value,
+    ),
+    'enablesuggestions': StaticDefinedBindingProperty(
+      getter: (element) => castToType<FlutterShadcnInputBindings>(element).enablesuggestions,
+      setter: (element, value) =>
+      castToType<FlutterShadcnInputBindings>(element).enablesuggestions = value,
+    ),
+    'enterkeyhint': StaticDefinedBindingProperty(
+      getter: (element) => castToType<FlutterShadcnInputBindings>(element).enterkeyhint,
+      setter: (element, value) =>
+      castToType<FlutterShadcnInputBindings>(element).enterkeyhint = value,
+    ),
+    'maxlines': StaticDefinedBindingProperty(
+      getter: (element) => castToType<FlutterShadcnInputBindings>(element).maxlines,
+      setter: (element, value) =>
+      castToType<FlutterShadcnInputBindings>(element).maxlines = value,
+    ),
+    'minlines': StaticDefinedBindingProperty(
+      getter: (element) => castToType<FlutterShadcnInputBindings>(element).minlines,
+      setter: (element, value) =>
+      castToType<FlutterShadcnInputBindings>(element).minlines = value,
+    ),
+    'cursorcolor': StaticDefinedBindingProperty(
+      getter: (element) => castToType<FlutterShadcnInputBindings>(element).cursorcolor,
+      setter: (element, value) =>
+      castToType<FlutterShadcnInputBindings>(element).cursorcolor = value,
+    ),
+    'selectioncolor': StaticDefinedBindingProperty(
+      getter: (element) => castToType<FlutterShadcnInputBindings>(element).selectioncolor,
+      setter: (element, value) =>
+      castToType<FlutterShadcnInputBindings>(element).selectioncolor = value,
+    ),
+    'obscuringcharacter': StaticDefinedBindingProperty(
+      getter: (element) => castToType<FlutterShadcnInputBindings>(element).obscuringcharacter,
+      setter: (element, value) =>
+      castToType<FlutterShadcnInputBindings>(element).obscuringcharacter = value,
     ),
   };
   @override

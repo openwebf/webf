@@ -25,27 +25,27 @@ abstract class FlutterShadcnToastBindings extends WidgetElement {
     super.initializeAttributes(attributes);
     attributes['variant'] = ElementAttributeProperty(
       getter: () => variant?.toString(),
-      setter: (value) => this.variant = value,
+      setter: (value) => variant = value,
       deleter: () => variant = null
     );
     attributes['title'] = ElementAttributeProperty(
       getter: () => title?.toString(),
-      setter: (value) => this.title = value,
+      setter: (value) => title = value,
       deleter: () => title = null
     );
     attributes['description'] = ElementAttributeProperty(
       getter: () => description?.toString(),
-      setter: (value) => this.description = value,
+      setter: (value) => description = value,
       deleter: () => description = null
     );
     attributes['duration'] = ElementAttributeProperty(
       getter: () => duration?.toString(),
-      setter: (value) => this.duration = value,
+      setter: (value) => duration = value,
       deleter: () => duration = null
     );
     attributes['closable'] = ElementAttributeProperty(
       getter: () => closable.toString(),
-      setter: (value) => this.closable = value == 'true' || value == '',
+      setter: (value) => closable = value == 'true' || value == '',
       deleter: () => closable = false
     );
   }

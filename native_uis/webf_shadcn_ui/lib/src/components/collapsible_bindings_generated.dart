@@ -19,12 +19,12 @@ abstract class FlutterShadcnCollapsibleBindings extends WidgetElement {
     super.initializeAttributes(attributes);
     attributes['open'] = ElementAttributeProperty(
       getter: () => open.toString(),
-      setter: (value) => this.open = value == 'true' || value == '',
+      setter: (value) => open = value == 'true' || value == '',
       deleter: () => open = false
     );
     attributes['disabled'] = ElementAttributeProperty(
       getter: () => disabled.toString(),
-      setter: (value) => this.disabled = value == 'true' || value == '',
+      setter: (value) => disabled = value == 'true' || value == '',
       deleter: () => disabled = false
     );
   }

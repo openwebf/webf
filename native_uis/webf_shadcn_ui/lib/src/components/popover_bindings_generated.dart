@@ -21,17 +21,17 @@ abstract class FlutterShadcnPopoverBindings extends WidgetElement {
     super.initializeAttributes(attributes);
     attributes['open'] = ElementAttributeProperty(
       getter: () => open.toString(),
-      setter: (value) => this.open = value == 'true' || value == '',
+      setter: (value) => open = value == 'true' || value == '',
       deleter: () => open = false
     );
     attributes['placement'] = ElementAttributeProperty(
       getter: () => placement?.toString(),
-      setter: (value) => this.placement = value,
+      setter: (value) => placement = value,
       deleter: () => placement = null
     );
     attributes['close-on-outside-click'] = ElementAttributeProperty(
       getter: () => closeOnOutsideClick.toString(),
-      setter: (value) => this.closeOnOutsideClick = value == 'true' || value == '',
+      setter: (value) => closeOnOutsideClick = value == 'true' || value == '',
       deleter: () => closeOnOutsideClick = false
     );
   }
