@@ -21,6 +21,9 @@ const Map<String, dynamic> _defaultStyle = {
   DISPLAY: INLINE_BLOCK,
   BORDER: '2px solid rgb(118, 118, 118)',
   PADDING: '1px 6px',
+  // Match UA default sizing for form controls (smaller than body text).
+  FONT_SIZE: SMALLER,
+  LINE_HEIGHT: NORMAL,
 };
 
 class LabelElement extends Element {
