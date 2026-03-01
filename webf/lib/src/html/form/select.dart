@@ -32,6 +32,23 @@ const Map<String, dynamic> _selectDefaultStyle = {
   COLOR: '#000',
 };
 
+class _SelectMenuEntry {
+  final HTMLOptionElement? option;
+  final int? optionIndex;
+  final String? groupLabel;
+  final bool disabled;
+
+  const _SelectMenuEntry.option(this.option, this.optionIndex, {required this.disabled})
+      : groupLabel = null;
+
+  const _SelectMenuEntry.group(this.groupLabel)
+      : option = null,
+        optionIndex = null,
+        disabled = true;
+
+  bool get isGroupLabel => groupLabel != null;
+}
+
 class HTMLSelectElement extends WidgetElement implements FormElementBase {
   HTMLSelectElement([super.context]);
 
@@ -318,6 +335,7 @@ class FlutterSelectElementState extends WebFWidgetElementState {
   Future<void> _openOptionsMenu(BuildContext context) async {
     if (widgetElement.disabled) return;
 
+    final List<_SelectMenuEntry> entries = _collectMenuEntries();
     final List<HTMLOptionElement> options = widgetElement._collectOptions();
     if (options.isEmpty) return;
 
@@ -342,36 +360,50 @@ class FlutterSelectElementState extends WebFWidgetElementState {
       context: context,
       position: position,
       items: [
-        for (int i = 0; i < options.length; i++)
-          PopupMenuItem<int>(
-            value: i,
-            enabled: !options[i].disabled,
-            child: Row(
-              children: [
-                if (i == currentIndex)
-                  Icon(
-                    Icons.check,
-                    size: (textStyle.fontSize ?? 14) + 2,
-                    color: textStyle.color,
-                  )
-                else
-                  SizedBox(width: (textStyle.fontSize ?? 14) + 2),
-                const SizedBox(width: 6),
-                Expanded(
-                  child: Text(
-                    widgetElement._optionLabel(options[i]),
-                    style: textStyle,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
+        for (final _SelectMenuEntry entry in entries)
+          if (entry.isGroupLabel)
+            PopupMenuItem<int>(
+              value: -1,
+              enabled: false,
+              child: Text(
+                entry.groupLabel ?? '',
+                style: textStyle.copyWith(
+                  color: textStyle.color?.withOpacity(0.5),
                 ),
-              ],
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+            )
+          else
+            PopupMenuItem<int>(
+              value: entry.optionIndex ?? -1,
+              enabled: !entry.disabled,
+              child: Row(
+                children: [
+                  if (entry.optionIndex == currentIndex)
+                    Icon(
+                      Icons.check,
+                      size: (textStyle.fontSize ?? 14) + 2,
+                      color: entry.disabled ? (textStyle.color?.withOpacity(0.5)) : textStyle.color,
+                    )
+                  else
+                    SizedBox(width: (textStyle.fontSize ?? 14) + 2),
+                  const SizedBox(width: 6),
+                  Expanded(
+                    child: Text(
+                      widgetElement._optionLabel(entry.option!),
+                      style: entry.disabled ? textStyle.copyWith(color: textStyle.color?.withOpacity(0.5)) : textStyle,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                ],
+              ),
             ),
-          ),
       ],
     );
 
-    if (result == null) return;
+    if (result == null || result < 0) return;
     if (result == currentIndex) return;
 
     widgetElement.selectedIndex = result;
@@ -405,30 +437,81 @@ class FlutterSelectElementState extends WebFWidgetElementState {
     );
   }
 
+  List<_SelectMenuEntry> _collectMenuEntries() {
+    final List<_SelectMenuEntry> entries = <_SelectMenuEntry>[];
+    int optionIndex = 0;
+
+    void visit(Element element, {bool groupDisabled = false}) {
+      if (element.tagName.toUpperCase() == OPTGROUP) {
+        final HTMLOptGroupElement? group =
+            element is HTMLOptGroupElement ? element : null;
+        final String label = group?.label ?? '';
+        if (label.isNotEmpty) {
+          entries.add(_SelectMenuEntry.group(label));
+        }
+        final bool disabled = groupDisabled || (group?.disabled ?? false);
+        for (final Node child in element.childNodes) {
+          if (child is Element) {
+            visit(child, groupDisabled: disabled);
+          }
+        }
+        return;
+      }
+
+      if (element is HTMLOptionElement) {
+        final bool disabled = groupDisabled || element.disabled;
+        entries.add(_SelectMenuEntry.option(element, optionIndex, disabled: disabled));
+        optionIndex += 1;
+        return;
+      }
+
+      for (final Node child in element.childNodes) {
+        if (child is Element) {
+          visit(child, groupDisabled: groupDisabled);
+        }
+      }
+    }
+
+    visit(widgetElement);
+    return entries;
+  }
+
   @override
   Widget build(BuildContext context) {
     final TextStyle textStyle = _textStyle();
     final TextDirection textDirection = widgetElement.renderStyle.direction;
     final String label = widgetElement._displayLabel;
+    final bool shouldShowArrow =
+        widgetElement.renderStyle.borderTopWidth?.computedValue != 0 ||
+            widgetElement.renderStyle.borderRightWidth?.computedValue != 0 ||
+            widgetElement.renderStyle.borderBottomWidth?.computedValue != 0 ||
+            widgetElement.renderStyle.borderLeftWidth?.computedValue != 0;
 
+    final bool constrainLabel =
+        widgetElement.renderStyle.width.isNotAuto ||
+            widgetElement.renderStyle.maxWidth.isNotNone;
+    Widget labelWidget = Text(
+      label,
+      style: textStyle,
+      maxLines: 1,
+      overflow: TextOverflow.ellipsis,
+      softWrap: false,
+      textAlign: widgetElement.renderStyle.textAlign,
+      textDirection: textDirection,
+    );
+    if (constrainLabel) {
+      labelWidget = Flexible(fit: FlexFit.loose, child: labelWidget);
+    }
     Widget content = Row(
-      mainAxisSize: MainAxisSize.max,
+      mainAxisSize: MainAxisSize.min,
       children: [
-        Expanded(
-          child: Text(
-            label,
-            style: textStyle,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            textAlign: widgetElement.renderStyle.textAlign,
-            textDirection: textDirection,
+        labelWidget,
+        if (shouldShowArrow)
+          Icon(
+            Icons.arrow_drop_down,
+            size: (textStyle.fontSize ?? 14) + 6,
+            color: widgetElement.renderStyle.color.value,
           ),
-        ),
-        Icon(
-          Icons.arrow_drop_down,
-          size: (textStyle.fontSize ?? 14) + 6,
-          color: widgetElement.renderStyle.color.value,
-        ),
       ],
     );
 
@@ -728,7 +811,7 @@ class HTMLOptionElement extends Element {
 class HTMLOptGroupElement extends Element {
   HTMLOptGroupElement([super.context]);
 
-  bool get disabled => getAttribute('disabled') != null;
+  bool get disabled => _attributeValueIgnoreCase('disabled') != null;
 
   set disabled(dynamic value) {
     if (value == true) {
@@ -736,6 +819,13 @@ class HTMLOptGroupElement extends Element {
     } else if (attributes.containsKey('disabled')) {
       removeAttribute('disabled');
     }
+    _markPseudoStateDirty();
+  }
+
+  String get label => _attributeValueIgnoreCase('label') ?? '';
+
+  set label(dynamic value) {
+    internalSetAttribute('label', value?.toString() ?? '');
     _markPseudoStateDirty();
   }
 
@@ -752,6 +842,7 @@ class HTMLOptGroupElement extends Element {
   void initializeDynamicProperties(Map<String, BindingObjectProperty> properties) {
     super.initializeDynamicProperties(properties);
     properties['disabled'] = BindingObjectProperty(getter: () => disabled, setter: (value) => disabled = value);
+    properties['label'] = BindingObjectProperty(getter: () => label, setter: (value) => label = value);
   }
 
   @override
@@ -761,5 +852,18 @@ class HTMLOptGroupElement extends Element {
         getter: () => disabled.toString(),
         setter: (value) => disabled = dom.attributeToProperty<bool>(value),
         deleter: _markPseudoStateDirty);
+    attributes['label'] = dom.ElementAttributeProperty(
+        getter: () => _attributeValueIgnoreCase('label') ?? '',
+        setter: (value) => label = value,
+        deleter: _markPseudoStateDirty);
+  }
+
+  String? _attributeValueIgnoreCase(String name) {
+    if (attributes.containsKey(name)) return attributes[name];
+    final String lower = name.toLowerCase();
+    for (final String key in attributes.keys) {
+      if (key.toLowerCase() == lower) return attributes[key];
+    }
+    return null;
   }
 }
