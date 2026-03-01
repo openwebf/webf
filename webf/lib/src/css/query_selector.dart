@@ -505,6 +505,8 @@ class SelectorEvaluator extends SelectorVisitor {
       case 'invalid': {
         final Element element = _element!;
         if (!_isFormControlElement(element)) return false;
+        // Elements barred from constraint validation (e.g. disabled) match neither :valid nor :invalid.
+        if (_isFormControlDisabled(element)) return false;
         final bool isValid = _isFormControlValid(element);
         return name == 'valid' ? isValid : !isValid;
       }
