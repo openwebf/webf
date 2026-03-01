@@ -506,6 +506,7 @@ class SelectorEvaluator extends SelectorVisitor {
         final Element element = _element!;
         if (!_isFormControlElement(element)) return false;
         // Elements barred from constraint validation (e.g. disabled) match neither :valid nor :invalid.
+        // https://html.spec.whatwg.org/multipage/form-control-infrastructure.html#barred-from-constraint-validation
         if (_isFormControlDisabled(element)) return false;
         final bool isValid = _isFormControlValid(element);
         return name == 'valid' ? isValid : !isValid;
