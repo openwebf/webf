@@ -797,7 +797,13 @@ class RenderFlexLayout extends RenderLayoutBox {
     if (crossIsHorizontal) {
       final bool usesBlockAxis = renderStyle.flexDirection == FlexDirection.row ||
           renderStyle.flexDirection == FlexDirection.rowReverse;
-      final bool crossStartIsPhysicalLeft = usesBlockAxis ? (wm == CSSWritingMode.verticalLr) : true;
+      // When the cross axis is horizontal, it can be either the block axis (in
+      // vertical writing modes for row/row-reverse) or the inline axis (for
+      // column/column-reverse in horizontal writing mode). Inline-start depends
+      // on `direction` in horizontal writing mode.
+      final bool crossStartIsPhysicalLeft = usesBlockAxis
+          ? (wm == CSSWritingMode.verticalLr)
+          : (renderStyle.direction != TextDirection.rtl);
       if (!isEnd) {
         return crossStartIsPhysicalLeft
             ? childRenderBoxModel.renderStyle.marginLeft.computedValue
@@ -4298,9 +4304,18 @@ class RenderFlexLayout extends RenderLayoutBox {
     final double mainAxisGap = _getMainAxisGap();
     final double crossAxisGap = _getCrossAxisGap();
     final double mainAxisStartPadding = _flowAwareMainAxisPadding();
-    final double crossAxisStartPadding = _flowAwareCrossAxisPadding();
+    // Children offsets are in physical coordinates (left/top origin). For the
+    // cross axis we need the physical start padding/border, not the logical
+    // cross-start; otherwise RTL column flex containers will incorrectly shift
+    // children by `padding-inline-start` (which maps to padding-right).
+    final bool crossAxisIsHorizontal = !isHorizontal;
+    final double crossAxisStartPadding = crossAxisIsHorizontal
+        ? renderStyle.paddingLeft.computedValue
+        : renderStyle.paddingTop.computedValue;
     final double mainAxisStartBorder = _flowAwareMainAxisBorder();
-    final double crossAxisStartBorder = _flowAwareCrossAxisBorder();
+    final double crossAxisStartBorder = crossAxisIsHorizontal
+        ? renderStyle.effectiveBorderLeftWidth.computedValue
+        : renderStyle.effectiveBorderTopWidth.computedValue;
 
     // Compute spacing before and between each flex line.
     final _RunSpacing runSpacing = _computeRunSpacing(runMetrics);
@@ -4909,8 +4924,8 @@ class RenderFlexLayout extends RenderLayoutBox {
               childCrossAxisExtent +
               childCrossAxisStartMargin;
         } else {
-          // Cross-start at right: cross-end is left
-          return crossStartAddedOffset;
+          // Cross-start at right: cross-end is left (physical start)
+          return crossAxisStartPadding + crossAxisStartBorder + childCrossAxisEndMargin;
         }
       case 'center':
         // Center the child's MARGIN-BOX within the flex line's content box (spec behavior).

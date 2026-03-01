@@ -634,6 +634,68 @@ void main() {
     });
   });
 
+  group('Logical Padding in Flex', () {
+    testWidgets('padding-inline-start on column flex respects RTL cross axis', (WidgetTester tester) async {
+      final prepared = await WebFWidgetTestUtils.prepareWidgetTest(
+        tester: tester,
+        controllerName: 'padding-inline-start-rtl-column-flex-test-${DateTime.now().millisecondsSinceEpoch}',
+        html: '''
+          <html>
+            <body style="margin: 0; padding: 0;">
+              <div id="container" style="
+                display: flex;
+                flex-direction: column;
+                direction: rtl;
+                width: 335px;
+                padding-inline-start: 44px;
+                background-color: #eee;
+              ">
+                <div id="child" style="height: 10px; background-color: red;"></div>
+              </div>
+            </body>
+          </html>
+        ''',
+      );
+
+      final dom.Element child = prepared.getElementById('child');
+      final rect = child.getBoundingClientRect();
+
+      // In RTL, padding-inline-start maps to padding-right, so the child should
+      // not be shifted from the physical left edge.
+      expect(rect.left, equals(0.0));
+      expect(child.offsetWidth, equals(291.0)); // 335 - 44
+    });
+
+    testWidgets('padding-inline-start on column flex in LTR shifts content right', (WidgetTester tester) async {
+      final prepared = await WebFWidgetTestUtils.prepareWidgetTest(
+        tester: tester,
+        controllerName: 'padding-inline-start-ltr-column-flex-test-${DateTime.now().millisecondsSinceEpoch}',
+        html: '''
+          <html>
+            <body style="margin: 0; padding: 0;">
+              <div id="container" style="
+                display: flex;
+                flex-direction: column;
+                direction: ltr;
+                width: 335px;
+                padding-inline-start: 44px;
+                background-color: #eee;
+              ">
+                <div id="child" style="height: 10px; background-color: red;"></div>
+              </div>
+            </body>
+          </html>
+        ''',
+      );
+
+      final dom.Element child = prepared.getElementById('child');
+      final rect = child.getBoundingClientRect();
+
+      expect(rect.left, equals(44.0));
+      expect(child.offsetWidth, equals(291.0)); // 335 - 44
+    });
+  });
+
   group('Flexbox with Absolute Positioning', () {
     testWidgets('absolute child in flex container', (WidgetTester tester) async {
       final prepared = await WebFWidgetTestUtils.prepareWidgetTest(
