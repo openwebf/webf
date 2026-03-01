@@ -592,6 +592,9 @@ class SelectorEvaluator extends SelectorVisitor {
     if (element is BaseInputElement) {
       type = element.type.toLowerCase();
       value = element.value ?? '';
+    } else if (element is FormElementBase) {
+      type = element.type.toLowerCase();
+      value = element.value?.toString() ?? '';
     } else {
       final String? attrType = _getAttributeValue(element, 'type');
       if (attrType != null && attrType.isNotEmpty) {

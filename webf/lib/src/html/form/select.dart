@@ -6,9 +6,18 @@
  * Copyright (C) 2022-2024 The WebF authors. All rights reserved.
  */
 
+import 'dart:async';
+import 'dart:math' as math;
+
+import 'package:flutter/material.dart' hide Element;
 import 'package:webf/bridge.dart';
+import 'package:webf/css.dart';
 import 'package:webf/dom.dart' as dom;
 import 'package:webf/dom.dart';
+import 'package:webf/src/accessibility/semantics.dart';
+import 'package:webf/widget.dart';
+
+import 'form_element_base.dart';
 
 // ignore: constant_identifier_names
 const SELECT = 'SELECT';
@@ -17,8 +26,30 @@ const OPTION = 'OPTION';
 // ignore: constant_identifier_names
 const OPTGROUP = 'OPTGROUP';
 
-class HTMLSelectElement extends Element {
+const Map<String, dynamic> _selectDefaultStyle = {
+  DISPLAY: INLINE_BLOCK,
+  BORDER: '2px solid rgb(118, 118, 118)',
+  COLOR: '#000',
+};
+
+class HTMLSelectElement extends WidgetElement implements FormElementBase {
   HTMLSelectElement([super.context]);
+
+  bool _pendingFocus = false;
+
+  @override
+  Map<String, dynamic> get defaultStyle => _selectDefaultStyle;
+
+  @override
+  FlutterSelectElementState? get state => super.state as FlutterSelectElementState?;
+
+  @override
+  WebFWidgetElementState createState() {
+    return FlutterSelectElementState(this);
+  }
+
+  @override
+  String get type => multiple ? 'select-multiple' : 'select-one';
 
   bool get disabled => _hasAttributeIgnoreCase('disabled');
 
@@ -38,6 +69,41 @@ class HTMLSelectElement extends Element {
     _setBooleanAttribute('required', _coerceBooleanAttribute(value));
   }
 
+  @override
+  String get value {
+    final HTMLOptionElement? option = _resolveSelectedOption();
+    if (option == null) return '';
+    return option.value;
+  }
+
+  @override
+  set value(dynamic v) {
+    _setValue(v?.toString() ?? '');
+  }
+
+  int get selectedIndex {
+    final List<HTMLOptionElement> options = _collectOptions();
+    for (int i = 0; i < options.length; i++) {
+      if (options[i].selected) return i;
+    }
+    return -1;
+  }
+
+  set selectedIndex(dynamic index) {
+    if (index == null) {
+      _clearAllSelections();
+      return;
+    }
+    int? parsed;
+    if (index is num) {
+      parsed = index.toInt();
+    } else {
+      parsed = int.tryParse(index.toString());
+    }
+    if (parsed == null) return;
+    _setSelectedIndex(parsed);
+  }
+
   bool _coerceBooleanAttribute(dynamic value) {
     if (value == null) return false;
     if (value is bool) return value;
@@ -53,6 +119,92 @@ class HTMLSelectElement extends Element {
       removeAttribute(name);
     }
     _markPseudoStateDirty();
+  }
+
+  HTMLOptionElement? _resolveSelectedOption() {
+    final List<HTMLOptionElement> options = _collectOptions();
+    for (final HTMLOptionElement option in options) {
+      if (option.selected) return option;
+    }
+    return null;
+  }
+
+  String _optionLabel(HTMLOptionElement option) {
+    final String? labelAttr = option.getAttribute('label');
+    if (labelAttr != null && labelAttr.isNotEmpty) return labelAttr;
+    return option.text;
+  }
+
+  String get _displayLabel {
+    final List<HTMLOptionElement> options = _collectOptions();
+    if (options.isEmpty) return '';
+
+    if (multiple) {
+      final List<HTMLOptionElement> selected =
+          options.where((option) => option.selected).toList();
+      final List<HTMLOptionElement> visible =
+          selected.isEmpty ? <HTMLOptionElement>[options.first] : selected;
+      return visible.map(_optionLabel).join(', ');
+    }
+
+    final HTMLOptionElement? option = _resolveSelectedOption();
+    if (option == null) return '';
+    return _optionLabel(option);
+  }
+
+  void _setValue(String nextValue) {
+    final List<HTMLOptionElement> options = _collectOptions();
+    for (final HTMLOptionElement option in options) {
+      if (option.value == nextValue) {
+        option.selected = true;
+        _notifyOptionsChanged();
+        return;
+      }
+    }
+  }
+
+  void _setSelectedIndex(int index) {
+    final List<HTMLOptionElement> options = _collectOptions();
+    if (index < 0 || index >= options.length) {
+      _clearAllSelections();
+      return;
+    }
+    options[index].selected = true;
+    _notifyOptionsChanged();
+  }
+
+  void _clearAllSelections() {
+    final List<HTMLOptionElement> options = _collectOptions();
+    for (final HTMLOptionElement option in options) {
+      if (option.attributes.containsKey('selected')) {
+        option.removeAttribute('selected');
+      }
+    }
+    _notifyOptionsChanged();
+  }
+
+  List<HTMLOptionElement> _collectOptions() {
+    final List<HTMLOptionElement> options = <HTMLOptionElement>[];
+    void visit(Element element) {
+      for (final Node child in element.childNodes) {
+        if (child is HTMLOptionElement) {
+          options.add(child);
+        }
+        if (child is Element) {
+          visit(child);
+        }
+      }
+    }
+    visit(this);
+    return options;
+  }
+
+  void _notifyOptionsChanged() {
+    state?.requestUpdateState();
+  }
+
+  void _markPendingFocus() {
+    _pendingFocus = true;
   }
 
   bool _hasAttributeIgnoreCase(String name) {
@@ -74,8 +226,29 @@ class HTMLSelectElement extends Element {
   }
 
   @override
+  void initializeDynamicMethods(Map<String, BindingObjectMethod> methods) {
+    super.initializeDynamicMethods(methods);
+    methods['focus'] = BindingObjectMethodSync(call: (List args) {
+      if (disabled) return;
+      if (state != null) {
+        state?.focus();
+      } else {
+        _markPendingFocus();
+      }
+      ownerDocument.updateFocusTarget(this);
+    });
+    methods['blur'] = BindingObjectMethodSync(call: (List args) {
+      state?.blur();
+      ownerDocument.clearFocusTarget(this);
+    });
+  }
+
+  @override
   void initializeDynamicProperties(Map<String, BindingObjectProperty> properties) {
     super.initializeDynamicProperties(properties);
+    properties['value'] = BindingObjectProperty(getter: () => value, setter: (value) => this.value = value);
+    properties['selectedIndex'] =
+        BindingObjectProperty(getter: () => selectedIndex, setter: (value) => selectedIndex = value);
     properties['disabled'] = BindingObjectProperty(getter: () => disabled, setter: (value) => disabled = value);
     properties['multiple'] = BindingObjectProperty(getter: () => multiple, setter: (value) => multiple = value);
     properties['required'] = BindingObjectProperty(getter: () => required, setter: (value) => required = value);
@@ -99,8 +272,233 @@ class HTMLSelectElement extends Element {
   }
 }
 
+class FlutterSelectElementState extends WebFWidgetElementState {
+  FlutterSelectElementState(super.widgetElement);
+
+  @override
+  HTMLSelectElement get widgetElement => super.widgetElement as HTMLSelectElement;
+
+  FocusNode? _focusNode;
+
+  @override
+  void initState() {
+    super.initState();
+    _focusNode ??= FocusNode();
+    _focusNode!.addListener(_handleFocusChange);
+    if (widgetElement._pendingFocus) {
+      scheduleMicrotask(() {
+        if (mounted) focus();
+      });
+      widgetElement._pendingFocus = false;
+    }
+  }
+
+  void focus() {
+    _focusNode?.requestFocus();
+  }
+
+  void blur() {
+    _focusNode?.unfocus();
+  }
+
+  void _handleFocusChange() {
+    if (_focusNode?.hasFocus ?? false) {
+      widgetElement.ownerDocument.updateFocusTarget(widgetElement);
+      scheduleMicrotask(() {
+        widgetElement.dispatchEvent(dom.FocusEvent(dom.EVENT_FOCUS, relatedTarget: widgetElement));
+      });
+    } else {
+      widgetElement.ownerDocument.clearFocusTarget(widgetElement);
+      scheduleMicrotask(() {
+        widgetElement.dispatchEvent(dom.FocusEvent(dom.EVENT_BLUR, relatedTarget: widgetElement));
+      });
+    }
+  }
+
+  Future<void> _openOptionsMenu(BuildContext context) async {
+    if (widgetElement.disabled) return;
+
+    final List<HTMLOptionElement> options = widgetElement._collectOptions();
+    if (options.isEmpty) return;
+
+    final RenderBox? box = context.findRenderObject() as RenderBox?;
+    final OverlayState? overlay = Overlay.of(context);
+    final RenderBox? overlayBox = overlay?.context.findRenderObject() as RenderBox?;
+    if (box == null || overlayBox == null) return;
+
+    final Offset topLeft = box.localToGlobal(Offset.zero, ancestor: overlayBox);
+    final Offset bottomRight =
+        box.localToGlobal(box.size.bottomRight(Offset.zero), ancestor: overlayBox);
+
+    final RelativeRect position = RelativeRect.fromRect(
+      Rect.fromPoints(topLeft, bottomRight),
+      Offset.zero & overlayBox.size,
+    );
+
+    final TextStyle textStyle = _textStyle();
+    final int currentIndex = widgetElement.selectedIndex;
+
+    final int? result = await showMenu<int>(
+      context: context,
+      position: position,
+      items: [
+        for (int i = 0; i < options.length; i++)
+          PopupMenuItem<int>(
+            value: i,
+            enabled: !options[i].disabled,
+            child: Row(
+              children: [
+                if (i == currentIndex)
+                  Icon(
+                    Icons.check,
+                    size: (textStyle.fontSize ?? 14) + 2,
+                    color: textStyle.color,
+                  )
+                else
+                  SizedBox(width: (textStyle.fontSize ?? 14) + 2),
+                const SizedBox(width: 6),
+                Expanded(
+                  child: Text(
+                    widgetElement._optionLabel(options[i]),
+                    style: textStyle,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+              ],
+            ),
+          ),
+      ],
+    );
+
+    if (result == null) return;
+    if (result == currentIndex) return;
+
+    widgetElement.selectedIndex = result;
+    widgetElement.dispatchEvent(dom.InputEvent(inputType: 'select', data: widgetElement.value));
+    widgetElement.dispatchEvent(dom.Event('change'));
+  }
+
+  TextStyle _textStyle() {
+    final double fs = widgetElement.renderStyle.fontSize.computedValue;
+    final double nonNegativeFontSize = fs.isFinite && fs >= 0 ? fs : 0.0;
+    double? height;
+    if (widgetElement.renderStyle.lineHeight != CSSText.defaultLineHeight) {
+      double lineHeight =
+          widgetElement.renderStyle.lineHeight.computedValue / widgetElement.renderStyle.fontSize.computedValue;
+      if (widgetElement.renderStyle.height.isNotAuto) {
+        lineHeight = math.min(
+            lineHeight,
+            widgetElement.renderStyle.height.computedValue /
+                widgetElement.renderStyle.fontSize.computedValue);
+      }
+      if (lineHeight >= 1) {
+        height = lineHeight;
+      }
+    }
+    return TextStyle(
+      color: widgetElement.renderStyle.color.value,
+      fontSize: nonNegativeFontSize,
+      height: height,
+      fontWeight: widgetElement.renderStyle.fontWeight,
+      fontFamily: widgetElement.renderStyle.fontFamily?.join(' '),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final TextStyle textStyle = _textStyle();
+    final TextDirection textDirection = widgetElement.renderStyle.direction;
+    final String label = widgetElement._displayLabel;
+
+    Widget content = Row(
+      mainAxisSize: MainAxisSize.max,
+      children: [
+        Expanded(
+          child: Text(
+            label,
+            style: textStyle,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            textAlign: widgetElement.renderStyle.textAlign,
+            textDirection: textDirection,
+          ),
+        ),
+        Icon(
+          Icons.arrow_drop_down,
+          size: (textStyle.fontSize ?? 14) + 6,
+          color: widgetElement.renderStyle.color.value,
+        ),
+      ],
+    );
+
+    Widget widget = GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: widgetElement.disabled
+          ? null
+          : () async {
+              focus();
+              final box = context.findRenderObject() as RenderBox?;
+              if (box != null) {
+                final Offset globalOffset = box.globalToLocal(Offset.zero);
+                widgetElement.dispatchEvent(dom.MouseEvent(dom.EVENT_CLICK,
+                    clientX: globalOffset.dx, clientY: globalOffset.dy, view: widgetElement.ownerDocument.defaultView));
+              } else {
+                widgetElement.dispatchEvent(dom.MouseEvent(dom.EVENT_CLICK, view: widgetElement.ownerDocument.defaultView));
+              }
+              await _openOptionsMenu(context);
+            },
+      child: content,
+    );
+
+    widget = Focus(
+      focusNode: _focusNode,
+      child: widget,
+    );
+
+    final String? semanticsLabel = WebFAccessibility.computeAccessibleName(widgetElement);
+    final String? semanticsHint = WebFAccessibility.computeAccessibleDescription(widgetElement);
+    if ((semanticsLabel != null && semanticsLabel.isNotEmpty) || (semanticsHint != null && semanticsHint.isNotEmpty)) {
+      widget = Semantics(
+        container: true,
+        label: (semanticsLabel != null && semanticsLabel.isNotEmpty) ? semanticsLabel : null,
+        hint: (semanticsHint != null && semanticsHint.isNotEmpty) ? semanticsHint : null,
+        textDirection: widgetElement.renderStyle.direction,
+        child: widget,
+      );
+    }
+
+    return Directionality(textDirection: textDirection, child: widget);
+  }
+
+  @override
+  void dispose() {
+    _focusNode?.removeListener(_handleFocusChange);
+    _focusNode?.dispose();
+    super.dispose();
+  }
+}
+
 class HTMLOptionElement extends Element {
   HTMLOptionElement([super.context]);
+
+  String get value {
+    final String? attr = _attributeValueIgnoreCase('value');
+    if (attr != null) return attr;
+    return text;
+  }
+
+  set value(dynamic v) {
+    internalSetAttribute('value', v?.toString() ?? '');
+    _markPseudoStateDirty();
+  }
+
+  String get text => _collectTextContent(this);
+
+  set text(String v) {
+    _setTextContent(v);
+    _markPseudoStateDirty();
+  }
 
   bool get selected => _isSelected();
 
@@ -236,6 +634,52 @@ class HTMLOptionElement extends Element {
     } else {
       ownerDocument.markElementStyleDirty(this, reason: 'childList-pseudo');
     }
+    _notifySelect();
+  }
+
+  void _notifySelect() {
+    final Element? select = _findSelectAncestor();
+    if (select is HTMLSelectElement) {
+      select._notifyOptionsChanged();
+    }
+  }
+
+  String _collectTextContent(Element root) {
+    final StringBuffer buffer = StringBuffer();
+    void visit(Node node) {
+      if (node is TextNode) {
+        buffer.write(node.data);
+      }
+      if (node is Element) {
+        for (final Node child in node.childNodes) {
+          visit(child);
+        }
+      }
+    }
+    visit(root);
+    return buffer.toString();
+  }
+
+  void _setTextContent(String value) {
+    // Replace existing text nodes with a single text node.
+    List<TextNode> textNodes = [];
+    Node? cursor = firstChild;
+    while (cursor != null) {
+      if (cursor is TextNode) textNodes.add(cursor);
+      cursor = cursor.nextSibling;
+    }
+
+    if (textNodes.isNotEmpty) {
+      TextNode keep = textNodes.first;
+      keep.data = value;
+      for (final tn in textNodes) {
+        if (!identical(tn, keep)) {
+          removeChild(tn);
+        }
+      }
+    } else {
+      appendChild(TextNode(value));
+    }
   }
 
   @override
@@ -243,6 +687,8 @@ class HTMLOptionElement extends Element {
     super.initializeDynamicProperties(properties);
     properties['selected'] = BindingObjectProperty(getter: () => selected, setter: (value) => selected = value);
     properties['disabled'] = BindingObjectProperty(getter: () => disabled, setter: (value) => disabled = value);
+    properties['value'] = BindingObjectProperty(getter: () => value, setter: (value) => this.value = value);
+    properties['text'] = BindingObjectProperty(getter: () => text, setter: (value) => text = value?.toString() ?? '');
   }
 
   @override
@@ -256,6 +702,26 @@ class HTMLOptionElement extends Element {
         getter: () => disabled.toString(),
         setter: (value) => disabled = dom.attributeToProperty<bool>(value),
         deleter: _markPseudoStateDirty);
+    attributes['value'] = dom.ElementAttributeProperty(
+        getter: () => _attributeValueIgnoreCase('value') ?? '',
+        setter: (value) => this.value = value,
+        deleter: _markPseudoStateDirty);
+    attributes['label'] = dom.ElementAttributeProperty(
+        getter: () => _attributeValueIgnoreCase('label') ?? '',
+        setter: (value) {
+          // Attribute map will be updated by Element.setAttribute; just notify.
+          _markPseudoStateDirty();
+        },
+        deleter: _markPseudoStateDirty);
+  }
+
+  String? _attributeValueIgnoreCase(String name) {
+    if (attributes.containsKey(name)) return attributes[name];
+    final String lower = name.toLowerCase();
+    for (final String key in attributes.keys) {
+      if (key.toLowerCase() == lower) return attributes[key];
+    }
+    return null;
   }
 }
 
