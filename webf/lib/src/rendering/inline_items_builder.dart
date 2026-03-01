@@ -200,9 +200,14 @@ class InlineItemsBuilder {
           if (child.renderStyle.isSelfRenderReplaced() || child.renderStyle.isSelfRenderWidget()) {
             _addAtomicInline(child);
           } else {
-            // Skip RenderEventListener wrappers - they're just for event handling
-            // and shouldn't create separate inline boxes
+            // Skip wrapper render boxes (event listener / listview constraint wrappers, etc).
+            // These are implementation details and should not create separate inline boxes.
             if (child is RenderEventListener && child.child != null) {
+              if (_boxStack.isEmpty) {
+                _consumedRootContent = true;
+              }
+              _collectInlines(child);
+            } else if (child is RenderLayoutBoxWrapper && child.child != null) {
               if (_boxStack.isEmpty) {
                 _consumedRootContent = true;
               }
@@ -224,6 +229,11 @@ class InlineItemsBuilder {
           // Always break after the block-level atomic so following inline content starts on a new line.
           _addControl('\n');
         }
+      } else {
+        // Descend into non-RenderBoxModel wrappers (e.g. pointer listeners, semantics,
+        // clipping, scrolling widgets). These often sit between WebF render boxes,
+        // especially when overflow/scrollable behavior is involved.
+        _collectInlines(child);
       }
 
       // Get next sibling
