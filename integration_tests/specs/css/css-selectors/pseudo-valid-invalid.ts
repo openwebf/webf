@@ -207,14 +207,14 @@ describe('css selector :valid/:invalid', () => {
 
     await snapshot();
 
-    // Disabled inputs are barred from constraint validation
+    // Disabled inputs are barred from constraint validation and match neither :valid nor :invalid.
     const disabledRequired = document.getElementById('disabled-required') as HTMLInputElement;
     const disabledInvalidEmail = document.getElementById('disabled-invalid-email') as HTMLInputElement;
 
-    expect(disabledRequired.matches(':valid')).toBe(true);
+    expect(disabledRequired.matches(':valid')).toBe(false);
     expect(disabledRequired.matches(':invalid')).toBe(false);
 
-    expect(disabledInvalidEmail.matches(':valid')).toBe(true);
+    expect(disabledInvalidEmail.matches(':valid')).toBe(false);
     expect(disabledInvalidEmail.matches(':invalid')).toBe(false);
   });
 
