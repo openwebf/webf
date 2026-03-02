@@ -269,6 +269,8 @@ jobs:
         uses: jwlawson/actions-setup-cmake@v2
         with:
           cmake-version: ${{ env.cmakeVersion }}
+      - name: Install gperf
+        run: brew install gperf
 
       # - name: Setup Node.js
       #   uses: actions/setup-node@v4
@@ -367,6 +369,9 @@ jobs:
       - name: Install Node.js dependencies
         run: npm install
 
+      - name: Install gperf
+        run: brew install gperf
+
       - name: Generate binding code
         run: npm run bindgen
 
@@ -453,6 +458,9 @@ jobs:
 
       - name: Install Node.js dependencies
         run: npm ci
+
+      - name: Install gperf
+        run: brew install gperf
 
       - name: Generate binding code
         run: npm run bindgen
