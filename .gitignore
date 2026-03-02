@@ -74,3 +74,4 @@ pubspec.lock
 
 **/.dartServer/
 **/.dart-tool/
+packages/react-shadcn-ui/
