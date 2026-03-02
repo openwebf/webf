@@ -358,10 +358,10 @@ class FlutterShadcnFormFieldState extends WebFWidgetElementState {
 
   @override
   Widget build(BuildContext context) {
+    final theme = ShadTheme.of(context);
+
     // If there are child nodes, render them as custom field content
     if (widgetElement.childNodes.isNotEmpty) {
-      final theme = ShadTheme.of(context);
-
       return Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -417,9 +417,20 @@ class FlutterShadcnFormFieldState extends WebFWidgetElementState {
     }
 
     // Otherwise, render as ShadInputFormField
+    final borderRadius = theme.inputTheme.decoration?.border?.radius;
+    final boundedDecoration = ShadDecoration(
+      disableSecondaryBorder: true,
+      focusedBorder: ShadBorder.all(
+        color: theme.colorScheme.ring,
+        width: 1,
+        radius: borderRadius,
+      ),
+    );
+
     return ShadInputFormField(
       id: widgetElement.fieldId,
       initialValue: widgetElement.initialValue,
+      decoration: boundedDecoration,
       label: widgetElement.label != null
           ? Row(
               mainAxisSize: MainAxisSize.min,

@@ -161,6 +161,8 @@ class FlutterShadcnTextareaState extends WebFWidgetElementState {
 
   @override
   Widget build(BuildContext context) {
+    final theme = ShadTheme.of(context);
+
     // Sync controller with external value changes
     if (_controller.text != widgetElement.value) {
       _controller.text = widgetElement.value;
@@ -173,9 +175,22 @@ class FlutterShadcnTextareaState extends WebFWidgetElementState {
       ];
     }
 
+    // WebF can clip outlines that are painted outside the widget bounds.
+    // Keep focused border feedback inside the component bounds.
+    final borderRadius = theme.inputTheme.decoration?.border?.radius;
+    final boundedDecoration = ShadDecoration(
+      disableSecondaryBorder: true,
+      focusedBorder: ShadBorder.all(
+        color: theme.colorScheme.ring,
+        width: 1,
+        radius: borderRadius,
+      ),
+    );
+
     return ShadInput(
       controller: _controller,
       focusNode: _focusNode,
+      decoration: boundedDecoration,
       placeholder: widgetElement.placeholder != null
           ? Text(widgetElement.placeholder!)
           : null,

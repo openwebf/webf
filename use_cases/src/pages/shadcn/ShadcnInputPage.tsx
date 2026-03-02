@@ -176,6 +176,27 @@ export const ShadcnInputPage: React.FC = () => {
           </div>
 
           <div className="mb-8">
+            <h2 className="text-lg font-semibold mb-4">Outline Color</h2>
+            <p className="text-sm text-gray-500 mb-4">
+              Set <code>outlineColor</code> on <code>FlutterShadcnTheme</code>, then focus the input.
+            </p>
+            <div className="space-y-4">
+              <FlutterShadcnTheme colorScheme="zinc" brightness="light" outlineColor="#ef4444">
+                <div>
+                  <label className="block text-sm font-medium mb-2">Red outline</label>
+                  <FlutterShadcnInput placeholder="Focus to see red outline" />
+                </div>
+              </FlutterShadcnTheme>
+              <FlutterShadcnTheme colorScheme="zinc" brightness="light" outlineColor="#2563eb">
+                <div>
+                  <label className="block text-sm font-medium mb-2">Blue outline</label>
+                  <FlutterShadcnInput placeholder="Focus to see blue outline" />
+                </div>
+              </FlutterShadcnTheme>
+            </div>
+          </div>
+
+          <div className="mb-8">
             <h2 className="text-lg font-semibold mb-4">Textarea</h2>
             <div className="space-y-4">
               <div>

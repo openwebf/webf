@@ -22,6 +22,7 @@ class FlutterShadcnTheme extends FlutterShadcnThemeBindings {
   String _colorScheme = 'zinc';
   String _brightness = 'system';
   double _radius = 0.5;
+  Color? _outlineColor;
 
   @override
   String get colorScheme => _colorScheme;
@@ -59,7 +60,37 @@ class FlutterShadcnTheme extends FlutterShadcnThemeBindings {
     }
   }
 
+  @override
+  String? get outlineColor => _outlineColor != null
+      ? '#${_outlineColor!.value.toRadixString(16).padLeft(8, '0')}'
+      : null;
+
+  @override
+  set outlineColor(value) {
+    final newValue = value != null ? _parseColor(value.toString()) : null;
+    if (newValue != _outlineColor) {
+      _outlineColor = newValue;
+      state?.requestUpdateState(() {});
+    }
+  }
+
   double get radiusValue => _radius;
+  Color? get outlineColorValue => _outlineColor;
+
+  static Color? _parseColor(String value) {
+    final trimmed = value.trim().toLowerCase();
+    if (trimmed.startsWith('#')) {
+      final hex = trimmed.substring(1);
+      if (hex.length == 6) {
+        final intValue = int.tryParse(hex, radix: 16);
+        if (intValue != null) return Color(0xFF000000 | intValue);
+      } else if (hex.length == 8) {
+        final intValue = int.tryParse(hex, radix: 16);
+        if (intValue != null) return Color(intValue);
+      }
+    }
+    return null;
+  }
 
   ThemeMode get themeMode {
     switch (_brightness.toLowerCase()) {
@@ -100,7 +131,11 @@ class FlutterShadcnThemeState extends WebFWidgetElementState {
     }
 
     // Get color scheme for the effective brightness
-    final colorScheme = getColorScheme(schemeName, effectiveBrightness);
+    var colorScheme = getColorScheme(schemeName, effectiveBrightness);
+    final outlineColor = widgetElement.outlineColorValue;
+    if (outlineColor != null) {
+      colorScheme = colorScheme.copyWith(ring: outlineColor);
+    }
 
     // Build theme data
     final theme = ShadThemeData(
