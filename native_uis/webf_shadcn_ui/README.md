@@ -83,6 +83,7 @@ void main() {
 - `<flutter-shadcn-breadcrumb>` - Breadcrumb navigation
 - `<flutter-shadcn-dropdown-menu>` - Dropdown menu
 - `<flutter-shadcn-context-menu>` - Right-click context menu
+- `<flutter-shadcn-menubar>` - Horizontal menubar with nested menus
 
 ### Data Display
 - `<flutter-shadcn-table>` - Data table

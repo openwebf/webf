@@ -60,7 +60,7 @@ native_uis/webf_shadcn_ui/
 | Breadcrumb | `<flutter-shadcn-breadcrumb>` | breadcrumb.dart | breadcrumb.d.ts | Done |
 | DropdownMenu | `<flutter-shadcn-dropdown-menu>` | dropdown_menu.dart | dropdown_menu.d.ts | Done |
 | ContextMenu | `<flutter-shadcn-context-menu>` | context_menu.dart | context_menu.d.ts | Done |
-| Menubar | - | - | - | Not implemented |
+| Menubar | `<flutter-shadcn-menubar>` | menubar.dart | menubar.d.ts | Done |
 
 ### Data Display (6 components)
 
@@ -162,6 +162,17 @@ The following slot elements are implemented for compositional components:
 - `<flutter-shadcn-context-menu-content>`
 - `<flutter-shadcn-context-menu-item>`
 - `<flutter-shadcn-context-menu-separator>`
+- `<flutter-shadcn-menubar-menu>`
+- `<flutter-shadcn-menubar-trigger>`
+- `<flutter-shadcn-menubar-content>`
+- `<flutter-shadcn-menubar-item>`
+- `<flutter-shadcn-menubar-separator>`
+- `<flutter-shadcn-menubar-sub>`
+- `<flutter-shadcn-menubar-sub-trigger>`
+- `<flutter-shadcn-menubar-sub-content>`
+- `<flutter-shadcn-menubar-checkbox-item>`
+- `<flutter-shadcn-menubar-radio-group>`
+- `<flutter-shadcn-menubar-radio-item>`
 - `<flutter-shadcn-collapsible-trigger>`
 - `<flutter-shadcn-collapsible-content>`
 
@@ -204,7 +215,6 @@ The following slot elements are implemented for compositional components:
 
 4. **Optional Enhancements**
    - Add remaining advanced components (ResizablePanel, HoverCard, etc.)
-   - Add Menubar component
    - Improve animation support
    - Add accessibility features
 

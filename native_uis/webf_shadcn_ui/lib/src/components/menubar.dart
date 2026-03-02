@@ -10,6 +10,7 @@ import 'package:flutter/services.dart';
 import 'package:shadcn_ui/shadcn_ui.dart';
 import 'package:webf/css.dart';
 import 'package:webf/webf.dart';
+import 'menubar_bindings_generated.dart';
 
 const Map<String, dynamic> _menubarDefaultStyle = {
   DISPLAY: INLINE_FLEX,
@@ -339,7 +340,7 @@ class _MenubarSubmenuTriggerState extends State<_MenubarSubmenuTrigger> {
 /// WebF custom element for the menubar container.
 ///
 /// Exposed as `<flutter-shadcn-menubar>` in the DOM.
-class FlutterShadcnMenubar extends WidgetElement {
+class FlutterShadcnMenubar extends FlutterShadcnMenubarBindings {
   FlutterShadcnMenubar(super.context);
 
   @override
