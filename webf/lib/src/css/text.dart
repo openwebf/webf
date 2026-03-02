@@ -529,6 +529,28 @@ mixin CSSTextMixin on RenderStyle {
     _direction = value;
     // Update all the children text and flow layout with specified style property not set due to style inheritance.
     _markNestChildrenTextAndLayoutNeedsLayout(this, DIRECTION);
+
+    // Overflow scroll containers build Flutter `Scrollable` widgets whose
+    // `axisDirection` depends on the resolved text direction. When `direction`
+    // changes on an ancestor (e.g. `dir="rtl"` on a root container), descendant
+    // scrollable elements often inherit the new direction without setting their
+    // own `direction` property, so their renderStyle updates but their Scrollable
+    // wrappers won't rebuild automatically. Force a rebuild for any scrollable
+    // elements in this subtree so horizontal overflow scrolling matches RTL/LTR.
+    final dom.Element root = target;
+    void requestScrollableRebuild(dom.Element el) {
+      if (!el.hasScroll) return;
+      el.renderStyle.requestWidgetToRebuild(UpdateDirectionReason());
+    }
+
+    requestScrollableRebuild(root);
+    void visit(dom.Node node) {
+      if (node is dom.Element) {
+        requestScrollableRebuild(node);
+        node.visitChildren(visit);
+      }
+    }
+    root.visitChildren(visit);
   }
 
   double? _tabSize;
