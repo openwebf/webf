@@ -24,8 +24,8 @@ importers:
         specifier: 1.0.1
         version: 1.0.1(react-dom@19.2.0(react@19.2.0))(react@19.2.0)
       '@openwebf/react-shadcn-ui':
-        specifier: link:../packages/react-shadcn-ui
-        version: link:../packages/react-shadcn-ui
+        specifier: ^0.1.0
+        version: 0.1.0(@openwebf/react-core-ui@0.24.2(react-dom@19.2.0(react@19.2.0))(react@19.2.0))(react-dom@19.2.0(react@19.2.0))(react@19.2.0)
       '@openwebf/react-ui-kit':
         specifier: ^0.1.0-beta.1
         version: 0.1.0-beta.1(react-dom@19.2.0(react@19.2.0))(react@19.2.0)
@@ -1250,6 +1250,13 @@ packages:
   '@openwebf/react-router@1.0.1':
     resolution: {integrity: sha512-7D6VhZDtmW1gLC5ZIhSF0jJI1FmeT4GxNs0fB2GJRJaT4L1q8Huzio4+QqqSlJrR0TUTjPPcl9dyRCCmi0Fu8A==}
     peerDependencies:
+      react: '>=16.8.0'
+      react-dom: '>=16.8.0'
+
+  '@openwebf/react-shadcn-ui@0.1.0':
+    resolution: {integrity: sha512-tYiuRknaK9IoLe9W1c8jI+XzJCauZuVle9HJIzsBmzqQUghY3cXruq3bTZGS72GNbHefjK10tbOHE9Yj2fSKQg==}
+    peerDependencies:
+      '@openwebf/react-core-ui': ^0.24.1
       react: '>=16.8.0'
       react-dom: '>=16.8.0'
 
@@ -7517,6 +7524,12 @@ snapshots:
       ahooks: 3.9.6(react-dom@19.2.0(react@19.2.0))(react@19.2.0)
       event-emitter: 0.3.5
       lodash-es: 4.17.23
+      react: 19.2.0
+      react-dom: 19.2.0(react@19.2.0)
+
+  '@openwebf/react-shadcn-ui@0.1.0(@openwebf/react-core-ui@0.24.2(react-dom@19.2.0(react@19.2.0))(react@19.2.0))(react-dom@19.2.0(react@19.2.0))(react@19.2.0)':
+    dependencies:
+      '@openwebf/react-core-ui': 0.24.2(react-dom@19.2.0(react@19.2.0))(react@19.2.0)
       react: 19.2.0
       react-dom: 19.2.0(react@19.2.0)
 
