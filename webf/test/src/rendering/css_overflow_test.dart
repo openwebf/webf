@@ -3,6 +3,9 @@
  */
 
 import 'package:flutter_test/flutter_test.dart';
+import 'package:flutter/widgets.dart';
+import 'package:webf/dom.dart' as dom;
+import 'package:webf/rendering.dart';
 import 'package:webf/webf.dart';
 import '../../setup.dart';
 import '../widget/test_utils.dart';
@@ -964,6 +967,143 @@ void main() {
       expect(container.offsetWidth, equals(200.0));
       expect(container.offsetHeight, equals(100.0));
       expect(container.scrollWidth, greaterThanOrEqualTo(300.0));
+    });
+
+    testWidgets('rtl direction change via dir attribute updates overflow alignment', (WidgetTester tester) async {
+      final prepared = await WebFWidgetTestUtils.prepareWidgetTest(
+        tester: tester,
+        controllerName: 'overflow-rtl-inherited-direction-rebuild-test-${DateTime.now().millisecondsSinceEpoch}',
+        html: '''
+          <html>
+            <body style="margin: 0; padding: 0;">
+              <div id="host" dir="ltr">
+                <div id="scroller" style="
+                  width: 120px;
+                  height: 20px;
+                  overflow-x: auto;
+                  overflow-y: hidden;
+                  background: #eee;
+                ">
+                  <div id="content" style="width: 300px; height: 20px; background: #0f0;"></div>
+                </div>
+              </div>
+            </body>
+          </html>
+        ''',
+      );
+
+      final host = prepared.getElementById('host');
+      final scroller = prepared.getElementById('scroller');
+      final content = prepared.getElementById('content');
+
+      final dom.Element scrollerEl1 = scroller;
+      final RenderBoxModel r1 = scrollerEl1.attachedRenderer!;
+      expect(r1.renderStyle.direction, TextDirection.ltr);
+
+      await tester.runAsync(() async {
+        host.setAttribute('dir', 'rtl');
+      });
+      await tester.pump();
+
+      final dom.Element scrollerEl2 = scroller;
+      final RenderBoxModel r2 = scrollerEl2.attachedRenderer!;
+      expect(r2.renderStyle.direction, TextDirection.rtl);
+
+      final sRect2 = scroller.getBoundingClientRect();
+      final contentRect2 = content.getBoundingClientRect();
+      // RTL: should rebuild scrollable axis direction and start at the right edge.
+      expect((contentRect2.right - sRect2.right).abs(), lessThan(0.5));
+    });
+
+    testWidgets('rtl horizontal overflow starts at right edge', (WidgetTester tester) async {
+      final prepared = await WebFWidgetTestUtils.prepareWidgetTest(
+        tester: tester,
+        controllerName: 'overflow-rtl-initial-offset-test-${DateTime.now().millisecondsSinceEpoch}',
+        html: '''
+          <html>
+            <body style="margin: 0; padding: 0;">
+              <div id="container" style="
+                direction: rtl;
+                width: 100px;
+                height: 20px;
+                overflow-x: auto;
+                overflow-y: hidden;
+                background: #eee;
+              ">
+                <div id="content" style="
+                  width: 300px;
+                  height: 20px;
+                  background: #0f0;
+                "></div>
+              </div>
+            </body>
+          </html>
+        ''',
+      );
+
+      final container = prepared.getElementById('container');
+      final content = prepared.getElementById('content');
+
+      final cRect = container.getBoundingClientRect();
+      final contentRect = content.getBoundingClientRect();
+
+      // In RTL, overflow containers should start scrolled to the "start" edge (right),
+      // so the content's right edge aligns with the container's right edge.
+      expect((contentRect.right - cRect.right).abs(), lessThan(0.5));
+
+      // Internal sanity: paint scroll offset should translate to reveal the right edge.
+      final dom.Element containerEl = container;
+      final RenderBoxModel r = containerEl.attachedRenderer!;
+      final double maxScroll = (container.scrollWidth - container.clientWidth).toDouble();
+      expect(maxScroll, greaterThan(0.0));
+      expect((r.paintScrollOffset.dx + maxScroll).abs(), lessThan(0.5));
+    });
+
+    testWidgets('rtl flex-start overflow does not add right gutter', (WidgetTester tester) async {
+      final prepared = await WebFWidgetTestUtils.prepareWidgetTest(
+        tester: tester,
+        controllerName: 'overflow-rtl-flex-start-gutter-test-${DateTime.now().millisecondsSinceEpoch}',
+        html: '''
+          <html>
+            <body style="margin: 0; padding: 0;">
+              <div id="scroller" style="
+                direction: rtl;
+                width: 200px;
+                height: 30px;
+                overflow-x: auto;
+                overflow-y: hidden;
+                background: #eee;
+              ">
+                <div style="display: flex; width: 100%; height: 30px; justify-content: flex-start;">
+                  <div id="first" style="min-width: 120px; height: 30px; background: #f00;"></div>
+                  <div style="min-width: 120px; height: 30px; background: #0f0;"></div>
+                  <div style="min-width: 120px; height: 30px; background: #00f;"></div>
+                  <div style="min-width: 120px; height: 30px; background: #ff0;"></div>
+                </div>
+              </div>
+            </body>
+          </html>
+        ''',
+      );
+
+      final scroller = prepared.getElementById('scroller');
+      final first = prepared.getElementById('first');
+
+      final sRect = scroller.getBoundingClientRect();
+      final firstRect = first.getBoundingClientRect();
+
+      // In RTL, flex-start lays items from the physical right edge and may produce
+      // negative child offsets for overflow. The scroll container should not apply
+      // an extra shift that creates a blank gutter on the right.
+      expect((firstRect.right - sRect.right).abs(), lessThan(0.5));
+
+      // Internal sanity: in this RTL flex-start case the content is already anchored
+      // to the right by layout (negative child offsets), so the scroll paint offset
+      // at scrollX=0 should be ~0 (not -maxScroll).
+      final dom.Element scrollerEl = scroller;
+      final RenderBoxModel r = scrollerEl.attachedRenderer!;
+      expect(r.scrollLeft, closeTo(0.0, 0.01));
+      expect(r.paintScrollOffset.dx.abs(), lessThan(0.5));
     });
   });
 

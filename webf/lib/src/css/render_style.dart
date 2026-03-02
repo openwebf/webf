@@ -40,6 +40,8 @@ class UpdateDisplayReason extends AdapterUpdateReason {}
 
 class UpdateTransformReason extends AdapterUpdateReason {}
 
+class UpdateDirectionReason extends AdapterUpdateReason {}
+
 class UpdateChildNodeUpdateReason extends AdapterUpdateReason {}
 
 // Used by Blink style-sync to reveal elements that were temporarily hidden to

@@ -14,11 +14,12 @@ import 'package:webf/rendering.dart';
 import 'package:webf/dom.dart';
 import 'package:webf/foundation.dart';
 import 'package:webf/css.dart';
+import 'box_overflow.dart';
 
 typedef ScrollListener = void Function(
     double scrollOffset, AxisDirection axisDirection);
 
-mixin RenderOverflowMixin on RenderBoxModelBase {
+mixin RenderOverflowMixin on RenderBoxModelBase, RenderBoxOverflowLayout {
   static const double _kSemanticsScrollFactor = 0.8;
 
   ScrollListener? scrollListener;
@@ -204,19 +205,53 @@ mixin RenderOverflowMixin on RenderBoxModelBase {
     } catch (_) {}
   }
 
+  double _computePaintOffsetXForPixels(double pixels) {
+    final Size? viewport = _viewportSize;
+    final Size? content = _scrollableSize;
+    if (viewport == null || content == null) return 0.0;
+
+    if (renderStyle.direction != TextDirection.rtl) {
+      return -pixels;
+    }
+
+    final double viewportWidth = viewport.width;
+    final double contentWidth = content.width;
+    final double maxScroll = math.max(0.0, contentWidth - viewportWidth);
+    if (maxScroll == 0.0) return 0.0;
+
+    // For RTL, the "start" position should reveal the right edge of the content.
+    //
+    // Typical layout (content laid out in the positive X range):
+    //   start translate = viewportWidth - contentWidth  (negative)
+    //
+    // Some RTL layouts (notably flex with justify-content:flex-start) place
+    // children from the physical right edge, producing negative child offsets.
+    // In that case the content's right edge can already coincide with the
+    // viewport right edge at scrollX=0, and applying the typical RTL translate
+    // would create a blank gutter on the right.
+    //
+    // Use the computed layout overflow bounds (overflowRect) to determine the
+    // content's right edge in local coordinates:
+    //   start translate = viewportRight - overflowRect.right
+    // where viewportRight is the padding-box right edge (borderLeft + viewportWidth).
+    double startTranslate = viewportWidth - contentWidth; // default = -maxScroll
+    final Rect? o = overflowRect;
+    if (o != null) {
+      final double borderLeft =
+          renderStyle.effectiveBorderLeftWidth.computedValue;
+      final double viewportRight = borderLeft + viewportWidth;
+      startTranslate = viewportRight - o.right;
+      // Keep translation within the scrollable range.
+      if (startTranslate > 0.0) startTranslate = 0.0;
+      if (startTranslate < -maxScroll) startTranslate = -maxScroll;
+    }
+
+    return startTranslate + pixels;
+  }
+
   double get _paintOffsetX {
     if (_scrollOffsetX == null) return 0.0;
-    // Compute logical left-edge position within the scrollable content.
-    // LTR: logical distance from left is the raw pixels.
-    // RTL: logical distance from left is (maxScroll - pixels) so that
-    // an initial pixels=0 aligns the visual viewport to the right edge.
-    final double maxScroll = math.max(
-        0.0, (_scrollableSize?.width ?? 0) - (_viewportSize?.width ?? 0));
-    final double logicalLeft = (renderStyle.direction == TextDirection.rtl)
-        ? (maxScroll - _scrollOffsetX!.pixels)
-        : _scrollOffsetX!.pixels;
-    // Translate content left by the logical left distance.
-    return -logicalLeft;
+    return _computePaintOffsetXForPixels(_scrollOffsetX!.pixels);
   }
 
   double get _paintOffsetY {
@@ -264,6 +299,7 @@ mixin RenderOverflowMixin on RenderBoxModelBase {
           size.width - borderEdge.right - borderEdge.left,
           size.height - borderEdge.bottom - borderEdge.top,
         );
+
     if (_shouldClipAtPaintOffset(paintOffset, size)) {
       // ignore: prefer_function_declarations_over_variables
       PaintingContextCallback painter =
@@ -654,10 +690,8 @@ mixin RenderOverflowMixin on RenderBoxModelBase {
 
     double deltaPaintX = 0.0;
     if (xScrollable) {
-      final double maxX = math.max(0.0, content.width - viewport.width);
-      final bool isRTL = renderStyle.direction == TextDirection.rtl;
-      final double newLogicalLeft = isRTL ? (maxX - targetScrollLeft) : targetScrollLeft;
-      final double newPaintOffsetX = -newLogicalLeft;
+      final double newPaintOffsetX =
+          _computePaintOffsetXForPixels(targetScrollLeft);
       deltaPaintX = newPaintOffsetX - oldPaintOffsetX;
     }
 
@@ -671,10 +705,12 @@ mixin RenderOverflowMixin on RenderBoxModelBase {
   }
 
   void debugOverflowProperties(DiagnosticPropertiesBuilder properties) {
-    if (_scrollableSize != null)
+    if (_scrollableSize != null) {
       properties.add(DiagnosticsProperty('scrollableSize', _scrollableSize));
-    if (_viewportSize != null)
+    }
+    if (_viewportSize != null) {
       properties.add(DiagnosticsProperty('viewportSize', _viewportSize));
+    }
     properties.add(DiagnosticsProperty('clipX', clipX));
     properties.add(DiagnosticsProperty('clipY', clipY));
   }
