@@ -322,6 +322,8 @@ class FlutterShadcnPopoverTriggerState extends WebFWidgetElementState {
         tagName: 'DIV',
         controller: widgetElement.ownerDocument.controller,
         parentElement: widgetElement,
+        // Ensure the popover anchor matches the trigger's visual bounds.
+        inlineStyle: const {'display': 'inline-block'},
         children: widgetElement.childNodes.toWidgetList(),
       ),
     );
@@ -343,9 +345,13 @@ class FlutterShadcnPopoverContentState extends WebFWidgetElementState {
   @override
   Widget build(BuildContext context) {
     final theme = ShadTheme.of(context);
+    final maxContentWidth = (MediaQuery.sizeOf(context).width - 32)
+        .clamp(0.0, 420.0)
+        .toDouble();
 
     return Container(
       padding: const EdgeInsets.all(16),
+      constraints: BoxConstraints(maxWidth: maxContentWidth),
       decoration: BoxDecoration(
         color: theme.colorScheme.background,
         borderRadius: BorderRadius.circular(8),
@@ -362,6 +368,13 @@ class FlutterShadcnPopoverContentState extends WebFWidgetElementState {
           tagName: 'DIV',
           controller: widgetElement.ownerDocument.controller,
           parentElement: widgetElement,
+          // Keep popover content width anchored to its content instead of
+          // stretching to the full overlay width (default block behavior).
+          inlineStyle: const {
+            'display': 'inline-block',
+            'max-width': '100%',
+            'white-space': 'normal',
+          },
           children: widgetElement.childNodes.toWidgetList(),
         ),
       ),

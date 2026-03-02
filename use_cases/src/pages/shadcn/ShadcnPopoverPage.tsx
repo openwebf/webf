@@ -11,6 +11,8 @@ import {
 } from '@openwebf/react-shadcn-ui';
 
 export const ShadcnPopoverPage: React.FC = () => {
+  const [placement, setPlacement] = React.useState<'top' | 'bottom' | 'left' | 'right'>('top');
+
   return (
     <FlutterShadcnTheme colorScheme="zinc" brightness="light">
       <div className="min-h-screen w-full bg-white">
@@ -100,16 +102,16 @@ export const ShadcnPopoverPage: React.FC = () => {
           <div className="mb-8">
             <h2 className="text-lg font-semibold mb-4">Tooltip Positions</h2>
             <div className="flex flex-wrap gap-4">
-              <FlutterShadcnTooltip content="Top tooltip" side="top">
+              <FlutterShadcnTooltip content="Top tooltip" placement="top">
                 <FlutterShadcnButton variant="outline">Top</FlutterShadcnButton>
               </FlutterShadcnTooltip>
-              <FlutterShadcnTooltip content="Bottom tooltip" side="bottom">
+              <FlutterShadcnTooltip content="Bottom tooltip" placement="bottom">
                 <FlutterShadcnButton variant="outline">Bottom</FlutterShadcnButton>
               </FlutterShadcnTooltip>
-              <FlutterShadcnTooltip content="Left tooltip" side="left">
+              <FlutterShadcnTooltip content="Left tooltip" placement="left">
                 <FlutterShadcnButton variant="outline">Left</FlutterShadcnButton>
               </FlutterShadcnTooltip>
-              <FlutterShadcnTooltip content="Right tooltip" side="right">
+              <FlutterShadcnTooltip content="Right tooltip" placement="right">
                 <FlutterShadcnButton variant="outline">Right</FlutterShadcnButton>
               </FlutterShadcnTooltip>
             </div>
@@ -118,39 +120,28 @@ export const ShadcnPopoverPage: React.FC = () => {
           <div className="mb-8">
             <h2 className="text-lg font-semibold mb-4">Popover Placement</h2>
             <p className="text-sm text-gray-600 mb-4">
-              Use the <code>placement</code> prop to control where the popover appears.
+              Pick a placement, then open the centered trigger to preview it around the same button.
             </p>
-            <div className="flex flex-wrap gap-4">
-              <FlutterShadcnPopover placement="top">
+            <div className="flex flex-wrap gap-3 mb-6">
+              {(['top', 'bottom', 'left', 'right'] as const).map((item) => (
+                <FlutterShadcnButton
+                  key={item}
+                  variant={placement === item ? 'default' : 'outline'}
+                  onClick={() => setPlacement(item)}
+                >
+                  {item[0].toUpperCase() + item.slice(1)}
+                </FlutterShadcnButton>
+              ))}
+            </div>
+            <div className="min-h-[180px] w-full flex items-center justify-center">
+              <FlutterShadcnPopover placement={placement}>
                 <FlutterShadcnPopoverTrigger>
-                  <FlutterShadcnButton variant="outline">Top</FlutterShadcnButton>
+                  <FlutterShadcnButton variant="outline">Open Preview</FlutterShadcnButton>
                 </FlutterShadcnPopoverTrigger>
                 <FlutterShadcnPopoverContent>
-                  <div><p className="text-sm">Placed on top</p></div>
-                </FlutterShadcnPopoverContent>
-              </FlutterShadcnPopover>
-              <FlutterShadcnPopover placement="bottom">
-                <FlutterShadcnPopoverTrigger>
-                  <FlutterShadcnButton variant="outline">Bottom</FlutterShadcnButton>
-                </FlutterShadcnPopoverTrigger>
-                <FlutterShadcnPopoverContent>
-                  <div><p className="text-sm">Placed on bottom</p></div>
-                </FlutterShadcnPopoverContent>
-              </FlutterShadcnPopover>
-              <FlutterShadcnPopover placement="left">
-                <FlutterShadcnPopoverTrigger>
-                  <FlutterShadcnButton variant="outline">Left</FlutterShadcnButton>
-                </FlutterShadcnPopoverTrigger>
-                <FlutterShadcnPopoverContent>
-                  <div><p className="text-sm">Placed on left</p></div>
-                </FlutterShadcnPopoverContent>
-              </FlutterShadcnPopover>
-              <FlutterShadcnPopover placement="right">
-                <FlutterShadcnPopoverTrigger>
-                  <FlutterShadcnButton variant="outline">Right</FlutterShadcnButton>
-                </FlutterShadcnPopoverTrigger>
-                <FlutterShadcnPopoverContent>
-                  <div><p className="text-sm">Placed on right</p></div>
+                  <div>
+                    <p className="text-sm">Placed on {placement}</p>
+                  </div>
                 </FlutterShadcnPopoverContent>
               </FlutterShadcnPopover>
             </div>
@@ -232,17 +223,30 @@ export const ShadcnPopoverPage: React.FC = () => {
 
           <div className="mb-8">
             <h2 className="text-lg font-semibold mb-4">Tooltip in Context</h2>
-            <div className="p-4 border rounded-lg">
-              <p className="text-sm mb-4">
-                Click the{' '}
-                <FlutterShadcnTooltip content="This will save your changes">
-                  <span className="text-blue-500 underline cursor-pointer">save button</span>
+            <div className="p-4 border rounded-lg space-y-4">
+              <p className="text-sm text-gray-600">
+                On mobile, tap any trigger below to show a tooltip.
+              </p>
+
+              <div className="flex flex-wrap gap-3">
+                <FlutterShadcnTooltip content="Creates or saves your changes.">
+                  <FlutterShadcnButton variant="outline" size="sm">Save Action</FlutterShadcnButton>
                 </FlutterShadcnTooltip>
-                {' '}to save your changes, or the{' '}
-                <FlutterShadcnTooltip content="This will discard unsaved changes">
-                  <span className="text-red-500 underline cursor-pointer">cancel button</span>
+                <FlutterShadcnTooltip content="Cancels and keeps the previous state.">
+                  <FlutterShadcnButton variant="outline" size="sm">Cancel Action</FlutterShadcnButton>
                 </FlutterShadcnTooltip>
-                {' '}to discard them.
+              </div>
+
+              <p className="text-base leading-relaxed">
+                Inline example: choose{' '}
+                <FlutterShadcnTooltip content="This will save your latest edits.">
+                  <span className="px-1 text-blue-600 underline font-medium">Save</span>
+                </FlutterShadcnTooltip>
+                {' '}to keep changes, or{' '}
+                <FlutterShadcnTooltip content="This will discard unsaved changes.">
+                  <span className="px-1 text-red-600 underline font-medium">Cancel</span>
+                </FlutterShadcnTooltip>
+                .
               </p>
             </div>
           </div>
