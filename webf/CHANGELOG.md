@@ -1,3 +1,11 @@
+## 0.24.14
+
+### Bug Fixes
+
+- **RTL/Overflow**: correct initial paint offset for overflow scrollers in RTL; add regression tests.
+- **Rendering/Inline**: preserve inline span text through `WebFListView` wrapper stacks; add integration coverage.
+- **Rendering/Flexbox**: fix RTL cross-axis padding for column flex containers; add regression tests and snapshots.
+
 ## 0.24.13+1
 
 ### Major Features
