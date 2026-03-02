@@ -252,7 +252,7 @@ jobs:
 
   build-macos:
     name: Build macOS Bridge
-    runs-on: [self-hosted, macos]
+    runs-on: macos-latest
 
     env:
       nodeVersion: "22"
@@ -334,7 +334,7 @@ jobs:
 
   build-ios:
     name: Build iOS Bridge
-    runs-on: [self-hosted, macos]
+    runs-on: macos-latest
 
     env:
       nodeVersion: "22"
@@ -403,7 +403,7 @@ jobs:
 
   build-android:
     name: Build Android Bridge
-    runs-on: [self-hosted, macos]
+    runs-on: macos-latest
 
     env:
       nodeVersion: "22"
