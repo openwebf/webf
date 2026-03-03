@@ -15,29 +15,29 @@ import 'tooltip_bindings_generated.dart';
 ShadAnchorBase _placementToAnchor(String placement) {
   switch (placement) {
     case 'bottom':
-      return const ShadAnchorAuto(
+      return const ShadAnchor(
         offset: Offset(0, 4),
-        followerAnchor: Alignment.bottomCenter,
-        targetAnchor: Alignment.bottomCenter,
+        childAlignment: Alignment.topCenter,
+        overlayAlignment: Alignment.bottomCenter,
       );
     case 'left':
-      return const ShadAnchorAuto(
+      return const ShadAnchor(
         offset: Offset(-4, 0),
-        followerAnchor: Alignment.centerLeft,
-        targetAnchor: Alignment.centerLeft,
+        childAlignment: Alignment.centerRight,
+        overlayAlignment: Alignment.centerLeft,
       );
     case 'right':
-      return const ShadAnchorAuto(
+      return const ShadAnchor(
         offset: Offset(4, 0),
-        followerAnchor: Alignment.centerRight,
-        targetAnchor: Alignment.centerRight,
+        childAlignment: Alignment.centerLeft,
+        overlayAlignment: Alignment.centerRight,
       );
     case 'top':
     default:
-      return const ShadAnchorAuto(
+      return const ShadAnchor(
         offset: Offset(0, -4),
-        followerAnchor: Alignment.topCenter,
-        targetAnchor: Alignment.topCenter,
+        childAlignment: Alignment.bottomCenter,
+        overlayAlignment: Alignment.topCenter,
       );
   }
 }
@@ -105,10 +105,12 @@ class FlutterShadcnTooltip extends FlutterShadcnTooltipBindings {
 
 class FlutterShadcnTooltipState extends WebFWidgetElementState {
   FlutterShadcnTooltipState(super.widgetElement);
-  final _tooltipController = ShadTooltipController();
+  final _tooltipController = ShadPopoverController();
   Timer? _showTimer;
   Timer? _hideTimer;
   Offset? _tapDownPosition;
+  DateTime? _lastShownAt;
+  bool _openedByTap = false;
 
   @override
   FlutterShadcnTooltip get widgetElement =>
@@ -124,16 +126,20 @@ class FlutterShadcnTooltipState extends WebFWidgetElementState {
   void _showTooltipNow() {
     _hideTimer?.cancel();
     _hideTimer = null;
+    _lastShownAt = DateTime.now();
     _tooltipController.show();
   }
 
   void _hideTooltipNow() {
     _showTimer?.cancel();
     _showTimer = null;
+    _openedByTap = false;
     _tooltipController.hide();
   }
 
   void _scheduleShow() {
+    _hideTimer?.cancel();
+    _hideTimer = null;
     _showTimer?.cancel();
     final delay = Duration(milliseconds: widgetElement._showDelay);
     if (delay > Duration.zero) {
@@ -145,10 +151,22 @@ class FlutterShadcnTooltipState extends WebFWidgetElementState {
 
   void _scheduleHide({Duration? fallbackDelay}) {
     _hideTimer?.cancel();
-    final delay = Duration(milliseconds: widgetElement._hideDelay);
-    final effectiveDelay = delay > Duration.zero
-        ? delay
+    final configuredDelay = Duration(milliseconds: widgetElement._hideDelay);
+    var effectiveDelay = configuredDelay > Duration.zero
+        ? configuredDelay
         : (fallbackDelay ?? Duration.zero);
+
+    if (_lastShownAt != null) {
+      const minVisible = Duration(milliseconds: 280);
+      final elapsed = DateTime.now().difference(_lastShownAt!);
+      if (elapsed < minVisible) {
+        final remaining = minVisible - elapsed;
+        if (remaining > effectiveDelay) {
+          effectiveDelay = remaining;
+        }
+      }
+    }
+
     if (effectiveDelay > Duration.zero) {
       _hideTimer = Timer(effectiveDelay, _hideTooltipNow);
     } else {
@@ -157,13 +175,15 @@ class FlutterShadcnTooltipState extends WebFWidgetElementState {
   }
 
   void _toggleFromTap() {
-    if (_tooltipController.isOpen) {
+    if (_tooltipController.isOpen && _openedByTap) {
       _hideTooltipNow();
       return;
     }
+    _openedByTap = true;
     _showTooltipNow();
-    // Keep tooltip visible briefly on touch interactions when hide-delay is 0.
-    _scheduleHide(fallbackDelay: const Duration(milliseconds: 1500));
+    if (widgetElement._hideDelay <= 0) {
+      _scheduleHide(fallbackDelay: const Duration(milliseconds: 2000));
+    }
   }
 
   @override
@@ -194,9 +214,15 @@ class FlutterShadcnTooltipState extends WebFWidgetElementState {
 
     final interactiveTrigger = MouseRegion(
       onEnter: (_) => _scheduleShow(),
-      onExit: (_) => _scheduleHide(),
+      onHover: (_) => _scheduleShow(),
+      onExit: (_) {
+        if (_openedByTap) return;
+        _scheduleHide(fallbackDelay: const Duration(milliseconds: 350));
+      },
       child: Listener(
         behavior: HitTestBehavior.opaque,
+        onPointerHover: (_) => _scheduleShow(),
+        onPointerMove: (_) => _scheduleShow(),
         onPointerDown: (event) {
           _tapDownPosition = event.position;
         },
@@ -215,12 +241,23 @@ class FlutterShadcnTooltipState extends WebFWidgetElementState {
       ),
     );
 
-    return ShadTooltip(
-      builder: (context) => Text(widgetElement.content!),
-      waitDuration: Duration(milliseconds: widgetElement._showDelay),
-      showDuration: Duration(milliseconds: widgetElement._hideDelay),
-      anchor: _placementToAnchor(widgetElement.placement),
+    final theme = ShadTheme.of(context);
+    final tooltipTheme = theme.tooltipTheme;
+
+    return ShadPopover(
       controller: _tooltipController,
+      anchor: _placementToAnchor(widgetElement.placement),
+      closeOnTapOutside: true,
+      effects: tooltipTheme.effects,
+      reverseDuration: tooltipTheme.reverseDuration,
+      padding: tooltipTheme.padding,
+      decoration: tooltipTheme.decoration,
+      popover: (_) => Text(
+        widgetElement.content!,
+        style: theme.textTheme.muted.copyWith(
+          color: theme.colorScheme.popoverForeground,
+        ),
+      ),
       child: interactiveTrigger,
     );
   }

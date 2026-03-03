@@ -120,6 +120,8 @@ export const ShadcnPopoverPage: React.FC = () => {
               <FlutterShadcnTooltip
                 content={`${tooltipPlacement[0].toUpperCase() + tooltipPlacement.slice(1)} tooltip`}
                 placement={tooltipPlacement}
+                showDelay="0"
+                hideDelay="1200"
               >
                 <FlutterShadcnButton variant="outline">Tap for Tooltip</FlutterShadcnButton>
               </FlutterShadcnTooltip>
