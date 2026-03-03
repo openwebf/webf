@@ -3433,6 +3433,15 @@ class InlineFormattingContext {
     bool shapedWithHugeWidth = false;
     bool shapedWithZeroWidth = false; // Track when we intentionally shape with 0 width
 
+    final CSSRenderStyle containerStyle = (container as RenderBoxModel).renderStyle;
+    final CSSPositionType posType = containerStyle.position;
+    final bool containerIsOutOfFlow = posType == CSSPositionType.absolute || posType == CSSPositionType.fixed;
+    // For out-of-flow positioned blocks with auto width, CSS uses shrink-to-fit sizing.
+    // In these cases, shaping/layouting the paragraph to an ancestor "fallback" width can
+    // cause RTL start alignment to place glyphs far to the right (outside the shrink-to-fit
+    // box), where they may then be clipped by an ancestor overflow.
+    final bool outOfFlowShrinkToFit = containerIsOutOfFlow && containerStyle.width.isAuto;
+
     final bool hasAtomicInlines = _items.any((it) => it.isAtomicInline);
     final bool hasExplicitBreaks =
         _items.any((it) => it.type == InlineItemType.control || it.type == InlineItemType.lineBreakOpportunity);
@@ -3467,10 +3476,15 @@ class InlineFormattingContext {
     final bool preferZeroWidthShaping =
         hasAtomicInlines || hasExplicitBreaks || hasWhitespaceInText || hasCJKBreaks || breakAll;
     if (!constraints.hasBoundedWidth) {
-      initialWidth =
-          (fallbackContentMaxWidth != null && fallbackContentMaxWidth > 0) ? fallbackContentMaxWidth : 1000000.0;
-      if (initialWidth >= 1000000.0) {
+      if (outOfFlowShrinkToFit) {
+        initialWidth = 1000000.0;
         shapedWithHugeWidth = true;
+      } else {
+        initialWidth =
+            (fallbackContentMaxWidth != null && fallbackContentMaxWidth > 0) ? fallbackContentMaxWidth : 1000000.0;
+        if (initialWidth >= 1000000.0) {
+          shapedWithHugeWidth = true;
+        }
       }
     } else {
       if (constraints.maxWidth > 0) {
@@ -3511,15 +3525,13 @@ class InlineFormattingContext {
     }
     paragraph.layout(ui.ParagraphConstraints(width: initialWidth));
 
-    final CSSDisplay display = (container as RenderBoxModel).renderStyle.effectiveDisplay;
+    final CSSDisplay display = containerStyle.effectiveDisplay;
     final bool isBlockLike = display == CSSDisplay.block || display == CSSDisplay.inlineBlock;
 
     if (shapedWithHugeWidth &&
         constraints.hasBoundedWidth &&
         constraints.maxWidth.isFinite &&
         constraints.maxWidth > 0) {
-      final CSSPositionType posType = (container as RenderBoxModel).renderStyle.position;
-      final bool containerIsOutOfFlow = posType == CSSPositionType.absolute || posType == CSSPositionType.fixed;
       if (!containerIsOutOfFlow) {
         final double naturalSingleLine = paragraph.longestLine;
         if (constraints.maxWidth + 0.5 >= naturalSingleLine) {
@@ -3534,15 +3546,19 @@ class InlineFormattingContext {
 
     if (isBlockLike) {
       if (!constraints.hasBoundedWidth) {
-        final double targetWidth = (fallbackContentMaxWidth != null && fallbackContentMaxWidth > 0)
-            ? fallbackContentMaxWidth
-            : paragraph.longestLine;
+        final double targetWidth = outOfFlowShrinkToFit
+            ? paragraph.longestLine
+            : (fallbackContentMaxWidth != null && fallbackContentMaxWidth > 0)
+                ? fallbackContentMaxWidth
+                : paragraph.longestLine;
         paragraph.layout(ui.ParagraphConstraints(width: targetWidth));
       } else if (constraints.maxWidth <= 0) {
         if (!shapedWithZeroWidth) {
-          final double targetWidth = (fallbackContentMaxWidth != null && fallbackContentMaxWidth > 0)
-              ? fallbackContentMaxWidth
-              : paragraph.longestLine;
+          final double targetWidth = outOfFlowShrinkToFit
+              ? paragraph.longestLine
+              : (fallbackContentMaxWidth != null && fallbackContentMaxWidth > 0)
+                  ? fallbackContentMaxWidth
+                  : paragraph.longestLine;
           paragraph.layout(ui.ParagraphConstraints(width: targetWidth));
         }
       }
