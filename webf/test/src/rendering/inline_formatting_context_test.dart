@@ -7,6 +7,7 @@ import 'package:flutter/rendering.dart';
 import 'package:webf/webf.dart';
 import 'package:webf/dom.dart' as dom;
 import 'package:webf/css.dart';
+import 'package:webf/rendering.dart';
 import '../../setup.dart';
 import '../widget/test_utils.dart';
 
@@ -184,6 +185,40 @@ void main() {
       expect(btn.attachedRenderer!.size.width, greaterThan(0));
       expect(btn.attachedRenderer!.size.width, lessThan(200));
       expect(btn.attachedRenderer!.size.width, lessThan(host.attachedRenderer!.size.width));
+    });
+
+    testWidgets('should paint RTL abspos inline text at origin in shrink-to-fit boxes', (WidgetTester tester) async {
+      final prepared = await WebFWidgetTestUtils.prepareWidgetTest(
+        tester: tester,
+        controllerName: 'rtl-abspos-shrink-to-fit-${DateTime.now().millisecondsSinceEpoch}',
+        html: '''
+          <div id="card" style="position: relative; width: 343px; padding: 40px 24px; overflow-x: hidden; direction: rtl; background: #eee;">
+            <div id="badge" style="position: absolute; inset-inline-start: 0; top: 0; background: rgb(248 113 113); padding: 4px 12px; border-radius: 16px 0 0 8px;">
+              認證商家
+            </div>
+          </div>
+        ''',
+      );
+
+      final controller = prepared.controller;
+      await tester.pump();
+
+      final badge = controller.view.document.getElementById(['badge']) as dom.Element;
+      final renderer = badge.attachedRenderer!;
+      expect(renderer, isA<RenderFlowLayout>());
+
+      final flow = renderer as RenderFlowLayout;
+      expect(flow.establishIFC, isTrue);
+      final ifc = flow.inlineFormattingContext;
+      expect(ifc, isNotNull);
+
+      final lines = ifc!.paragraphLineMetrics;
+      expect(lines, isNotEmpty);
+
+      // In shrink-to-fit abspos containers under RTL, the paragraph should be
+      // laid out to intrinsic width so the line's left is near 0 (not shifted
+      // far right by an ancestor constraint width).
+      expect(lines.first.left.abs(), lessThan(1.0));
     });
 
     testWidgets('should handle nested inline elements', (WidgetTester tester) async {
