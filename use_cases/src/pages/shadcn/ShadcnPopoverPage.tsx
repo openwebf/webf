@@ -11,6 +11,7 @@ import {
 } from '@openwebf/react-shadcn-ui';
 
 export const ShadcnPopoverPage: React.FC = () => {
+  const [tooltipPlacement, setTooltipPlacement] = React.useState<'top' | 'bottom' | 'left' | 'right'>('top');
   const [placement, setPlacement] = React.useState<'top' | 'bottom' | 'left' | 'right'>('top');
 
   return (
@@ -101,18 +102,26 @@ export const ShadcnPopoverPage: React.FC = () => {
 
           <div className="mb-8">
             <h2 className="text-lg font-semibold mb-4">Tooltip Positions</h2>
-            <div className="flex flex-wrap gap-4">
-              <FlutterShadcnTooltip content="Top tooltip" placement="top">
-                <FlutterShadcnButton variant="outline">Top</FlutterShadcnButton>
-              </FlutterShadcnTooltip>
-              <FlutterShadcnTooltip content="Bottom tooltip" placement="bottom">
-                <FlutterShadcnButton variant="outline">Bottom</FlutterShadcnButton>
-              </FlutterShadcnTooltip>
-              <FlutterShadcnTooltip content="Left tooltip" placement="left">
-                <FlutterShadcnButton variant="outline">Left</FlutterShadcnButton>
-              </FlutterShadcnTooltip>
-              <FlutterShadcnTooltip content="Right tooltip" placement="right">
-                <FlutterShadcnButton variant="outline">Right</FlutterShadcnButton>
+            <p className="text-sm text-gray-600 mb-4">
+              Pick a placement, then tap the trigger button to preview it.
+            </p>
+            <div className="flex flex-wrap gap-3 mb-6">
+              {(['top', 'bottom', 'left', 'right'] as const).map((item) => (
+                <FlutterShadcnButton
+                  key={item}
+                  variant={tooltipPlacement === item ? 'default' : 'outline'}
+                  onClick={() => setTooltipPlacement(item)}
+                >
+                  {item[0].toUpperCase() + item.slice(1)}
+                </FlutterShadcnButton>
+              ))}
+            </div>
+            <div className="min-h-[120px] w-full flex items-center justify-center">
+              <FlutterShadcnTooltip
+                content={`${tooltipPlacement[0].toUpperCase() + tooltipPlacement.slice(1)} tooltip`}
+                placement={tooltipPlacement}
+              >
+                <FlutterShadcnButton variant="outline">Tap for Tooltip</FlutterShadcnButton>
               </FlutterShadcnTooltip>
             </div>
           </div>
