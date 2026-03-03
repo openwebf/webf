@@ -4,6 +4,8 @@
  * Licensed under GNU GPL with Enterprise exception.
  */
 
+import 'dart:ui';
+
 import 'package:webf/css.dart';
 import 'package:webf/dom.dart';
 
@@ -53,8 +55,6 @@ mixin CSSPositionMixin on RenderStyle {
     _markContainingBlockNeedsLayout();
   }
 
-  @override
-  CSSLengthValue get left => _left ?? CSSLengthValue.auto;
   CSSLengthValue? _left;
   set left(CSSLengthValue? value) {
     if (_left == value) {
@@ -65,13 +65,45 @@ mixin CSSPositionMixin on RenderStyle {
   }
 
   @override
-  CSSLengthValue get right => _right ?? CSSLengthValue.auto;
+  CSSLengthValue get left {
+    final CSSLengthValue physical = _left ?? CSSLengthValue.auto;
+    // Keep logical values so they can remap when `direction` changes. When a
+    // physical side is explicitly specified, it should override the logical
+    // fallback (matches paddingInlineStart/end behavior).
+    final CSSLengthValue? logical =
+        (direction == TextDirection.rtl) ? _insetInlineEnd : _insetInlineStart;
+    if (_left != null) return physical;
+    return logical ?? physical;
+  }
+
+  @override
+  CSSLengthValue get right {
+    final CSSLengthValue physical = _right ?? CSSLengthValue.auto;
+    final CSSLengthValue? logical =
+        (direction == TextDirection.rtl) ? _insetInlineStart : _insetInlineEnd;
+    if (_right != null) return physical;
+    return logical ?? physical;
+  }
   CSSLengthValue? _right;
   set right(CSSLengthValue? value) {
     if (_right == value) {
       return;
     }
     _right = value;
+    _markContainingBlockNeedsLayout();
+  }
+
+  CSSLengthValue? _insetInlineStart;
+  set insetInlineStart(CSSLengthValue? value) {
+    if (_insetInlineStart == value) return;
+    _insetInlineStart = value;
+    _markContainingBlockNeedsLayout();
+  }
+
+  CSSLengthValue? _insetInlineEnd;
+  set insetInlineEnd(CSSLengthValue? value) {
+    if (_insetInlineEnd == value) return;
+    _insetInlineEnd = value;
     _markContainingBlockNeedsLayout();
   }
 

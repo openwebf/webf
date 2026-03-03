@@ -1689,7 +1689,7 @@ class CSSRenderStyle extends RenderStyle
 
     // Map logical properties to physical properties based on current direction.
     //
-    // Note: Do NOT eagerly map padding-inline-start/end to physical paddings here.
+    // Note: Do NOT eagerly map padding-inline-start/end or inset-inline-start/end to physical sides here.
     // `direction` is inherited and may change after the property is applied (e.g., when
     // an ancestor sets `direction` later in the same style flush). Eager mapping can
     // leave stale padding on the wrong side (LTR->RTL), shrinking the content box.
@@ -1705,8 +1705,6 @@ class CSSRenderStyle extends RenderStyle
       propertyName = isRTL ? BORDER_RIGHT_STYLE : BORDER_LEFT_STYLE;
     } else if (name == BORDER_INLINE_START_COLOR) {
       propertyName = isRTL ? BORDER_RIGHT_COLOR : BORDER_LEFT_COLOR;
-    } else if (name == INSET_INLINE_START) {
-      propertyName = isRTL ? RIGHT : LEFT;
     }
     // Handle inline-end properties (maps to right in LTR, left in RTL)
     else if (name == BORDER_INLINE_END) {
@@ -1717,8 +1715,6 @@ class CSSRenderStyle extends RenderStyle
       propertyName = isRTL ? BORDER_LEFT_STYLE : BORDER_RIGHT_STYLE;
     } else if (name == BORDER_INLINE_END_COLOR) {
       propertyName = isRTL ? BORDER_LEFT_COLOR : BORDER_RIGHT_COLOR;
-    } else if (name == INSET_INLINE_END) {
-      propertyName = isRTL ? LEFT : RIGHT;
     }
     // Handle block-start properties (maps to top)
     else if (name == MARGIN_BLOCK_START) {
@@ -1784,11 +1780,17 @@ class CSSRenderStyle extends RenderStyle
       case TOP:
         top = value;
         break;
+      case INSET_INLINE_START:
+        insetInlineStart = value;
+        break;
       case LEFT:
         left = value;
         break;
       case BOTTOM:
         bottom = value;
+        break;
+      case INSET_INLINE_END:
+        insetInlineEnd = value;
         break;
       case RIGHT:
         right = value;
@@ -2202,7 +2204,7 @@ class CSSRenderStyle extends RenderStyle
 
     // Map logical properties to physical properties based on current direction.
     //
-    // Note: Do NOT eagerly map padding-inline-start/end to physical paddings here.
+    // Note: Do NOT eagerly map padding-inline-start/end or inset-inline-start/end to physical sides here.
     // See [setProperty] above for rationale.
     String mappedPropertyName = propertyName;
     final bool isRTL = direction == TextDirection.rtl;
@@ -2216,8 +2218,6 @@ class CSSRenderStyle extends RenderStyle
       mappedPropertyName = isRTL ? BORDER_RIGHT_STYLE : BORDER_LEFT_STYLE;
     } else if (propertyName == BORDER_INLINE_START_COLOR) {
       mappedPropertyName = isRTL ? BORDER_RIGHT_COLOR : BORDER_LEFT_COLOR;
-    } else if (propertyName == INSET_INLINE_START) {
-      mappedPropertyName = isRTL ? RIGHT : LEFT;
     }
     // Handle inline-end properties (maps to right in LTR, left in RTL)
     else if (propertyName == BORDER_INLINE_END) {
@@ -2228,8 +2228,6 @@ class CSSRenderStyle extends RenderStyle
       mappedPropertyName = isRTL ? BORDER_LEFT_STYLE : BORDER_RIGHT_STYLE;
     } else if (propertyName == BORDER_INLINE_END_COLOR) {
       mappedPropertyName = isRTL ? BORDER_LEFT_COLOR : BORDER_RIGHT_COLOR;
-    } else if (propertyName == INSET_INLINE_END) {
-      mappedPropertyName = isRTL ? LEFT : RIGHT;
     }
     // Handle block-start properties (maps to top)
     else if (propertyName == MARGIN_BLOCK_START) {
@@ -2310,6 +2308,8 @@ class CSSRenderStyle extends RenderStyle
       case LEFT:
       case BOTTOM:
       case RIGHT:
+      case INSET_INLINE_START:
+      case INSET_INLINE_END:
       case FLEX_BASIS:
       case WIDTH:
       case MIN_WIDTH:
