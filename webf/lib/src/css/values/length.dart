@@ -761,6 +761,8 @@ class CSSLengthValue {
             break;
           case LEFT:
           case RIGHT:
+          case INSET_INLINE_START:
+          case INSET_INLINE_END:
             // Offset of positioned element starts from the edge of padding box of containing block.
             if (parentPaddingBoxWidth != null) {
               _computedValue = value! * parentPaddingBoxWidth;
@@ -1004,6 +1006,8 @@ class CSSLengthValue {
       case BOTTOM:
       case LEFT:
       case RIGHT:
+      case INSET_INLINE_START:
+      case INSET_INLINE_END:
         if (computedValue == double.infinity) {
           return true;
         }
