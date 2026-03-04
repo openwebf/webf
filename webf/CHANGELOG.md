@@ -1,3 +1,10 @@
+## 0.24.15
+
+### Bug Fixes
+
+- **CSS/Logical Properties**: defer `inset-inline-start`/`inset-inline-end` mapping until `direction` resolves; support dynamic direction changes and percentage resolution; add regression coverage.
+- **Rendering/Inline/RTL**: fix RTL absolutely positioned shrink-to-fit inline text visibility in inline formatting context; add integration snapshot and tests.
+
 ## 0.24.14
 
 ### Bug Fixes
