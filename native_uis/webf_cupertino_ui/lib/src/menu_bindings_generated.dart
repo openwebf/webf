@@ -8,29 +8,29 @@
 // ignore_for_file: library_private_types_in_public_api
 // ignore_for_file: prefer_void_to_null
 import 'package:webf/webf.dart';
-abstract class FlutterShadcnBadgeBindings extends WidgetElement {
-  FlutterShadcnBadgeBindings(super.context);
-  String? get variant;
-  set variant(value);
+abstract class FlutterCupertinoMenuBindings extends WidgetElement {
+  FlutterCupertinoMenuBindings(super.context);
+  bool get disabled;
+  set disabled(value);
   @override
   void initializeAttributes(Map<String, ElementAttributeProperty> attributes) {
     super.initializeAttributes(attributes);
-    attributes['variant'] = ElementAttributeProperty(
-      getter: () => variant?.toString(),
-      setter: (value) => variant = value,
-      deleter: () => variant = null
+    attributes['disabled'] = ElementAttributeProperty(
+      getter: () => disabled.toString(),
+      setter: (value) => disabled = value == 'true' || value == '',
+      deleter: () => disabled = false
     );
   }
-  static StaticDefinedBindingPropertyMap flutterShadcnBadgeProperties = {
-    'variant': StaticDefinedBindingProperty(
-      getter: (element) => castToType<FlutterShadcnBadgeBindings>(element).variant,
+  static StaticDefinedBindingPropertyMap flutterCupertinoMenuProperties = {
+    'disabled': StaticDefinedBindingProperty(
+      getter: (element) => castToType<FlutterCupertinoMenuBindings>(element).disabled,
       setter: (element, value) =>
-      castToType<FlutterShadcnBadgeBindings>(element).variant = value,
+      castToType<FlutterCupertinoMenuBindings>(element).disabled = value,
     ),
   };
   @override
   List<StaticDefinedBindingPropertyMap> get properties => [
     ...super.properties,
-    flutterShadcnBadgeProperties,
+    flutterCupertinoMenuProperties,
   ];
 }

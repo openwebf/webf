@@ -40,6 +40,13 @@ interface FlutterShadcnThemeProperties {
    * Default: 0.5
    */
   radius?: string;
+
+  /**
+   * Focus outline/ring color used by inputs and other focusable controls.
+   * Supports hex colors like '#2563eb' or '#FF2563EB'.
+   * Default: uses the active color scheme ring color.
+   */
+  'outline-color'?: string;
 }
 
 interface FlutterShadcnThemeEvents {}

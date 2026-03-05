@@ -60,6 +60,15 @@ A native UI library consists of three layers:
 webf codegen my-ui-lib --flutter-package-src=./flutter_package
 ```
 
+### Preflight (Required for shadcn_ui work)
+
+Before changing any `shadcn_ui` related implementation, always load and review:
+
+1. https://mariuti.com/flutter-shadcn-ui/llms.txt
+2. https://mariuti.com/flutter-shadcn-ui/
+
+Use these docs as the first reference for component behavior, API naming, and expected usage patterns.
+
 ## Step-by-Step Guide
 
 ### Step 1: Create Flutter Package Structure
@@ -709,6 +718,8 @@ See [Complete Example](./example-input.md) for a full implementation of a text i
 
 ## Resources
 
+- **Flutter shadcn_ui LLM docs**: https://mariuti.com/flutter-shadcn-ui/llms.txt
+- **Flutter shadcn_ui official page**: https://mariuti.com/flutter-shadcn-ui/
 - **CLI Development Guide**: [cli/CLAUDE.md](https://github.com/openwebf/webf/blob/main/cli/CLAUDE.md)
 - **TypeScript Guide**: [CLI TYPING_GUIDE.md](https://github.com/openwebf/webf/blob/main/cli/TYPING_GUIDE.md)
 - **Example Package**: [native_uis/webf_cupertino_ui](https://github.com/openwebf/webf/tree/main/native_uis/webf_cupertino_ui)

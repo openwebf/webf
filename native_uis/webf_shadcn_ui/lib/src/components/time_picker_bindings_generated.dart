@@ -23,22 +23,22 @@ abstract class FlutterShadcnTimePickerBindings extends WidgetElement {
     super.initializeAttributes(attributes);
     attributes['value'] = ElementAttributeProperty(
       getter: () => value?.toString(),
-      setter: (value) => this.value = value,
+      setter: (value) => value = value,
       deleter: () => value = null
     );
     attributes['placeholder'] = ElementAttributeProperty(
       getter: () => placeholder?.toString(),
-      setter: (value) => this.placeholder = value,
+      setter: (value) => placeholder = value,
       deleter: () => placeholder = null
     );
     attributes['disabled'] = ElementAttributeProperty(
       getter: () => disabled.toString(),
-      setter: (value) => this.disabled = value == 'true' || value == '',
+      setter: (value) => disabled = value == 'true' || value == '',
       deleter: () => disabled = false
     );
     attributes['use-24-hour'] = ElementAttributeProperty(
       getter: () => use24Hour.toString(),
-      setter: (value) => this.use24Hour = value == 'true' || value == '',
+      setter: (value) => use24Hour = value == 'true' || value == '',
       deleter: () => use24Hour = false
     );
   }
