@@ -14,10 +14,14 @@
 namespace webf {
 
 class HTMLInputElement : public WidgetElement {
-  DEFINE_WRAPPERTYPEINFO();
+ DEFINE_WRAPPERTYPEINFO();
 
  public:
   explicit HTMLInputElement(Document&);
+  NativeValue HandleCallFromDartSide(const AtomicString& method,
+                                     int32_t argc,
+                                     const NativeValue* argv,
+                                     Dart_Handle dart_object) override;
 };
 
 }  // namespace webf

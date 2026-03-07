@@ -231,6 +231,38 @@ abstract class Element extends ContainerNode
 
   List<String> get classList => _classList;
 
+  // Pseudo-class state flags used by the Dart selector engine.
+  static const int _pseudoHover = 1 << 0;
+  static const int _pseudoActive = 1 << 1;
+  static const int _pseudoFocus = 1 << 2;
+  static const int _pseudoFocusVisible = 1 << 3;
+
+  int _pseudoStateFlags = 0;
+  int _focusWithinDescendantCount = 0;
+
+  bool get isHovered => (_pseudoStateFlags & _pseudoHover) != 0;
+  bool get isActive => (_pseudoStateFlags & _pseudoActive) != 0;
+  bool get isFocused => (_pseudoStateFlags & _pseudoFocus) != 0;
+  bool get isFocusVisible => (_pseudoStateFlags & _pseudoFocusVisible) != 0;
+  bool get isFocusWithin => isFocused || _focusWithinDescendantCount > 0;
+
+  void updateHoverState(bool value) {
+    _setPseudoState(_pseudoHover, value);
+  }
+
+  void updateActiveState(bool value) {
+    _setPseudoState(_pseudoActive, value);
+  }
+
+  void updateFocusState(bool value, {bool? focusVisible}) {
+    final bool changed = _setPseudoState(_pseudoFocus, value);
+    final bool visible = value && (focusVisible ?? ownerDocument.shouldShowFocusVisible);
+    _setPseudoState(_pseudoFocusVisible, visible);
+    if (changed) {
+      _updateFocusWithinAncestors(value);
+    }
+  }
+
   @pragma('vm:prefer-inline')
   set className(String className) {
     final List<String> classList = splitByAsciiWhitespace(className);
@@ -335,6 +367,125 @@ abstract class Element extends ContainerNode
 
     // Init attribute getter and setter.
     initializeAttributes(_attributeProperties);
+  }
+
+  @override
+  void initializeDynamicProperties(Map<String, BindingObjectProperty> properties) {
+    super.initializeDynamicProperties(properties);
+    properties['tabIndex'] = BindingObjectProperty(getter: () => tabIndex, setter: (value) => tabIndex = value);
+  }
+
+  @override
+  void initializeDynamicMethods(Map<String, BindingObjectMethod> methods) {
+    super.initializeDynamicMethods(methods);
+    methods['focus'] = BindingObjectMethodSync(call: (List args) {
+      focus();
+    });
+    methods['blur'] = BindingObjectMethodSync(call: (List args) {
+      blur();
+    });
+  }
+
+  int get tabIndex {
+    final String? raw = _getAttributeIgnoreCase('tabindex');
+    if (raw == null || raw.isEmpty) return -1;
+    return int.tryParse(raw) ?? -1;
+  }
+
+  set tabIndex(dynamic value) {
+    if (value == null) {
+      _removeAttributeIgnoreCase('tabindex');
+      return;
+    }
+    int parsed;
+    if (value is num) {
+      parsed = value.toInt();
+    } else {
+      parsed = int.tryParse(value.toString()) ?? 0;
+    }
+    internalSetAttribute('tabindex', parsed.toString());
+  }
+
+  void focus() {
+    ownerDocument.updateFocusTarget(this);
+    if (!isFocused) {
+      // Fallback: ensure pseudo state is updated even if focus target routing failed.
+      updateFocusState(true);
+    }
+  }
+
+  void blur() {
+    ownerDocument.clearFocusTarget(this);
+  }
+
+  bool _isProgrammaticallyFocusable() {
+    if (_hasAttributeIgnoreCase('tabindex')) return true;
+    final String tag = tagName.toUpperCase();
+    switch (tag) {
+      case 'INPUT':
+      case 'TEXTAREA':
+      case 'SELECT':
+      case 'BUTTON':
+        return true;
+      case 'A':
+        return _hasAttributeIgnoreCase('href');
+      default:
+        return false;
+    }
+  }
+
+  // Whether this element should receive focus from user pointer interaction.
+  bool get isUserFocusable {
+    if (_hasAttributeIgnoreCase('disabled')) return false;
+    if (tabIndex >= 0) return true;
+    final String tag = tagName.toUpperCase();
+    switch (tag) {
+      case 'INPUT':
+      case 'TEXTAREA':
+      case 'SELECT':
+      case 'BUTTON':
+        return true;
+      case 'A':
+        return _hasAttributeIgnoreCase('href');
+      default:
+        return false;
+    }
+  }
+
+  bool _hasAttributeIgnoreCase(String name) {
+    if (attributes.containsKey(name)) return true;
+    final String lower = name.toLowerCase();
+    for (final String key in attributes.keys) {
+      if (key.toLowerCase() == lower) return true;
+    }
+    return false;
+  }
+
+  String? _getAttributeIgnoreCase(String name) {
+    if (attributes.containsKey(name)) return attributes[name];
+    final String lower = name.toLowerCase();
+    for (final String key in attributes.keys) {
+      if (key.toLowerCase() == lower) return attributes[key];
+    }
+    return null;
+  }
+
+  void _removeAttributeIgnoreCase(String name) {
+    final String lower = name.toLowerCase();
+    String? keyToRemove;
+    if (attributes.containsKey(name)) {
+      keyToRemove = name;
+    } else {
+      for (final String key in attributes.keys) {
+        if (key.toLowerCase() == lower) {
+          keyToRemove = key;
+          break;
+        }
+      }
+    }
+    if (keyToRemove != null) {
+      removeAttribute(keyToRemove);
+    }
   }
 
   @pragma('vm:prefer-inline')
@@ -549,38 +700,49 @@ abstract class Element extends ContainerNode
     return list;
   }
 
-  dynamic getElementsByClassName(List<dynamic> args) {
-    return query_selector.querySelectorAll(this, '.${args.first}');
-  }
-
-  dynamic getElementsByTagName(List<dynamic> args) {
-    return query_selector.querySelectorAll(this, args.first);
-  }
-
-  dynamic querySelector(List<dynamic> args) {
-    if (args[0].runtimeType == String && (args[0] as String).isEmpty) {
-      return null;
+  String? _selectorFromArgs(dynamic args) {
+    if (args is String) return args;
+    if (args is List && args.isNotEmpty) {
+      final dynamic first = args.first;
+      if (first is String) return first;
     }
-    return query_selector.querySelector(this, args.first);
+    return null;
   }
 
-  dynamic querySelectorAll(List<dynamic> args) {
-    if (args[0].runtimeType == String && (args[0] as String).isEmpty) return [];
-    return query_selector.querySelectorAll(this, args.first);
+  dynamic getElementsByClassName(dynamic args) {
+    final String? selector = _selectorFromArgs(args);
+    if (selector == null || selector.isEmpty) return [];
+    return query_selector.querySelectorAll(this, '.$selector');
   }
 
-  bool matches(List<dynamic> args) {
-    if (args[0].runtimeType == String && (args[0] as String).isEmpty) {
-      return false;
-    }
-    return query_selector.matches(this, args.first);
+  dynamic getElementsByTagName(dynamic args) {
+    final String? selector = _selectorFromArgs(args);
+    if (selector == null || selector.isEmpty) return [];
+    return query_selector.querySelectorAll(this, selector);
   }
 
-  dynamic closest(List<dynamic> args) {
-    if (args[0].runtimeType == String && (args[0] as String).isEmpty) {
-      return null;
-    }
-    return query_selector.closest(this, args.first);
+  dynamic querySelector(dynamic args) {
+    final String? selector = _selectorFromArgs(args);
+    if (selector == null || selector.isEmpty) return null;
+    return query_selector.querySelector(this, selector);
+  }
+
+  dynamic querySelectorAll(dynamic args) {
+    final String? selector = _selectorFromArgs(args);
+    if (selector == null || selector.isEmpty) return [];
+    return query_selector.querySelectorAll(this, selector);
+  }
+
+  bool matches(dynamic args) {
+    final String? selector = _selectorFromArgs(args);
+    if (selector == null || selector.isEmpty) return false;
+    return query_selector.matches(this, selector);
+  }
+
+  dynamic closest(dynamic args) {
+    final String? selector = _selectorFromArgs(args);
+    if (selector == null || selector.isEmpty) return null;
+    return query_selector.closest(this, selector);
   }
 
   RenderBoxModel? createRenderBoxModel(
@@ -1022,10 +1184,12 @@ abstract class Element extends ContainerNode
         }
         // increments on ::before pseudo only for the current element being evaluated
         if (identical(node, this)) {
-          final incBefore = node.style.pseudoBeforeStyle == null
+          final CSSStyleDeclaration? beforeStyle =
+              node.style.resolvedPseudoBeforeStyle;
+          final incBefore = beforeStyle == null
               ? ''
-              : getProp(node.style.pseudoBeforeStyle!, 'counterIncrement',
-                  'counter-increment');
+              : getProp(
+                  beforeStyle, 'counterIncrement', 'counter-increment');
           if (incBefore.isNotEmpty && incBefore != 'none') {
             final map = _parseCounterIncrementList(incBefore);
             final add = (map[name] ?? 0);
@@ -1137,9 +1301,13 @@ abstract class Element extends ContainerNode
             allocateNewBindingObject()));
 
     // Merge pseudo-specific style rules collected on the parent onto the pseudo element.
-    previousPseudoElement.style.merge(kind == PseudoKind.kPseudoBefore
-        ? style.pseudoBeforeStyle!
-        : style.pseudoAfterStyle!);
+    final CSSStyleDeclaration? pseudoStyle =
+        kind == PseudoKind.kPseudoBefore
+            ? style.resolvedPseudoBeforeStyle
+            : style.resolvedPseudoAfterStyle;
+    if (pseudoStyle != null) {
+      previousPseudoElement.style.merge(pseudoStyle);
+    }
 
     // Attach the pseudo element to the correct position in the DOM tree if not already attached.
     switch (kind) {
@@ -1198,7 +1366,7 @@ abstract class Element extends ContainerNode
   void _updateBeforePseudoElement() {
     // Add pseudo elements
     String? beforeContent =
-        style.pseudoBeforeStyle?.getPropertyValue('content');
+        style.resolvedPseudoBeforeStyle?.getPropertyValue('content');
     if (beforeContent != null && beforeContent.isNotEmpty) {
       _beforeElement = _createOrUpdatePseudoElement(
           beforeContent, PseudoKind.kPseudoBefore, _beforeElement);
@@ -1217,7 +1385,8 @@ abstract class Element extends ContainerNode
   }
 
   void _updateAfterPseudoElement() {
-    String? afterContent = style.pseudoAfterStyle?.getPropertyValue('content');
+    String? afterContent =
+        style.resolvedPseudoAfterStyle?.getPropertyValue('content');
     if (afterContent != null && afterContent.isNotEmpty) {
       _afterElement = _createOrUpdatePseudoElement(
           afterContent, PseudoKind.kPseudoAfter, _afterElement);
@@ -1649,6 +1818,45 @@ abstract class Element extends ContainerNode
     final Element? root = ownerDocument.documentElement;
     if (root == null) return;
     ownerDocument.markElementStyleDirty(root, reason: 'childList-has');
+  }
+
+  bool _setPseudoState(int flag, bool value) {
+    final bool had = (_pseudoStateFlags & flag) != 0;
+    if (had == value) return false;
+    if (value) {
+      _pseudoStateFlags |= flag;
+    } else {
+      _pseudoStateFlags &= ~flag;
+    }
+    _markPseudoStateDirty();
+    return true;
+  }
+
+  void _markPseudoStateDirty() {
+    ownerDocument.markElementStyleDirty(this, reason: 'pseudo-state');
+    _markHasSelectorsDirty();
+  }
+
+  void _updateFocusWithinAncestors(bool focused) {
+    Element? current = parentElement;
+    while (current != null) {
+      current._updateFocusWithinFromDescendant(focused);
+      current = current.parentElement;
+    }
+  }
+
+  void _updateFocusWithinFromDescendant(bool focused) {
+    final int before = _focusWithinDescendantCount;
+    if (focused) {
+      _focusWithinDescendantCount++;
+    } else if (_focusWithinDescendantCount > 0) {
+      _focusWithinDescendantCount--;
+    }
+    final bool beforeActive = before > 0;
+    final bool afterActive = _focusWithinDescendantCount > 0;
+    if (beforeActive != afterActive) {
+      _markPseudoStateDirty();
+    }
   }
 
   @mustCallSuper

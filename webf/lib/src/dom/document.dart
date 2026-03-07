@@ -34,6 +34,8 @@ enum DocumentReadyState { loading, interactive, complete }
 
 enum VisibilityState { visible, hidden }
 
+enum _InputModality { unknown, pointer, keyboard }
+
 class Document extends ContainerNode {
   final WebFController controller;
   late AnimationTimeline animationTimeline;
@@ -87,6 +89,10 @@ class Document extends ContainerNode {
 
   String? _readyState;
   VisibilityState _visibilityState = VisibilityState.hidden;
+  _InputModality _lastInputModality = _InputModality.unknown;
+  Element? _hoverTarget;
+  Element? _activeTarget;
+  Element? _focusTarget;
 
   @override
   bool get isConnected => true;
@@ -96,6 +102,111 @@ class Document extends ContainerNode {
     _scriptRunner = ScriptRunner(this, context.contextId);
     ruleSet = RuleSet(this);
     animationTimeline = AnimationTimeline(this);
+  }
+
+  bool get shouldShowFocusVisible => _lastInputModality != _InputModality.pointer;
+
+  void notePointerInteraction() {
+    _lastInputModality = _InputModality.pointer;
+  }
+
+  void noteKeyboardInteraction() {
+    _lastInputModality = _InputModality.keyboard;
+  }
+
+  List<Element> _collectInclusiveAncestors(Element? element) {
+    if (element == null) return const <Element>[];
+    final List<Element> chain = <Element>[element];
+    Element? current = element.parentElement;
+    while (current != null) {
+      chain.add(current);
+      current = current.parentElement;
+    }
+    return chain;
+  }
+
+  void _updatePseudoChain({
+    required Element? previousTarget,
+    required Element? nextTarget,
+    required void Function(Element element, bool enabled) toggle,
+  }) {
+    final List<Element> previousChain = _collectInclusiveAncestors(previousTarget);
+    final List<Element> nextChain = _collectInclusiveAncestors(nextTarget);
+
+    final Set<Element> nextSet = nextChain.toSet();
+    for (final Element element in previousChain) {
+      if (!nextSet.contains(element)) {
+        toggle(element, false);
+      }
+    }
+
+    final Set<Element> previousSet = previousChain.toSet();
+    for (final Element element in nextChain) {
+      if (!previousSet.contains(element)) {
+        toggle(element, true);
+      }
+    }
+  }
+
+  void updateHoverTarget(Element? target) {
+    if (identical(_hoverTarget, target)) return;
+    // Keep the most specific hovered element; ignore ancestor updates fired later in the hit-test path.
+    if (_hoverTarget != null && target != null && _hoverTarget!.isDescendantOf(target)) {
+      return;
+    }
+    _updatePseudoChain(
+      previousTarget: _hoverTarget,
+      nextTarget: target,
+      toggle: (element, enabled) => element.updateHoverState(enabled),
+    );
+    _hoverTarget = target;
+  }
+
+  void clearHoverTarget(Element target) {
+    if (_hoverTarget == null) return;
+    if (identical(_hoverTarget, target) || _hoverTarget!.isDescendantOf(target)) {
+      updateHoverTarget(null);
+    }
+  }
+
+  void updateActiveTarget(Element? target) {
+    if (identical(_activeTarget, target)) return;
+    if (_activeTarget != null && target != null && _activeTarget!.isDescendantOf(target)) {
+      return;
+    }
+    _updatePseudoChain(
+      previousTarget: _activeTarget,
+      nextTarget: target,
+      toggle: (element, enabled) => element.updateActiveState(enabled),
+    );
+    _activeTarget = target;
+  }
+
+  void clearActiveTarget(Element target) {
+    if (_activeTarget == null) return;
+    if (identical(_activeTarget, target) || _activeTarget!.isDescendantOf(target)) {
+      updateActiveTarget(null);
+    }
+  }
+
+  void updateFocusTarget(Element? target, {bool? focusVisible}) {
+    if (identical(_focusTarget, target)) {
+      if (target != null && !target.isFocused) {
+        target.updateFocusState(true, focusVisible: focusVisible);
+      }
+      return;
+    }
+    _focusTarget?.updateFocusState(false);
+    _focusTarget = target;
+    _focusTarget?.updateFocusState(true, focusVisible: focusVisible);
+  }
+
+  void clearFocusTarget(Element target) {
+    if (identical(_focusTarget, target)) {
+      updateFocusTarget(null);
+    } else if (target.isFocused) {
+      target.updateFocusState(false);
+    }
   }
 
   void initializeCookieJarForUrl(String url) {

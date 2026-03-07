@@ -6,6 +6,9 @@
  * Copyright (C) 2022-present The OpenWebF Company. All rights reserved.
  */
 
+import 'dart:ffi';
+
+import 'package:ffi/ffi.dart';
 import 'package:flutter/material.dart';
 import 'package:webf/webf.dart';
 import 'package:webf/dom.dart' as dom;
@@ -15,8 +18,32 @@ import 'radio.dart';
 
 mixin BaseCheckedElement on BaseInputElement {
   bool _checked = false;
+  bool _checkedDirty = false;
 
   String get _earlyCheckedKey => hashCode.toString();
+
+  void _syncCheckedStateToNative(bool checked) {
+    final Pointer<NativeBindingObject>? nativePtr = pointer;
+    final double? ctxId = contextId;
+    if (nativePtr == null || ctxId == null) return;
+    if (isBindingObjectDisposed(nativePtr)) return;
+    if (nativePtr.ref.invokeBindingMethodFromDart == nullptr) return;
+
+    final DartInvokeBindingMethodsFromDart invoke =
+        nativePtr.ref.invokeBindingMethodFromDart.asFunction();
+
+    final Pointer<NativeValue> method = malloc.allocate(sizeOf<NativeValue>());
+    toNativeValue(method, '__syncCheckedState', this);
+    final Pointer<NativeValue> args = makeNativeValueArguments(this, [checked]);
+
+    final _SyncCheckedStateContext context = _SyncCheckedStateContext(method, args);
+    final Pointer<NativeFunction<NativeInvokeResultCallback>> resultCallback =
+        Pointer.fromFunction(_handleSyncCheckedStateResult);
+
+    Future.microtask(() {
+      invoke(nativePtr, ctxId, method, 1, args, context, resultCallback);
+    });
+  }
 
   bool getChecked() {
     if (this is FlutterInputElement) {
@@ -25,18 +52,32 @@ mixin BaseCheckedElement on BaseInputElement {
         case 'radio':
           return _getRadioChecked();
         case 'checkbox':
+          if (!_checkedDirty && !_checked && hasAttribute('checked')) {
+            return true;
+          }
           return _checked;
         default:
+          if (!_checkedDirty && !_checked && hasAttribute('checked')) {
+            return true;
+          }
           return _checked;
       }
+    }
+    if (!_checkedDirty && !_checked && hasAttribute('checked')) {
+      return true;
     }
     return _checked;
   }
 
-  setChecked(bool value) {
+  setChecked(bool value, {bool fromAttribute = false}) {
     if (this is FlutterInputElement) {
       FlutterInputElement input = this as FlutterInputElement;
       final bool previous = getChecked();
+      if (!fromAttribute) {
+        _checkedDirty = true;
+      } else if (_checkedDirty) {
+        return;
+      }
 
       if (state == null) {
         if (input.type == 'radio') {
@@ -65,6 +106,9 @@ mixin BaseCheckedElement on BaseInputElement {
       }
       if (previous != getChecked()) {
         _markPseudoStateDirty();
+        if (!fromAttribute && ownerDocument.ownerView.enableBlink) {
+          _syncCheckedStateToNative(getChecked());
+        }
       }
     }
   }
@@ -72,13 +116,14 @@ mixin BaseCheckedElement on BaseInputElement {
   bool _getRadioChecked() {
     if (this is BaseRadioElement) {
       BaseRadioElement radio = this as BaseRadioElement;
-      final String groupName = (state as RadioElementState?)?.cachedGroupName ?? radio.name;
-      final String expected = '$groupName-${radio.value}';
+      final String groupName =
+          (state as RadioElementState?)?.cachedGroupName ?? radio.selectionGroupName;
+      final String expected = radio.selectionValue;
 
       // Before widget state mounts, honor boolean attribute presence and any group selection
       // already recorded by early checked changes.
       if (state == null) {
-        if (hasAttribute('checked')) return true;
+        if (!_checkedDirty && hasAttribute('checked')) return true;
         final bool? early = RadioElementState.getEarlyCheckedState(radio.hashCode.toString());
         if (early != null) return early;
         return RadioElementState.getGroupValueForName(groupName) == expected;
@@ -96,11 +141,11 @@ mixin BaseCheckedElement on BaseInputElement {
       
       if (state == null) {
         // Update group selection immediately so `el.checked` reads correctly before mount.
-        final String radioName = radio.name;
-        if (newValue && radioName.isNotEmpty) {
-          RadioElementState.setGroupValueForName(radioName, '$radioName-${radio.value}');
-        } else if (!newValue && radioName.isNotEmpty) {
-          final String expected = '$radioName-${radio.value}';
+        final String radioName = radio.selectionGroupName;
+        if (newValue) {
+          RadioElementState.setGroupValueForName(radioName, radio.selectionValue);
+        } else {
+          final String expected = radio.selectionValue;
           if (RadioElementState.getGroupValueForName(radioName) == expected) {
             RadioElementState.setGroupValueForName(radioName, '');
           }
@@ -111,10 +156,11 @@ mixin BaseCheckedElement on BaseInputElement {
       }
       
       // Use cached group name from state, fallback to current name
-      String radioName = (state as RadioElementState).cachedGroupName ?? radio.name;
+      String radioName =
+          (state as RadioElementState).cachedGroupName ?? radio.selectionGroupName;
 
       if (newValue) {
-        String newGroupValue = '$radioName-${radio.value}';
+        String newGroupValue = radio.selectionValue;
         // Update shared group selection immediately so all radios read consistent checkedness.
         RadioElementState.setGroupValueForName(radioName, newGroupValue);
         Map<String, String> map = <String, String>{};
@@ -127,7 +173,7 @@ mixin BaseCheckedElement on BaseInputElement {
         }
       } else {
         // When unchecking, only clear if this radio is currently the selected one
-        String currentRadioValue = '$radioName-${radio.value}';
+        String currentRadioValue = radio.selectionValue;
         String currentGroupValue = (state as RadioElementState).groupValue;
         if (currentGroupValue == currentRadioValue) {
           RadioElementState.setGroupValueForName(radioName, '');
@@ -160,6 +206,20 @@ mixin BaseCheckedElement on BaseInputElement {
       ownerDocument.markElementStyleDirty(this, reason: 'childList-pseudo');
     }
   }
+}
+
+class _SyncCheckedStateContext {
+  final Pointer<NativeValue> method;
+  final Pointer<NativeValue> args;
+
+  _SyncCheckedStateContext(this.method, this.args);
+}
+
+void _handleSyncCheckedStateResult(Object contextHandle, Pointer<NativeValue> returnValue) {
+  final _SyncCheckedStateContext context = contextHandle as _SyncCheckedStateContext;
+  malloc.free(context.method);
+  malloc.free(context.args);
+  malloc.free(returnValue);
 }
 
 mixin CheckboxElementState on WebFWidgetElementState {

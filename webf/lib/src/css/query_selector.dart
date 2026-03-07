@@ -45,14 +45,95 @@ typedef IndexCounter = int Function(Element element);
 
 Element? querySelector(Node node, String selector) =>
     SelectorEvaluator(scopeElement: _resolveScope(node))
-        .querySelector(node, _parseSelectorGroup(selector));
+        .querySelector(node, _parseSelectorGroup(selector)) ??
+    _fallbackQuerySelectorByAttr(node, selector);
 
 List<Element> querySelectorAll(Node node, String selector) {
   final group = _parseSelectorGroup(selector);
   final results = <Element>[];
   SelectorEvaluator(scopeElement: _resolveScope(node))
       .querySelectorAll(node, group, results);
+  if (results.isEmpty) {
+    final fallback = _fallbackQuerySelectorByAttr(node, selector);
+    if (fallback != null) {
+      results.add(fallback);
+    }
+  }
   return results;
+}
+
+Element? _fallbackQuerySelectorByAttr(Node node, String selector) {
+  final List<String>? parts = _parseSimpleAttributeSelector(selector);
+  if (parts == null) return null;
+  final String tagName = parts[0].toUpperCase();
+  final String attrName = parts[1];
+  final String attrValue = parts[2];
+
+  Element? found;
+  void visit(Node root) {
+    for (final Element element in root.childNodes.whereType<Element>()) {
+      if (element.tagName == tagName) {
+        final String? value = _attributeValueForMatch(element, attrName);
+        if (value != null && _stripAttributeQuotes(value) == _stripAttributeQuotes(attrValue)) {
+          found = element;
+          return;
+        }
+      }
+      visit(element);
+      if (found != null) return;
+    }
+  }
+
+  visit(node);
+  return found;
+}
+
+String? _attributeValueForMatch(Element element, String name) {
+  if (element.attributes.containsKey(name)) {
+    return element.attributes[name];
+  }
+  final String lower = name.toLowerCase();
+  for (final String key in element.attributes.keys) {
+    if (key.toLowerCase() == lower) return element.attributes[key];
+  }
+  if (lower == 'value' && element is BaseInputElement) {
+    final String value = element.value;
+    if (value.isNotEmpty) return value;
+  }
+  return null;
+}
+
+List<String>? _parseSimpleAttributeSelector(String selector) {
+  final String trimmed = selector.trim();
+  final int bracketStart = trimmed.indexOf('[');
+  final int bracketEnd = trimmed.lastIndexOf(']');
+  if (bracketStart <= 0 || bracketEnd != trimmed.length - 1) return null;
+  final String tag = trimmed.substring(0, bracketStart);
+  final String attrPart = trimmed.substring(bracketStart + 1, bracketEnd).trim();
+  final int equalsIndex = attrPart.indexOf('=');
+  if (equalsIndex <= 0) return null;
+  final String attrName = attrPart.substring(0, equalsIndex).trim();
+  String attrValue = attrPart.substring(equalsIndex + 1).trim();
+  if (attrValue.isEmpty) return null;
+  if (attrValue.length >= 2) {
+    final int first = attrValue.codeUnitAt(0);
+    final int last = attrValue.codeUnitAt(attrValue.length - 1);
+    if ((first == 0x22 && last == 0x22) || (first == 0x27 && last == 0x27)) {
+      attrValue = attrValue.substring(1, attrValue.length - 1);
+    }
+  }
+  if (tag.isEmpty || attrName.isEmpty) return null;
+  return <String>[tag, attrName, attrValue];
+}
+
+String _stripAttributeQuotes(String value) {
+  if (value.length < 2) return value;
+  final int first = value.codeUnitAt(0);
+  final int last = value.codeUnitAt(value.length - 1);
+  if ((first == 0x22 && last == 0x22) || (first == 0x27 && last == 0x27)) {
+    return value.substring(1, value.length - 1);
+  }
+  return value;
 }
 
 bool matches(Element element, String selector) =>
@@ -367,6 +448,26 @@ class SelectorEvaluator extends SelectorVisitor {
       case 'only-child':
         return _element!.previousElementSibling == null && _element!.nextElementSibling == null;
 
+      // https://drafts.csswg.org/selectors-4/#the-hover-pseudo
+      case 'hover':
+        return _element!.isHovered;
+
+      // https://drafts.csswg.org/selectors-4/#the-active-pseudo
+      case 'active':
+        return _element!.isActive;
+
+      // https://drafts.csswg.org/selectors-4/#the-focus-pseudo
+      case 'focus':
+        return _element!.isFocused;
+
+      // https://drafts.csswg.org/selectors-4/#the-focus-visible-pseudo
+      case 'focus-visible':
+        return _element!.isFocusVisible;
+
+      // https://drafts.csswg.org/selectors-4/#the-focus-within-pseudo
+      case 'focus-within':
+        return _element!.isFocusWithin;
+
       // https://drafts.csswg.org/selectors-4/#enableddisabled
       case 'enabled':
       case 'disabled': {
@@ -375,11 +476,38 @@ class SelectorEvaluator extends SelectorVisitor {
         final bool isDisabled = _isFormControlDisabled(element);
         return name == 'disabled' ? isDisabled : !isDisabled;
       }
+      // https://drafts.csswg.org/selectors-4/#opt-pseudos
+      case 'required':
+      case 'optional': {
+        final Element element = _element!;
+        if (!_isFormControlElement(element)) return false;
+        final bool required = _hasAttribute(element, 'required');
+        return name == 'required' ? required : !required;
+      }
+      // https://drafts.csswg.org/selectors-4/#placeholder-shown-pseudo
+      case 'placeholder-shown': {
+        final Element element = _element!;
+        if (!_isFormControlElement(element)) return false;
+        String placeholder = '';
+        String value = '';
+        if (element is BaseInputElement) {
+          placeholder = element.placeholder;
+          value = element.value;
+        } else {
+          placeholder = _getAttributeValue(element, 'placeholder') ?? '';
+          value = _getAttributeValue(element, 'value') ?? '';
+        }
+        if (placeholder.isEmpty) return false;
+        return value.isEmpty;
+      }
       // https://drafts.csswg.org/selectors-4/#validity-pseudos
       case 'valid':
       case 'invalid': {
         final Element element = _element!;
         if (!_isFormControlElement(element)) return false;
+        // Elements barred from constraint validation (e.g. disabled) match neither :valid nor :invalid.
+        // https://html.spec.whatwg.org/multipage/form-control-infrastructure.html#barred-from-constraint-validation
+        if (_isFormControlDisabled(element)) return false;
         final bool isValid = _isFormControlValid(element);
         return name == 'valid' ? isValid : !isValid;
       }
@@ -434,26 +562,26 @@ class SelectorEvaluator extends SelectorVisitor {
     // Widget-based form controls (e.g., <input>, <textarea>) keep `disabled`
     // state in the element instance and may not reflect it as an attribute.
     if (element is FormElementBase) {
-      return element.disabled;
+      if (element.disabled) return true;
     }
-    if (element.attributes.containsKey('disabled')) return true;
+    if (_hasAttribute(element, 'disabled')) return true;
     if (element.tagName.toUpperCase() == OPTION) {
       final Element? optgroup = _findAncestorByTag(element, OPTGROUP);
-      if (optgroup != null && optgroup.attributes.containsKey('disabled')) {
+      if (optgroup != null && _hasAttribute(optgroup, 'disabled')) {
         return true;
       }
       final Element? select = _findAncestorByTag(element, SELECT);
-      if (select != null && select.attributes.containsKey('disabled')) {
+      if (select != null && _hasAttribute(select, 'disabled')) {
         return true;
       }
     }
     if (element.tagName.toUpperCase() == OPTGROUP) {
       final Element? select = _findAncestorByTag(element, SELECT);
-      if (select != null && select.attributes.containsKey('disabled')) {
+      if (select != null && _hasAttribute(select, 'disabled')) {
         return true;
       }
     }
-    final String? ariaDisabled = element.attributes['aria-disabled'];
+    final String? ariaDisabled = _getAttributeValue(element, 'aria-disabled');
     if (ariaDisabled != null && ariaDisabled.toLowerCase() == 'true') return true;
     return false;
   }
@@ -467,14 +595,17 @@ class SelectorEvaluator extends SelectorVisitor {
     if (element is BaseInputElement) {
       type = element.type.toLowerCase();
       value = element.value ?? '';
+    } else if (element is FormElementBase) {
+      type = element.type.toLowerCase();
+      value = element.value?.toString() ?? '';
     } else {
-      final String? attrType = element.attributes['type'];
+      final String? attrType = _getAttributeValue(element, 'type');
       if (attrType != null && attrType.isNotEmpty) {
         type = attrType.toLowerCase();
       }
-      value = element.attributes['value'] ?? '';
+      value = _getAttributeValue(element, 'value') ?? '';
     }
-    final bool required = element.attributes.containsKey('required');
+    final bool required = _hasAttribute(element, 'required');
 
     if (element is BaseCheckedElement && (type == 'checkbox' || type == 'radio')) {
       return !required || element.getChecked();
@@ -501,22 +632,60 @@ class SelectorEvaluator extends SelectorVisitor {
     return null;
   }
 
+  bool _isHtmlElement(Element element) =>
+      element.namespaceURI.isEmpty || element.namespaceURI == htmlElementUri;
+
+  String? _getAttributeValue(Element element, String name) {
+    String? value;
+    if (element.attributes.containsKey(name)) {
+      value = element.attributes[name];
+    }
+    if (!_isHtmlElement(element)) return null;
+    final String lower = name.toLowerCase();
+    for (final String key in element.attributes.keys) {
+      if (key.toLowerCase() == lower) {
+        value = element.attributes[key];
+        break;
+      }
+    }
+    if (lower == 'value' && element is BaseInputElement) {
+      final String elementValue = element.value;
+      if ((value == null || value.isEmpty) && elementValue.isNotEmpty) {
+        return elementValue;
+      }
+    }
+    return value;
+  }
+
+  bool _hasAttribute(Element element, String name) => _getAttributeValue(element, name) != null;
+
   bool _isOptionSelected(Element element) {
-    if (element.attributes.containsKey('selected')) {
+    if (element is HTMLOptionElement) {
+      return element.selected;
+    }
+    bool hasAttrIgnoreCase(Element el, String name) {
+      if (el.attributes.containsKey(name)) return true;
+      final String lower = name.toLowerCase();
+      for (final String key in el.attributes.keys) {
+        if (key.toLowerCase() == lower) return true;
+      }
+      return false;
+    }
+    if (hasAttrIgnoreCase(element, 'selected')) {
       return true;
     }
     final Element? select = _findAncestorByTag(element, SELECT);
     if (select == null) {
       return false;
     }
-    if (select.attributes.containsKey('multiple')) {
+    if (hasAttrIgnoreCase(select, 'multiple')) {
       return false;
     }
     final List<Element> options = _collectOptions(select);
     if (options.isEmpty) {
       return false;
     }
-    final bool anyExplicit = options.any((option) => option.attributes.containsKey('selected'));
+    final bool anyExplicit = options.any((option) => hasAttrIgnoreCase(option, 'selected'));
     if (anyExplicit) {
       return false;
     }
@@ -1048,29 +1217,42 @@ class SelectorEvaluator extends SelectorVisitor {
   @override
   bool visitAttributeSelector(AttributeSelector node) {
     // Match name first
-    final value = _element!.attributes[node.name.toLowerCase()];
+    final String? value = _getAttributeValue(_element!, node.name);
     if (value == null) return false;
 
     if (node.operatorKind == TokenKind.NO_MATCH) return true;
 
-    final select = '${node.value}';
+    final String select = '${node.value}';
+    final String normalizedValue = _stripAttributeQuotes(value);
+    final String normalizedSelect = _stripAttributeQuotes(select);
     switch (node.operatorKind) {
       case TokenKind.EQUALS:
-        return value == select;
+        return normalizedValue == normalizedSelect;
       case TokenKind.INCLUDES:
-        return value.split(' ').any((v) => v.isNotEmpty && v == select);
+        return normalizedValue.split(' ').any((v) => v.isNotEmpty && v == normalizedSelect);
       case TokenKind.DASH_MATCH:
-        return value.startsWith(select) && (value.length == select.length || value[select.length] == '-');
+        return normalizedValue.startsWith(normalizedSelect) &&
+            (normalizedValue.length == normalizedSelect.length || normalizedValue[normalizedSelect.length] == '-');
       case TokenKind.PREFIX_MATCH:
-        return value.startsWith(select);
+        return normalizedValue.startsWith(normalizedSelect);
       case TokenKind.SUFFIX_MATCH:
-        return value.endsWith(select);
+        return normalizedValue.endsWith(normalizedSelect);
       case TokenKind.SUBSTRING_MATCH:
-        return value.contains(select);
+        return normalizedValue.contains(normalizedSelect);
       default:
         if (kDebugMode) throw _unsupported(node);
     }
     return false;
+  }
+
+  String _stripAttributeQuotes(String value) {
+    if (value.length < 2) return value;
+    final int first = value.codeUnitAt(0);
+    final int last = value.codeUnitAt(value.length - 1);
+    if ((first == 0x22 && last == 0x22) || (first == 0x27 && last == 0x27)) {
+      return value.substring(1, value.length - 1);
+    }
+    return value;
   }
 
   UnimplementedError _unimplemented(SimpleSelector selector) => UnimplementedError("'$selector' selector of type "
