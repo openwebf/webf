@@ -22,7 +22,26 @@ const Map<String, dynamic> _defaultStyle = {
   ALIGN_ITEMS: CENTER,
   JUSTIFY_CONTENT: CENTER,
   TEXT_ALIGN: CENTER,
-  BORDER: '2px solid rgb(118, 118, 118)',
+  BACKGROUND_COLOR: 'rgb(239, 239, 239)',
+  BORDER: '1px solid rgb(118, 118, 118)',
+  // BORDER_RADIUS: '3px',
+  PADDING: '1px 6px',
+  // Match UA default sizing for form controls (smaller than body text).
+  FONT_SIZE: SMALLER,
+  LINE_HEIGHT: NORMAL,
+};
+
+// UA default disabled styling for <button> (light theme values).
+const Map<String, dynamic> _disabledStyle = {
+  DISPLAY: INLINE_FLEX,
+  ALIGN_ITEMS: CENTER,
+  JUSTIFY_CONTENT: CENTER,
+  TEXT_ALIGN: CENTER,
+  BACKGROUND_COLOR: 'rgba(239, 239, 239, 0.3)',
+  COLOR: 'rgba(16, 16, 16, 0.3)',
+  BORDER_COLOR: 'rgba(118, 118, 118, 0.3)',
+  BORDER: '1px solid rgb(118, 118, 118)',
+  // BORDER_RADIUS: '3px',
   PADDING: '1px 6px',
   // Match UA default sizing for form controls (smaller than body text).
   FONT_SIZE: SMALLER,
@@ -142,5 +161,14 @@ class ButtonElement extends Element {
   ButtonElement([super.context]);
 
   @override
-  Map<String, dynamic> get defaultStyle => _defaultStyle;
+  Map<String, dynamic> get defaultStyle {
+    final String? ariaDisabled = getAttribute('aria-disabled');
+    final bool isDisabled =
+        hasAttribute('disabled') || (ariaDisabled != null && ariaDisabled.toLowerCase() == 'true');
+    if (!isDisabled) return _defaultStyle;
+    return {
+      ..._defaultStyle,
+      ..._disabledStyle,
+    };
+  }
 }
