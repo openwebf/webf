@@ -15,10 +15,13 @@ import 'package:webf/src/dom/node_traversal.dart';
 const String LABEL = 'LABEL';
 const String BUTTON = 'BUTTON';
 
-// UA default styling for <button>: inline-block with a visible border and padding.
-// We keep values conservative and consistent with input[type=button] UA defaults.
+// UA default styling for <button>: center label like native controls.
+// Keep values conservative and consistent with form control defaults.
 const Map<String, dynamic> _defaultStyle = {
-  DISPLAY: INLINE_BLOCK,
+  DISPLAY: INLINE_FLEX,
+  ALIGN_ITEMS: CENTER,
+  JUSTIFY_CONTENT: CENTER,
+  TEXT_ALIGN: CENTER,
   BORDER: '2px solid rgb(118, 118, 118)',
   PADDING: '1px 6px',
   // Match UA default sizing for form controls (smaller than body text).
