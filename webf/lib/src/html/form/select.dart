@@ -28,8 +28,15 @@ const OPTGROUP = 'OPTGROUP';
 
 const Map<String, dynamic> _selectDefaultStyle = {
   DISPLAY: INLINE_BLOCK,
-  BORDER: '2px solid rgb(118, 118, 118)',
+  BORDER: '1px solid rgb(118, 118, 118)',
   COLOR: '#000',
+  BACKGROUND_COLOR: 'rgb(239, 239, 239)',
+};
+
+const Map<String, dynamic> _selectDisabledStyle = {
+  BACKGROUND_COLOR: 'rgba(239, 239, 239, 0.3)',
+  COLOR: 'rgba(16, 16, 16, 0.3)',
+  BORDER_COLOR: 'rgba(118, 118, 118, 0.3)',
 };
 
 class _SelectMenuEntry {
@@ -55,7 +62,13 @@ class HTMLSelectElement extends WidgetElement implements FormElementBase {
   bool _pendingFocus = false;
 
   @override
-  Map<String, dynamic> get defaultStyle => _selectDefaultStyle;
+  Map<String, dynamic> get defaultStyle {
+    if (!disabled) return _selectDefaultStyle;
+    return {
+      ..._selectDefaultStyle,
+      ..._selectDisabledStyle,
+    };
+  }
 
   @override
   FlutterSelectElementState? get state => super.state as FlutterSelectElementState?;
@@ -503,7 +516,7 @@ class FlutterSelectElementState extends WebFWidgetElementState {
       labelWidget = Expanded(child: labelWidget);
     }
     Widget content = Row(
-      mainAxisSize: MainAxisSize.max,
+      mainAxisSize: MainAxisSize.min,
       children: [
         labelWidget,
         if (shouldShowArrow)
