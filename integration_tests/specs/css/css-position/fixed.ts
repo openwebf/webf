@@ -531,7 +531,7 @@ describe('Position fixed', () => {
       requestAnimationFrame(async () => {
         window.scrollBy(-500, -500);
         requestAnimationFrame(async () => {
-          await snapshot();
+          await snapshot(0.3);
           done();
         })
       });
@@ -600,7 +600,7 @@ describe('Position fixed', () => {
           await waitForFrame();
 
           requestAnimationFrame(async () => {
-            await snapshot();
+            await snapshot(0.3);
             done();
           })
         });
