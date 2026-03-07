@@ -736,7 +736,7 @@ void main() {
         expect(emptyEmail.matches(':invalid'), isFalse);
       });
 
-      testWidgets('disabled input is always valid',
+      testWidgets('disabled input matches neither :valid nor :invalid',
           (WidgetTester tester) async {
         final prepared = await _prepareMaterialWidgetTest(
           tester: tester,
@@ -756,7 +756,7 @@ void main() {
         final disabledRequired = prepared.getElementById('disabled_required');
 
         // Disabled inputs are barred from constraint validation
-        expect(disabledRequired.matches(':valid'), isTrue);
+        expect(disabledRequired.matches(':valid'), isFalse);
         expect(disabledRequired.matches(':invalid'), isFalse);
       });
     });
