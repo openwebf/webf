@@ -109,7 +109,9 @@ struct NativeValueConverter<NativeTypeDouble> : public NativeValueConverterBase<
     if (value.tag == NativeTag::TAG_NULL) {
       return 0.0;
     }
-
+    if (value.tag == NativeTag::TAG_INT) {
+      return static_cast<double>(value.u.int64);
+    }
     assert(value.tag == NativeTag::TAG_FLOAT64);
     double result;
     memcpy(&result, reinterpret_cast<void*>(&value.u.int64), sizeof(double));
