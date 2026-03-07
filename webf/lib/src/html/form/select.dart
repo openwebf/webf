@@ -500,10 +500,10 @@ class FlutterSelectElementState extends WebFWidgetElementState {
       textDirection: textDirection,
     );
     if (constrainLabel) {
-      labelWidget = Flexible(fit: FlexFit.loose, child: labelWidget);
+      labelWidget = Expanded(child: labelWidget);
     }
     Widget content = Row(
-      mainAxisSize: MainAxisSize.min,
+      mainAxisSize: MainAxisSize.max,
       children: [
         labelWidget,
         if (shouldShowArrow)
