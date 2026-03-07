@@ -30,12 +30,11 @@ const Map<String, dynamic> _selectDefaultStyle = {
   DISPLAY: INLINE_BLOCK,
   BORDER: '1px solid rgb(118, 118, 118)',
   COLOR: '#000',
-  BACKGROUND_COLOR: 'rgb(239, 239, 239)',
 };
 
 const Map<String, dynamic> _selectDisabledStyle = {
-  BACKGROUND_COLOR: 'rgba(239, 239, 239, 0.3)',
-  COLOR: 'rgba(16, 16, 16, 0.3)',
+  COLOR: 'rgb(170, 170, 170)',
+  OPACITY: '0.7',
   BORDER_COLOR: 'rgba(118, 118, 118, 0.3)',
 };
 

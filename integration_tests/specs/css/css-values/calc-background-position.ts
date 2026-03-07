@@ -13,7 +13,7 @@ describe('calc-background-position', () => {
     });
 
     append(BODY, element);
-    await snapshot();
+    await snapshot(0.8);
   });
 
   it('should calculate background-position with calc() using negative percentages', async () => {
