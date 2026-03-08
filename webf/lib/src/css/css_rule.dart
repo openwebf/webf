@@ -236,6 +236,10 @@ class CSSMediaDirective extends CSSRule {
   final CSSMediaQuery? cssMediaQuery;
   final List<CSSRule>? rules;
 
+  static const String _prefersReducedMotionDefault = 'no-preference';
+  static const String _prefersContrastDefault = 'no-preference';
+  static const String _forcedColorsDefault = 'none';
+
   CSSMediaDirective(this.cssMediaQuery, this.rules) : super();
 
   set rules(List<CSSRule>? rules) {
@@ -267,6 +271,11 @@ class CSSMediaDirective extends CSSRule {
     for (CSSMediaExpression expression in cssMediaQuery!.expressions) {
       // [max-width: 1800px, min-width: 450px]
       if (expression.mediaStyle != null) {
+        String normalize(dynamic raw) {
+          if (raw == null) return '';
+          return raw.toString().trim().toLowerCase();
+        }
+
         dynamic maxAspectRatio = expression.mediaStyle!['max-aspect-ratio'];
         if (maxAspectRatio != null &&
             windowWidth != null &&
@@ -320,8 +329,69 @@ class CSSMediaDirective extends CSSRule {
         dynamic prefersColorScheme =
             expression.mediaStyle!['prefers-color-scheme'];
         if (prefersColorScheme != null) {
-          bool isMediaDarkMode = prefersColorScheme == 'dark';
+          String scheme = normalize(prefersColorScheme);
+          bool isMediaDarkMode = scheme == 'dark';
           bool condition = isMediaDarkMode == isDarkMode;
+          conditions.add(condition);
+          ops.add(expression.op == MediaOperator.AND);
+        }
+
+        dynamic orientationValue = expression.mediaStyle!['orientation'];
+        if (orientationValue != null &&
+            windowWidth != null &&
+            windowHeight != null) {
+          final String value = normalize(orientationValue);
+          bool condition = false;
+          if (value.isEmpty) {
+            condition = windowWidth >= 0 && windowHeight >= 0;
+          } else if (value == 'landscape' || value == 'portrait') {
+            final bool isLandscape = windowWidth > windowHeight;
+            condition = value == 'landscape' ? isLandscape : !isLandscape;
+          }
+          conditions.add(condition);
+          ops.add(expression.op == MediaOperator.AND);
+        }
+
+        dynamic prefersReducedMotion =
+            expression.mediaStyle!['prefers-reduced-motion'];
+        if (prefersReducedMotion != null) {
+          final String value = normalize(prefersReducedMotion);
+          final String current = _prefersReducedMotionDefault;
+          bool condition;
+          if (value.isEmpty) {
+            condition = current != 'no-preference';
+          } else {
+            condition = value == current;
+          }
+          conditions.add(condition);
+          ops.add(expression.op == MediaOperator.AND);
+        }
+
+        dynamic forcedColors = expression.mediaStyle!['forced-colors'];
+        if (forcedColors != null) {
+          final String value = normalize(forcedColors);
+          final String current = _forcedColorsDefault;
+          bool condition;
+          if (value.isEmpty) {
+            condition = current != 'none';
+          } else {
+            condition = value == current;
+          }
+          conditions.add(condition);
+          ops.add(expression.op == MediaOperator.AND);
+        }
+
+        dynamic prefersContrast =
+            expression.mediaStyle!['prefers-contrast'];
+        if (prefersContrast != null) {
+          final String value = normalize(prefersContrast);
+          final String current = _prefersContrastDefault;
+          bool condition;
+          if (value.isEmpty) {
+            condition = current != 'no-preference';
+          } else {
+            condition = value == current;
+          }
           conditions.add(condition);
           ops.add(expression.op == MediaOperator.AND);
         }

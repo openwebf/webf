@@ -772,6 +772,79 @@ static bool PrefersColorSchemeMediaFeatureEval(const MediaQueryExpValue& value,
   }
 }
 
+static bool PrefersReducedMotionMediaFeatureEval(const MediaQueryExpValue& value,
+                                                 MediaQueryOperator,
+                                                 const MediaValues& media_values) {
+  bool prefers_reduced_motion = media_values.PrefersReducedMotion();
+
+  if (!value.IsValid()) {
+    return prefers_reduced_motion;
+  }
+
+  if (!value.IsId()) {
+    return false;
+  }
+
+  switch (value.Id()) {
+    case CSSValueID::kReduce:
+      return prefers_reduced_motion;
+    case CSSValueID::kNoPreference:
+      return !prefers_reduced_motion;
+    default:
+      return false;
+  }
+}
+
+static bool ForcedColorsMediaFeatureEval(const MediaQueryExpValue& value,
+                                         MediaQueryOperator,
+                                         const MediaValues& media_values) {
+  bool forced_active = media_values.ForcedColorsActive();
+
+  if (!value.IsValid()) {
+    return forced_active;
+  }
+
+  if (!value.IsId()) {
+    return false;
+  }
+
+  switch (value.Id()) {
+    case CSSValueID::kActive:
+      return forced_active;
+    case CSSValueID::kNone:
+      return !forced_active;
+    default:
+      return false;
+  }
+}
+
+static bool PrefersContrastMediaFeatureEval(const MediaQueryExpValue& value,
+                                            MediaQueryOperator,
+                                            const MediaValues& media_values) {
+  CSSValueID contrast = media_values.PreferredContrast();
+
+  if (!value.IsValid()) {
+    return contrast != CSSValueID::kNoPreference;
+  }
+
+  if (!value.IsId()) {
+    return false;
+  }
+
+  switch (value.Id()) {
+    case CSSValueID::kNoPreference:
+      return contrast == CSSValueID::kNoPreference;
+    case CSSValueID::kMore:
+      return contrast == CSSValueID::kMore;
+    case CSSValueID::kLess:
+      return contrast == CSSValueID::kLess;
+    case CSSValueID::kCustom:
+      return contrast == CSSValueID::kCustom;
+    default:
+      return false;
+  }
+}
+
 static bool Transform3dMediaFeatureEval(const MediaQueryExpValue& value,
                                         MediaQueryOperator op,
                                         const MediaValues& media_values) {

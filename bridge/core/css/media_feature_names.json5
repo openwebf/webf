@@ -61,6 +61,9 @@
     "resizable",
     "inverted-colors",
     "prefers-color-scheme",
+    "prefers-reduced-motion",
+    "forced-colors",
+    "prefers-contrast",
     "origin-trial-test"
   ],
 }

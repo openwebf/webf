@@ -49,6 +49,10 @@ class MediaValues : public CSSLengthResolver {
   // Returns the preferred color scheme for evaluating prefers-color-scheme media queries.
   // Defaults to light when not overridden.
   virtual CSSValueID PreferredColorScheme() const { return CSSValueID::kLight; }
+  // Defaults to no-preference / inactive unless overridden.
+  virtual bool PrefersReducedMotion() const { return false; }
+  virtual bool ForcedColorsActive() const { return false; }
+  virtual CSSValueID PreferredContrast() const { return CSSValueID::kNoPreference; }
   virtual bool Resizable() const = 0;
   virtual bool StrictMode() const = 0;
   virtual Document* GetDocument() const = 0;
