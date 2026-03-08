@@ -1,3 +1,19 @@
+## 0.24.16
+
+### Major Features
+
+- **CSS/Selectors**: add Dart-engine support for interactive and form pseudo-classes, including `:hover`, `:active`, `:focus`, `:focus-visible`, `:focus-within`, `:enabled`, `:disabled`, `:checked`, `:required`, `:optional`, `:placeholder-shown`, `:valid`, and `:invalid`, with new unit and integration coverage.
+- **Form Controls**: add Dart-side `<select>` support with `value`/`selectedIndex`, focus and blur handling, `required`/`multiple`/`disabled` state, option and `optgroup` handling, and native menu rendering; improve `<label>` activation and default button/select UA styling.
+
+### Bug Fixes
+
+- **Rendering/Widget**: preserve auto-height shrink-wrap for widget-hosted WebF content inside bounded flex and tooltip layouts; add regression coverage.
+- **Rendering/Inline**: honor `border-radius` when painting inline backgrounds for inline spans.
+- **Form Controls**: improve checkbox and radio checked-state synchronization across Dart/Blink paths, fix checkbox baseline alignment in inline formatting contexts, restore placeholder color behavior, and tighten default form-control typography and disabled-state styling.
+- **DOM/Focus**: make generic elements focusable via `tabindex`, and fix focus/blur state propagation for selector matching and related events.
+- **Selectors/DOM**: improve attribute selector and `querySelector` fallback matching for case-insensitive HTML attributes and live form-control values.
+- **Bridge/NativeValue**: accept integer tags by coercing them to doubles during native value conversion.
+
 ## 0.24.15
 
 ### Bug Fixes
