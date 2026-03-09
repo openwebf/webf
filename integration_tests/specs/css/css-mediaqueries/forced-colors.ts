@@ -30,6 +30,7 @@ describe('MediaQuery forced-colors', () => {
     BODY.appendChild(box);
 
     await nextFrames(2);
+    await snapshot();
 
     const active = window.matchMedia('(forced-colors: active)').matches;
     const none = window.matchMedia('(forced-colors: none)').matches;

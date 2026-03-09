@@ -42,6 +42,7 @@ describe('MediaQuery prefers-contrast', () => {
     BODY.appendChild(box);
 
     await nextFrames(2);
+    await snapshot();
 
     const more = window.matchMedia('(prefers-contrast: more)').matches;
     const less = window.matchMedia('(prefers-contrast: less)').matches;

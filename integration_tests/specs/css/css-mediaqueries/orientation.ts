@@ -30,6 +30,7 @@ describe('MediaQuery orientation', () => {
     BODY.appendChild(box);
 
     await nextFrames(2);
+    await snapshot();
 
     await resizeViewport(800, 400);
     expect(getComputedStyle(box).backgroundColor).toBe('rgb(0, 128, 0)');

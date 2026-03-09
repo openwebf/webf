@@ -30,6 +30,7 @@ describe('MediaQuery prefers-reduced-motion', () => {
     BODY.appendChild(box);
 
     await nextFrames(2);
+    await snapshot();
 
     const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     const noPref = window.matchMedia('(prefers-reduced-motion: no-preference)').matches;
