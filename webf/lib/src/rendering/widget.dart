@@ -53,30 +53,11 @@ class RenderWidget extends RenderBoxModel
     return null;
   }
 
-  bool _containsWidgetElementChild(RenderObject renderObject, [int depth = 0]) {
-    if (renderObject is RenderWidgetElementChild) {
-      return true;
-    }
-    if (depth >= 16) {
-      return false;
-    }
-
-    bool found = false;
-    renderObject.visitChildren((RenderObject child) {
-      if (!found && _containsWidgetElementChild(child, depth + 1)) {
-        found = true;
-      }
-    });
-    return found;
-  }
-
   void _layoutChild(RenderBox child) {
     // Ensure logical content sizes are computed from CSS before deriving constraints
     // so that explicit width/height (e.g. h-8) can be honored.
     renderStyle.computeContentBoxLogicalWidth();
     renderStyle.computeContentBoxLogicalHeight();
-
-    final WidgetElement widgetElement = renderStyle.target as WidgetElement;
 
     // Base child constraints come from our content box constraints.
     // For inline-block with auto width, avoid clamping to the viewport so
@@ -140,47 +121,31 @@ class RenderWidget extends RenderBoxModel
         math.max(0.0, effectiveViewportHeight - verticalPadding - verticalBorder);
 
     BoxConstraints childConstraints;
-    final bool hostsEmbeddedWebFSubtree = _containsWidgetElementChild(child);
-    final bool shouldPreserveUnboundedChildHeight =
-        !widgetElement.isScrollingElement &&
-            hostsEmbeddedWebFSubtree &&
-            renderStyle.height.isAuto &&
-            renderStyle.minHeight.isAuto &&
-            renderStyle.maxHeight.isNone &&
-            !contentConstraints!.hasBoundedHeight;
-
-    final double resolvedMaxHeight =
-        (contentConstraints!.hasTightHeight ||
-                widgetElement.allowsInfiniteHeight ||
-                shouldPreserveUnboundedChildHeight)
-            ? contentConstraints!.maxHeight
-            : math.min(contentViewportHeight, contentConstraints!.maxHeight);
-
     if (isInlineBlockAutoWidth || hasExplicitInlineWidth) {
       childConstraints = BoxConstraints(
           minWidth: contentConstraints!.minWidth,
           maxWidth: contentConstraints!.maxWidth,
           minHeight: contentConstraints!.minHeight,
-          maxHeight: resolvedMaxHeight);
+          maxHeight: (contentConstraints!.hasTightHeight ||
+                  (renderStyle.target as WidgetElement).allowsInfiniteHeight)
+              ? contentConstraints!.maxHeight
+              : math.min(contentViewportHeight, contentConstraints!.maxHeight));
     } else {
       // Clamp the hosted Flutter subtree to the viewport when the widget element has
-      // no explicit used width, but preserve an indefinite block-axis for
-      // non-scrolling auto-height widgets so embedded WebF content can shrink-wrap.
-      // Ensure the result stays valid (max >= min).
+      // no explicit used width, but ensure the result stays valid (max >= min).
       final double maxWidthCap = math.min(effectiveViewportWidth, contentConstraints!.maxWidth);
-      final double maxHeightCap = resolvedMaxHeight;
+      final double maxHeightCap = math.min(contentViewportHeight, contentConstraints!.maxHeight);
       final double safeMaxWidth = math.max(contentConstraints!.minWidth, maxWidthCap);
       final double safeMaxHeight = math.max(contentConstraints!.minHeight, maxHeightCap);
       childConstraints = BoxConstraints(
           minWidth: contentConstraints!.minWidth,
           maxWidth: (contentConstraints!.hasTightWidth ||
-                  widgetElement.allowsInfiniteWidth)
+                  (renderStyle.target as WidgetElement).allowsInfiniteWidth)
               ? contentConstraints!.maxWidth
               : safeMaxWidth,
           minHeight: contentConstraints!.minHeight,
           maxHeight: (contentConstraints!.hasTightHeight ||
-                  widgetElement.allowsInfiniteHeight ||
-                  shouldPreserveUnboundedChildHeight)
+                  (renderStyle.target as WidgetElement).allowsInfiniteHeight)
               ? contentConstraints!.maxHeight
               : safeMaxHeight);
     }
