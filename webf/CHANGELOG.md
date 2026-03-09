@@ -1,3 +1,9 @@
+## 0.24.17
+
+### Bug Fixes
+
+- **Rendering/Widget**: revert the `0.24.16` auto-height shrink-wrap change for widget-hosted WebF content inside bounded flex and tooltip layouts, restoring the previous `RenderWidget` height-constraint behavior.
+
 ## 0.24.16
 
 ### Major Features
