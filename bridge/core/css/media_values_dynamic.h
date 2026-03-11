@@ -30,7 +30,10 @@ class MediaValuesDynamic : public MediaValues {
   bool InvertedColors() const override;
   bool ThreeDEnabled() const override;
   const String MediaType() const override;
-   CSSValueID PreferredColorScheme() const override;
+  CSSValueID PreferredColorScheme() const override;
+  bool PrefersReducedMotion() const override;
+  bool ForcedColorsActive() const override;
+  CSSValueID PreferredContrast() const override;
   bool Resizable() const override;
   bool StrictMode() const override;
   Document* GetDocument() const override;
