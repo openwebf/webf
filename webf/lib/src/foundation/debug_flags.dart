@@ -100,7 +100,8 @@ class DebugFlags {
   // Removed: Use FlowLog filters to enable flow logs.
 
   // Verbose logging for scrollable sizing; toggle at runtime.
-  static bool debugLogScrollableEnabled = const bool.fromEnvironment('WEBF_DEBUG_SCROLL', defaultValue: false);
+  static bool debugLogScrollableEnabled =
+      const bool.fromEnvironment('WEBF_DEBUG_SCROLL', defaultValue: false);
 
   // Enable verbose baseline logging for flex baseline alignment.
   static bool debugLogFlexBaselineEnabled = false;
@@ -189,7 +190,8 @@ class DebugFlags {
   // allow logging only when the variable feeds into a watched CSS property.
   static bool shouldLogCssVar(String identifier, [Iterable<String>? deps]) {
     if (!enableCssVarAndTransitionLogs) return false;
-    if (watchedCssVariables.isNotEmpty) return watchedCssVariables.contains(identifier);
+    if (watchedCssVariables.isNotEmpty)
+      return watchedCssVariables.contains(identifier);
     // If no explicit var whitelist, only log when it affects watched properties.
     if (watchedTransitionProperties.isEmpty) return false;
     if (deps != null) {

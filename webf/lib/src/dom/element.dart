@@ -246,6 +246,14 @@ abstract class Element extends ContainerNode
   bool get isFocusVisible => (_pseudoStateFlags & _pseudoFocusVisible) != 0;
   bool get isFocusWithin => isFocused || _focusWithinDescendantCount > 0;
 
+  bool canActivatePseudoClassOnTarget(String pseudoClassName) {
+    final RuleSet ruleSet = ownerDocument.ruleSet;
+    if (pseudoClassName == 'hover' && !ruleSet.hasHoverPseudo) return false;
+    if (pseudoClassName == 'active' && !ruleSet.hasActivePseudo) return false;
+    return _elementRuleCollector.canActivatePseudoClassOnTarget(
+        ruleSet, this, pseudoClassName);
+  }
+
   void updateHoverState(bool value) {
     _setPseudoState(_pseudoHover, value);
   }
@@ -256,7 +264,8 @@ abstract class Element extends ContainerNode
 
   void updateFocusState(bool value, {bool? focusVisible}) {
     final bool changed = _setPseudoState(_pseudoFocus, value);
-    final bool visible = value && (focusVisible ?? ownerDocument.shouldShowFocusVisible);
+    final bool visible =
+        value && (focusVisible ?? ownerDocument.shouldShowFocusVisible);
     _setPseudoState(_pseudoFocusVisible, visible);
     if (changed) {
       _updateFocusWithinAncestors(value);
@@ -370,9 +379,11 @@ abstract class Element extends ContainerNode
   }
 
   @override
-  void initializeDynamicProperties(Map<String, BindingObjectProperty> properties) {
+  void initializeDynamicProperties(
+      Map<String, BindingObjectProperty> properties) {
     super.initializeDynamicProperties(properties);
-    properties['tabIndex'] = BindingObjectProperty(getter: () => tabIndex, setter: (value) => tabIndex = value);
+    properties['tabIndex'] = BindingObjectProperty(
+        getter: () => tabIndex, setter: (value) => tabIndex = value);
   }
 
   @override
@@ -416,49 +427,6 @@ abstract class Element extends ContainerNode
 
   void blur() {
     ownerDocument.clearFocusTarget(this);
-  }
-
-  bool _isProgrammaticallyFocusable() {
-    if (_hasAttributeIgnoreCase('tabindex')) return true;
-    final String tag = tagName.toUpperCase();
-    switch (tag) {
-      case 'INPUT':
-      case 'TEXTAREA':
-      case 'SELECT':
-      case 'BUTTON':
-        return true;
-      case 'A':
-        return _hasAttributeIgnoreCase('href');
-      default:
-        return false;
-    }
-  }
-
-  // Whether this element should receive focus from user pointer interaction.
-  bool get isUserFocusable {
-    if (_hasAttributeIgnoreCase('disabled')) return false;
-    if (tabIndex >= 0) return true;
-    final String tag = tagName.toUpperCase();
-    switch (tag) {
-      case 'INPUT':
-      case 'TEXTAREA':
-      case 'SELECT':
-      case 'BUTTON':
-        return true;
-      case 'A':
-        return _hasAttributeIgnoreCase('href');
-      default:
-        return false;
-    }
-  }
-
-  bool _hasAttributeIgnoreCase(String name) {
-    if (attributes.containsKey(name)) return true;
-    final String lower = name.toLowerCase();
-    for (final String key in attributes.keys) {
-      if (key.toLowerCase() == lower) return true;
-    }
-    return false;
   }
 
   String? _getAttributeIgnoreCase(String name) {
@@ -936,8 +904,8 @@ abstract class Element extends ContainerNode
     // Avoid mutating out-of-flow attachment state for detached elements.
     if (!isConnected) {
       if (DebugFlags.shouldLogPositioningForClasses(_classList)) {
-        cssLogger
-            .info('[pos][update][skip] <${tagName.toLowerCase()}> not connected');
+        cssLogger.info(
+            '[pos][update][skip] <${tagName.toLowerCase()}> not connected');
       }
       return;
     }
@@ -1188,8 +1156,7 @@ abstract class Element extends ContainerNode
               node.style.resolvedPseudoBeforeStyle;
           final incBefore = beforeStyle == null
               ? ''
-              : getProp(
-                  beforeStyle, 'counterIncrement', 'counter-increment');
+              : getProp(beforeStyle, 'counterIncrement', 'counter-increment');
           if (incBefore.isNotEmpty && incBefore != 'none') {
             final map = _parseCounterIncrementList(incBefore);
             final add = (map[name] ?? 0);
@@ -1301,10 +1268,9 @@ abstract class Element extends ContainerNode
             allocateNewBindingObject()));
 
     // Merge pseudo-specific style rules collected on the parent onto the pseudo element.
-    final CSSStyleDeclaration? pseudoStyle =
-        kind == PseudoKind.kPseudoBefore
-            ? style.resolvedPseudoBeforeStyle
-            : style.resolvedPseudoAfterStyle;
+    final CSSStyleDeclaration? pseudoStyle = kind == PseudoKind.kPseudoBefore
+        ? style.resolvedPseudoBeforeStyle
+        : style.resolvedPseudoAfterStyle;
     if (pseudoStyle != null) {
       previousPseudoElement.style.merge(pseudoStyle);
     }
@@ -1833,6 +1799,7 @@ abstract class Element extends ContainerNode
   }
 
   void _markPseudoStateDirty() {
+    _matchedRulesLRU = null;
     ownerDocument.markElementStyleDirty(this, reason: 'pseudo-state');
     _markHasSelectorsDirty();
   }
@@ -2310,8 +2277,8 @@ abstract class Element extends ContainerNode
       } catch (_) {}
     }
 
-    final bool shouldTrans = renderStyle.shouldTransition(
-        property, prevForTransition, currentValue);
+    final bool shouldTrans =
+        renderStyle.shouldTransition(property, prevForTransition, currentValue);
     if (DebugFlags.shouldLogTransitionForProp(property)) {
       cssLogger.info(
           '[style][route] $tagName.$property shouldTransition=$shouldTrans');
@@ -2390,7 +2357,8 @@ abstract class Element extends ContainerNode
     // do nothing (keep the previous specified value). For gap properties,
     // validate early so we don't mutate Element.inlineStyle before the
     // CSSStyleDeclaration validation/expansion runs.
-    final bool isGapProp = property == GAP || property == ROW_GAP || property == COLUMN_GAP;
+    final bool isGapProp =
+        property == GAP || property == ROW_GAP || property == COLUMN_GAP;
     if (isGapProp && cleaned.isNotEmpty) {
       bool isValidGapDeclaration(String v) {
         // CSS-wide keywords are allowed on the shorthand as a single token.
@@ -2399,7 +2367,8 @@ abstract class Element extends ContainerNode
         if (tokens.isEmpty || tokens.length > 2) return false;
         for (final token in tokens) {
           // CSS-wide keywords cannot appear as components in a multi-token shorthand.
-          if (token == INHERIT || CSSLength.isInitial(token)) return tokens.length == 1;
+          if (token == INHERIT || CSSLength.isInitial(token))
+            return tokens.length == 1;
           if (!CSSGap.isValidGapValue(token)) return false;
         }
         return true;
@@ -2410,7 +2379,9 @@ abstract class Element extends ContainerNode
           return;
         }
       } else if (property == ROW_GAP || property == COLUMN_GAP) {
-        if (!(cleaned == INHERIT || CSSLength.isInitial(cleaned) || CSSGap.isValidGapValue(cleaned))) {
+        if (!(cleaned == INHERIT ||
+            CSSLength.isInitial(cleaned) ||
+            CSSGap.isValidGapValue(cleaned))) {
           return;
         }
       }

@@ -19,6 +19,58 @@ class ElementRuleCollector {
     return matchedRules(ruleSet, element).isNotEmpty;
   }
 
+  bool canActivatePseudoClassOnTarget(
+      RuleSet ruleSet, Element element, String pseudoClassName) {
+    if (ruleSet.isEmpty) return false;
+
+    final SelectorEvaluator evaluator = SelectorEvaluator();
+    final String normalizedPseudo = pseudoClassName.toLowerCase();
+
+    bool matchRules(List<CSSRule>? rules) {
+      if (rules == null || rules.isEmpty) return false;
+      for (final CSSRule rule in rules) {
+        if (rule is! CSSStyleRule) continue;
+        if (!selectorGroupHasRightmostPseudoClass(
+            rule.selectorGroup, normalizedPseudo)) {
+          continue;
+        }
+        if (evaluator.matchSelectorWithForcedPseudoClass(
+          rule.selectorGroup,
+          element,
+          forcedElement: element,
+          pseudoClass: normalizedPseudo,
+        )) {
+          return true;
+        }
+      }
+      return false;
+    }
+
+    final String? id = element.id;
+    if (id != null && matchRules(ruleSet.idRules[id])) {
+      return true;
+    }
+
+    for (final String className in element.classList) {
+      if (matchRules(ruleSet.classRules[className])) {
+        return true;
+      }
+    }
+
+    for (final String attribute in element.attributes.keys) {
+      if (matchRules(ruleSet.attributeRules[attribute.toUpperCase()])) {
+        return true;
+      }
+    }
+
+    if (matchRules(ruleSet.tagRules[element.tagName.toUpperCase()])) {
+      return true;
+    }
+
+    return matchRules(ruleSet.universalRules) ||
+        matchRules(ruleSet.pseudoRules);
+  }
+
   List<CSSStyleRule> matchedPseudoRules(RuleSet ruleSet, Element element) {
     final SelectorEvaluator evaluator = SelectorEvaluator();
 

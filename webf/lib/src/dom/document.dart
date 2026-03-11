@@ -10,6 +10,7 @@
 import 'dart:collection';
 import 'dart:async';
 import 'dart:ffi';
+import 'dart:io';
 import 'dart:ui' as ui;
 import 'package:flutter/foundation.dart';
 import 'package:flutter/rendering.dart';
@@ -27,7 +28,6 @@ import 'package:webf/src/css/query_selector.dart' as query_selector;
 import 'package:webf/src/dom/element_registry.dart' as element_registry;
 import 'package:webf/src/dom/intersection_observer.dart';
 
-
 // Removed _InactiveRenderObjects helper (unused).
 
 enum DocumentReadyState { loading, interactive, complete }
@@ -35,6 +35,32 @@ enum DocumentReadyState { loading, interactive, complete }
 enum VisibilityState { visible, hidden }
 
 enum _InputModality { unknown, pointer, keyboard }
+
+class _PendingInteractivePseudoUpdate {
+  _PendingInteractivePseudoUpdate({
+    required this.pointer,
+    required this.timeStamp,
+    required this.eventType,
+    required this.target,
+    required this.clear,
+  });
+
+  final int pointer;
+  final Duration timeStamp;
+  final Type eventType;
+  final Element? target;
+  final bool clear;
+
+  bool matchesBatch(PointerEvent event) {
+    return pointer == event.pointer && timeStamp == event.timeStamp;
+  }
+
+  bool matches(PointerEvent event, {required bool clearRequested}) {
+    return matchesBatch(event) &&
+        eventType == event.runtimeType &&
+        clear == clearRequested;
+  }
+}
 
 class Document extends ContainerNode {
   final WebFController controller;
@@ -93,18 +119,26 @@ class Document extends ContainerNode {
   Element? _hoverTarget;
   Element? _activeTarget;
   Element? _focusTarget;
+  _PendingInteractivePseudoUpdate? _pendingHoverUpdate;
+  _PendingInteractivePseudoUpdate? _pendingActiveUpdate;
+  bool _interactivePseudoFlushScheduled = false;
 
   @override
   bool get isConnected => true;
 
-  Document(BindingContext context, {required this.controller}) : super(NodeType.DOCUMENT_NODE, context) {
+  Document(BindingContext context, {required this.controller})
+      : super(NodeType.DOCUMENT_NODE, context) {
     _styleNodeManager = StyleNodeManager(this);
     _scriptRunner = ScriptRunner(this, context.contextId);
     ruleSet = RuleSet(this);
     animationTimeline = AnimationTimeline(this);
   }
 
-  bool get shouldShowFocusVisible => _lastInputModality != _InputModality.pointer;
+  bool get shouldShowFocusVisible =>
+      _lastInputModality != _InputModality.pointer;
+
+  bool get _isDesktopHoverPlatform =>
+      Platform.isMacOS || Platform.isWindows || Platform.isLinux;
 
   void notePointerInteraction() {
     _lastInputModality = _InputModality.pointer;
@@ -114,77 +148,121 @@ class Document extends ContainerNode {
     _lastInputModality = _InputModality.keyboard;
   }
 
-  List<Element> _collectInclusiveAncestors(Element? element) {
-    if (element == null) return const <Element>[];
-    final List<Element> chain = <Element>[element];
-    Element? current = element.parentElement;
-    while (current != null) {
-      chain.add(current);
-      current = current.parentElement;
+  void queueHoverTargetUpdate(PointerEvent event, Element target) {
+    if (_pendingHoverUpdate == null ||
+        !_pendingHoverUpdate!.matchesBatch(event) ||
+        _pendingHoverUpdate!.clear) {
+      _pendingHoverUpdate = _PendingInteractivePseudoUpdate(
+        pointer: event.pointer,
+        timeStamp: event.timeStamp,
+        eventType: event.runtimeType,
+        target: target,
+        clear: false,
+      );
     }
-    return chain;
+    _scheduleInteractivePseudoFlush();
   }
 
-  void _updatePseudoChain({
-    required Element? previousTarget,
-    required Element? nextTarget,
-    required void Function(Element element, bool enabled) toggle,
-  }) {
-    final List<Element> previousChain = _collectInclusiveAncestors(previousTarget);
-    final List<Element> nextChain = _collectInclusiveAncestors(nextTarget);
-
-    final Set<Element> nextSet = nextChain.toSet();
-    for (final Element element in previousChain) {
-      if (!nextSet.contains(element)) {
-        toggle(element, false);
-      }
+  void queueHoverTargetClear(PointerEvent event, Element target) {
+    if (_pendingHoverUpdate == null ||
+        !_pendingHoverUpdate!.matchesBatch(event)) {
+      _pendingHoverUpdate = _PendingInteractivePseudoUpdate(
+        pointer: event.pointer,
+        timeStamp: event.timeStamp,
+        eventType: event.runtimeType,
+        target: target,
+        clear: true,
+      );
     }
+    _scheduleInteractivePseudoFlush();
+  }
 
-    final Set<Element> previousSet = previousChain.toSet();
-    for (final Element element in nextChain) {
-      if (!previousSet.contains(element)) {
-        toggle(element, true);
-      }
+  void queueActiveTargetUpdate(PointerEvent event, Element? target) {
+    _pendingActiveUpdate ??= _PendingInteractivePseudoUpdate(
+      pointer: event.pointer,
+      timeStamp: event.timeStamp,
+      eventType: event.runtimeType,
+      target: target,
+      clear: target == null,
+    );
+    if (!_pendingActiveUpdate!.matches(event, clearRequested: target == null)) {
+      _pendingActiveUpdate = _PendingInteractivePseudoUpdate(
+        pointer: event.pointer,
+        timeStamp: event.timeStamp,
+        eventType: event.runtimeType,
+        target: target,
+        clear: target == null,
+      );
     }
+    _scheduleInteractivePseudoFlush();
+  }
+
+  void _scheduleInteractivePseudoFlush() {
+    if (_interactivePseudoFlushScheduled) return;
+    _interactivePseudoFlushScheduled = true;
+    scheduleMicrotask(() {
+      _interactivePseudoFlushScheduled = false;
+      final _PendingInteractivePseudoUpdate? hoverUpdate = _pendingHoverUpdate;
+      final _PendingInteractivePseudoUpdate? activeUpdate =
+          _pendingActiveUpdate;
+      _pendingHoverUpdate = null;
+      _pendingActiveUpdate = null;
+
+      if (hoverUpdate != null) {
+        if (hoverUpdate.clear) {
+          final Element? target = hoverUpdate.target;
+          if (target != null) {
+            clearHoverTarget(target);
+          } else {
+            updateHoverTarget(null);
+          }
+        } else {
+          updateHoverTarget(hoverUpdate.target);
+        }
+      }
+
+      if (activeUpdate != null) {
+        if (activeUpdate.clear) {
+          updateActiveTarget(null);
+        } else {
+          updateActiveTarget(activeUpdate.target);
+        }
+      }
+    });
   }
 
   void updateHoverTarget(Element? target) {
-    if (identical(_hoverTarget, target)) return;
-    // Keep the most specific hovered element; ignore ancestor updates fired later in the hit-test path.
-    if (_hoverTarget != null && target != null && _hoverTarget!.isDescendantOf(target)) {
-      return;
-    }
-    _updatePseudoChain(
-      previousTarget: _hoverTarget,
-      nextTarget: target,
-      toggle: (element, enabled) => element.updateHoverState(enabled),
-    );
-    _hoverTarget = target;
+    final bool platformAllowsHover = _isDesktopHoverPlatform;
+    final bool targetAllowsHover = platformAllowsHover &&
+        target != null &&
+        target.canActivatePseudoClassOnTarget('hover');
+    final Element? nextTarget = targetAllowsHover ? target : null;
+    if (identical(_hoverTarget, nextTarget)) return;
+    _hoverTarget?.updateHoverState(false);
+    _hoverTarget = nextTarget;
+    _hoverTarget?.updateHoverState(true);
   }
 
   void clearHoverTarget(Element target) {
     if (_hoverTarget == null) return;
-    if (identical(_hoverTarget, target) || _hoverTarget!.isDescendantOf(target)) {
+    if (identical(_hoverTarget, target)) {
       updateHoverTarget(null);
     }
   }
 
   void updateActiveTarget(Element? target) {
-    if (identical(_activeTarget, target)) return;
-    if (_activeTarget != null && target != null && _activeTarget!.isDescendantOf(target)) {
-      return;
-    }
-    _updatePseudoChain(
-      previousTarget: _activeTarget,
-      nextTarget: target,
-      toggle: (element, enabled) => element.updateActiveState(enabled),
-    );
-    _activeTarget = target;
+    final bool targetAllowsActive =
+        target != null && target.canActivatePseudoClassOnTarget('active');
+    final Element? nextTarget = targetAllowsActive ? target : null;
+    if (identical(_activeTarget, nextTarget)) return;
+    _activeTarget?.updateActiveState(false);
+    _activeTarget = nextTarget;
+    _activeTarget?.updateActiveState(true);
   }
 
   void clearActiveTarget(Element target) {
     if (_activeTarget == null) return;
-    if (identical(_activeTarget, target) || _activeTarget!.isDescendantOf(target)) {
+    if (identical(_activeTarget, target)) {
       updateActiveTarget(null);
     }
   }
@@ -210,7 +288,8 @@ class Document extends ContainerNode {
   }
 
   void initializeCookieJarForUrl(String url) {
-    controller.cookieManager.initialize(url: url, initialCookies: controller.initialCookies);
+    controller.cookieManager
+        .initialize(url: url, initialCookies: controller.initialCookies);
   }
 
   // https://github.com/WebKit/WebKit/blob/main/Source/WebCore/dom/Document.h#L1898
@@ -285,7 +364,8 @@ class Document extends ContainerNode {
 
   int _domContentLoadedEventDelayCount = 0;
 
-  bool get isDelayingDOMContentLoadedEvent => _domContentLoadedEventDelayCount > 0;
+  bool get isDelayingDOMContentLoadedEvent =>
+      _domContentLoadedEventDelayCount > 0;
 
   void incrementDOMContentLoadedEventDelayCount() {
     _domContentLoadedEventDelayCount++;
@@ -314,36 +394,47 @@ class Document extends ContainerNode {
   static final StaticDefinedBindingPropertyMap _documentProperties = {
     'cookie': StaticDefinedBindingProperty(
         getter: (document) => castToType<Document>(document).cookie,
-        setter: (document, value) => castToType<Document>(document).cookie = value),
-    'compatMode': StaticDefinedBindingProperty(getter: (document) => castToType<Document>(document).compatMode),
+        setter: (document, value) =>
+            castToType<Document>(document).cookie = value),
+    'compatMode': StaticDefinedBindingProperty(
+        getter: (document) => castToType<Document>(document).compatMode),
     'domain': StaticDefinedBindingProperty(
         getter: (document) => castToType<Document>(document).domain,
-        setter: (document, value) => castToType<Document>(document).domain = value),
-    'readyState': StaticDefinedBindingProperty(getter: (document) => castToType<Document>(document).readyState),
-    'visibilityState':
-        StaticDefinedBindingProperty(getter: (document) => castToType<Document>(document).visibilityState),
-    'hidden': StaticDefinedBindingProperty(getter: (document) => castToType<Document>(document).hidden),
+        setter: (document, value) =>
+            castToType<Document>(document).domain = value),
+    'readyState': StaticDefinedBindingProperty(
+        getter: (document) => castToType<Document>(document).readyState),
+    'visibilityState': StaticDefinedBindingProperty(
+        getter: (document) => castToType<Document>(document).visibilityState),
+    'hidden': StaticDefinedBindingProperty(
+        getter: (document) => castToType<Document>(document).hidden),
     'title': StaticDefinedBindingProperty(
         getter: (document) => castToType<Document>(document)._title ?? '',
         setter: (document, value) {
           castToType<Document>(document)._title = value ?? '';
-          castToType<Document>(document).controller.onTitleChanged?.call(castToType<Document>(document).title);
+          castToType<Document>(document)
+              .controller
+              .onTitleChanged
+              ?.call(castToType<Document>(document).title);
         }),
     // CSSOM: https://drafts.csswg.org/cssom/#dom-document-stylesheets
     // In Dart CSS mode, this is backed by the Dart stylesheet engine.
     'styleSheets': StaticDefinedBindingProperty(
-      getter: (document) => castToType<Document>(document)._styleSheetsForBinding,
+      getter: (document) =>
+          castToType<Document>(document)._styleSheetsForBinding,
     ),
   };
 
   @override
-  List<StaticDefinedBindingPropertyMap> get properties => [...super.properties, _documentProperties];
+  List<StaticDefinedBindingPropertyMap> get properties =>
+      [...super.properties, _documentProperties];
 
   final Expando<WeakReference<CSSStyleSheetBinding>> _styleSheetBindingCache =
       Expando<WeakReference<CSSStyleSheetBinding>>('documentStyleSheetBinding');
 
   CSSStyleSheetBinding _ensureStyleSheetBinding(CSSStyleSheet sheet) {
-    final CSSStyleSheetBinding? existing = _styleSheetBindingCache[sheet]?.target;
+    final CSSStyleSheetBinding? existing =
+        _styleSheetBindingCache[sheet]?.target;
     if (existing != null && !isBindingObjectDisposed(existing.pointer)) {
       return existing;
     }
@@ -358,7 +449,8 @@ class Document extends ContainerNode {
 
   // Exposed for other DOM nodes (e.g. <style>/<link>) to return stable
   // CSSStyleSheet binding objects that are shared with `document.styleSheets`.
-  CSSStyleSheetBinding ensureStyleSheetBindingForCSSOM(CSSStyleSheet sheet) => _ensureStyleSheetBinding(sheet);
+  CSSStyleSheetBinding ensureStyleSheetBindingForCSSOM(CSSStyleSheet sheet) =>
+      _ensureStyleSheetBinding(sheet);
 
   List<CSSStyleSheetBinding> get _styleSheetsForBinding {
     if (ownerView.enableBlink) {
@@ -389,32 +481,43 @@ class Document extends ContainerNode {
 
   static final StaticDefinedSyncBindingObjectMethodMap _syncDocumentMethods = {
     'querySelectorAll': StaticDefinedSyncBindingObjectMethod(
-        call: (document, args) => castToType<Document>(document).querySelectorAll(args)),
-    'querySelector': StaticDefinedSyncBindingObjectMethod(
-        call: (document, args) => castToType<Document>(document).querySelector(args)),
-    'getElementById': StaticDefinedSyncBindingObjectMethod(
-        call: (document, args) => castToType<Document>(document).getElementById(args)),
-    'getElementsByClassName': StaticDefinedSyncBindingObjectMethod(
-        call: (document, args) => castToType<Document>(document).getElementsByClassName(args)),
-    'getElementsByTagName': StaticDefinedSyncBindingObjectMethod(
-        call: (document, args) => castToType<Document>(document).getElementsByTagName(args)),
-    'getElementsByName': StaticDefinedSyncBindingObjectMethod(
-        call: (document, args) => castToType<Document>(document).getElementsByName(args)),
-    'elementFromPoint': StaticDefinedSyncBindingObjectMethod(
         call: (document, args) =>
-            castToType<Document>(document).elementFromPoint(castToType<double>(args[0]), castToType<double>(args[1]))),
+            castToType<Document>(document).querySelectorAll(args)),
+    'querySelector': StaticDefinedSyncBindingObjectMethod(
+        call: (document, args) =>
+            castToType<Document>(document).querySelector(args)),
+    'getElementById': StaticDefinedSyncBindingObjectMethod(
+        call: (document, args) =>
+            castToType<Document>(document).getElementById(args)),
+    'getElementsByClassName': StaticDefinedSyncBindingObjectMethod(
+        call: (document, args) =>
+            castToType<Document>(document).getElementsByClassName(args)),
+    'getElementsByTagName': StaticDefinedSyncBindingObjectMethod(
+        call: (document, args) =>
+            castToType<Document>(document).getElementsByTagName(args)),
+    'getElementsByName': StaticDefinedSyncBindingObjectMethod(
+        call: (document, args) =>
+            castToType<Document>(document).getElementsByName(args)),
+    'elementFromPoint': StaticDefinedSyncBindingObjectMethod(
+        call: (document, args) => castToType<Document>(document)
+            .elementFromPoint(
+                castToType<double>(args[0]), castToType<double>(args[1]))),
   };
 
   // Methods getter overridden below to include debug methods conditionally.
 
   static final StaticDefinedSyncBindingObjectMethodMap _debugDocumentMethods = {
     '___clear_cookies__': StaticDefinedSyncBindingObjectMethod(
-        call: (document, args) => castToType<Document>(document).debugClearCookies(args)),
+        call: (document, args) =>
+            castToType<Document>(document).debugClearCookies(args)),
   };
 
   @override
   List<StaticDefinedSyncBindingObjectMethodMap> get methods {
-    final list = <StaticDefinedSyncBindingObjectMethodMap>[...super.methods, _syncDocumentMethods];
+    final list = <StaticDefinedSyncBindingObjectMethodMap>[
+      ...super.methods,
+      _syncDocumentMethods
+    ];
     if (kDebugMode || kProfileMode) {
       list.add(_debugDocumentMethods);
     }
@@ -485,7 +588,8 @@ class Document extends ContainerNode {
   }
 
   dynamic querySelector(List<dynamic> args) {
-    if (args[0].runtimeType == String && (args[0] as String).isEmpty) return null;
+    if (args[0].runtimeType == String && (args[0] as String).isEmpty)
+      return null;
     return query_selector.querySelector(this, args.first);
   }
 
@@ -498,7 +602,9 @@ class Document extends ContainerNode {
     Iterable<HitTestEntry> hitTestEntrys = hitTestResult.path;
     if (hitTestResult.path.isNotEmpty) {
       if (hitTestEntrys.first.target is RenderBoxModel) {
-        return (hitTestEntrys.first.target as RenderBoxModel).renderStyle.target;
+        return (hitTestEntrys.first.target as RenderBoxModel)
+            .renderStyle
+            .target;
       }
     }
     return null;
@@ -507,7 +613,8 @@ class Document extends ContainerNode {
   HitTestResult hitTestInDocument(double x, double y) {
     BoxHitTestResult boxHitTestResult = BoxHitTestResult();
     Offset offset = Offset(x, y);
-    documentElement?.attachedRenderer?.hitTest(boxHitTestResult, position: offset);
+    documentElement?.attachedRenderer
+        ?.hitTest(boxHitTestResult, position: offset);
     return boxHitTestResult;
   }
 
@@ -517,7 +624,8 @@ class Document extends ContainerNode {
   }
 
   dynamic getElementById(List<dynamic> args) {
-    if (args[0].runtimeType == String && (args[0] as String).isEmpty) return null;
+    if (args[0].runtimeType == String && (args[0] as String).isEmpty)
+      return null;
     final elements = elementsByID[args.first];
     if (elements == null || elements.isEmpty) {
       return null;
@@ -605,7 +713,8 @@ class Document extends ContainerNode {
     if (bodyHasColor) {
       resolved = bodyColor;
     } else {
-      final ui.Color? htmlColor = documentElement?.renderStyle.backgroundColor?.value;
+      final ui.Color? htmlColor =
+          documentElement?.renderStyle.backgroundColor?.value;
       final bool htmlHasColor = htmlColor != null && htmlColor.a != 0;
       if (htmlHasColor) {
         resolved = htmlColor;
@@ -670,9 +779,11 @@ class Document extends ContainerNode {
   void childrenChanged(ChildrenChange change) {
     super.childrenChanged(change);
 
-    flutter.BuildContext? rootBuildContext = ownerView.rootController.rootBuildContext?.context;
+    flutter.BuildContext? rootBuildContext =
+        ownerView.rootController.rootBuildContext?.context;
     if (rootBuildContext != null) {
-      WebFState state = (rootBuildContext as flutter.StatefulElement).state as WebFState;
+      WebFState state =
+          (rootBuildContext as flutter.StatefulElement).state as WebFState;
       state.requestForUpdate(DocumentElementChangedReason());
     }
   }
@@ -726,7 +837,6 @@ class Document extends ContainerNode {
     }
     // Increment the ruleset version to bust element-level caches.
     ruleSetVersion++;
-
   }
 
   bool _recalculating = false;
@@ -746,11 +856,9 @@ class Document extends ContainerNode {
     if (!styleNodeManager.hasPendingStyleSheet &&
         !styleNodeManager.isStyleSheetCandidateNodeChanged &&
         _styleDirtyElements.isEmpty) {
-
       return;
     }
     if (_recalculating) {
-
       return;
     }
     _recalculating = true;
@@ -768,22 +876,24 @@ class Document extends ContainerNode {
     final int dirtyAtStart = _styleDirtyElements.length;
     // Always attempt to update active stylesheets first so changedRuleSet can
     // mark targeted elements dirty (even if we had no prior dirty set).
-    final bool sheetsUpdated = styleNodeManager.updateActiveStyleSheets(rebuild: rebuild);
+    final bool sheetsUpdated =
+        styleNodeManager.updateActiveStyleSheets(rebuild: rebuild);
 
     if (DebugFlags.enableCssMultiStyleTrace) {
-      cssLogger.info('[trace][multi-style][flush] sheetsUpdated=$sheetsUpdated pendingNow=${styleNodeManager.pendingStyleSheetCount} '
+      cssLogger.info(
+          '[trace][multi-style][flush] sheetsUpdated=$sheetsUpdated pendingNow=${styleNodeManager.pendingStyleSheetCount} '
           'candidates=${styleNodeManager.styleSheetCandidateNodes.length} dirtyAtStart=$dirtyAtStart');
     }
     // Recompute dirty count after stylesheets may have targeted elements.
     final int dirtyAfterSheets = _styleDirtyElements.length;
 
     if (dirtyAfterSheets == 0 && !sheetsUpdated) {
-
       _recalculating = false;
       return;
     }
     bool recalcFromRoot = _styleDirtyElements.any((address) {
-          final BindingObject? bindingObject = ownerView.getBindingObject(Pointer.fromAddress(address));
+          final BindingObject? bindingObject =
+              ownerView.getBindingObject(Pointer.fromAddress(address));
           if (bindingObject == null) {
             return false;
           }
@@ -795,19 +905,19 @@ class Document extends ContainerNode {
     }
 
     if (recalcFromRoot) {
-
       documentElement?.recalculateStyle(rebuildNested: true);
     } else {
       for (int address in _styleDirtyElements) {
-        Element? element = ownerView.getBindingObject(Pointer.fromAddress(address)) as Element?;
-        final bool rebuildNested = _styleDirtyElementsRebuildNested.contains(address);
+        Element? element = ownerView
+            .getBindingObject(Pointer.fromAddress(address)) as Element?;
+        final bool rebuildNested =
+            _styleDirtyElementsRebuildNested.contains(address);
         element?.recalculateStyle(rebuildNested: rebuildNested);
       }
     }
     _styleDirtyElements.clear();
     _styleDirtyElementsRebuildNested.clear();
     _recalculating = false;
-
   }
 
   void scheduleStyleUpdate() {
@@ -828,9 +938,12 @@ class Document extends ContainerNode {
       _styleUpdateScheduled = true;
       _styleUpdateDebounceTimer?.cancel();
       if (DebugFlags.enableCssMultiStyleTrace) {
-        cssLogger.info('[trace][multi-style][schedule] style update scheduled via debounce(${DebugFlags.cssBatchStyleUpdatesDebounceMs}ms)');
+        cssLogger.info(
+            '[trace][multi-style][schedule] style update scheduled via debounce(${DebugFlags.cssBatchStyleUpdatesDebounceMs}ms)');
       }
-      _styleUpdateDebounceTimer = Timer(Duration(milliseconds: DebugFlags.cssBatchStyleUpdatesDebounceMs), () {
+      _styleUpdateDebounceTimer = Timer(
+          Duration(milliseconds: DebugFlags.cssBatchStyleUpdatesDebounceMs),
+          () {
         // Skip if nothing pending (including element-level dirties).
         if (!styleNodeManager.hasPendingStyleSheet &&
             !styleNodeManager.isStyleSheetCandidateNodeChanged &&
@@ -839,7 +952,8 @@ class Document extends ContainerNode {
           return;
         }
         if (DebugFlags.enableCssMultiStyleTrace) {
-          cssLogger.info('[trace][multi-style][schedule] style update running (debounce)');
+          cssLogger.info(
+              '[trace][multi-style][schedule] style update running (debounce)');
         }
         updateStyleIfNeeded();
         _styleUpdateScheduled = false;
@@ -849,9 +963,11 @@ class Document extends ContainerNode {
 
     if (_styleUpdateScheduled) return;
     _styleUpdateScheduled = true;
-    final bool perFrame = DebugFlags.enableCssBatchStyleUpdatesPerFrame && DebugFlags.enableCssBatchStyleUpdates;
+    final bool perFrame = DebugFlags.enableCssBatchStyleUpdatesPerFrame &&
+        DebugFlags.enableCssBatchStyleUpdates;
     if (DebugFlags.enableCssMultiStyleTrace) {
-      cssLogger.info('[trace][multi-style][schedule] style update scheduled via ${perFrame ? 'frame' : 'microtask'}');
+      cssLogger.info(
+          '[trace][multi-style][schedule] style update scheduled via ${perFrame ? 'frame' : 'microtask'}');
     }
     if (perFrame) {
       SchedulerBinding.instance.addPostFrameCallback((_) {
@@ -862,7 +978,8 @@ class Document extends ContainerNode {
           return;
         }
         if (DebugFlags.enableCssMultiStyleTrace) {
-          cssLogger.info('[trace][multi-style][schedule] style update running (frame)');
+          cssLogger.info(
+              '[trace][multi-style][schedule] style update running (frame)');
         }
         updateStyleIfNeeded();
         _styleUpdateScheduled = false;
@@ -877,7 +994,8 @@ class Document extends ContainerNode {
           return;
         }
         if (DebugFlags.enableCssMultiStyleTrace) {
-          cssLogger.info('[trace][multi-style][schedule] style update running (microtask)');
+          cssLogger.info(
+              '[trace][multi-style][schedule] style update running (microtask)');
         }
         updateStyleIfNeeded();
         _styleUpdateScheduled = false;
@@ -890,10 +1008,8 @@ class Document extends ContainerNode {
 
     for (final element in styleSheetNodes) {
       if (element is StyleElementMixin) {
-
         element.reloadStyle();
       } else if (element is LinkElement && element.isCSSStyleSheetLoaded()) {
-
         element.reloadStyle();
       }
     }
@@ -928,15 +1044,18 @@ class Document extends ContainerNode {
 
   void addIntersectionObserver(IntersectionObserver observer, Element element) {
     if (enableWebFCommandLog) {
-      domLogger.fine('[IntersectionObserver] document add observer=${observer.pointer} target=${element.pointer}');
+      domLogger.fine(
+          '[IntersectionObserver] document add observer=${observer.pointer} target=${element.pointer}');
     }
     observer.observe(element);
     _intersectionObserverList.add(observer);
   }
 
-  void removeIntersectionObserver(IntersectionObserver observer, Element element) {
+  void removeIntersectionObserver(
+      IntersectionObserver observer, Element element) {
     if (enableWebFCommandLog) {
-      domLogger.fine('[IntersectionObserver] document remove observer=${observer.pointer} target=${element.pointer}');
+      domLogger.fine(
+          '[IntersectionObserver] document remove observer=${observer.pointer} target=${element.pointer}');
     }
     observer.unobserve(element);
     if (!observer.hasObservations()) {
@@ -946,7 +1065,8 @@ class Document extends ContainerNode {
 
   void disconnectIntersectionObserver(IntersectionObserver observer) {
     if (enableWebFCommandLog) {
-      domLogger.fine('[IntersectionObserver] document disconnect observer=${observer.pointer}');
+      domLogger.fine(
+          '[IntersectionObserver] document disconnect observer=${observer.pointer}');
     }
     observer.disconnect();
     _intersectionObserverList.remove(observer);
@@ -965,7 +1085,8 @@ class Document extends ContainerNode {
     }
 
     if (enableWebFCommandLog && delivered > 0) {
-      domLogger.fine('[IntersectionObserver] deliver records observers=$delivered');
+      domLogger
+          .fine('[IntersectionObserver] deliver records observers=$delivered');
     }
   }
 }

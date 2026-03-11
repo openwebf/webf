@@ -37,6 +37,8 @@ class RuleSet {
 
   final Map<String, CSSKeyframesRule> keyframesRules = {};
   bool hasHasPseudo = false;
+  bool hasHoverPseudo = false;
+  bool hasActivePseudo = false;
 
   int _lastPosition = 0;
 
@@ -75,6 +77,22 @@ class RuleSet {
           }
         }
       }
+      if (!hasHoverPseudo) {
+        for (final selector in rule.selectorGroup.selectors) {
+          if (_selectorContainsPseudoClass(selector, 'hover')) {
+            hasHoverPseudo = true;
+            break;
+          }
+        }
+      }
+      if (!hasActivePseudo) {
+        for (final selector in rule.selectorGroup.selectors) {
+          if (_selectorContainsPseudoClass(selector, 'active')) {
+            hasActivePseudo = true;
+            break;
+          }
+        }
+      }
       for (final selector in rule.selectorGroup.selectors) {
         findBestRuleSetAndAdd(selector, rule);
       }
@@ -102,6 +120,8 @@ class RuleSet {
     pseudoRules.clear();
     keyframesRules.clear();
     hasHasPseudo = false;
+    hasHoverPseudo = false;
+    hasActivePseudo = false;
     layerTree.reset();
     _lastPosition = 0;
   }
@@ -203,6 +223,16 @@ class RuleSet {
     return false;
   }
 
+  bool _selectorContainsPseudoClass(Selector selector, String pseudoClassName) {
+    for (final seq in selector.simpleSelectorSequences) {
+      if (_simpleSelectorContainsPseudoClass(
+          seq.simpleSelector, pseudoClassName)) {
+        return true;
+      }
+    }
+    return false;
+  }
+
   bool _simpleSelectorContainsHas(SimpleSelector selector) {
     if (selector is PseudoClassFunctionSelector) {
       final String name = selector.name.toLowerCase();
@@ -228,6 +258,35 @@ class RuleSet {
       final SimpleSelector? neg = selector.negationArg;
       if (neg == null) return false;
       return _simpleSelectorContainsHas(neg);
+    }
+
+    return false;
+  }
+
+  bool _simpleSelectorContainsPseudoClass(
+      SimpleSelector selector, String pseudoClassName) {
+    if (selector is PseudoClassSelector) {
+      return selector.name.toLowerCase() == pseudoClassName;
+    }
+
+    if (selector is PseudoClassFunctionSelector) {
+      final dynamic arg = selector.argument;
+      if (arg is SelectorGroup) {
+        for (final sel in arg.selectors) {
+          if (_selectorContainsPseudoClass(sel, pseudoClassName)) {
+            return true;
+          }
+        }
+      } else if (arg is Selector) {
+        return _selectorContainsPseudoClass(arg, pseudoClassName);
+      }
+      return false;
+    }
+
+    if (selector is NegationSelector) {
+      final SimpleSelector? neg = selector.negationArg;
+      if (neg == null) return false;
+      return _simpleSelectorContainsPseudoClass(neg, pseudoClassName);
     }
 
     return false;

@@ -18,7 +18,10 @@ class RenderPortalsParentData extends RenderLayoutParentData {}
 
 class RenderEventListener extends RenderBoxModel
     with RenderObjectWithChildMixin<RenderBox>, RenderProxyBoxMixin<RenderBox> {
-  RenderEventListener({required CSSRenderStyle renderStyle, required this.controller, required bool hasEvent})
+  RenderEventListener(
+      {required CSSRenderStyle renderStyle,
+      required this.controller,
+      required bool hasEvent})
       : _enableEvent = hasEvent,
         super(renderStyle: renderStyle) {
     if (hasEvent) {
@@ -64,14 +67,16 @@ class RenderEventListener extends RenderBoxModel
   }
 
   @override
-  bool get hasOverrideContentLogicalWidth => (child as RenderBoxModel).hasOverrideContentLogicalWidth;
+  bool get hasOverrideContentLogicalWidth =>
+      (child as RenderBoxModel).hasOverrideContentLogicalWidth;
   @override
   set hasOverrideContentLogicalWidth(value) {
     (child as RenderBoxModel).hasOverrideContentLogicalWidth = value;
   }
 
   @override
-  bool get hasOverrideContentLogicalHeight => (child as RenderBoxModel).hasOverrideContentLogicalHeight;
+  bool get hasOverrideContentLogicalHeight =>
+      (child as RenderBoxModel).hasOverrideContentLogicalHeight;
   @override
   set hasOverrideContentLogicalHeight(value) {
     (child as RenderBoxModel).hasOverrideContentLogicalHeight = value;
@@ -123,7 +128,6 @@ class RenderEventListener extends RenderBoxModel
     return c.getMaxIntrinsicHeight(width);
   }
 
-
   @override
   bool hitTest(BoxHitTestResult result, {required Offset position}) {
     if (child == null) {
@@ -131,14 +135,17 @@ class RenderEventListener extends RenderBoxModel
     }
 
     final BoxParentData childParentData = child!.parentData as BoxParentData;
-    bool isHit = result.addWithPaintOffset(offset: childParentData.offset, position: position, hitTest: (result, position) {
-      // addWithPaintOffset is to add an offset to the child node, the calculation itself does not need to bring an offset.
-      if (child!.hitTest(result, position: position)) {
-        result.add(BoxHitTestEntry(this, position));
-        return true;
-      }
-      return false;
-    });
+    bool isHit = result.addWithPaintOffset(
+        offset: childParentData.offset,
+        position: position,
+        hitTest: (result, position) {
+          // addWithPaintOffset is to add an offset to the child node, the calculation itself does not need to bring an offset.
+          if (child!.hitTest(result, position: position)) {
+            result.add(BoxHitTestEntry(this, position));
+            return true;
+          }
+          return false;
+        });
     return isHit;
   }
 
@@ -154,11 +161,12 @@ class RenderEventListener extends RenderBoxModel
 
   @override
   void performLayout() {
-    size = (child?..layout(constraints, parentUsesSize: true))?.size
-        ?? computeSizeForNoChild(constraints);
+    size = (child?..layout(constraints, parentUsesSize: true))?.size ??
+        computeSizeForNoChild(constraints);
 
     calculateBaseline();
-    initOverflowLayout(Rect.fromLTRB(0, 0, size.width, size.height), Rect.fromLTRB(0, 0, size.width, size.height));
+    initOverflowLayout(Rect.fromLTRB(0, 0, size.width, size.height),
+        Rect.fromLTRB(0, 0, size.width, size.height));
 
     // Set the size of scrollable overflow area for Portal.
     if (child is RenderBoxModel) {
@@ -172,21 +180,19 @@ class RenderEventListener extends RenderBoxModel
 
     final Element target = renderStyle.target;
     final Document document = controller.view.document;
+    final bool isMousePointer = event.kind == PointerDeviceKind.mouse;
 
     if (event is PointerDownEvent) {
       document.notePointerInteraction();
-      document.updateActiveTarget(target);
-      document.updateHoverTarget(target);
-      if (target.isUserFocusable) {
-        target.focus();
-      }
+      document.queueActiveTargetUpdate(event, target);
     } else if (event is PointerUpEvent || event is PointerCancelEvent) {
-      document.updateActiveTarget(null);
-    } else if (event is PointerHoverEvent ||
-        (event is PointerMoveEvent && event.buttons == 0)) {
-      document.updateHoverTarget(target);
-    } else if (event is PointerExitEvent) {
-      document.clearHoverTarget(target);
+      document.queueActiveTargetUpdate(event, null);
+    } else if (isMousePointer &&
+        (event is PointerHoverEvent ||
+            (event is PointerMoveEvent && event.buttons == 0))) {
+      document.queueHoverTargetUpdate(event, target);
+    } else if (isMousePointer && event is PointerExitEvent) {
+      document.queueHoverTargetClear(event, target);
     }
 
     _gestureDispatcher?.handlePointerEvent(event);
@@ -215,7 +221,10 @@ class RenderEventListener extends RenderBoxModel
 }
 
 class RenderTouchEventListener extends RenderEventListener {
-  RenderTouchEventListener({required super.renderStyle, required super.controller, required super.hasEvent});
+  RenderTouchEventListener(
+      {required super.renderStyle,
+      required super.controller,
+      required super.hasEvent});
 
   final RawPointerListener rawPointerListener = RawPointerListener();
 
