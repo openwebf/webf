@@ -74,7 +74,8 @@ Element? _fallbackQuerySelectorByAttr(Node node, String selector) {
     for (final Element element in root.childNodes.whereType<Element>()) {
       if (element.tagName == tagName) {
         final String? value = _attributeValueForMatch(element, attrName);
-        if (value != null && _stripAttributeQuotes(value) == _stripAttributeQuotes(attrValue)) {
+        if (value != null &&
+            _stripAttributeQuotes(value) == _stripAttributeQuotes(attrValue)) {
           found = element;
           return;
         }
@@ -109,7 +110,8 @@ List<String>? _parseSimpleAttributeSelector(String selector) {
   final int bracketEnd = trimmed.lastIndexOf(']');
   if (bracketStart <= 0 || bracketEnd != trimmed.length - 1) return null;
   final String tag = trimmed.substring(0, bracketStart);
-  final String attrPart = trimmed.substring(bracketStart + 1, bracketEnd).trim();
+  final String attrPart =
+      trimmed.substring(bracketStart + 1, bracketEnd).trim();
   final int equalsIndex = attrPart.indexOf('=');
   if (equalsIndex <= 0) return null;
   final String attrName = attrPart.substring(0, equalsIndex).trim();
@@ -144,6 +146,57 @@ Element? closest(Node node, String selector) =>
     SelectorEvaluator(scopeElement: node is Element ? node : null)
         .closest(node, _parseSelectorGroup(selector));
 
+bool selectorGroupHasRightmostPseudoClass(
+    SelectorGroup selectorGroup, String pseudoClassName) {
+  for (final Selector selector in selectorGroup.selectors) {
+    if (selectorHasRightmostPseudoClass(selector, pseudoClassName)) {
+      return true;
+    }
+  }
+  return false;
+}
+
+bool selectorHasRightmostPseudoClass(
+    Selector selector, String pseudoClassName) {
+  final String normalized = pseudoClassName.toLowerCase();
+  for (final SimpleSelectorSequence seq
+      in selector.simpleSelectorSequences.reversed) {
+    if (_simpleSelectorContainsPseudoClass(seq.simpleSelector, normalized)) {
+      return true;
+    }
+    if (seq.combinator != TokenKind.COMBINATOR_NONE) {
+      break;
+    }
+  }
+  return false;
+}
+
+bool _simpleSelectorContainsPseudoClass(
+    SimpleSelector selector, String pseudoClassName) {
+  if (selector is PseudoClassSelector) {
+    return selector.name.toLowerCase() == pseudoClassName;
+  }
+
+  if (selector is PseudoClassFunctionSelector) {
+    final dynamic argument = selector.argument;
+    if (argument is SelectorGroup) {
+      for (final Selector nestedSelector in argument.selectors) {
+        if (selectorHasRightmostPseudoClass(nestedSelector, pseudoClassName)) {
+          return true;
+        }
+      }
+    } else if (argument is Selector) {
+      return selectorHasRightmostPseudoClass(argument, pseudoClassName);
+    }
+  }
+
+  if (selector is NegationSelector && selector.negationArg != null) {
+    return _simpleSelectorContainsPseudoClass(
+        selector.negationArg!, pseudoClassName);
+  }
+
+  return false;
+}
 
 // http://dev.w3.org/csswg/selectors-4/#grouping
 SelectorGroup? _parseSelectorGroup(String selector) {
@@ -161,6 +214,8 @@ class SelectorEvaluator extends SelectorVisitor {
   Element? _element;
   SelectorGroup? _selectorGroup;
   final Element? _scopeElement;
+  Element? _forcedPseudoElement;
+  Set<String>? _forcedPseudoClasses;
 
   SelectorEvaluator({Element? scopeElement}) : _scopeElement = scopeElement;
 
@@ -174,6 +229,24 @@ class SelectorEvaluator extends SelectorVisitor {
     return visitSelectorGroup(selectorGroup);
   }
 
+  bool matchSelectorWithForcedPseudoClass(
+    SelectorGroup? selectorGroup,
+    Element? element, {
+    required Element forcedElement,
+    required String pseudoClass,
+  }) {
+    final Element? previousForcedElement = _forcedPseudoElement;
+    final Set<String>? previousForcedPseudoClasses = _forcedPseudoClasses;
+    _forcedPseudoElement = forcedElement;
+    _forcedPseudoClasses = <String>{pseudoClass.toLowerCase()};
+    try {
+      return matchSelector(selectorGroup, element);
+    } finally {
+      _forcedPseudoElement = previousForcedElement;
+      _forcedPseudoClasses = previousForcedPseudoClasses;
+    }
+  }
+
   Element? querySelector(Node root, SelectorGroup? selector) {
     for (var element in root.childNodes.whereType<Element>()) {
       if (matchSelector(selector, element)) return element;
@@ -183,7 +256,8 @@ class SelectorEvaluator extends SelectorVisitor {
     return null;
   }
 
-  void querySelectorAll(Node root, SelectorGroup? selector, List<Element> results) {
+  void querySelectorAll(
+      Node root, SelectorGroup? selector, List<Element> results) {
     for (var element in root.childNodes.whereType<Element>()) {
       if (matchSelector(selector, element)) results.add(element);
       querySelectorAll(element, selector, results);
@@ -201,8 +275,18 @@ class SelectorEvaluator extends SelectorVisitor {
     return null;
   }
 
+  bool _matchesForcedPseudoClass(String name) {
+    final Element? forcedPseudoElement = _forcedPseudoElement;
+    final Set<String>? forcedPseudoClasses = _forcedPseudoClasses;
+    return forcedPseudoElement != null &&
+        forcedPseudoClasses != null &&
+        identical(_element, forcedPseudoElement) &&
+        forcedPseudoClasses.contains(name);
+  }
+
   @override
-  bool visitSelectorGroup(SelectorGroup node) => node.selectors.any(visitSelector);
+  bool visitSelectorGroup(SelectorGroup node) =>
+      node.selectors.any(visitSelector);
 
   @override
   bool visitSelector(Selector node) {
@@ -212,7 +296,8 @@ class SelectorEvaluator extends SelectorVisitor {
     // with COMBINATOR_NONE), and the combinator that connects each group to the
     // next group on the left.
     final List<List<SimpleSelector>> groups = <List<SimpleSelector>>[];
-    final List<int> groupCombinators = <int>[]; // combinator from this group to the next (left) group
+    final List<int> groupCombinators =
+        <int>[]; // combinator from this group to the next (left) group
 
     {
       List<SimpleSelector> current = <SimpleSelector>[];
@@ -238,7 +323,8 @@ class SelectorEvaluator extends SelectorVisitor {
       _element = element;
 
       // Optional timing/logging for diagnostics.
-      final bool wantDetail = DebugFlags.enableCssMatchDetail || (DebugFlags.cssMatchCompoundLogThresholdMs > 0);
+      final bool wantDetail = DebugFlags.enableCssMatchDetail ||
+          (DebugFlags.cssMatchCompoundLogThresholdMs > 0);
       final Stopwatch? sw = wantDetail ? (Stopwatch()..start()) : null;
       bool ok = true;
       int failIndex = -1;
@@ -260,7 +346,8 @@ class SelectorEvaluator extends SelectorVisitor {
         if (DebugFlags.enableCssMatchDetail || overThreshold) {
           final String elemDesc = _describeElement(element);
           final String sels = compound.map(_simpleSelectorType).join(',');
-          cssLogger.info('[match][compound] elem=$elemDesc parts=${compound.length} ok=$ok ms=$elapsed'
+          cssLogger.info(
+              '[match][compound] elem=$elemDesc parts=${compound.length} ok=$ok ms=$elapsed'
               '${ok ? '' : ' failAt=$failIndex failType=$failType'} selTypes=[$sels]');
         }
       }
@@ -284,56 +371,60 @@ class SelectorEvaluator extends SelectorVisitor {
       final List<SimpleSelector> nextGroup = groups[gi + 1];
 
       switch (combinator) {
-        case TokenKind.COMBINATOR_DESCENDANT: {
-          Element? ancestor = cursor?.parentElement;
-          bool found = false;
-          while (ancestor != null) {
-            if (matchesCompound(ancestor, nextGroup)) {
-              found = true;
-              cursor = ancestor;
-              break;
+        case TokenKind.COMBINATOR_DESCENDANT:
+          {
+            Element? ancestor = cursor?.parentElement;
+            bool found = false;
+            while (ancestor != null) {
+              if (matchesCompound(ancestor, nextGroup)) {
+                found = true;
+                cursor = ancestor;
+                break;
+              }
+              ancestor = ancestor.parentElement;
             }
-            ancestor = ancestor.parentElement;
+            if (!found) {
+              result = false;
+            }
+            break;
           }
-          if (!found) {
-            result = false;
+        case TokenKind.COMBINATOR_GREATER:
+          {
+            final Element? parent = cursor?.parentElement;
+            if (parent == null || !matchesCompound(parent, nextGroup)) {
+              result = false;
+            } else {
+              cursor = parent;
+            }
+            break;
           }
-          break;
-        }
-        case TokenKind.COMBINATOR_GREATER: {
-          final Element? parent = cursor?.parentElement;
-          if (parent == null || !matchesCompound(parent, nextGroup)) {
-            result = false;
-          } else {
-            cursor = parent;
-          }
-          break;
-        }
-        case TokenKind.COMBINATOR_PLUS: {
-          final Element? prev = cursor?.previousElementSibling;
-          if (prev == null || !matchesCompound(prev, nextGroup)) {
-            result = false;
-          } else {
-            cursor = prev;
-          }
-          break;
-        }
-        case TokenKind.COMBINATOR_TILDE: {
-          Element? prev = cursor?.previousElementSibling;
-          bool found = false;
-          while (prev != null) {
-            if (matchesCompound(prev, nextGroup)) {
-              found = true;
+        case TokenKind.COMBINATOR_PLUS:
+          {
+            final Element? prev = cursor?.previousElementSibling;
+            if (prev == null || !matchesCompound(prev, nextGroup)) {
+              result = false;
+            } else {
               cursor = prev;
-              break;
             }
-            prev = prev.previousElementSibling;
+            break;
           }
-          if (!found) {
-            result = false;
+        case TokenKind.COMBINATOR_TILDE:
+          {
+            Element? prev = cursor?.previousElementSibling;
+            bool found = false;
+            while (prev != null) {
+              if (matchesCompound(prev, nextGroup)) {
+                found = true;
+                cursor = prev;
+                break;
+              }
+              prev = prev.previousElementSibling;
+            }
+            if (!found) {
+              result = false;
+            }
+            break;
           }
-          break;
-        }
         case TokenKind.COMBINATOR_NONE:
           // No combinator – the next group must match the same element.
           if (!matchesCompound(cursor, nextGroup)) {
@@ -354,7 +445,8 @@ class SelectorEvaluator extends SelectorVisitor {
 
   String _describeElement(Element e) {
     final String id = (e.id != null && e.id!.isNotEmpty) ? '#${e.id}' : '';
-    final String cls = e.classList.isNotEmpty ? '.${e.classList.join('.')}' : '';
+    final String cls =
+        e.classList.isNotEmpty ? '.${e.classList.join('.')}' : '';
     return '<${e.tagName}$id$cls>';
   }
 
@@ -379,7 +471,9 @@ class SelectorEvaluator extends SelectorVisitor {
 
       // http://dev.w3.org/csswg/selectors-4/#the-root-pseudo
       case 'root':
-        return _element!.nodeName == HTML && (_element!.parentElement == null || _element!.parentElement is Document);
+        return _element!.nodeName == HTML &&
+            (_element!.parentElement == null ||
+                _element!.parentElement is Document);
 
       case 'scope':
         if (_scopeElement == null) return false;
@@ -387,12 +481,13 @@ class SelectorEvaluator extends SelectorVisitor {
 
       // http://dev.w3.org/csswg/selectors-4/#the-empty-pseudo
       case 'empty':
-        return _element!.childNodes.every((n) => !(n is Element || n is TextNode && n.data.isNotEmpty));
+        return _element!.childNodes.every(
+            (n) => !(n is Element || n is TextNode && n.data.isNotEmpty));
 
       // http://dev.w3.org/csswg/selectors-4/#the-blank-pseudo
       case 'blank':
-        return _element!.childNodes
-            .any((n) => !(n is Element || n is TextNode && n.data.runes.any((r) => !isWhitespaceCC(r))));
+        return _element!.childNodes.any((n) => !(n is Element ||
+            n is TextNode && n.data.runes.any((r) => !isWhitespaceCC(r))));
 
       // http://dev.w3.org/csswg/selectors-4/#the-first-child-pseudo
       case 'first-child':
@@ -446,15 +541,16 @@ class SelectorEvaluator extends SelectorVisitor {
         break;
       // http://dev.w3.org/csswg/selectors-4/#the-only-child-pseudo
       case 'only-child':
-        return _element!.previousElementSibling == null && _element!.nextElementSibling == null;
+        return _element!.previousElementSibling == null &&
+            _element!.nextElementSibling == null;
 
       // https://drafts.csswg.org/selectors-4/#the-hover-pseudo
       case 'hover':
-        return _element!.isHovered;
+        return _matchesForcedPseudoClass('hover') || _element!.isHovered;
 
       // https://drafts.csswg.org/selectors-4/#the-active-pseudo
       case 'active':
-        return _element!.isActive;
+        return _matchesForcedPseudoClass('active') || _element!.isActive;
 
       // https://drafts.csswg.org/selectors-4/#the-focus-pseudo
       case 'focus':
@@ -470,62 +566,68 @@ class SelectorEvaluator extends SelectorVisitor {
 
       // https://drafts.csswg.org/selectors-4/#enableddisabled
       case 'enabled':
-      case 'disabled': {
-        final Element element = _element!;
-        if (!_isFormControlElement(element)) return false;
-        final bool isDisabled = _isFormControlDisabled(element);
-        return name == 'disabled' ? isDisabled : !isDisabled;
-      }
+      case 'disabled':
+        {
+          final Element element = _element!;
+          if (!_isFormControlElement(element)) return false;
+          final bool isDisabled = _isFormControlDisabled(element);
+          return name == 'disabled' ? isDisabled : !isDisabled;
+        }
       // https://drafts.csswg.org/selectors-4/#opt-pseudos
       case 'required':
-      case 'optional': {
-        final Element element = _element!;
-        if (!_isFormControlElement(element)) return false;
-        final bool required = _hasAttribute(element, 'required');
-        return name == 'required' ? required : !required;
-      }
-      // https://drafts.csswg.org/selectors-4/#placeholder-shown-pseudo
-      case 'placeholder-shown': {
-        final Element element = _element!;
-        if (!_isFormControlElement(element)) return false;
-        String placeholder = '';
-        String value = '';
-        if (element is BaseInputElement) {
-          placeholder = element.placeholder;
-          value = element.value;
-        } else {
-          placeholder = _getAttributeValue(element, 'placeholder') ?? '';
-          value = _getAttributeValue(element, 'value') ?? '';
+      case 'optional':
+        {
+          final Element element = _element!;
+          if (!_isFormControlElement(element)) return false;
+          final bool required = _hasAttribute(element, 'required');
+          return name == 'required' ? required : !required;
         }
-        if (placeholder.isEmpty) return false;
-        return value.isEmpty;
-      }
+      // https://drafts.csswg.org/selectors-4/#placeholder-shown-pseudo
+      case 'placeholder-shown':
+        {
+          final Element element = _element!;
+          if (!_isFormControlElement(element)) return false;
+          String placeholder = '';
+          String value = '';
+          if (element is BaseInputElement) {
+            placeholder = element.placeholder;
+            value = element.value;
+          } else {
+            placeholder = _getAttributeValue(element, 'placeholder') ?? '';
+            value = _getAttributeValue(element, 'value') ?? '';
+          }
+          if (placeholder.isEmpty) return false;
+          return value.isEmpty;
+        }
       // https://drafts.csswg.org/selectors-4/#validity-pseudos
       case 'valid':
-      case 'invalid': {
-        final Element element = _element!;
-        if (!_isFormControlElement(element)) return false;
-        // Elements barred from constraint validation (e.g. disabled) match neither :valid nor :invalid.
-        // https://html.spec.whatwg.org/multipage/form-control-infrastructure.html#barred-from-constraint-validation
-        if (_isFormControlDisabled(element)) return false;
-        final bool isValid = _isFormControlValid(element);
-        return name == 'valid' ? isValid : !isValid;
-      }
+      case 'invalid':
+        {
+          final Element element = _element!;
+          if (!_isFormControlElement(element)) return false;
+          // Elements barred from constraint validation (e.g. disabled) match neither :valid nor :invalid.
+          // https://html.spec.whatwg.org/multipage/form-control-infrastructure.html#barred-from-constraint-validation
+          if (_isFormControlDisabled(element)) return false;
+          final bool isValid = _isFormControlValid(element);
+          return name == 'valid' ? isValid : !isValid;
+        }
       // https://drafts.csswg.org/selectors-4/#checked
-      case 'checked': {
-        final Element element = _element!;
-        if (element is BaseCheckedElement) {
-          return element.getChecked();
+      case 'checked':
+        {
+          final Element element = _element!;
+          if (element is BaseCheckedElement) {
+            return element.getChecked();
+          }
+          if (element.tagName.toUpperCase() == OPTION) {
+            return _isOptionSelected(element);
+          }
+          if (element.attributes.containsKey('checked')) return true;
+          if (element.attributes.containsKey('selected')) return true;
+          final String? ariaChecked = element.attributes['aria-checked'];
+          if (ariaChecked != null && ariaChecked.toLowerCase() == 'true')
+            return true;
+          return false;
         }
-        if (element.tagName.toUpperCase() == OPTION) {
-          return _isOptionSelected(element);
-        }
-        if (element.attributes.containsKey('checked')) return true;
-        if (element.attributes.containsKey('selected')) return true;
-        final String? ariaChecked = element.attributes['aria-checked'];
-        if (ariaChecked != null && ariaChecked.toLowerCase() == 'true') return true;
-        return false;
-      }
 
       // http://dev.w3.org/csswg/selectors-4/#link
       case 'link':
@@ -582,7 +684,9 @@ class SelectorEvaluator extends SelectorVisitor {
       }
     }
     final String? ariaDisabled = _getAttributeValue(element, 'aria-disabled');
-    if (ariaDisabled != null && ariaDisabled.toLowerCase() == 'true') return true;
+    if (ariaDisabled != null && ariaDisabled.toLowerCase() == 'true') {
+      return true;
+    }
     return false;
   }
 
@@ -607,7 +711,8 @@ class SelectorEvaluator extends SelectorVisitor {
     }
     final bool required = _hasAttribute(element, 'required');
 
-    if (element is BaseCheckedElement && (type == 'checkbox' || type == 'radio')) {
+    if (element is BaseCheckedElement &&
+        (type == 'checkbox' || type == 'radio')) {
       return !required || element.getChecked();
     }
 
@@ -657,7 +762,8 @@ class SelectorEvaluator extends SelectorVisitor {
     return value;
   }
 
-  bool _hasAttribute(Element element, String name) => _getAttributeValue(element, name) != null;
+  bool _hasAttribute(Element element, String name) =>
+      _getAttributeValue(element, name) != null;
 
   bool _isOptionSelected(Element element) {
     if (element is HTMLOptionElement) {
@@ -671,6 +777,7 @@ class SelectorEvaluator extends SelectorVisitor {
       }
       return false;
     }
+
     if (hasAttrIgnoreCase(element, 'selected')) {
       return true;
     }
@@ -685,7 +792,8 @@ class SelectorEvaluator extends SelectorVisitor {
     if (options.isEmpty) {
       return false;
     }
-    final bool anyExplicit = options.any((option) => hasAttrIgnoreCase(option, 'selected'));
+    final bool anyExplicit =
+        options.any((option) => hasAttrIgnoreCase(option, 'selected'));
     if (anyExplicit) {
       return false;
     }
@@ -702,6 +810,7 @@ class SelectorEvaluator extends SelectorVisitor {
         visit(child);
       }
     }
+
     visit(root);
     return options;
   }
@@ -738,62 +847,70 @@ class SelectorEvaluator extends SelectorVisitor {
     final String name = node.name.toLowerCase();
 
     switch (name) {
-      case 'is': {
-        final arg = node.argument;
-        if (arg is! SelectorGroup) return false;
-        final Element element = _element!;
-        for (final Selector selector in arg.selectors) {
-          if (_matchesSelectorWithoutSpecificity(selector, element)) {
-            return true;
+      case 'is':
+        {
+          final arg = node.argument;
+          if (arg is! SelectorGroup) return false;
+          final Element element = _element!;
+          for (final Selector selector in arg.selectors) {
+            if (_matchesSelectorWithoutSpecificity(selector, element)) {
+              return true;
+            }
           }
+          return false;
         }
-        return false;
-      }
-      case 'has': {
-        final arg = node.argument;
-        if (arg is! SelectorGroup) return false;
-        final Element scope = _element!;
-        for (final Selector selector in arg.selectors) {
-          if (_matchesRelativeSelector(scope, selector)) {
-            return true;
+      case 'has':
+        {
+          final arg = node.argument;
+          if (arg is! SelectorGroup) return false;
+          final Element scope = _element!;
+          for (final Selector selector in arg.selectors) {
+            if (_matchesRelativeSelector(scope, selector)) {
+              return true;
+            }
           }
+          return false;
         }
-        return false;
-      }
-      case 'where': {
-        final arg = node.argument;
-        if (arg is! SelectorGroup) return false;
-        final Element element = _element!;
-        for (final Selector selector in arg.selectors) {
-          if (_matchesSelectorWithoutSpecificity(selector, element)) {
-            return true;
+      case 'where':
+        {
+          final arg = node.argument;
+          if (arg is! SelectorGroup) return false;
+          final Element element = _element!;
+          for (final Selector selector in arg.selectors) {
+            if (_matchesSelectorWithoutSpecificity(selector, element)) {
+              return true;
+            }
           }
+          return false;
         }
-        return false;
-      }
       // http://dev.w3.org/csswg/selectors-4/#the-nth-child-pseudo
       case 'nth-child':
       case 'nth-of-type':
       case 'nth-last-child':
-      case 'nth-last-of-type': {
-        final arg = node.argument;
-        if (arg is! List<String>) return false;
-        final List<num?>? data = _parseNthExpressions(arg);
-        //  i = An + B
-        if (data == null) return false;
+      case 'nth-last-of-type':
+        {
+          final arg = node.argument;
+          if (arg is! List<String>) return false;
+          final List<num?>? data = _parseNthExpressions(arg);
+          //  i = An + B
+          if (data == null) return false;
 
-        switch (name) {
-          case 'nth-child':
-            return _elementSatisfiesNthChildren(_element!, node, data[0], data[1]!);
-          case 'nth-of-type':
-            return _elementSatisfiesNthChildrenOfType(_element!, _element!.tagName, node, data[0], data[1]!);
-          case 'nth-last-child':
-            return _elementSatisfiesNthLastChildren(_element!, node, data[0], data[1]!);
-          case 'nth-last-of-type':
-            return _elementSatisfiesNthLastChildrenOfType(_element!, _element!.tagName, node, data[0], data[1]!);
+          switch (name) {
+            case 'nth-child':
+              return _elementSatisfiesNthChildren(
+                  _element!, node, data[0], data[1]!);
+            case 'nth-of-type':
+              return _elementSatisfiesNthChildrenOfType(
+                  _element!, _element!.tagName, node, data[0], data[1]!);
+            case 'nth-last-child':
+              return _elementSatisfiesNthLastChildren(
+                  _element!, node, data[0], data[1]!);
+            case 'nth-last-of-type':
+              return _elementSatisfiesNthLastChildrenOfType(
+                  _element!, _element!.tagName, node, data[0], data[1]!);
+          }
+          return false;
         }
-        return false;
-      }
     }
 
     if (kDebugMode) throw _unimplemented(node);
@@ -803,33 +920,37 @@ class SelectorEvaluator extends SelectorVisitor {
   bool _matchesRelativeSelector(Element scope, Selector selector) {
     if (selector.simpleSelectorSequences.isEmpty) return false;
 
-    final int leadingCombinator = selector.simpleSelectorSequences.first.combinator;
+    final int leadingCombinator =
+        selector.simpleSelectorSequences.first.combinator;
     Iterable<Element> candidates;
 
     switch (leadingCombinator) {
       case TokenKind.COMBINATOR_PLUS:
-      case TokenKind.COMBINATOR_TILDE: {
-        final List<Element> roots = <Element>[];
-        Element? sibling = scope.nextElementSibling;
-        while (sibling != null) {
-          roots.add(sibling);
-          sibling = sibling.nextElementSibling;
+      case TokenKind.COMBINATOR_TILDE:
+        {
+          final List<Element> roots = <Element>[];
+          Element? sibling = scope.nextElementSibling;
+          while (sibling != null) {
+            roots.add(sibling);
+            sibling = sibling.nextElementSibling;
+          }
+          if (roots.isEmpty) return false;
+          candidates = _traverseMultiple(roots);
+          break;
         }
-        if (roots.isEmpty) return false;
-        candidates = _traverseMultiple(roots);
-        break;
-      }
       case TokenKind.COMBINATOR_GREATER:
       case TokenKind.COMBINATOR_DESCENDANT:
       case TokenKind.COMBINATOR_NONE:
-      default: {
-        candidates = _traverseElements(scope, includeRoot: false);
-        break;
-      }
+      default:
+        {
+          candidates = _traverseElements(scope, includeRoot: false);
+          break;
+        }
     }
 
     for (final Element element in candidates) {
-      final List<Element> leftmostMatches = _collectLeftmostMatches(element, selector);
+      final List<Element> leftmostMatches =
+          _collectLeftmostMatches(element, selector);
       if (leftmostMatches.isEmpty) continue;
       for (final Element leftmost in leftmostMatches) {
         if (_leftmostMatchesScope(scope, leftmost, leadingCombinator)) {
@@ -840,20 +961,22 @@ class SelectorEvaluator extends SelectorVisitor {
     return false;
   }
 
-  bool _leftmostMatchesScope(Element scope, Element leftmost, int leadingCombinator) {
+  bool _leftmostMatchesScope(
+      Element scope, Element leftmost, int leadingCombinator) {
     switch (leadingCombinator) {
       case TokenKind.COMBINATOR_GREATER:
         return leftmost.parentElement == scope;
       case TokenKind.COMBINATOR_PLUS:
         return leftmost.previousElementSibling == scope;
-      case TokenKind.COMBINATOR_TILDE: {
-        Element? prev = leftmost.previousElementSibling;
-        while (prev != null) {
-          if (prev == scope) return true;
-          prev = prev.previousElementSibling;
+      case TokenKind.COMBINATOR_TILDE:
+        {
+          Element? prev = leftmost.previousElementSibling;
+          while (prev != null) {
+            if (prev == scope) return true;
+            prev = prev.previousElementSibling;
+          }
+          return false;
         }
-        return false;
-      }
       case TokenKind.COMBINATOR_DESCENDANT:
       case TokenKind.COMBINATOR_NONE:
       default:
@@ -876,7 +999,8 @@ class SelectorEvaluator extends SelectorVisitor {
     }
   }
 
-  Iterable<Element> _traverseElements(Element root, {required bool includeRoot}) sync* {
+  Iterable<Element> _traverseElements(Element root,
+      {required bool includeRoot}) sync* {
     if (includeRoot) yield root;
     for (final Element child in root.children) {
       yield child;
@@ -892,7 +1016,8 @@ class SelectorEvaluator extends SelectorVisitor {
     // with COMBINATOR_NONE), and the combinator that connects each group to the
     // next group on the left.
     final List<List<SimpleSelector>> groups = <List<SimpleSelector>>[];
-    final List<int> groupCombinators = <int>[]; // combinator from this group to the next (left) group
+    final List<int> groupCombinators =
+        <int>[]; // combinator from this group to the next (left) group
 
     {
       List<SimpleSelector> current = <SimpleSelector>[];
@@ -918,7 +1043,8 @@ class SelectorEvaluator extends SelectorVisitor {
       _element = element;
 
       // Optional timing/logging for diagnostics.
-      final bool wantDetail = DebugFlags.enableCssMatchDetail || (DebugFlags.cssMatchCompoundLogThresholdMs > 0);
+      final bool wantDetail = DebugFlags.enableCssMatchDetail ||
+          (DebugFlags.cssMatchCompoundLogThresholdMs > 0);
       final Stopwatch? sw = wantDetail ? (Stopwatch()..start()) : null;
       bool ok = true;
       int failIndex = -1;
@@ -940,7 +1066,8 @@ class SelectorEvaluator extends SelectorVisitor {
         if (DebugFlags.enableCssMatchDetail || overThreshold) {
           final String elemDesc = _describeElement(element);
           final String sels = compound.map(_simpleSelectorType).join(',');
-          cssLogger.info('[match][compound] elem=$elemDesc parts=${compound.length} ok=$ok ms=$elapsed'
+          cssLogger.info(
+              '[match][compound] elem=$elemDesc parts=${compound.length} ok=$ok ms=$elapsed'
               '${ok ? '' : ' failAt=$failIndex failType=$failType'} selTypes=[$sels]');
         }
       }
@@ -959,42 +1086,46 @@ class SelectorEvaluator extends SelectorVisitor {
       final List<SimpleSelector> nextGroup = groups[groupIndex + 1];
 
       switch (combinator) {
-        case TokenKind.COMBINATOR_DESCENDANT: {
-          Element? ancestor = current.parentElement;
-          while (ancestor != null) {
-            if (matchesCompound(ancestor, nextGroup)) {
-              collect(ancestor, groupIndex + 1);
+        case TokenKind.COMBINATOR_DESCENDANT:
+          {
+            Element? ancestor = current.parentElement;
+            while (ancestor != null) {
+              if (matchesCompound(ancestor, nextGroup)) {
+                collect(ancestor, groupIndex + 1);
+              }
+              ancestor = ancestor.parentElement;
             }
-            ancestor = ancestor.parentElement;
-          }
-          break;
-        }
-        case TokenKind.COMBINATOR_GREATER: {
-          final Element? parent = current.parentElement;
-          if (parent == null || !matchesCompound(parent, nextGroup)) {
             break;
           }
-          collect(parent, groupIndex + 1);
-          break;
-        }
-        case TokenKind.COMBINATOR_PLUS: {
-          final Element? prev = current.previousElementSibling;
-          if (prev == null || !matchesCompound(prev, nextGroup)) {
+        case TokenKind.COMBINATOR_GREATER:
+          {
+            final Element? parent = current.parentElement;
+            if (parent == null || !matchesCompound(parent, nextGroup)) {
+              break;
+            }
+            collect(parent, groupIndex + 1);
             break;
           }
-          collect(prev, groupIndex + 1);
-          break;
-        }
-        case TokenKind.COMBINATOR_TILDE: {
-          Element? prev = current.previousElementSibling;
-          while (prev != null) {
-            if (matchesCompound(prev, nextGroup)) {
-              collect(prev, groupIndex + 1);
+        case TokenKind.COMBINATOR_PLUS:
+          {
+            final Element? prev = current.previousElementSibling;
+            if (prev == null || !matchesCompound(prev, nextGroup)) {
+              break;
             }
-            prev = prev.previousElementSibling;
+            collect(prev, groupIndex + 1);
+            break;
           }
-          break;
-        }
+        case TokenKind.COMBINATOR_TILDE:
+          {
+            Element? prev = current.previousElementSibling;
+            while (prev != null) {
+              if (matchesCompound(prev, nextGroup)) {
+                collect(prev, groupIndex + 1);
+              }
+              prev = prev.previousElementSibling;
+            }
+            break;
+          }
         case TokenKind.COMBINATOR_NONE:
           if (matchesCompound(current, nextGroup)) {
             collect(current, groupIndex + 1);
@@ -1026,7 +1157,8 @@ class SelectorEvaluator extends SelectorVisitor {
     return result;
   }
 
-  bool _elementSatisfies(Element element, PseudoClassFunctionSelector selector, num? a, num b, IndexCounter finder) {
+  bool _elementSatisfies(Element element, PseudoClassFunctionSelector selector,
+      num? a, num b, IndexCounter finder) {
     // For a detached element, per Selectors semantics used by WPT, treat it as
     // the sole child of its (implicit) parent subtree. This means its 1-based
     // index is 1 and all sibling traversals are empty.
@@ -1036,18 +1168,21 @@ class SelectorEvaluator extends SelectorVisitor {
     }
 
     int index = 0;
-    final int? cacheIndex = element.ownerDocument.nthIndexCache.getChildrenIndexFromCache(parent, element, selector.name);
+    final int? cacheIndex = element.ownerDocument.nthIndexCache
+        .getChildrenIndexFromCache(parent, element, selector.name);
     if (cacheIndex != null) {
       index = cacheIndex;
     } else {
       index = finder(element);
-      element.ownerDocument.nthIndexCache.setChildrenIndexWithParentNode(parent, element, selector.name, index);
+      element.ownerDocument.nthIndexCache.setChildrenIndexWithParentNode(
+          parent, element, selector.name, index);
     }
 
     return _indexSatisfiesEquation(index + 1, a, b);
   }
 
-  bool _elementSatisfiesNthChildren(Element element, PseudoClassFunctionSelector selector, num? a, num b) {
+  bool _elementSatisfiesNthChildren(
+      Element element, PseudoClassFunctionSelector selector, num? a, num b) {
     return _elementSatisfies(element, selector, a, b, (element) {
       int index = 0;
       Element? currentElement = element;
@@ -1060,7 +1195,8 @@ class SelectorEvaluator extends SelectorVisitor {
     });
   }
 
-  bool _elementSatisfiesNthChildrenOfType(Element element, String tagName, PseudoClassFunctionSelector selector, num? a, num b) {
+  bool _elementSatisfiesNthChildrenOfType(Element element, String tagName,
+      PseudoClassFunctionSelector selector, num? a, num b) {
     return _elementSatisfies(element, selector, a, b, (element) {
       int index = 0;
       Element? currentElement = element;
@@ -1075,7 +1211,8 @@ class SelectorEvaluator extends SelectorVisitor {
     });
   }
 
-  bool _elementSatisfiesNthLastChildren(Element element, PseudoClassFunctionSelector selector, num? a, num b) {
+  bool _elementSatisfiesNthLastChildren(
+      Element element, PseudoClassFunctionSelector selector, num? a, num b) {
     return _elementSatisfies(element, selector, a, b, (element) {
       Element? currentElement = element;
       int index = 0;
@@ -1088,7 +1225,8 @@ class SelectorEvaluator extends SelectorVisitor {
     });
   }
 
-  bool _elementSatisfiesNthLastChildrenOfType(Element element, String tagName, PseudoClassFunctionSelector selector, num? a, num b) {
+  bool _elementSatisfiesNthLastChildrenOfType(Element element, String tagName,
+      PseudoClassFunctionSelector selector, num? a, num b) {
     return _elementSatisfies(element, selector, a, b, (element) {
       Element? currentElement = element;
       int index = 0;
@@ -1200,19 +1338,22 @@ class SelectorEvaluator extends SelectorVisitor {
   }
 
   @override
-  bool visitElementSelector(ElementSelector node) => node.isWildcard || _element!.tagName == node.name.toUpperCase();
+  bool visitElementSelector(ElementSelector node) =>
+      node.isWildcard || _element!.tagName == node.name.toUpperCase();
 
   @override
   bool visitIdSelector(IdSelector node) => _element!.id == node.name;
 
   @override
-  bool visitClassSelector(ClassSelector node) => _element!.classList.contains(node.name);
+  bool visitClassSelector(ClassSelector node) =>
+      _element!.classList.contains(node.name);
 
   // TODO(jmesserly): negation should support any selectors in level 4,
   // not just simple selectors.
   // http://dev.w3.org/csswg/selectors-4/#negation
   @override
-  bool visitNegationSelector(NegationSelector node) => !(node.negationArg!.visit(this) as bool);
+  bool visitNegationSelector(NegationSelector node) =>
+      !(node.negationArg!.visit(this) as bool);
 
   @override
   bool visitAttributeSelector(AttributeSelector node) {
@@ -1229,10 +1370,13 @@ class SelectorEvaluator extends SelectorVisitor {
       case TokenKind.EQUALS:
         return normalizedValue == normalizedSelect;
       case TokenKind.INCLUDES:
-        return normalizedValue.split(' ').any((v) => v.isNotEmpty && v == normalizedSelect);
+        return normalizedValue
+            .split(' ')
+            .any((v) => v.isNotEmpty && v == normalizedSelect);
       case TokenKind.DASH_MATCH:
         return normalizedValue.startsWith(normalizedSelect) &&
-            (normalizedValue.length == normalizedSelect.length || normalizedValue[normalizedSelect.length] == '-');
+            (normalizedValue.length == normalizedSelect.length ||
+                normalizedValue[normalizedSelect.length] == '-');
       case TokenKind.PREFIX_MATCH:
         return normalizedValue.startsWith(normalizedSelect);
       case TokenKind.SUFFIX_MATCH:
@@ -1255,10 +1399,12 @@ class SelectorEvaluator extends SelectorVisitor {
     return value;
   }
 
-  UnimplementedError _unimplemented(SimpleSelector selector) => UnimplementedError("'$selector' selector of type "
-      '${selector.runtimeType} is not implemented');
+  UnimplementedError _unimplemented(SimpleSelector selector) =>
+      UnimplementedError("'$selector' selector of type "
+          '${selector.runtimeType} is not implemented');
 
-  FormatException _unsupported(selector) => FormatException("'$selector' is not a valid selector");
+  FormatException _unsupported(selector) =>
+      FormatException("'$selector' is not a valid selector");
 
   bool isWhitespaceCC(int charCode) {
     switch (charCode) {
