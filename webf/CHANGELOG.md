@@ -1,3 +1,18 @@
+## 0.24.18
+
+### Major Features
+
+- **Use Cases/CSS**: re-enable the selectors showcase in the example app and expand it with
+  direct-target interactive pseudo-class demos for `:hover`, `:active`, `:focus-visible`, and
+  `:focus-within`.
+
+### Bug Fixes
+
+- **CSS/Selectors**: scope document-dispatched interactive pseudo-class state to the stable leaf
+  target only. This prevents ancestor/descendant false positives for `:hover` and `:active`, ignores
+  targets without direct interactive pseudo selectors, preserves the deepest target during
+  same-event bubbling, and adds regression coverage.
+
 ## 0.24.17
 
 ### Bug Fixes
