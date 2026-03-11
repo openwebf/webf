@@ -64,6 +64,7 @@ const sections: Section[] = [
       { label: 'Typography', path: '/typography' },
       { label: '@font-face', path: '/fontface' },
       { label: 'Responsive', path: '/responsive' },
+      { label: 'Selectors', path: '/css/selectors' },
       { label: 'Values & Units', path: '/css/values-units' },
     ],
   },

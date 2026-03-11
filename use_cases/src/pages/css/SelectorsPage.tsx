@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { WebFListView } from '@openwebf/react-core-ui';
 
 const SectionTitle: React.FC<{ children: React.ReactNode }> = ({ children }) => (
@@ -18,8 +18,6 @@ const Badge: React.FC<{ children: React.ReactNode }> = ({ children }) => (
 );
 
 export const SelectorsPage: React.FC = () => {
-  const [activeTab, setActiveTab] = useState('A');
-
   return (
     <div className="w-full h-full bg-gray-50">
       <WebFListView className="p-5 flex flex-col gap-6 w-full box-border pb-20">
@@ -28,6 +26,10 @@ export const SelectorsPage: React.FC = () => {
         <div className="flex flex-col gap-2">
           <SectionTitle>1. User Actions</SectionTitle>
           <Card>
+            <p className="text-sm text-gray-500">
+              Interactive pseudo-classes in WebF are best demonstrated with direct target matches.
+              Hover reacts on desktop mouse input, while focus-based states work across platforms.
+            </p>
             <div className="grid grid-cols-2 gap-4">
               <button className="p-3 rounded bg-blue-500 text-white hover:bg-blue-700 hover:shadow-lg transition-all text-center">
                 Hover Me
@@ -40,15 +42,36 @@ export const SelectorsPage: React.FC = () => {
                 placeholder="Focus Me" 
                 className="p-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent w-full"
               />
-              <button className="p-3 rounded border-2 border-gray-200 text-gray-400 disabled:opacity-50 disabled:cursor-not-allowed" disabled>
-                Disabled
+              <button className="p-3 rounded border border-amber-300 bg-amber-50 text-amber-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 focus-visible:ring-offset-2 transition-all text-center">
+                Keyboard Focus Ring
               </button>
+            </div>
+            <div className="rounded-xl border border-slate-200 bg-slate-50 p-4 focus-within:border-cyan-500 focus-within:bg-cyan-50 transition-colors">
+              <div className="flex items-center justify-between gap-3 mb-3">
+                <div>
+                  <div className="font-semibold text-slate-800">Focus Within Container</div>
+                  <div className="text-sm text-slate-500">Tab into the input to light up the parent card.</div>
+                </div>
+                <span className="text-xs rounded-full border border-cyan-200 bg-white px-2 py-1 text-cyan-700">
+                  :focus-within
+                </span>
+              </div>
+              <input
+                type="text"
+                placeholder="Focus inside this container"
+                className="w-full rounded border border-slate-300 bg-white px-3 py-2 focus:outline-none focus:ring-2 focus:ring-cyan-500"
+              />
+            </div>
+            <div className="rounded-lg border border-dashed border-gray-300 bg-white/80 p-3 text-xs text-gray-500">
+              <strong>Note:</strong> <code>:hover</code> is shown only for direct target matches and desktop mouse input.
+              Parent-chain hover demos were intentionally removed to keep the runtime impact small.
             </div>
             <div className="flex flex-wrap gap-2 mt-2">
               <Badge>:hover</Badge>
               <Badge>:active</Badge>
               <Badge>:focus</Badge>
-              <Badge>:disabled</Badge>
+              <Badge>:focus-visible</Badge>
+              <Badge>:focus-within</Badge>
             </div>
           </Card>
         </div>
@@ -148,30 +171,27 @@ export const SelectorsPage: React.FC = () => {
           </Card>
         </div>
 
-        {/* 5. Parent State (Group) */}
+        {/* 5. Direct Target Hover */}
         <div className="flex flex-col gap-2">
-          <SectionTitle>5. Parent State (Group)</SectionTitle>
+          <SectionTitle>5. Direct Target Hover</SectionTitle>
           <Card>
             <p className="text-sm text-gray-500 mb-2">
-              Style a child based on the parent's state (e.g. hover).
+              This demo keeps the hovered element as the actual event target, so it works with WebF&apos;s target-only
+              <code className="mx-1 rounded bg-gray-100 px-1 py-0.5">:hover</code>
+              behavior.
             </p>
-            <div className="group p-4 rounded-lg border border-gray-200 bg-white hover:bg-indigo-50 hover:border-indigo-200 cursor-pointer transition-all">
-              <div className="flex items-center gap-4">
-                <div className="w-12 h-12 rounded-full bg-gray-200 group-hover:bg-indigo-500 text-gray-500 group-hover:text-white flex items-center justify-center transition-colors">
-                  <span className="font-bold text-xl">★</span>
-                </div>
-                <div>
-                  <h3 className="font-bold text-gray-700 group-hover:text-indigo-700 transition-colors">
-                    Hover this Card
-                  </h3>
-                  <p className="text-sm text-gray-500 group-hover:text-indigo-500/80 transition-colors">
-                    The icon and text change color when the *card* is hovered.
-                  </p>
-                </div>
-              </div>
+            <div className="rounded-lg border border-gray-200 bg-white p-5 text-gray-700 shadow-sm transition-all hover:-translate-y-0.5 hover:border-indigo-300 hover:bg-indigo-50 hover:text-indigo-800 hover:shadow-md">
+              Hover this card on desktop. The styles are attached to this exact element, not a parent chain.
+            </div>
+            <div className="rounded-lg border border-dashed border-gray-300 bg-white/80 p-3 text-xs text-gray-500">
+              <strong>Important:</strong> patterns like
+              <code className="mx-1 rounded bg-gray-100 px-1 py-0.5">.group:hover .child</code>
+              are intentionally not showcased here, because WebF no longer promotes hover state from a hovered child to its parent chain.
             </div>
             <div className="flex flex-wrap gap-2 mt-2">
-              <Badge>.group:hover .child</Badge>
+              <Badge>div:hover</Badge>
+              <Badge>target-only</Badge>
+              <Badge>desktop-only</Badge>
             </div>
           </Card>
         </div>
