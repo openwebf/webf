@@ -16,23 +16,30 @@ abstract class FlutterShadcnThemeBindings extends WidgetElement {
   set brightness(value);
   String? get radius;
   set radius(value);
+  String? get outlineColor;
+  set outlineColor(value);
   @override
   void initializeAttributes(Map<String, ElementAttributeProperty> attributes) {
     super.initializeAttributes(attributes);
     attributes['color-scheme'] = ElementAttributeProperty(
       getter: () => colorScheme?.toString(),
-      setter: (value) => this.colorScheme = value,
+      setter: (value) => colorScheme = value,
       deleter: () => colorScheme = null
     );
     attributes['brightness'] = ElementAttributeProperty(
       getter: () => brightness?.toString(),
-      setter: (value) => this.brightness = value,
+      setter: (value) => brightness = value,
       deleter: () => brightness = null
     );
     attributes['radius'] = ElementAttributeProperty(
       getter: () => radius?.toString(),
-      setter: (value) => this.radius = value,
+      setter: (value) => radius = value,
       deleter: () => radius = null
+    );
+    attributes['outline-color'] = ElementAttributeProperty(
+      getter: () => outlineColor?.toString(),
+      setter: (value) => outlineColor = value,
+      deleter: () => outlineColor = null
     );
   }
   static StaticDefinedBindingPropertyMap flutterShadcnThemeProperties = {
@@ -50,6 +57,11 @@ abstract class FlutterShadcnThemeBindings extends WidgetElement {
       getter: (element) => castToType<FlutterShadcnThemeBindings>(element).radius,
       setter: (element, value) =>
       castToType<FlutterShadcnThemeBindings>(element).radius = value,
+    ),
+    'outlineColor': StaticDefinedBindingProperty(
+      getter: (element) => castToType<FlutterShadcnThemeBindings>(element).outlineColor,
+      setter: (element, value) =>
+      castToType<FlutterShadcnThemeBindings>(element).outlineColor = value,
     ),
   };
   @override

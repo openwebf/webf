@@ -25,27 +25,27 @@ abstract class FlutterShadcnImageBindings extends WidgetElement {
     super.initializeAttributes(attributes);
     attributes['src'] = ElementAttributeProperty(
       getter: () => src?.toString(),
-      setter: (value) => this.src = value,
+      setter: (value) => src = value,
       deleter: () => src = null
     );
     attributes['alt'] = ElementAttributeProperty(
       getter: () => alt?.toString(),
-      setter: (value) => this.alt = value,
+      setter: (value) => alt = value,
       deleter: () => alt = null
     );
     attributes['width'] = ElementAttributeProperty(
       getter: () => width?.toString(),
-      setter: (value) => this.width = value,
+      setter: (value) => width = value,
       deleter: () => width = null
     );
     attributes['height'] = ElementAttributeProperty(
       getter: () => height?.toString(),
-      setter: (value) => this.height = value,
+      setter: (value) => height = value,
       deleter: () => height = null
     );
     attributes['fit'] = ElementAttributeProperty(
       getter: () => fit?.toString(),
-      setter: (value) => this.fit = value,
+      setter: (value) => fit = value,
       deleter: () => fit = null
     );
   }

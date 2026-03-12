@@ -20,6 +20,7 @@ export 'src/form_section.dart';
 export 'src/input.dart';
 export 'src/search_text_field.dart';
 export 'src/date_picker.dart';
+export 'src/menu.dart';
 import 'src/alert.dart';
 import 'src/action_sheet.dart';
 import 'src/context_menu.dart';
@@ -41,6 +42,7 @@ import 'src/tab_view.dart';
 import 'src/sliding_segmented_control.dart';
 import 'src/list_tile.dart';
 import 'src/search_text_field.dart';
+import 'src/menu.dart';
 
 /// Installs all Cupertino UI custom elements for WebF.
 ///
@@ -106,6 +108,9 @@ void installWebFCupertinoUI() {
   WebF.defineCustomElement(
       'flutter-cupertino-date-picker',
       (context) => FlutterCupertinoDatePicker(context));
+  WebF.defineCustomElement(
+      'flutter-cupertino-menu',
+      (context) => FlutterCupertinoMenu(context));
 
 
   // WebF.defineCustomElement('flutter-cupertino-input', (context) => FlutterCupertinoInput(context));

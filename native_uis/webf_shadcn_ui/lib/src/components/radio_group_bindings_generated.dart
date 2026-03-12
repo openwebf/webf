@@ -8,8 +8,8 @@
 // ignore_for_file: library_private_types_in_public_api
 // ignore_for_file: prefer_void_to_null
 import 'package:webf/webf.dart';
-abstract class FlutterShadcnRadioBindings extends WidgetElement {
-  FlutterShadcnRadioBindings(super.context);
+abstract class FlutterShadcnRadioGroupBindings extends WidgetElement {
+  FlutterShadcnRadioGroupBindings(super.context);
   String? get value;
   set value(value);
   bool get disabled;
@@ -21,40 +21,40 @@ abstract class FlutterShadcnRadioBindings extends WidgetElement {
     super.initializeAttributes(attributes);
     attributes['value'] = ElementAttributeProperty(
       getter: () => value?.toString(),
-      setter: (value) => this.value = value,
+      setter: (value) => value = value,
       deleter: () => value = null
     );
     attributes['disabled'] = ElementAttributeProperty(
       getter: () => disabled.toString(),
-      setter: (value) => this.disabled = value == 'true' || value == '',
+      setter: (value) => disabled = value == 'true' || value == '',
       deleter: () => disabled = false
     );
     attributes['orientation'] = ElementAttributeProperty(
       getter: () => orientation?.toString(),
-      setter: (value) => this.orientation = value,
+      setter: (value) => orientation = value,
       deleter: () => orientation = null
     );
   }
-  static StaticDefinedBindingPropertyMap flutterShadcnRadioProperties = {
+  static StaticDefinedBindingPropertyMap flutterShadcnRadioGroupProperties = {
     'value': StaticDefinedBindingProperty(
-      getter: (element) => castToType<FlutterShadcnRadioBindings>(element).value,
+      getter: (element) => castToType<FlutterShadcnRadioGroupBindings>(element).value,
       setter: (element, value) =>
-      castToType<FlutterShadcnRadioBindings>(element).value = value,
+      castToType<FlutterShadcnRadioGroupBindings>(element).value = value,
     ),
     'disabled': StaticDefinedBindingProperty(
-      getter: (element) => castToType<FlutterShadcnRadioBindings>(element).disabled,
+      getter: (element) => castToType<FlutterShadcnRadioGroupBindings>(element).disabled,
       setter: (element, value) =>
-      castToType<FlutterShadcnRadioBindings>(element).disabled = value,
+      castToType<FlutterShadcnRadioGroupBindings>(element).disabled = value,
     ),
     'orientation': StaticDefinedBindingProperty(
-      getter: (element) => castToType<FlutterShadcnRadioBindings>(element).orientation,
+      getter: (element) => castToType<FlutterShadcnRadioGroupBindings>(element).orientation,
       setter: (element, value) =>
-      castToType<FlutterShadcnRadioBindings>(element).orientation = value,
+      castToType<FlutterShadcnRadioGroupBindings>(element).orientation = value,
     ),
   };
   @override
   List<StaticDefinedBindingPropertyMap> get properties => [
     ...super.properties,
-    flutterShadcnRadioProperties,
+    flutterShadcnRadioGroupProperties,
   ];
 }

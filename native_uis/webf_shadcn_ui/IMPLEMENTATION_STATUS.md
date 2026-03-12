@@ -29,7 +29,7 @@ native_uis/webf_shadcn_ui/
 | Input | `<flutter-shadcn-input>` | input.dart | input.d.ts | Done |
 | Textarea | `<flutter-shadcn-textarea>` | textarea.dart | textarea.d.ts | Done |
 | Checkbox | `<flutter-shadcn-checkbox>` | checkbox.dart | checkbox.d.ts | Done |
-| Radio | `<flutter-shadcn-radio>` | radio.dart | radio.d.ts | Done |
+| RadioGroup | `<flutter-shadcn-radio-group>` | radio_group.dart | radio_group.d.ts | Done |
 | Switch | `<flutter-shadcn-switch>` | switch.dart | switch.d.ts | Done |
 | Select | `<flutter-shadcn-select>` | select.dart | select.d.ts | Done |
 | Slider | `<flutter-shadcn-slider>` | slider.dart | slider.d.ts | Done |
@@ -60,7 +60,7 @@ native_uis/webf_shadcn_ui/
 | Breadcrumb | `<flutter-shadcn-breadcrumb>` | breadcrumb.dart | breadcrumb.d.ts | Done |
 | DropdownMenu | `<flutter-shadcn-dropdown-menu>` | dropdown_menu.dart | dropdown_menu.d.ts | Done |
 | ContextMenu | `<flutter-shadcn-context-menu>` | context_menu.dart | context_menu.d.ts | Done |
-| Menubar | - | - | - | Not implemented |
+| Menubar | `<flutter-shadcn-menubar>` | menubar.dart | menubar.d.ts | Done |
 
 ### Data Display (6 components)
 
@@ -144,7 +144,7 @@ The following slot elements are implemented for compositional components:
 - `<flutter-shadcn-table-cell>`
 
 ### Other Slots
-- `<flutter-shadcn-radio-item>`
+- `<flutter-shadcn-radio-group-item>`
 - `<flutter-shadcn-combobox-item>`
 - `<flutter-shadcn-popover-trigger>`
 - `<flutter-shadcn-popover-content>`
@@ -162,6 +162,17 @@ The following slot elements are implemented for compositional components:
 - `<flutter-shadcn-context-menu-content>`
 - `<flutter-shadcn-context-menu-item>`
 - `<flutter-shadcn-context-menu-separator>`
+- `<flutter-shadcn-menubar-menu>`
+- `<flutter-shadcn-menubar-trigger>`
+- `<flutter-shadcn-menubar-content>`
+- `<flutter-shadcn-menubar-item>`
+- `<flutter-shadcn-menubar-separator>`
+- `<flutter-shadcn-menubar-sub>`
+- `<flutter-shadcn-menubar-sub-trigger>`
+- `<flutter-shadcn-menubar-sub-content>`
+- `<flutter-shadcn-menubar-checkbox-item>`
+- `<flutter-shadcn-menubar-radio-group>`
+- `<flutter-shadcn-menubar-radio-item>`
 - `<flutter-shadcn-collapsible-trigger>`
 - `<flutter-shadcn-collapsible-content>`
 
@@ -204,7 +215,6 @@ The following slot elements are implemented for compositional components:
 
 4. **Optional Enhancements**
    - Add remaining advanced components (ResizablePanel, HoverCard, etc.)
-   - Add Menubar component
    - Improve animation support
    - Add accessibility features
 

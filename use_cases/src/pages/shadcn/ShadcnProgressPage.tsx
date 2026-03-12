@@ -110,6 +110,124 @@ export const ShadcnProgressPage: React.FC = () => {
           </div>
 
           <div className="mb-8">
+            <h2 className="text-lg font-semibold mb-4">Indeterminate</h2>
+            <div className="space-y-6">
+              <div>
+                <p className="text-sm text-gray-500 mb-2">Default indeterminate animation</p>
+                <FlutterShadcnProgress variant="indeterminate" />
+              </div>
+              <div>
+                <p className="text-sm text-gray-500 mb-2">Indeterminate with custom color</p>
+                <FlutterShadcnProgress variant="indeterminate" color="#22c55e" />
+              </div>
+            </div>
+          </div>
+
+          <div className="mb-8">
+            <h2 className="text-lg font-semibold mb-4">Custom Colors</h2>
+            <div className="space-y-6">
+              <div>
+                <p className="text-sm text-gray-500 mb-2">Blue indicator</p>
+                <FlutterShadcnProgress value="60" color="#3b82f6" />
+              </div>
+              <div>
+                <p className="text-sm text-gray-500 mb-2">Green indicator</p>
+                <FlutterShadcnProgress value="80" color="#22c55e" />
+              </div>
+              <div>
+                <p className="text-sm text-gray-500 mb-2">Red indicator</p>
+                <FlutterShadcnProgress value="30" color="#ef4444" />
+              </div>
+              <div>
+                <p className="text-sm text-gray-500 mb-2">Purple indicator with custom background</p>
+                <FlutterShadcnProgress value="45" color="#8b5cf6" backgroundColor="#ede9fe" />
+              </div>
+              <div>
+                <p className="text-sm text-gray-500 mb-2">Orange indicator with dark background</p>
+                <FlutterShadcnProgress value="70" color="#f97316" backgroundColor="#1c1917" />
+              </div>
+            </div>
+          </div>
+
+          <div className="mb-8">
+            <h2 className="text-lg font-semibold mb-4">Custom Height</h2>
+            <div className="space-y-6">
+              <div>
+                <p className="text-sm text-gray-500 mb-2">Thin (4px)</p>
+                <FlutterShadcnProgress value="60" minHeight="4" />
+              </div>
+              <div>
+                <p className="text-sm text-gray-500 mb-2">Default (16px)</p>
+                <FlutterShadcnProgress value="60" />
+              </div>
+              <div>
+                <p className="text-sm text-gray-500 mb-2">Thick (24px)</p>
+                <FlutterShadcnProgress value="60" minHeight="24" />
+              </div>
+              <div>
+                <p className="text-sm text-gray-500 mb-2">Extra thick (32px)</p>
+                <FlutterShadcnProgress value="60" minHeight="32" />
+              </div>
+            </div>
+          </div>
+
+          <div className="mb-8">
+            <h2 className="text-lg font-semibold mb-4">Custom Border Radius</h2>
+            <div className="space-y-6">
+              <div>
+                <p className="text-sm text-gray-500 mb-2">Square corners (0)</p>
+                <FlutterShadcnProgress value="50" borderRadius="0" minHeight="20" />
+              </div>
+              <div>
+                <p className="text-sm text-gray-500 mb-2">Slightly rounded (4)</p>
+                <FlutterShadcnProgress value="50" borderRadius="4" minHeight="20" />
+              </div>
+              <div>
+                <p className="text-sm text-gray-500 mb-2">Default rounded (16)</p>
+                <FlutterShadcnProgress value="50" minHeight="20" />
+              </div>
+            </div>
+          </div>
+
+          <div className="mb-8">
+            <h2 className="text-lg font-semibold mb-4">Combined Customization</h2>
+            <div className="space-y-6">
+              <div className="p-4 border rounded-lg">
+                <p className="font-medium mb-1">Download Progress</p>
+                <p className="text-sm text-gray-500 mb-3">2.4 GB / 4.0 GB</p>
+                <FlutterShadcnProgress
+                  value="60"
+                  color="#3b82f6"
+                  backgroundColor="#dbeafe"
+                  minHeight="8"
+                  borderRadius="4"
+                />
+              </div>
+              <div className="p-4 border rounded-lg">
+                <p className="font-medium mb-1">Storage Used</p>
+                <p className="text-sm text-gray-500 mb-3">85% of 100 GB</p>
+                <FlutterShadcnProgress
+                  value="85"
+                  color="#ef4444"
+                  backgroundColor="#fef2f2"
+                  minHeight="12"
+                />
+              </div>
+              <div className="p-4 border rounded-lg">
+                <p className="font-medium mb-1">Battery Level</p>
+                <p className="text-sm text-gray-500 mb-3">72% remaining</p>
+                <FlutterShadcnProgress
+                  value="72"
+                  color="#22c55e"
+                  backgroundColor="#f0fdf4"
+                  minHeight="24"
+                  borderRadius="4"
+                />
+              </div>
+            </div>
+          </div>
+
+          <div className="mb-8">
             <h2 className="text-lg font-semibold mb-4">Multi-step Progress</h2>
             <div className="space-y-2">
               <div className="flex items-center gap-3">

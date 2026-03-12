@@ -27,32 +27,32 @@ abstract class FlutterShadcnComboboxBindings extends WidgetElement {
     super.initializeAttributes(attributes);
     attributes['value'] = ElementAttributeProperty(
       getter: () => value?.toString(),
-      setter: (value) => this.value = value,
+      setter: (value) => value = value,
       deleter: () => value = null
     );
     attributes['placeholder'] = ElementAttributeProperty(
       getter: () => placeholder?.toString(),
-      setter: (value) => this.placeholder = value,
+      setter: (value) => placeholder = value,
       deleter: () => placeholder = null
     );
     attributes['search-placeholder'] = ElementAttributeProperty(
       getter: () => searchPlaceholder?.toString(),
-      setter: (value) => this.searchPlaceholder = value,
+      setter: (value) => searchPlaceholder = value,
       deleter: () => searchPlaceholder = null
     );
     attributes['empty-text'] = ElementAttributeProperty(
       getter: () => emptyText?.toString(),
-      setter: (value) => this.emptyText = value,
+      setter: (value) => emptyText = value,
       deleter: () => emptyText = null
     );
     attributes['disabled'] = ElementAttributeProperty(
       getter: () => disabled.toString(),
-      setter: (value) => this.disabled = value == 'true' || value == '',
+      setter: (value) => disabled = value == 'true' || value == '',
       deleter: () => disabled = false
     );
     attributes['clearable'] = ElementAttributeProperty(
       getter: () => clearable.toString(),
-      setter: (value) => this.clearable = value == 'true' || value == '',
+      setter: (value) => clearable = value == 'true' || value == '',
       deleter: () => clearable = false
     );
   }

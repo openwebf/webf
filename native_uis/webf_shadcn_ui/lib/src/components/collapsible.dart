@@ -51,6 +51,8 @@ class FlutterShadcnCollapsible extends FlutterShadcnCollapsibleBindings {
 class FlutterShadcnCollapsibleState extends WebFWidgetElementState {
   FlutterShadcnCollapsibleState(super.widgetElement);
 
+  Offset? _tapDownPosition;
+
   @override
   FlutterShadcnCollapsible get widgetElement =>
       super.widgetElement as FlutterShadcnCollapsible;
@@ -74,12 +76,30 @@ class FlutterShadcnCollapsibleState extends WebFWidgetElementState {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         if (trigger != null)
-          GestureDetector(
-            onTap: widgetElement.disabled
+          // Use Listener instead of GestureDetector to avoid gesture arena
+          // conflicts with interactive child widgets (e.g. ShadButton).
+          Listener(
+            behavior: HitTestBehavior.opaque,
+            onPointerDown: widgetElement.disabled
                 ? null
-                : () {
-                    widgetElement.open = !widgetElement.open;
+                : (event) {
+                    _tapDownPosition = event.position;
                   },
+            onPointerUp: widgetElement.disabled
+                ? null
+                : (event) {
+                    if (_tapDownPosition != null) {
+                      final distance =
+                          (event.position - _tapDownPosition!).distance;
+                      _tapDownPosition = null;
+                      if (distance < 20) {
+                        widgetElement.open = !widgetElement.open;
+                      }
+                    }
+                  },
+            onPointerCancel: (_) {
+              _tapDownPosition = null;
+            },
             child: trigger,
           ),
         if (widgetElement.open && content != null) content,
