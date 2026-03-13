@@ -47,8 +47,6 @@ public class WebFPlugin implements FlutterPlugin, MethodCallHandler {
     }
     // Loads `libwebf.so`.
     System.loadLibrary("webf");
-    // Loads `libquickjs.so`.
-    System.loadLibrary("quickjs");
     isLibraryLoaded = true;
   }
 
