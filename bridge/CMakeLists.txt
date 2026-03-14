@@ -364,6 +364,20 @@ if (APPLE OR WIN32 OR CMAKE_SYSTEM_NAME STREQUAL "Linux")
   include(./test/test.cmake)
 endif ()
 
+# Android integration tests also need the test bridge exports, but they do not
+# build the desktop-only unit test targets from test.cmake.
+if (IS_ANDROID AND ENABLE_TEST)
+  add_compile_definitions(IS_TEST=true)
+  target_sources(webf PRIVATE
+    include/webf_bridge_test.h
+    webf_bridge_test.cc
+    ./test/test_framework_polyfill.c
+    test/webf_test_context.cc
+    test/webf_test_context.h
+  )
+  target_include_directories(webf PRIVATE ./test)
+endif ()
+
 #if(CMAKE_SYSTEM_NAME MATCHES "MSYS" OR MINGW)
 #  install(TARGETS webf
 #          LIBRARY DESTINATION lib     # For Unix-like OSes
