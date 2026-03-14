@@ -1105,6 +1105,7 @@ task('build-android-webf-lib', (done) => {
   };
   const buildType = (buildMode === 'Release' || buildMode == 'RelWithDebInfo') ? 'RelWithDebInfo' : 'Debug';
   let externCmakeArgs = [];
+  const enableTest = buildMode !== 'Release';
 
   if (process.env.ENABLE_ASAN === 'true') {
     externCmakeArgs.push('-DENABLE_ASAN=true');
@@ -1162,6 +1163,7 @@ task('build-android-webf-lib', (done) => {
     -DANDROID_SUPPORT_FLEXIBLE_PAGE_SIZES=ON \
     -DIS_ANDROID=TRUE \
     -DANDROID_ABI="${arch}" \
+    ${enableTest ? '-DENABLE_TEST=true \\' : '\\'}
     ${isProfile ? '-DENABLE_PROFILE=TRUE \\' : '\\'}
     ${externCmakeArgs.join(' ')} \
     -DANDROID_PLATFORM="android-18" \

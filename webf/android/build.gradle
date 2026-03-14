@@ -22,6 +22,10 @@ allprojects {
 
 apply plugin: 'com.android.library'
 
+def enableTestBridge =
+    System.getenv('WEBF_ENABLE_TEST') == 'true' ||
+    System.getenv('KRAKEN_ENABLE_TEST') == 'true'
+
 
 android {
     if (project.android.hasProperty("namespace")) {
@@ -41,6 +45,9 @@ android {
         externalNativeBuild {
             cmake {
                 arguments "-DANDROID_STL=c++_shared", "-DIS_ANDROID=TRUE", "-DANDROID_SUPPORT_FLEXIBLE_PAGE_SIZES=ON"
+                if (enableTestBridge) {
+                    arguments "-DENABLE_TEST=true"
+                }
             }
         }
     }
