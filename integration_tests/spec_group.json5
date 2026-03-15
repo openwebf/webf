@@ -55,6 +55,12 @@
     ]
   },
   {
+    "name": "Shadcn",
+    "specs": [
+      "specs/shadcn/**/*.{js,jsx,ts,tsx,html}"
+    ]
+  },
+  {
     "name": "BoxModelAndSizing",
     "specs": [
       "specs/css/css-align/**/*.{js,jsx,ts,tsx,html}",

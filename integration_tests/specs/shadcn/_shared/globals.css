@@ -1,0 +1,171 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+.shadcn-spec-page {
+  @apply min-h-[240px] bg-slate-100 p-6 text-slate-950;
+}
+
+.shadcn-probe-card {
+  @apply relative flex min-h-[200px] flex-col gap-4 rounded-2xl border border-slate-300 bg-white p-5 shadow-sm;
+}
+
+.shadcn-probe-title {
+  @apply text-lg font-semibold tracking-tight;
+}
+
+.shadcn-probe-copy {
+  @apply max-w-[28rem] text-sm leading-6 text-slate-600;
+}
+
+.shadcn-probe-inline {
+  @apply flex flex-wrap items-center gap-3;
+}
+
+.shadcn-probe-button {
+  @apply inline-flex items-center justify-center rounded-md bg-slate-900 px-4 py-2 text-sm font-medium text-white;
+}
+
+.shadcn-probe-button-alt {
+  @apply inline-flex items-center justify-center rounded-md border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-800;
+}
+
+.shadcn-probe-chip {
+  @apply rounded-full bg-slate-100 px-3 py-1 text-xs font-medium text-slate-700;
+}
+
+.shadcn-probe-readout {
+  @apply font-mono text-xs text-slate-500;
+}
+
+.shadcn-stack {
+  @apply flex flex-col gap-4;
+}
+
+.shadcn-card {
+  @apply rounded-2xl border border-slate-300 bg-white p-5 shadow-sm;
+}
+
+.shadcn-card-header {
+  @apply flex items-start justify-between gap-3;
+}
+
+.shadcn-card-title {
+  @apply text-base font-semibold tracking-tight;
+}
+
+.shadcn-card-description {
+  @apply text-sm leading-6 text-slate-600;
+}
+
+.shadcn-field-label {
+  @apply text-sm font-medium text-slate-800;
+}
+
+.shadcn-input {
+  @apply w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm text-slate-950;
+}
+
+.shadcn-input-hint {
+  @apply text-xs text-slate-500;
+}
+
+.shadcn-divider {
+  @apply h-px bg-slate-200;
+}
+
+.shadcn-meta-list {
+  @apply flex flex-col gap-3;
+}
+
+.shadcn-meta-row {
+  @apply flex items-start justify-between gap-4;
+}
+
+.shadcn-stat-row {
+  @apply flex flex-wrap gap-3;
+}
+
+.shadcn-stat-card {
+  @apply min-w-[120px] rounded-xl bg-slate-100 px-3 py-3;
+}
+
+.shadcn-stat-label {
+  @apply text-xs uppercase tracking-wide text-slate-500;
+}
+
+.shadcn-stat-value {
+  @apply mt-1 text-lg font-semibold text-slate-950;
+}
+
+.shadcn-badge {
+  @apply inline-flex items-center rounded-full bg-slate-100 px-3 py-1 text-xs font-medium text-slate-700;
+}
+
+.shadcn-badge-success {
+  @apply bg-emerald-50 text-emerald-700;
+}
+
+.shadcn-badge-warning {
+  @apply bg-amber-50 text-amber-700;
+}
+
+.shadcn-toggle-pill {
+  @apply inline-flex min-w-[78px] items-center justify-center rounded-full border px-3 py-1 text-xs font-medium transition-colors;
+}
+
+.shadcn-toggle-pill[data-state='on'] {
+  @apply border-emerald-300 bg-emerald-50 text-emerald-700;
+}
+
+.shadcn-toggle-pill[data-state='off'] {
+  @apply border-slate-300 bg-slate-100 text-slate-600;
+}
+
+.shadcn-row {
+  @apply flex items-start justify-between gap-4;
+}
+
+.shadcn-row-copy {
+  @apply flex max-w-[215px] flex-col gap-1;
+}
+
+.shadcn-floating-layer {
+  @apply z-50 rounded-xl border border-slate-300 bg-white p-4 shadow-xl;
+}
+
+.shadcn-dialog-backdrop {
+  @apply fixed inset-0 bg-slate-950/15;
+}
+
+.shadcn-dialog-shell {
+  @apply fixed left-6 top-20 w-[260px] rounded-xl border border-slate-300 bg-white p-4 shadow-2xl;
+}
+
+.shadcn-dialog-actions {
+  @apply mt-4 flex gap-3;
+}
+
+.shadcn-tablist {
+  @apply inline-flex gap-2 rounded-xl bg-slate-200 p-1;
+}
+
+.shadcn-tab {
+  @apply rounded-lg px-3 py-2 text-sm text-slate-600 transition-colors;
+}
+
+.shadcn-tab[data-focus='true'] {
+  @apply bg-white text-slate-950 shadow-sm;
+}
+
+.shadcn-tab[data-selected='true'] {
+  @apply font-semibold;
+}
+
+.shadcn-anchor {
+  @apply inline-flex w-[120px] items-center justify-center rounded-md bg-emerald-600 px-4 py-2 text-sm font-medium text-white transition-all;
+}
+
+.shadcn-anchor-wide {
+  @apply w-[200px] bg-emerald-700;
+}
