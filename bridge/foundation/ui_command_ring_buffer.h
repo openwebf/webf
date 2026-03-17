@@ -150,6 +150,7 @@ class UICommandPackageRingBuffer {
   // Overflow handling
   std::mutex overflow_mutex_;
   std::vector<std::unique_ptr<UICommandPackage>> overflow_packages_;
+  std::atomic<uint64_t> overflow_push_count_{0};
   
   // Helper methods
   bool ShouldCreateNewPackage(UICommand command) const;
