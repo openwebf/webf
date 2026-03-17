@@ -9,6 +9,7 @@
 #include "ui_command_ring_buffer.h"
 #include <algorithm>
 #include <cstring>
+#include <limits>
 #include "bindings/qjs/native_string_utils.h"
 #include "core/executing_context.h"
 #include "foundation/logging.h"
@@ -201,9 +202,6 @@ void UICommandPackage::AddCommand(const UICommandItem& item) {
 }
 
 bool UICommandPackage::ShouldSplit(UICommand next_command) const {
-  // Split package based on command type strategy
-  UICommandKind next_kind = GetKindFromUICommand(next_command);
-
   // Always split on certain commands
   switch (next_command) {
     case UICommand::kStartRecordingCommand:
@@ -214,13 +212,9 @@ bool UICommandPackage::ShouldSplit(UICommand next_command) const {
       break;
   }
 
-  // Split if mixing incompatible command types
-  if ((kind_mask & static_cast<uint32_t>(UICommandKind::kNodeCreation)) &&
-      (static_cast<uint32_t>(next_kind) & static_cast<uint32_t>(UICommandKind::kNodeMutation))) {
-    return true;
-  }
-
-  // Split if package is getting too large
+  // Keep alternating create/insert DOM command streams together. Splitting on
+  // every node mutation turns large mounts into thousands of tiny packages and
+  // overwhelms the package ring buffer before Dart can drain it.
   if (commands.size() >= 1000) {
     return true;
   }
@@ -330,8 +324,17 @@ void UICommandPackageRingBuffer::PushPackage(std::unique_ptr<UICommandPackage> p
   if (next_write_idx == read_index_.load(std::memory_order_acquire)) {
     // Buffer full, use overflow
     std::lock_guard<std::mutex> lock(overflow_mutex_);
-    WEBF_LOG(WARN) << "[UICommandPackageRingBuffer] PUSH PACKAGE TO OVERFLOW " << package.get();
     overflow_packages_.push_back(std::move(package));
+
+    uint64_t overflow_count = overflow_push_count_.fetch_add(1, std::memory_order_relaxed) + 1;
+    if (overflow_count == 1 || overflow_count % 64 == 0) {
+      size_t ring_count = (write_idx - read_index_.load(std::memory_order_acquire)) & capacity_mask_;
+      const auto* newest_package = overflow_packages_.back().get();
+      size_t newest_size = newest_package ? newest_package->commands.size() : 0;
+      WEBF_LOG(WARN) << "[UICommandPackageRingBuffer] overflow packages=" << overflow_packages_.size()
+                     << " total_overflows=" << overflow_count << " ring_backlog=" << ring_count
+                     << " newest_package_commands=" << newest_size << " capacity=" << capacity_;
+    }
     return;
   }
 
@@ -344,21 +347,25 @@ void UICommandPackageRingBuffer::PushPackage(std::unique_ptr<UICommandPackage> p
 }
 
 std::unique_ptr<UICommandPackage> UICommandPackageRingBuffer::PopPackage() {
-  // First check overflow
+  size_t read_idx = read_index_.load(std::memory_order_relaxed);
+  bool ring_ready = packages_[read_idx].ready.load(std::memory_order_acquire);
+  uint64_t ring_sequence = ring_ready && packages_[read_idx].package
+                               ? packages_[read_idx].package->sequence_number
+                               : std::numeric_limits<uint64_t>::max();
+
   {
     std::lock_guard<std::mutex> lock(overflow_mutex_);
     if (!overflow_packages_.empty()) {
-      auto package = std::move(overflow_packages_.front());
-      WEBF_LOG(VERBOSE) << " POP OVERFLOW PACKAGE " << package.get();
-      overflow_packages_.erase(overflow_packages_.begin());
-      return package;
+      uint64_t overflow_sequence = overflow_packages_.front()->sequence_number;
+      if (!ring_ready || overflow_sequence < ring_sequence) {
+        auto package = std::move(overflow_packages_.front());
+        overflow_packages_.erase(overflow_packages_.begin());
+        return package;
+      }
     }
   }
 
-  // Then check ring buffer
-  size_t read_idx = read_index_.load(std::memory_order_relaxed);
-
-  if (!packages_[read_idx].ready.load(std::memory_order_acquire)) {
+  if (!ring_ready) {
     return nullptr;  // No package available
   }
 
@@ -432,6 +439,8 @@ void UICommandPackageRingBuffer::Clear() {
     std::lock_guard<std::mutex> overflow_lock(overflow_mutex_);
     overflow_packages_.clear();
   }
+
+  overflow_push_count_.store(0, std::memory_order_relaxed);
 }
 
 bool UICommandPackageRingBuffer::ShouldCreateNewPackage(UICommand command) const {

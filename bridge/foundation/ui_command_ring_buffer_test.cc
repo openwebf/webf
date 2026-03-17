@@ -176,8 +176,8 @@ TEST_F(UICommandRingBufferTest, CommandBatchingStrategy) {
   package.AddCommand(UICommandItem(static_cast<int32_t>(UICommand::kCreateTextNode), nullptr, nullptr, nullptr));
   EXPECT_FALSE(package.ShouldSplit(UICommand::kCreateComment));
   
-  // Test split on node mutation after creation
-  EXPECT_TRUE(package.ShouldSplit(UICommand::kInsertAdjacentNode));
+  // Keep the common create/insert sequence in the same package.
+  EXPECT_FALSE(package.ShouldSplit(UICommand::kInsertAdjacentNode));
   
   // Test split on special commands
   package.Clear();
@@ -185,6 +185,24 @@ TEST_F(UICommandRingBufferTest, CommandBatchingStrategy) {
   EXPECT_TRUE(package.ShouldSplit(UICommand::kStartRecordingCommand));
   EXPECT_TRUE(package.ShouldSplit(UICommand::kFinishRecordingCommand));
   EXPECT_TRUE(package.ShouldSplit(UICommand::kAsyncCaller));
+}
+
+TEST_F(UICommandRingBufferTest, PackageOverflowPreservesSequenceOrder) {
+  UICommandPackageRingBuffer buffer(nullptr, 4);
+
+  for (intptr_t i = 1; i <= 5; ++i) {
+    buffer.AddCommand(UICommand::kCreateElement, nullptr, reinterpret_cast<void*>(i), nullptr);
+    buffer.FlushCurrentPackage();
+  }
+
+  for (intptr_t expected = 1; expected <= 5; ++expected) {
+    auto package = buffer.PopPackage();
+    ASSERT_NE(package, nullptr);
+    ASSERT_EQ(package->commands.size(), 1u);
+    EXPECT_EQ(package->commands[0].nativePtr, expected);
+  }
+
+  EXPECT_EQ(buffer.PopPackage(), nullptr);
 }
 
 // Test SharedUICommandRingBuffer integration
