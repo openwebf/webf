@@ -69,7 +69,6 @@ class CSSPosition {
         if (_isVertKW(a) && _isHorizKW(b)) {
           final List<String> swapped = <String>[b, a];
           _cachedParsedPosition[input] = swapped;
-          cssLogger.finer('[CSSPosition] Parsed background-position "$input" => x="${swapped[0]}", y="${swapped[1]}"');
           return swapped;
         }
       }
@@ -77,14 +76,12 @@ class CSSPosition {
       if (_isHorizKW(a) && _looksNumeric(b)) {
         final List<String> pair = <String>[a, b];
         _cachedParsedPosition[input] = pair;
-        cssLogger.finer('[CSSPosition] Parsed background-position "$input" => x="${pair[0]}", y="${pair[1]}"');
         return pair;
       }
       // Numeric followed by vertical keyword => x=numeric, y=keyword.
       if (_looksNumeric(a) && _isVertKW(b)) {
         final List<String> pair = <String>[a, b];
         _cachedParsedPosition[input] = pair;
-        cssLogger.finer('[CSSPosition] Parsed background-position "$input" => x="${pair[0]}", y="${pair[1]}"');
         return pair;
       }
     }
@@ -179,7 +176,6 @@ class CSSPosition {
     final List<String> result = <String>[xValue, yValue];
     _cachedParsedPosition[input] = result;
 
-    cssLogger.finer('[CSSPosition] Parsed background-position "$input" => x="$xValue", y="$yValue"');
     return result;
   }
 
