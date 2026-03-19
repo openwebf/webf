@@ -110,15 +110,32 @@ int compareStyleRulesForCascade(CSSStyleRule a, CSSStyleRule b,
 CSSStyleDeclaration cascadeMatchedStyleRules(List<CSSStyleRule> rules) {
   final declaration = CSSStyleDeclaration();
   if (rules.isEmpty) return declaration;
+  if (rules.length == 1) {
+    declaration.union(rules.first.declaration);
+    return declaration;
+  }
 
   final normalOrder = List<CSSStyleRule>.from(rules)
     ..sort((a, b) => compareStyleRulesForCascade(a, b, important: false));
+
+  final bool hasImportantDeclarations =
+      rules.any((rule) => rule.declaration.hasImportantDeclarations);
+  if (!hasImportantDeclarations) {
+    for (final r in normalOrder) {
+      declaration.union(r.declaration);
+    }
+    return declaration;
+  }
+
   for (final r in normalOrder) {
     declaration.unionByImportance(r.declaration, important: false);
   }
 
-  final importantOrder = List<CSSStyleRule>.from(rules)
-    ..sort((a, b) => compareStyleRulesForCascade(a, b, important: true));
+  final bool hasLayeredRules = rules.any((rule) => rule.layerOrderKey != null);
+  final List<CSSStyleRule> importantOrder = hasLayeredRules
+      ? (List<CSSStyleRule>.from(rules)
+        ..sort((a, b) => compareStyleRulesForCascade(a, b, important: true)))
+      : normalOrder;
   for (final r in importantOrder) {
     declaration.unionByImportance(r.declaration, important: true);
   }

@@ -9,7 +9,6 @@
 import 'dart:math' as math;
 import 'package:webf/src/foundation/debug_flags.dart';
 import 'package:webf/src/foundation/logger.dart';
-import 'package:collection/collection.dart';
 
 import 'package:webf/css.dart';
 import 'package:webf/dom.dart';
@@ -31,7 +30,8 @@ class StyleNodeManager {
   bool get hasPendingStyleSheet => _pendingStyleSheets.isNotEmpty;
   int get pendingStyleSheetCount => _pendingStyleSheets.length;
   bool _isStyleSheetCandidateNodeChanged = false;
-  bool get isStyleSheetCandidateNodeChanged => _isStyleSheetCandidateNodeChanged;
+  bool get isStyleSheetCandidateNodeChanged =>
+      _isStyleSheetCandidateNodeChanged;
 
   final Document document;
 
@@ -58,7 +58,8 @@ class StyleNodeManager {
 
     // Determine an appropriate insertion point.
     for (int i = _styleSheetCandidateNodes.length - 1; i >= 0; i--) {
-      DocumentPosition position = _styleSheetCandidateNodes[i].compareDocumentPosition(node);
+      DocumentPosition position =
+          _styleSheetCandidateNodes[i].compareDocumentPosition(node);
       if (position == DocumentPosition.FOLLOWING) {
         _styleSheetCandidateNodes.insert(i + 1, node);
         _isStyleSheetCandidateNodeChanged = true;
@@ -81,26 +82,34 @@ class StyleNodeManager {
     }
     _pendingStyleSheets.add(styleSheet);
     if (DebugFlags.enableCssMultiStyleTrace) {
-      cssLogger.info('[trace][multi-style][add] pending=${_pendingStyleSheets.length} candidates=${_styleSheetCandidateNodes.length} ' 'hash=${styleSheet.hashCode}');
+      cssLogger.info(
+          '[trace][multi-style][add] pending=${_pendingStyleSheets.length} candidates=${_styleSheetCandidateNodes.length} '
+          'hash=${styleSheet.hashCode}');
     }
   }
 
   void removePendingStyleSheet(CSSStyleSheet styleSheet) {
-    _pendingStyleSheets.removeWhere((element) => element == styleSheet);
-
+    _pendingStyleSheets.remove(styleSheet);
   }
 
   // TODO(jiangzhou): cache stylesheet
   bool updateActiveStyleSheets({bool rebuild = false}) {
     List<CSSStyleSheet> newSheets = _collectActiveStyleSheets();
     if (DebugFlags.enableCssMultiStyleTrace) {
-      cssLogger.info('[trace][multi-style][update] pending=${_pendingStyleSheets.length} candidates=${_styleSheetCandidateNodes.length} rebuild=$rebuild');
+      cssLogger.info(
+          '[trace][multi-style][update] pending=${_pendingStyleSheets.length} candidates=${_styleSheetCandidateNodes.length} rebuild=$rebuild');
     }
-    newSheets = newSheets.where((element) => element.cssRules.isNotEmpty).toList();
+    newSheets =
+        newSheets.where((element) => element.cssRules.isNotEmpty).toList();
     if (rebuild == false) {
-      RuleSet changedRuleSet = analyzeStyleSheetChangeRuleSet(document.styleSheets, newSheets);
-      final bool shouldForceHtml = !changedRuleSet.tagRules.containsKey('HTML') && _sheetsContainTagDifference(document.styleSheets, newSheets, 'HTML');
-      final bool shouldForceBody = !changedRuleSet.tagRules.containsKey('BODY') && _sheetsContainTagDifference(document.styleSheets, newSheets, 'BODY');
+      RuleSet changedRuleSet =
+          analyzeStyleSheetChangeRuleSet(document.styleSheets, newSheets);
+      final bool shouldForceHtml = !changedRuleSet.tagRules
+              .containsKey('HTML') &&
+          _sheetsContainTagDifference(document.styleSheets, newSheets, 'HTML');
+      final bool shouldForceBody = !changedRuleSet.tagRules
+              .containsKey('BODY') &&
+          _sheetsContainTagDifference(document.styleSheets, newSheets, 'BODY');
       if (changedRuleSet.isEmpty) {
         _pendingStyleSheets.clear();
         _isStyleSheetCandidateNodeChanged = false;
@@ -193,7 +202,8 @@ class StyleNodeManager {
         final Node node = stack.removeLast();
         if (node is Element) {
           fallbackVisited++;
-          final rules = collector.matchedRulesForInvalidate(changedRuleSet, node);
+          final rules =
+              collector.matchedRulesForInvalidate(changedRuleSet, node);
           if (rules.isNotEmpty) {
             addReason(node, 'fallback');
           }
@@ -207,7 +217,8 @@ class StyleNodeManager {
     // Ensure document root elements pick up tag-based changes immediately.
     if (hasTagRules) {
       final HTMLElement? root = document.documentElement;
-      if (root != null && changedRuleSet.tagRules.containsKey(root.tagName.toUpperCase())) {
+      if (root != null &&
+          changedRuleSet.tagRules.containsKey(root.tagName.toUpperCase())) {
         addReason(root, 'tag:${root.tagName}');
       }
       final BodyElement? body = document.bodyElement;
@@ -240,7 +251,10 @@ class StyleNodeManager {
       // replaced (e.g. integration test resets). Ignore disconnected nodes to
       // avoid leaking stale stylesheets across document lifecycles.
       if (!node.isConnected) continue;
-      if (node is LinkElement && !node.disabled && !node.loading && node.styleSheet != null) {
+      if (node is LinkElement &&
+          !node.disabled &&
+          !node.loading &&
+          node.styleSheet != null) {
         final sheet = node.styleSheet!;
         if (!sheet.disabled) {
           styleSheetsForStyleSheetsList.add(sheet);
@@ -255,8 +269,8 @@ class StyleNodeManager {
     return styleSheetsForStyleSheetsList;
   }
 
-
-  RuleSet analyzeStyleSheetChangeRuleSet(List<CSSStyleSheet> oldSheets, List<CSSStyleSheet> newSheets) {
+  RuleSet analyzeStyleSheetChangeRuleSet(
+      List<CSSStyleSheet> oldSheets, List<CSSStyleSheet> newSheets) {
     RuleSet ruleSet = RuleSet(document);
 
     final oldSheetsCount = oldSheets.length;
@@ -264,63 +278,82 @@ class StyleNodeManager {
 
     final minCount = math.min(oldSheetsCount, newSheetsCount);
 
-    Function equals = ListEquality().equals;
-
     int index = 0;
-    for (; index < minCount && oldSheets[index] == newSheets[index]; index++) {
-      if (equals(oldSheets[index].cssRules, newSheets[index].cssRules)) {
+    for (; index < minCount; index++) {
+      final CSSStyleSheet oldSheet = oldSheets[index];
+      final CSSStyleSheet newSheet = newSheets[index];
+      if (identical(oldSheet, newSheet) ||
+          oldSheet.structurallyEquals(newSheet)) {
         continue;
       }
-      ruleSet.addRules(newSheets[index].cssRules, baseHref: newSheets[index].href);
-      ruleSet.addRules(oldSheets[index].cssRules, baseHref: oldSheets[index].href);
+      ruleSet.addRules(newSheet.cssRules, baseHref: newSheet.href);
+      ruleSet.addRules(oldSheet.cssRules, baseHref: oldSheet.href);
+      index++;
+      break;
     }
 
     if (index == oldSheetsCount) {
       for (; index < newSheetsCount; index++) {
-        ruleSet.addRules(newSheets[index].cssRules, baseHref: newSheets[index].href);
+        ruleSet.addRules(newSheets[index].cssRules,
+            baseHref: newSheets[index].href);
       }
       return ruleSet;
     }
 
     if (index == newSheetsCount) {
       for (; index < oldSheetsCount; index++) {
-        ruleSet.addRules(oldSheets[index].cssRules, baseHref: oldSheets[index].href);
+        ruleSet.addRules(oldSheets[index].cssRules,
+            baseHref: oldSheets[index].href);
       }
       return ruleSet;
     }
 
-    List<CSSStyleSheet> mergeSorted = [];
-    mergeSorted.addAll(oldSheets.sublist(index));
-    mergeSorted.addAll(newSheets.sublist(index));
-    mergeSorted.sort();
+    final Map<int, List<CSSStyleSheet>> unmatchedOldByHash =
+        <int, List<CSSStyleSheet>>{};
+    for (int oldIndex = index; oldIndex < oldSheetsCount; oldIndex++) {
+      final CSSStyleSheet sheet = oldSheets[oldIndex];
+      unmatchedOldByHash
+          .putIfAbsent(sheet.structuralHashCode, () => <CSSStyleSheet>[])
+          .add(sheet);
+    }
 
-    for (int index = 0; index < mergeSorted.length; index++) {
-      CSSStyleSheet sheet = mergeSorted[index];
-      if (index + 1 < mergeSorted.length) {
-        ++index;
-      }
-      CSSStyleSheet sheet1 = mergeSorted[index];
-      if (index == mergeSorted.length - 1 || sheet != sheet1) {
-        ruleSet.addRules(sheet1.cssRules, baseHref: sheet1.href);
+    final List<CSSStyleSheet> unmatchedNew = <CSSStyleSheet>[];
+    for (int newIndex = index; newIndex < newSheetsCount; newIndex++) {
+      final CSSStyleSheet sheet = newSheets[newIndex];
+      final List<CSSStyleSheet>? bucket =
+          unmatchedOldByHash[sheet.structuralHashCode];
+      if (bucket == null) {
+        unmatchedNew.add(sheet);
         continue;
       }
 
-      if (index + 1 < mergeSorted.length) {
-        ++index;
-      }
-      CSSStyleSheet sheet2 = mergeSorted[index];
-      if (equals(sheet1.cssRules, sheet2.cssRules)) {
+      final int matchedIndex = bucket.indexWhere(sheet.structurallyEquals);
+      if (matchedIndex == -1) {
+        unmatchedNew.add(sheet);
         continue;
       }
 
-      ruleSet.addRules(sheet1.cssRules, baseHref: sheet1.href);
-      ruleSet.addRules(sheet2.cssRules, baseHref: sheet2.href);
+      bucket.removeAt(matchedIndex);
+      if (bucket.isEmpty) {
+        unmatchedOldByHash.remove(sheet.structuralHashCode);
+      }
+    }
+
+    for (final List<CSSStyleSheet> bucket in unmatchedOldByHash.values) {
+      for (final CSSStyleSheet sheet in bucket) {
+        ruleSet.addRules(sheet.cssRules, baseHref: sheet.href);
+      }
+    }
+
+    for (final CSSStyleSheet sheet in unmatchedNew) {
+      ruleSet.addRules(sheet.cssRules, baseHref: sheet.href);
     }
     return ruleSet;
   }
 }
 
-bool _sheetsContainTagDifference(List<CSSStyleSheet> oldSheets, List<CSSStyleSheet> newSheets, String tag) {
+bool _sheetsContainTagDifference(
+    List<CSSStyleSheet> oldSheets, List<CSSStyleSheet> newSheets, String tag) {
   final bool before = _sheetsContainTagSelector(oldSheets, tag);
   final bool after = _sheetsContainTagSelector(newSheets, tag);
   return before != after;
@@ -333,7 +366,8 @@ bool _sheetsContainTagSelector(List<CSSStyleSheet> sheets, String tag) {
     for (final CSSRule rule in sheet.cssRules) {
       if (rule is! CSSStyleRule) continue;
       for (final Selector selector in rule.selectorGroup.selectors) {
-        for (final SimpleSelectorSequence sequence in selector.simpleSelectorSequences) {
+        for (final SimpleSelectorSequence sequence
+            in selector.simpleSelectorSequences) {
           final SimpleSelector simple = sequence.simpleSelector;
           if (simple is ElementSelector && !simple.isWildcard) {
             if (simple.name.toUpperCase() == target) {

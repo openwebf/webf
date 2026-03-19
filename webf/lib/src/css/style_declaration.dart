@@ -214,6 +214,8 @@ class CSSStyleDeclaration extends DynamicBindingObject
     return _importants[propertyName] == true;
   }
 
+  bool get hasImportantDeclarations => _importants.isNotEmpty;
+
   bool get hasInheritedPendingProperty {
     return _pendingProperties.keys
         .any((key) => isInheritedPropertyString(_kebabize(key)));
@@ -244,6 +246,55 @@ class CSSStyleDeclaration extends DynamicBindingObject
   String? getPropertyBaseHref(String propertyName) {
     return _pendingProperties[propertyName]?.baseHref ??
         _properties[propertyName]?.baseHref;
+  }
+
+  List<String> _structuralPropertyNames() {
+    final Set<String> propertyNames = <String>{}
+      ..addAll(_properties.keys)
+      ..addAll(_pendingProperties.keys)
+      ..addAll(_importants.keys);
+    propertyNames
+        .removeWhere((propertyName) => getPropertyValue(propertyName).isEmpty);
+    final List<String> sorted = propertyNames.toList(growable: false);
+    sorted.sort();
+    return sorted;
+  }
+
+  int get structuralHashCode {
+    final List<String> propertyNames = _structuralPropertyNames();
+    return Object.hashAll(propertyNames.map((propertyName) => Object.hash(
+          propertyName,
+          getPropertyValue(propertyName),
+          getPropertyBaseHref(propertyName),
+          _importants[propertyName] == true,
+        )));
+  }
+
+  bool structurallyEquals(CSSStyleDeclaration other) {
+    if (identical(this, other)) return true;
+
+    final List<String> propertyNames = _structuralPropertyNames();
+    final List<String> otherPropertyNames = other._structuralPropertyNames();
+    if (propertyNames.length != otherPropertyNames.length) return false;
+
+    for (int index = 0; index < propertyNames.length; index++) {
+      final String propertyName = propertyNames[index];
+      if (propertyName != otherPropertyNames[index]) return false;
+      if (getPropertyValue(propertyName) !=
+          other.getPropertyValue(propertyName)) {
+        return false;
+      }
+      if (getPropertyBaseHref(propertyName) !=
+          other.getPropertyBaseHref(propertyName)) {
+        return false;
+      }
+      if ((_importants[propertyName] == true) !=
+          (other._importants[propertyName] == true)) {
+        return false;
+      }
+    }
+
+    return true;
   }
 
   /// Removes a property from the CSS declaration.
@@ -917,14 +968,11 @@ class CSSStyleDeclaration extends DynamicBindingObject
 
   // Inserts the style of the given Declaration into the current Declaration.
   void union(CSSStyleDeclaration declaration) {
-    Map<String, CSSPropertyValue> properties = {}
-      ..addAll(_properties)
-      ..addAll(_pendingProperties);
-
     for (String propertyName in declaration._pendingProperties.keys) {
       bool currentIsImportant = _importants[propertyName] ?? false;
       bool otherIsImportant = declaration._importants[propertyName] ?? false;
-      CSSPropertyValue? currentValue = properties[propertyName];
+      final CSSPropertyValue? currentValue =
+          _pendingProperties[propertyName] ?? _properties[propertyName];
       CSSPropertyValue? otherValue =
           declaration._pendingProperties[propertyName];
       if ((otherIsImportant || !currentIsImportant) &&
@@ -947,17 +995,14 @@ class CSSStyleDeclaration extends DynamicBindingObject
   /// This is used by cascade layers where `!important` reverses layer order.
   void unionByImportance(CSSStyleDeclaration declaration,
       {required bool important}) {
-    Map<String, CSSPropertyValue> properties = {}
-      ..addAll(_properties)
-      ..addAll(_pendingProperties);
-
     for (String propertyName in declaration._pendingProperties.keys) {
       final bool otherIsImportant =
           declaration._importants[propertyName] ?? false;
       if (otherIsImportant != important) continue;
 
       final bool currentIsImportant = _importants[propertyName] ?? false;
-      final CSSPropertyValue? currentValue = properties[propertyName];
+      final CSSPropertyValue? currentValue =
+          _pendingProperties[propertyName] ?? _properties[propertyName];
       final CSSPropertyValue? otherValue =
           declaration._pendingProperties[propertyName];
 
@@ -997,51 +1042,48 @@ class CSSStyleDeclaration extends DynamicBindingObject
       return;
     }
 
-    List<CSSStyleRule> beforeRules = [];
-    List<CSSStyleRule> afterRules = [];
-    List<CSSStyleRule> firstLetterRules = [];
-    List<CSSStyleRule> firstLineRules = [];
+    List<CSSStyleRule>? beforeRules;
+    List<CSSStyleRule>? afterRules;
+    List<CSSStyleRule>? firstLetterRules;
+    List<CSSStyleRule>? firstLineRules;
 
     for (CSSStyleRule style in rules) {
-      for (Selector selector in style.selectorGroup.selectors) {
-        for (SimpleSelectorSequence sequence
-            in selector.simpleSelectorSequences) {
-          if (sequence.simpleSelector is PseudoElementSelector) {
-            if (sequence.simpleSelector.name == 'before') {
-              beforeRules.add(style);
-            } else if (sequence.simpleSelector.name == 'after') {
-              afterRules.add(style);
-            } else if (sequence.simpleSelector.name == 'first-letter') {
-              firstLetterRules.add(style);
-            } else if (sequence.simpleSelector.name == 'first-line') {
-              firstLineRules.add(style);
-            }
-          }
-        }
+      final int pseudoElementMask = style.selectorGroup.pseudoElementMask;
+      if ((pseudoElementMask & kPseudoElementMaskBefore) != 0) {
+        (beforeRules ??= <CSSStyleRule>[]).add(style);
+      }
+      if ((pseudoElementMask & kPseudoElementMaskAfter) != 0) {
+        (afterRules ??= <CSSStyleRule>[]).add(style);
+      }
+      if ((pseudoElementMask & kPseudoElementMaskFirstLetter) != 0) {
+        (firstLetterRules ??= <CSSStyleRule>[]).add(style);
+      }
+      if ((pseudoElementMask & kPseudoElementMaskFirstLine) != 0) {
+        (firstLineRules ??= <CSSStyleRule>[]).add(style);
       }
     }
 
-    if (beforeRules.isNotEmpty) {
+    if (beforeRules != null) {
       pseudoBeforeStyle = cascadeMatchedStyleRules(beforeRules);
-    } else if (beforeRules.isEmpty && pseudoBeforeStyle != null) {
+    } else if (pseudoBeforeStyle != null) {
       pseudoBeforeStyle = null;
     }
 
-    if (afterRules.isNotEmpty) {
+    if (afterRules != null) {
       pseudoAfterStyle = cascadeMatchedStyleRules(afterRules);
-    } else if (afterRules.isEmpty && pseudoAfterStyle != null) {
+    } else if (pseudoAfterStyle != null) {
       pseudoAfterStyle = null;
     }
 
-    if (firstLetterRules.isNotEmpty) {
+    if (firstLetterRules != null) {
       pseudoFirstLetterStyle = cascadeMatchedStyleRules(firstLetterRules);
-    } else if (firstLetterRules.isEmpty && pseudoFirstLetterStyle != null) {
+    } else if (pseudoFirstLetterStyle != null) {
       pseudoFirstLetterStyle = null;
     }
 
-    if (firstLineRules.isNotEmpty) {
+    if (firstLineRules != null) {
       pseudoFirstLineStyle = cascadeMatchedStyleRules(firstLineRules);
-    } else if (firstLineRules.isEmpty && pseudoFirstLineStyle != null) {
+    } else if (pseudoFirstLineStyle != null) {
       pseudoFirstLineStyle = null;
     }
   }
@@ -1240,14 +1282,6 @@ class CSSStyleDeclaration extends DynamicBindingObject
   @override
   String toString({DiagnosticLevel minLevel = DiagnosticLevel.info}) =>
       'CSSStyleDeclaration($cssText)';
-
-  @override
-  int get hashCode => cssText.hashCode;
-
-  @override
-  bool operator ==(Object other) {
-    return hashCode == other.hashCode;
-  }
 
   @override
   Iterator<MapEntry<String, CSSPropertyValue>> get iterator {
