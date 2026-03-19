@@ -7,15 +7,212 @@
  * Copyright (C) 2022-2024 The WebF authors. All rights reserved.
  */
 
-import 'package:quiver/core.dart';
-import 'package:collection/collection.dart';
 import 'package:webf/css.dart';
 import 'package:webf/src/foundation/logger.dart';
+
+bool cssRuleListsStructurallyEqual(List<CSSRule> left, List<CSSRule> right) {
+  if (identical(left, right)) return true;
+  if (left.length != right.length) return false;
+  for (int index = 0; index < left.length; index++) {
+    if (!cssRulesStructurallyEqual(left[index], right[index])) {
+      return false;
+    }
+  }
+  return true;
+}
+
+int cssRuleListStructuralHash(Iterable<CSSRule> rules) {
+  return Object.hashAll(rules.map(cssRuleStructuralHash));
+}
+
+bool cssRulesStructurallyEqual(CSSRule? left, CSSRule? right) {
+  if (identical(left, right)) return true;
+  if (left == null || right == null) return left == right;
+  if (left.runtimeType != right.runtimeType) return false;
+
+  if (left is CSSStyleRule && right is CSSStyleRule) {
+    return left.selectorGroup.structurallyEquals(right.selectorGroup) &&
+        left.layerPath.length == right.layerPath.length &&
+        _stringListsEqual(left.layerPath, right.layerPath) &&
+        left.declaration.structurallyEquals(right.declaration);
+  }
+
+  if (left is CSSLayerStatementRule && right is CSSLayerStatementRule) {
+    return _layerNamePathsEqual(left.layerNamePaths, right.layerNamePaths);
+  }
+
+  if (left is CSSLayerBlockRule && right is CSSLayerBlockRule) {
+    return left.name == right.name &&
+        _stringListsEqual(left.layerNamePath, right.layerNamePath) &&
+        cssRuleListsStructurallyEqual(left.cssRules, right.cssRules);
+  }
+
+  if (left is CSSImportRule && right is CSSImportRule) {
+    return left.href == right.href && left.media == right.media;
+  }
+
+  if (left is CSSKeyframesRule && right is CSSKeyframesRule) {
+    return left.name == right.name &&
+        _keyframesEqual(left.keyframes, right.keyframes);
+  }
+
+  if (left is CSSFontFaceRule && right is CSSFontFaceRule) {
+    return left.declarations.structurallyEquals(right.declarations);
+  }
+
+  if (left is CSSMediaDirective && right is CSSMediaDirective) {
+    return _mediaQueriesEqual(left.cssMediaQuery, right.cssMediaQuery) &&
+        cssRuleListsStructurallyEqual(
+            left.rules ?? const <CSSRule>[], right.rules ?? const <CSSRule>[]);
+  }
+
+  return left.cssText == right.cssText;
+}
+
+int cssRuleStructuralHash(CSSRule rule) {
+  if (rule is CSSStyleRule) {
+    return Object.hash(
+      rule.type,
+      rule.selectorGroup.structuralHashCode,
+      Object.hashAll(rule.layerPath),
+      rule.declaration.structuralHashCode,
+    );
+  }
+
+  if (rule is CSSLayerStatementRule) {
+    return Object.hash(
+      rule.type,
+      Object.hashAll(rule.layerNamePaths.map((path) => Object.hashAll(path))),
+    );
+  }
+
+  if (rule is CSSLayerBlockRule) {
+    return Object.hash(
+      rule.type,
+      rule.name,
+      Object.hashAll(rule.layerNamePath),
+      cssRuleListStructuralHash(rule.cssRules),
+    );
+  }
+
+  if (rule is CSSImportRule) {
+    return Object.hash(rule.type, rule.href, rule.media);
+  }
+
+  if (rule is CSSKeyframesRule) {
+    return Object.hash(
+      rule.type,
+      rule.name,
+      Object.hashAll(rule.keyframes.map((keyframe) => Object.hash(
+            keyframe.property,
+            keyframe.value,
+            keyframe.offset,
+            keyframe.easing,
+          ))),
+    );
+  }
+
+  if (rule is CSSFontFaceRule) {
+    return Object.hash(rule.type, rule.declarations.structuralHashCode);
+  }
+
+  if (rule is CSSMediaDirective) {
+    return Object.hash(
+      rule.type,
+      _mediaQueryStructuralHash(rule.cssMediaQuery),
+      cssRuleListStructuralHash(rule.rules ?? const <CSSRule>[]),
+    );
+  }
+
+  return Object.hash(rule.type, rule.cssText);
+}
+
+bool _layerNamePathsEqual(List<List<String>> left, List<List<String>> right) {
+  if (identical(left, right)) return true;
+  if (left.length != right.length) return false;
+  for (int index = 0; index < left.length; index++) {
+    if (!_stringListsEqual(left[index], right[index])) return false;
+  }
+  return true;
+}
+
+bool _stringListsEqual(List<String> left, List<String> right) {
+  if (identical(left, right)) return true;
+  if (left.length != right.length) return false;
+  for (int index = 0; index < left.length; index++) {
+    if (left[index] != right[index]) return false;
+  }
+  return true;
+}
+
+bool _keyframesEqual(List<Keyframe> left, List<Keyframe> right) {
+  if (identical(left, right)) return true;
+  if (left.length != right.length) return false;
+  for (int index = 0; index < left.length; index++) {
+    final Keyframe leftKeyframe = left[index];
+    final Keyframe rightKeyframe = right[index];
+    if (leftKeyframe.property != rightKeyframe.property ||
+        leftKeyframe.value != rightKeyframe.value ||
+        leftKeyframe.offset != rightKeyframe.offset ||
+        leftKeyframe.easing != rightKeyframe.easing) {
+      return false;
+    }
+  }
+  return true;
+}
+
+bool _mediaQueriesEqual(CSSMediaQuery? left, CSSMediaQuery? right) {
+  if (identical(left, right)) return true;
+  if (left == null || right == null) return left == right;
+  if (left._mediaUnary != right._mediaUnary) return false;
+  if (left._mediaType?.name != right._mediaType?.name) return false;
+  if (left.expressions.length != right.expressions.length) return false;
+  for (int index = 0; index < left.expressions.length; index++) {
+    final CSSMediaExpression leftExpression = left.expressions[index];
+    final CSSMediaExpression rightExpression = right.expressions[index];
+    if (leftExpression.op != rightExpression.op) return false;
+    final Map<String, String>? leftStyle = leftExpression.mediaStyle;
+    final Map<String, String>? rightStyle = rightExpression.mediaStyle;
+    if (leftStyle == null || rightStyle == null) {
+      if (leftStyle != rightStyle) return false;
+      continue;
+    }
+    if (leftStyle.length != rightStyle.length) return false;
+    final List<String> keys = leftStyle.keys.toList(growable: false)..sort();
+    final List<String> otherKeys = rightStyle.keys.toList(growable: false)
+      ..sort();
+    if (!_stringListsEqual(keys, otherKeys)) return false;
+    for (final String key in keys) {
+      if (leftStyle[key] != rightStyle[key]) return false;
+    }
+  }
+  return true;
+}
+
+int _mediaQueryStructuralHash(CSSMediaQuery? mediaQuery) {
+  if (mediaQuery == null) return 0;
+  return Object.hash(
+    mediaQuery._mediaUnary,
+    mediaQuery._mediaType?.name,
+    Object.hashAll(mediaQuery.expressions.map((expression) {
+      final Map<String, String>? mediaStyle = expression.mediaStyle;
+      if (mediaStyle == null) {
+        return Object.hash(expression.op, null);
+      }
+      final List<String> keys = mediaStyle.keys.toList(growable: false)..sort();
+      return Object.hash(
+        expression.op,
+        Object.hashAll(keys.map((key) => Object.hash(key, mediaStyle[key]))),
+      );
+    })),
+  );
+}
 
 /// https://drafts.csswg.org/cssom/#the-cssstylerule-interface
 class CSSStyleRule extends CSSRule {
   @override
-  String get cssText => '${selectorGroup.selectorText} {${declaration.cssText}}';
+  String get cssText =>
+      '${selectorGroup.selectorText} {${declaration.cssText}}';
 
   @override
   int get type => CSSRule.STYLE_RULE;
@@ -25,12 +222,10 @@ class CSSStyleRule extends CSSRule {
 
   CSSStyleRule(this.selectorGroup, this.declaration) : super();
 
-  @override
-  int get hashCode => hash2(selectorGroup, declaration);
+  int get structuralHashCode => cssRuleStructuralHash(this);
 
-  @override
-  bool operator ==(Object other) {
-    return hashCode == other.hashCode;
+  bool structurallyEquals(CSSStyleRule other) {
+    return cssRulesStructurallyEqual(this, other);
   }
 }
 
@@ -58,29 +253,6 @@ class CSSLayerStatementRule extends CSSRule {
 
   @override
   int get type => CSSRule.LAYER_STATEMENT_RULE;
-
-  static bool _deepEquals(List<List<String>> a, List<List<String>> b) {
-    if (identical(a, b)) return true;
-    if (a.length != b.length) return false;
-    for (var i = 0; i < a.length; i++) {
-      final ai = a[i];
-      final bi = b[i];
-      if (ai.length != bi.length) return false;
-      for (var j = 0; j < ai.length; j++) {
-        if (ai[j] != bi[j]) return false;
-      }
-    }
-    return true;
-  }
-
-  @override
-  int get hashCode => hashObjects(layerNamePaths.map((p) => hashObjects(p)));
-
-  @override
-  bool operator ==(Object other) {
-    return other is CSSLayerStatementRule &&
-        _deepEquals(layerNamePaths, other.layerNamePaths);
-  }
 }
 
 /// Represents a CSS Cascade Layer block: `@layer name { ... }`.
@@ -106,30 +278,6 @@ class CSSLayerBlockRule extends CSSRule {
 
   @override
   int get type => CSSRule.LAYER_BLOCK_RULE;
-
-  @override
-  int get hashCode => hashObjects(<Object?>[
-        name,
-        hashObjects(layerNamePath),
-        hashObjects(cssRules),
-      ]);
-
-  static bool _listEquals(List<String> a, List<String> b) {
-    if (identical(a, b)) return true;
-    if (a.length != b.length) return false;
-    for (int i = 0; i < a.length; i++) {
-      if (a[i] != b[i]) return false;
-    }
-    return true;
-  }
-
-  @override
-  bool operator ==(Object other) {
-    return other is CSSLayerBlockRule &&
-        other.name == name &&
-        _listEquals(other.layerNamePath, layerNamePath) &&
-        const ListEquality<CSSRule>().equals(other.cssRules, cssRules);
-  }
 
   int insertRule(CSSRule rule, int index) {
     if (index < 0 || index > cssRules.length) {

@@ -53,8 +53,34 @@ String? _cascadeColor(String css) {
   return decl.getPropertyValue('color');
 }
 
+CSSStyleDeclaration _cascadeDeclaration(String css) {
+  final rules = _prepareMatchedStyleRules(css);
+  return cascadeMatchedStyleRules(rules);
+}
+
 void main() {
   group('@layer cascade', () {
+    test('single matched rule keeps normal and important declarations', () {
+      final decl = _cascadeDeclaration('''
+        .x {
+          color: red !important;
+          background-color: blue;
+        }
+      ''');
+
+      expect(decl.getPropertyValue('color'), 'red');
+      expect(decl.getPropertyValue('background-color'), 'blue');
+    });
+
+    test(
+        'important cascade without layers follows specificity and source order',
+        () {
+      expect(_cascadeColor('''
+        div { color: blue !important; }
+        .x { color: red !important; }
+      '''), 'red');
+    });
+
     test('unlayered overrides layered', () {
       expect(_cascadeColor('''
         @layer a { .x { color: red; } }

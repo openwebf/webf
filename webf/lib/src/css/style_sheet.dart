@@ -7,7 +7,6 @@
  * Copyright (C) 2022-2024 The WebF authors. All rights reserved.
  */
 import 'package:webf/css.dart';
-import 'package:quiver/core.dart';
 
 abstract class StyleSheet {}
 
@@ -36,8 +35,10 @@ class CSSStyleSheet implements StyleSheet, Comparable {
   }) {
     // Parse with this stylesheet's href so relative URLs in inserted rules
     // resolve against the stylesheet URL, not the document URL.
-    List<CSSRule> rules = CSSParser(text, href: href)
-        .parseRules(windowWidth: windowWidth, windowHeight: windowHeight, isDarkMode: isDarkMode);
+    List<CSSRule> rules = CSSParser(text, href: href).parseRules(
+        windowWidth: windowWidth,
+        windowHeight: windowHeight,
+        isDarkMode: isDarkMode);
     if (index < 0 || index > cssRules.length) {
       throw RangeError.index(index, cssRules, 'index');
     }
@@ -54,28 +55,41 @@ class CSSStyleSheet implements StyleSheet, Comparable {
   }
 
   /// Synchronously replaces the content of the stylesheet with the content passed into it.
-  replaceSync(String text, {required double windowWidth, required double windowHeight, required bool? isDarkMode}) {
+  replaceSync(String text,
+      {required double windowWidth,
+      required double windowHeight,
+      required bool? isDarkMode}) {
     cssRules.clear();
     // Preserve href so relative URLs continue to resolve correctly after replace.
-    List<CSSRule> rules = CSSParser(text, href: href)
-        .parseRules(windowWidth: windowWidth, windowHeight: windowHeight, isDarkMode: isDarkMode);
+    List<CSSRule> rules = CSSParser(text, href: href).parseRules(
+        windowWidth: windowWidth,
+        windowHeight: windowHeight,
+        isDarkMode: isDarkMode);
     cssRules.addAll(rules);
     for (final rule in rules) {
       _assignParentStyleSheetRecursive(rule, this);
     }
   }
 
-  @override
-  bool operator ==(Object other) {
-    return hashCode == other.hashCode;
-  }
+  int get structuralHashCode => Object.hash(
+        type,
+        disabled,
+        href,
+        cssRuleListStructuralHash(cssRules),
+      );
 
-  @override
-  int get hashCode => hashObjects(cssRules);
+  bool structurallyEquals(CSSStyleSheet other) {
+    if (identical(this, other)) return true;
+    return type == other.type &&
+        disabled == other.disabled &&
+        href == other.href &&
+        cssRuleListsStructurallyEqual(cssRules, other.cssRules);
+  }
 
   CSSStyleSheet clone() {
     final clonedRules = cssRules.map(_cloneRuleForDiff).toList(growable: false);
-    CSSStyleSheet sheet = CSSStyleSheet(List.from(clonedRules), disabled: disabled, href: href);
+    CSSStyleSheet sheet =
+        CSSStyleSheet(List.from(clonedRules), disabled: disabled, href: href);
     for (final rule in sheet.cssRules) {
       _assignParentStyleSheetRecursive(rule, sheet);
     }
@@ -87,10 +101,11 @@ class CSSStyleSheet implements StyleSheet, Comparable {
     if (other is! CSSStyleSheet) {
       return 0;
     }
-    return hashCode.compareTo(other.hashCode);
+    return structuralHashCode.compareTo(other.structuralHashCode);
   }
 
-  static void _assignParentStyleSheetRecursive(CSSRule rule, CSSStyleSheet sheet) {
+  static void _assignParentStyleSheetRecursive(
+      CSSRule rule, CSSStyleSheet sheet) {
     rule.parentStyleSheet = sheet;
     if (rule is CSSLayerBlockRule) {
       for (final child in rule.cssRules) {
@@ -112,7 +127,9 @@ class CSSStyleSheet implements StyleSheet, Comparable {
     }
     if (rule is CSSLayerStatementRule) {
       return CSSLayerStatementRule(
-        rule.layerNamePaths.map((p) => List<String>.from(p)).toList(growable: false),
+        rule.layerNamePaths
+            .map((p) => List<String>.from(p))
+            .toList(growable: false),
       );
     }
     return rule;

@@ -1800,6 +1800,7 @@ abstract class Element extends ContainerNode
 
   void _markPseudoStateDirty() {
     _matchedRulesLRU = null;
+    _matchedRulesLRUVersion = -1;
     ownerDocument.markElementStyleDirty(this, reason: 'pseudo-state');
     _markHasSelectorsDirty();
   }
@@ -2018,54 +2019,44 @@ abstract class Element extends ContainerNode
   // Lightweight memoization for matched rules (per-element LRU cache).
   // Guarded by DebugFlags.enableCssMemoization.
   // Capacity kept intentionally tiny to bound memory (default via DebugFlags).
-  LinkedHashMap<_MatchFingerprint, _MatchedRulesCacheEntry>? _matchedRulesLRU;
+  LinkedHashMap<_MatchFingerprint, CSSStyleDeclaration>? _matchedRulesLRU;
+  int _matchedRulesLRUVersion = -1;
 
   CSSStyleDeclaration _collectMatchedRulesWithCache() {
     final RuleSet ruleSet = ownerDocument.ruleSet;
     if (!DebugFlags.enableCssMemoization) {
       _matchedRulesLRU = null;
+      _matchedRulesLRUVersion = -1;
       return _elementRuleCollector.collectionFromRuleSet(ruleSet, this);
     }
 
     final int version = ownerDocument.ruleSetVersion;
     final _MatchFingerprint fingerprint = _computeMatchFingerprint(ruleSet);
-    final LinkedHashMap<_MatchFingerprint, _MatchedRulesCacheEntry> cache =
+    final LinkedHashMap<_MatchFingerprint, CSSStyleDeclaration> cache =
         _matchedRulesLRU ??=
-            LinkedHashMap<_MatchFingerprint, _MatchedRulesCacheEntry>();
-
-    // Prune stale entries from previous RuleSet versions (capacity is tiny).
-    if (cache.isNotEmpty) {
-      final List<_MatchFingerprint> toRemove = <_MatchFingerprint>[];
-      cache.forEach((fp, entry) {
-        if (entry.version != version) toRemove.add(fp);
-      });
-      for (final fp in toRemove) {
-        cache.remove(fp);
-      }
+            LinkedHashMap<_MatchFingerprint, CSSStyleDeclaration>();
+    if (_matchedRulesLRUVersion != version) {
+      cache.clear();
+      _matchedRulesLRUVersion = version;
     }
 
-    final _MatchedRulesCacheEntry? hitEntry = cache[fingerprint];
-    if (hitEntry != null && hitEntry.version == version) {
+    final CSSStyleDeclaration? hitEntry = cache.remove(fingerprint);
+    if (hitEntry != null) {
       // LRU refresh: move to most-recent by reinserting.
-      cache.remove(fingerprint);
       cache[fingerprint] = hitEntry;
-      return hitEntry.style;
+      return hitEntry;
     }
 
     // Cache miss: compute and insert, enforce capacity with LRU eviction.
-    final CSSStyleDeclaration computed =
-        _elementRuleCollector.collectionFromRuleSet(ruleSet, this);
     final int capRaw = DebugFlags.cssMatchedRulesCacheCapacity;
     final int capacity = capRaw <= 0 ? 1 : capRaw;
+    final CSSStyleDeclaration computed =
+        _elementRuleCollector.collectionFromRuleSet(ruleSet, this);
     if (cache.length >= capacity) {
       final _MatchFingerprint oldest = cache.keys.first;
       cache.remove(oldest);
     }
-    cache[fingerprint] = _MatchedRulesCacheEntry(
-      version: version,
-      fingerprint: fingerprint,
-      style: computed,
-    );
+    cache[fingerprint] = computed;
     return computed;
   }
 
@@ -2495,6 +2486,7 @@ abstract class Element extends ContainerNode
       // callers request a nested rebuild.
       if (rebuildNested) {
         _matchedRulesLRU = null;
+        _matchedRulesLRUVersion = -1;
       }
 
       // Diff style.
@@ -3013,22 +3005,6 @@ abstract class Element extends ContainerNode
     }
     renderStyle.addIntersectionChangeListener(
         _handleIntersectionObserver, _thresholds);
-  }
-}
-
-class _MatchedRulesCacheEntry {
-  final int version;
-  final _MatchFingerprint fingerprint;
-  final CSSStyleDeclaration style;
-
-  _MatchedRulesCacheEntry({
-    required this.version,
-    required this.fingerprint,
-    required this.style,
-  });
-
-  bool matches({required int version, required _MatchFingerprint fingerprint}) {
-    return this.version == version && this.fingerprint == fingerprint;
   }
 }
 

@@ -229,6 +229,11 @@ class SelectorEvaluator extends SelectorVisitor {
     return visitSelectorGroup(selectorGroup);
   }
 
+  bool matchSingleSelectorWithoutSpecificity(
+      Selector selector, Element element) {
+    return _matchesSelectorWithoutSpecificity(selector, element);
+  }
+
   bool matchSelectorWithForcedPseudoClass(
     SelectorGroup? selectorGroup,
     Element? element, {
@@ -291,30 +296,8 @@ class SelectorEvaluator extends SelectorVisitor {
   @override
   bool visitSelector(Selector node) {
     final old = _element;
-
-    // Build right-to-left groups of compound selectors (simple selectors joined
-    // with COMBINATOR_NONE), and the combinator that connects each group to the
-    // next group on the left.
-    final List<List<SimpleSelector>> groups = <List<SimpleSelector>>[];
-    final List<int> groupCombinators =
-        <int>[]; // combinator from this group to the next (left) group
-
-    {
-      List<SimpleSelector> current = <SimpleSelector>[];
-      for (final seq in node.simpleSelectorSequences.reversed) {
-        current.add(seq.simpleSelector);
-        if (seq.combinator != TokenKind.COMBINATOR_NONE) {
-          groups.add(current);
-          groupCombinators.add(seq.combinator);
-          current = <SimpleSelector>[];
-        }
-      }
-      if (current.isNotEmpty) {
-        groups.add(current);
-        // No combinator to the left of the leftmost group
-        groupCombinators.add(TokenKind.COMBINATOR_NONE);
-      }
-    }
+    final List<List<SimpleSelector>> groups = node.matchGroups;
+    final List<int> groupCombinators = node.matchGroupCombinators;
 
     bool matchesCompound(Element? element, List<SimpleSelector> compound) {
       if (element == null) return false;
