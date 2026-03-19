@@ -122,6 +122,7 @@ class CSSStyleDeclaration extends DynamicBindingObject
     _pseudoBeforeStyle = newStyle;
     target?.markBeforePseudoElementNeedsUpdate();
   }
+
   CSSStyleDeclaration? get resolvedPseudoBeforeStyle =>
       _resolvePseudoStyle(_pseudoBeforeStyle, _inlinePseudoBeforeStyle);
 
@@ -132,6 +133,7 @@ class CSSStyleDeclaration extends DynamicBindingObject
     _pseudoAfterStyle = newStyle;
     target?.markAfterPseudoElementNeedsUpdate();
   }
+
   CSSStyleDeclaration? get resolvedPseudoAfterStyle =>
       _resolvePseudoStyle(_pseudoAfterStyle, _inlinePseudoAfterStyle);
 
@@ -144,6 +146,7 @@ class CSSStyleDeclaration extends DynamicBindingObject
     // Trigger a layout rebuild so IFC can re-shape text for first-letter styling
     target?.markFirstLetterPseudoNeedsUpdate();
   }
+
   CSSStyleDeclaration? get resolvedPseudoFirstLetterStyle =>
       _resolvePseudoStyle(
           _pseudoFirstLetterStyle, _inlinePseudoFirstLetterStyle);
@@ -156,6 +159,7 @@ class CSSStyleDeclaration extends DynamicBindingObject
     _pseudoFirstLineStyle = newStyle;
     target?.markFirstLinePseudoNeedsUpdate();
   }
+
   CSSStyleDeclaration? get resolvedPseudoFirstLineStyle =>
       _resolvePseudoStyle(_pseudoFirstLineStyle, _inlinePseudoFirstLineStyle);
 
@@ -567,14 +571,16 @@ class CSSStyleDeclaration extends DynamicBindingObject
 
     // Validate value.
     switch (propertyName) {
-      case GAP: {
-        final List<String> tokens = splitByAsciiWhitespacePreservingGroups(normalizedValue);
-        if (tokens.isEmpty || tokens.length > 2) return false;
-        for (final token in tokens) {
-          if (!CSSGap.isValidGapValue(token)) return false;
+      case GAP:
+        {
+          final List<String> tokens =
+              splitByAsciiWhitespacePreservingGroups(normalizedValue);
+          if (tokens.isEmpty || tokens.length > 2) return false;
+          for (final token in tokens) {
+            if (!CSSGap.isValidGapValue(token)) return false;
+          }
+          break;
         }
-        break;
-      }
       case ROW_GAP:
       case COLUMN_GAP:
         if (!CSSGap.isValidGapValue(normalizedValue)) return false;
@@ -1017,34 +1023,26 @@ class CSSStyleDeclaration extends DynamicBindingObject
 
     if (beforeRules.isNotEmpty) {
       pseudoBeforeStyle = cascadeMatchedStyleRules(beforeRules);
-      parentElement.markBeforePseudoElementNeedsUpdate();
     } else if (beforeRules.isEmpty && pseudoBeforeStyle != null) {
       pseudoBeforeStyle = null;
-      parentElement.markBeforePseudoElementNeedsUpdate();
     }
 
     if (afterRules.isNotEmpty) {
       pseudoAfterStyle = cascadeMatchedStyleRules(afterRules);
-      parentElement.markAfterPseudoElementNeedsUpdate();
     } else if (afterRules.isEmpty && pseudoAfterStyle != null) {
       pseudoAfterStyle = null;
-      parentElement.markAfterPseudoElementNeedsUpdate();
     }
 
     if (firstLetterRules.isNotEmpty) {
       pseudoFirstLetterStyle = cascadeMatchedStyleRules(firstLetterRules);
-      parentElement.markFirstLetterPseudoNeedsUpdate();
     } else if (firstLetterRules.isEmpty && pseudoFirstLetterStyle != null) {
       pseudoFirstLetterStyle = null;
-      parentElement.markFirstLetterPseudoNeedsUpdate();
     }
 
     if (firstLineRules.isNotEmpty) {
       pseudoFirstLineStyle = cascadeMatchedStyleRules(firstLineRules);
-      parentElement.markFirstLinePseudoNeedsUpdate();
     } else if (firstLineRules.isEmpty && pseudoFirstLineStyle != null) {
       pseudoFirstLineStyle = null;
-      parentElement.markFirstLinePseudoNeedsUpdate();
     }
   }
 
@@ -1054,6 +1052,27 @@ class CSSStyleDeclaration extends DynamicBindingObject
       ..addAll(_properties)
       ..addAll(_pendingProperties);
     bool updateStatus = false;
+
+    void mergePseudoStyle({
+      required CSSStyleDeclaration? currentStyle,
+      required CSSStyleDeclaration? incomingStyle,
+      required void Function(CSSStyleDeclaration? value) assign,
+      required VoidCallback markNeedsUpdate,
+      required bool clearWhenMissing,
+    }) {
+      if (incomingStyle != null) {
+        if (currentStyle == null) {
+          final CSSStyleDeclaration mergedStyle = CSSStyleDeclaration();
+          mergedStyle.merge(incomingStyle);
+          assign(mergedStyle);
+        } else if (currentStyle.merge(incomingStyle)) {
+          markNeedsUpdate();
+        }
+      } else if (clearWhenMissing && currentStyle != null) {
+        assign(null);
+      }
+    }
+
     for (String propertyName in properties.keys) {
       CSSPropertyValue? prevValue = properties[propertyName];
       CSSPropertyValue? currentValue = other._pendingProperties[propertyName];
@@ -1091,50 +1110,63 @@ class CSSStyleDeclaration extends DynamicBindingObject
     // 'other' are not dropped when this side is null. When pseudo rules were
     // processed on the other side, clear stale pseudo styles if no rule matches.
     if (other._didProcessPseudoRules) {
-      if (other.pseudoBeforeStyle != null) {
-        pseudoBeforeStyle ??= CSSStyleDeclaration();
-        pseudoBeforeStyle!.merge(other.pseudoBeforeStyle!);
-      } else if (pseudoBeforeStyle != null) {
-        pseudoBeforeStyle = null;
-      }
-
-      if (other.pseudoAfterStyle != null) {
-        pseudoAfterStyle ??= CSSStyleDeclaration();
-        pseudoAfterStyle!.merge(other.pseudoAfterStyle!);
-      } else if (pseudoAfterStyle != null) {
-        pseudoAfterStyle = null;
-      }
-
-      if (other.pseudoFirstLetterStyle != null) {
-        pseudoFirstLetterStyle ??= CSSStyleDeclaration();
-        pseudoFirstLetterStyle!.merge(other.pseudoFirstLetterStyle!);
-      } else if (pseudoFirstLetterStyle != null) {
-        pseudoFirstLetterStyle = null;
-      }
-
-      if (other.pseudoFirstLineStyle != null) {
-        pseudoFirstLineStyle ??= CSSStyleDeclaration();
-        pseudoFirstLineStyle!.merge(other.pseudoFirstLineStyle!);
-      } else if (pseudoFirstLineStyle != null) {
-        pseudoFirstLineStyle = null;
-      }
+      mergePseudoStyle(
+        currentStyle: pseudoBeforeStyle,
+        incomingStyle: other.pseudoBeforeStyle,
+        assign: (value) => pseudoBeforeStyle = value,
+        markNeedsUpdate: () => target?.markBeforePseudoElementNeedsUpdate(),
+        clearWhenMissing: true,
+      );
+      mergePseudoStyle(
+        currentStyle: pseudoAfterStyle,
+        incomingStyle: other.pseudoAfterStyle,
+        assign: (value) => pseudoAfterStyle = value,
+        markNeedsUpdate: () => target?.markAfterPseudoElementNeedsUpdate(),
+        clearWhenMissing: true,
+      );
+      mergePseudoStyle(
+        currentStyle: pseudoFirstLetterStyle,
+        incomingStyle: other.pseudoFirstLetterStyle,
+        assign: (value) => pseudoFirstLetterStyle = value,
+        markNeedsUpdate: () => target?.markFirstLetterPseudoNeedsUpdate(),
+        clearWhenMissing: true,
+      );
+      mergePseudoStyle(
+        currentStyle: pseudoFirstLineStyle,
+        incomingStyle: other.pseudoFirstLineStyle,
+        assign: (value) => pseudoFirstLineStyle = value,
+        markNeedsUpdate: () => target?.markFirstLinePseudoNeedsUpdate(),
+        clearWhenMissing: true,
+      );
     } else {
-      if (other.pseudoBeforeStyle != null) {
-        pseudoBeforeStyle ??= CSSStyleDeclaration();
-        pseudoBeforeStyle!.merge(other.pseudoBeforeStyle!);
-      }
-      if (other.pseudoAfterStyle != null) {
-        pseudoAfterStyle ??= CSSStyleDeclaration();
-        pseudoAfterStyle!.merge(other.pseudoAfterStyle!);
-      }
-      if (other.pseudoFirstLetterStyle != null) {
-        pseudoFirstLetterStyle ??= CSSStyleDeclaration();
-        pseudoFirstLetterStyle!.merge(other.pseudoFirstLetterStyle!);
-      }
-      if (other.pseudoFirstLineStyle != null) {
-        pseudoFirstLineStyle ??= CSSStyleDeclaration();
-        pseudoFirstLineStyle!.merge(other.pseudoFirstLineStyle!);
-      }
+      mergePseudoStyle(
+        currentStyle: pseudoBeforeStyle,
+        incomingStyle: other.pseudoBeforeStyle,
+        assign: (value) => pseudoBeforeStyle = value,
+        markNeedsUpdate: () => target?.markBeforePseudoElementNeedsUpdate(),
+        clearWhenMissing: false,
+      );
+      mergePseudoStyle(
+        currentStyle: pseudoAfterStyle,
+        incomingStyle: other.pseudoAfterStyle,
+        assign: (value) => pseudoAfterStyle = value,
+        markNeedsUpdate: () => target?.markAfterPseudoElementNeedsUpdate(),
+        clearWhenMissing: false,
+      );
+      mergePseudoStyle(
+        currentStyle: pseudoFirstLetterStyle,
+        incomingStyle: other.pseudoFirstLetterStyle,
+        assign: (value) => pseudoFirstLetterStyle = value,
+        markNeedsUpdate: () => target?.markFirstLetterPseudoNeedsUpdate(),
+        clearWhenMissing: false,
+      );
+      mergePseudoStyle(
+        currentStyle: pseudoFirstLineStyle,
+        incomingStyle: other.pseudoFirstLineStyle,
+        assign: (value) => pseudoFirstLineStyle = value,
+        markNeedsUpdate: () => target?.markFirstLinePseudoNeedsUpdate(),
+        clearWhenMissing: false,
+      );
     }
 
     return updateStatus;

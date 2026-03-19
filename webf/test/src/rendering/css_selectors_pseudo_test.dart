@@ -42,10 +42,12 @@ void main() {
   });
 
   group('CSS Pseudo Elements', () {
-    testWidgets('::before pseudo element creates PseudoElement child', (WidgetTester tester) async {
+    testWidgets('::before pseudo element creates PseudoElement child',
+        (WidgetTester tester) async {
       final prepared = await WebFWidgetTestUtils.prepareWidgetTest(
         tester: tester,
-        controllerName: 'before-pseudo-test-${DateTime.now().millisecondsSinceEpoch}',
+        controllerName:
+            'before-pseudo-test-${DateTime.now().millisecondsSinceEpoch}',
         html: '''
           <html>
             <head>
@@ -88,10 +90,12 @@ void main() {
       expect(beforeElement.offsetHeight, equals(30.0));
     });
 
-    testWidgets('::after pseudo element creates PseudoElement child', (WidgetTester tester) async {
+    testWidgets('::after pseudo element creates PseudoElement child',
+        (WidgetTester tester) async {
       final prepared = await WebFWidgetTestUtils.prepareWidgetTest(
         tester: tester,
-        controllerName: 'after-pseudo-test-${DateTime.now().millisecondsSinceEpoch}',
+        controllerName:
+            'after-pseudo-test-${DateTime.now().millisecondsSinceEpoch}',
         html: '''
           <html>
             <head>
@@ -134,10 +138,12 @@ void main() {
       expect(afterElement.offsetHeight, equals(20.0));
     });
 
-    testWidgets('both ::before and ::after pseudo elements', (WidgetTester tester) async {
+    testWidgets('both ::before and ::after pseudo elements',
+        (WidgetTester tester) async {
       final prepared = await WebFWidgetTestUtils.prepareWidgetTest(
         tester: tester,
-        controllerName: 'both-pseudo-test-${DateTime.now().millisecondsSinceEpoch}',
+        controllerName:
+            'both-pseudo-test-${DateTime.now().millisecondsSinceEpoch}',
         html: '''
           <html>
             <head>
@@ -172,7 +178,8 @@ void main() {
       expect(afterElement, isNotNull);
 
       // Check content
-      expect((beforeElement!.firstChild as dom.TextNode).data, equals('Before'));
+      expect(
+          (beforeElement!.firstChild as dom.TextNode).data, equals('Before'));
       expect((afterElement!.firstChild as dom.TextNode).data, equals('After'));
 
       // Check colors
@@ -189,11 +196,13 @@ void main() {
       expect(children.last, equals(afterElement));
     });
 
-    testWidgets('dynamic pseudo element creation/removal', skip: true, (WidgetTester tester) async {
+    testWidgets('dynamic pseudo element creation/removal', skip: true,
+        (WidgetTester tester) async {
       // TODO: This test is flaky due to timing issues with WebF's style recalculation
       final prepared = await WebFWidgetTestUtils.prepareWidgetTest(
         tester: tester,
-        controllerName: 'dynamic-pseudo-test-${DateTime.now().millisecondsSinceEpoch}',
+        controllerName:
+            'dynamic-pseudo-test-${DateTime.now().millisecondsSinceEpoch}',
         html: '''
           <html>
             <head>
@@ -225,7 +234,8 @@ void main() {
       // Should have pseudo element now
       final beforeElement = findPseudoElement(div, PseudoKind.kPseudoBefore);
       expect(beforeElement, isNotNull);
-      expect((beforeElement!.firstChild as dom.TextNode).data, equals('Dynamic Before'));
+      expect((beforeElement!.firstChild as dom.TextNode).data,
+          equals('Dynamic Before'));
 
       // Remove class to remove pseudo element
       div.className = '';
@@ -238,10 +248,91 @@ void main() {
       expect(findPseudoElement(div, PseudoKind.kPseudoBefore), isNull);
     });
 
-    testWidgets('pseudo element with display:none', (WidgetTester tester) async {
+    testWidgets('pseudo updates when className and id change',
+        (WidgetTester tester) async {
       final prepared = await WebFWidgetTestUtils.prepareWidgetTest(
         tester: tester,
-        controllerName: 'hidden-pseudo-test-${DateTime.now().millisecondsSinceEpoch}',
+        controllerName:
+            'pseudo-toggle-id-class-${DateTime.now().millisecondsSinceEpoch}',
+        html: '''
+          <html>
+            <head>
+              <style>
+                .div1::before {
+                  content: 'CLASS BEFORE';
+                  color: #ff0000;
+                }
+                .div1::after {
+                  content: 'CLASS AFTER';
+                  color: #00ff00;
+                }
+                .text-box::before {
+                  color: #0000ff;
+                }
+                .text-box::after {
+                  color: #ffff00;
+                }
+                #pro::before {
+                  content: 'ID BEFORE';
+                }
+                #pro::after {
+                  content: 'ID AFTER';
+                }
+              </style>
+            </head>
+            <body style="margin: 0; padding: 0;">
+              <div id="pro" class="div1 text-box">Main Content</div>
+            </body>
+          </html>
+        ''',
+      );
+
+      final div = prepared.getElementById('pro');
+
+      await tester.pump(const Duration(milliseconds: 50));
+
+      final beforeInitial = findPseudoElement(div, PseudoKind.kPseudoBefore);
+      final afterInitial = findPseudoElement(div, PseudoKind.kPseudoAfter);
+
+      expect(beforeInitial, isNotNull);
+      expect(afterInitial, isNotNull);
+      expect((beforeInitial!.firstChild as dom.TextNode).data,
+          equals('ID BEFORE'));
+      expect(
+          (afterInitial!.firstChild as dom.TextNode).data, equals('ID AFTER'));
+      expect(
+          beforeInitial.renderStyle.color.value.toARGB32(), equals(0xFF0000FF));
+      expect(
+          afterInitial.renderStyle.color.value.toARGB32(), equals(0xFFFFFF00));
+
+      div.className = 'div1';
+      div.id = '';
+
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 100));
+      await tester.pump();
+
+      final beforeUpdated = findPseudoElement(div, PseudoKind.kPseudoBefore);
+      final afterUpdated = findPseudoElement(div, PseudoKind.kPseudoAfter);
+
+      expect(beforeUpdated, isNotNull);
+      expect(afterUpdated, isNotNull);
+      expect((beforeUpdated!.firstChild as dom.TextNode).data,
+          equals('CLASS BEFORE'));
+      expect((afterUpdated!.firstChild as dom.TextNode).data,
+          equals('CLASS AFTER'));
+      expect(
+          beforeUpdated.renderStyle.color.value.toARGB32(), equals(0xFFFF0000));
+      expect(
+          afterUpdated.renderStyle.color.value.toARGB32(), equals(0xFF00FF00));
+    });
+
+    testWidgets('pseudo element with display:none',
+        (WidgetTester tester) async {
+      final prepared = await WebFWidgetTestUtils.prepareWidgetTest(
+        tester: tester,
+        controllerName:
+            'hidden-pseudo-test-${DateTime.now().millisecondsSinceEpoch}',
         html: '''
           <html>
             <head>
@@ -274,10 +365,12 @@ void main() {
       expect(div.renderStyle.display, isNot(equals(CSSDisplay.none)));
     });
 
-    testWidgets('pseudo element positioning and layout', (WidgetTester tester) async {
+    testWidgets('pseudo element positioning and layout',
+        (WidgetTester tester) async {
       final prepared = await WebFWidgetTestUtils.prepareWidgetTest(
         tester: tester,
-        controllerName: 'layout-pseudo-test-${DateTime.now().millisecondsSinceEpoch}',
+        controllerName:
+            'layout-pseudo-test-${DateTime.now().millisecondsSinceEpoch}',
         html: '''
           <html>
             <head>
@@ -328,9 +421,10 @@ void main() {
       expect(afterElement, isNotNull);
 
       // Check positioning
-      expect(beforeElement!.renderStyle.position, equals(CSSPositionType.absolute));
-      expect(afterElement!.renderStyle.position, equals(CSSPositionType.absolute));
-
+      expect(beforeElement!.renderStyle.position,
+          equals(CSSPositionType.absolute));
+      expect(
+          afterElement!.renderStyle.position, equals(CSSPositionType.absolute));
 
       // Check dimensions
       expect(beforeElement.offsetWidth, equals(30.0));
@@ -339,10 +433,12 @@ void main() {
       expect(afterElement.offsetHeight, equals(40.0));
     });
 
-    testWidgets('pseudo element behavior with empty content vs no content', (WidgetTester tester) async {
+    testWidgets('pseudo element behavior with empty content vs no content',
+        (WidgetTester tester) async {
       final prepared = await WebFWidgetTestUtils.prepareWidgetTest(
         tester: tester,
-        controllerName: 'empty-pseudo-test-${DateTime.now().millisecondsSinceEpoch}',
+        controllerName:
+            'empty-pseudo-test-${DateTime.now().millisecondsSinceEpoch}',
         html: '''
           <html>
             <head>

@@ -62,6 +62,52 @@ class _PendingInteractivePseudoUpdate {
   }
 }
 
+@visibleForTesting
+List<MapEntry<Element, bool>> pruneNestedDirtyStyleElements(
+    Iterable<MapEntry<Element, bool>> dirtyElements) {
+  final List<MapEntry<Element, bool>> dirtyList = dirtyElements.toList();
+  if (dirtyList.length <= 1) {
+    return dirtyList;
+  }
+
+  final Set<int> rebuildNestedAddresses = <int>{};
+  for (final dirty in dirtyList) {
+    if (!dirty.value) {
+      continue;
+    }
+    final Pointer? pointer = dirty.key.pointer;
+    if (pointer != null) {
+      rebuildNestedAddresses.add(pointer.address);
+    }
+  }
+
+  if (rebuildNestedAddresses.isEmpty) {
+    return dirtyList;
+  }
+
+  final List<MapEntry<Element, bool>> effectiveDirty =
+      <MapEntry<Element, bool>>[];
+  for (final dirty in dirtyList) {
+    bool coveredByAncestorSubtreeRecalc = false;
+    Element? ancestor = dirty.key.parentElement;
+    while (ancestor != null) {
+      final Pointer? ancestorPtr = ancestor.pointer;
+      if (ancestorPtr != null &&
+          rebuildNestedAddresses.contains(ancestorPtr.address)) {
+        coveredByAncestorSubtreeRecalc = true;
+        break;
+      }
+      ancestor = ancestor.parentElement;
+    }
+
+    if (!coveredByAncestorSubtreeRecalc) {
+      effectiveDirty.add(dirty);
+    }
+  }
+
+  return effectiveDirty;
+}
+
 class Document extends ContainerNode {
   final WebFController controller;
   late AnimationTimeline animationTimeline;
@@ -588,8 +634,9 @@ class Document extends ContainerNode {
   }
 
   dynamic querySelector(List<dynamic> args) {
-    if (args[0].runtimeType == String && (args[0] as String).isEmpty)
+    if (args[0].runtimeType == String && (args[0] as String).isEmpty) {
       return null;
+    }
     return query_selector.querySelector(this, args.first);
   }
 
@@ -624,8 +671,9 @@ class Document extends ContainerNode {
   }
 
   dynamic getElementById(List<dynamic> args) {
-    if (args[0].runtimeType == String && (args[0] as String).isEmpty)
+    if (args[0].runtimeType == String && (args[0] as String).isEmpty) {
       return null;
+    }
     final elements = elementsByID[args.first];
     if (elements == null || elements.isEmpty) {
       return null;
@@ -907,12 +955,28 @@ class Document extends ContainerNode {
     if (recalcFromRoot) {
       documentElement?.recalculateStyle(rebuildNested: true);
     } else {
+      final List<MapEntry<Element, bool>> resolvedDirty =
+          <MapEntry<Element, bool>>[];
       for (int address in _styleDirtyElements) {
         Element? element = ownerView
             .getBindingObject(Pointer.fromAddress(address)) as Element?;
+        if (element == null) {
+          continue;
+        }
         final bool rebuildNested =
             _styleDirtyElementsRebuildNested.contains(address);
-        element?.recalculateStyle(rebuildNested: rebuildNested);
+        resolvedDirty.add(MapEntry(element, rebuildNested));
+      }
+
+      // Child-list batching can mark both an ancestor and many descendants
+      // dirty in the same microtask. If an ancestor is already going to
+      // rebuild its subtree, separately recalc-ing descendants repeats the
+      // same recursive walk and dominates large popup mounts.
+      final List<MapEntry<Element, bool>> effectiveDirty =
+          pruneNestedDirtyStyleElements(resolvedDirty);
+
+      for (final dirty in effectiveDirty) {
+        dirty.key.recalculateStyle(rebuildNested: dirty.value);
       }
     }
     _styleDirtyElements.clear();
