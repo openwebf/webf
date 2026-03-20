@@ -469,7 +469,10 @@ abstract class RenderBoxModel extends RenderBox
 
     double? parentBoxContentConstraintsWidth;
     if (renderStyle.isParentRenderBoxModel() &&
-        renderStyle.getAttachedRenderParentRenderStyle()?.attachedRenderBoxModel != null &&
+        renderStyle
+                .getAttachedRenderParentRenderStyle()
+                ?.attachedRenderBoxModel !=
+            null &&
         (renderStyle.isSelfRenderLayoutBox() ||
             renderStyle.isSelfRenderWidget())) {
       RenderBoxModel parentRenderBoxModel = (renderStyle
@@ -677,21 +680,25 @@ abstract class RenderBoxModel extends RenderBox
             renderStyle.right.isNotAuto &&
             renderStyle.width.isAuto)) {
       // Use the parent's available inline size if it's definite; otherwise fall back to infinity.
-      final double available =
-          (parentBoxContentConstraintsWidth != null && parentBoxContentConstraintsWidth.isFinite)
-              ? parentBoxContentConstraintsWidth
-              : (maxConstraintWidth.isFinite ? maxConstraintWidth : double.infinity);
+      final double available = (parentBoxContentConstraintsWidth != null &&
+              parentBoxContentConstraintsWidth.isFinite)
+          ? parentBoxContentConstraintsWidth
+          : (maxConstraintWidth.isFinite
+              ? maxConstraintWidth
+              : double.infinity);
 
       double minIntrinsic = getMinIntrinsicWidth(double.infinity);
       double maxIntrinsic = getMaxIntrinsicWidth(double.infinity);
 
       // Respect nowrap/pre: min-content equals max-content for unbreakable inline content.
-      if (renderStyle.whiteSpace == WhiteSpace.nowrap || renderStyle.whiteSpace == WhiteSpace.pre) {
+      if (renderStyle.whiteSpace == WhiteSpace.nowrap ||
+          renderStyle.whiteSpace == WhiteSpace.pre) {
         minIntrinsic = maxIntrinsic;
       }
 
       if (!minIntrinsic.isFinite || minIntrinsic < 0) minIntrinsic = 0;
-      if (!maxIntrinsic.isFinite || maxIntrinsic < minIntrinsic) maxIntrinsic = minIntrinsic;
+      if (!maxIntrinsic.isFinite || maxIntrinsic < minIntrinsic)
+        maxIntrinsic = minIntrinsic;
 
       double used;
       switch (renderStyle.width.type) {
@@ -885,7 +892,9 @@ abstract class RenderBoxModel extends RenderBox
   // Base layout methods to compute content constraints before content box layout.
   // Call this method before content box layout.
   void beforeLayout() {
-    final RenderObject? effectiveParent = parent is RenderEventListener ? (parent as RenderEventListener).parent : parent;
+    final RenderObject? effectiveParent = parent is RenderEventListener
+        ? (parent as RenderEventListener).parent
+        : parent;
     // In WebF's render tree, CSS boxes can be wrapped by Flutter proxy render objects
     // (e.g., semantics/gesture/scroll adapters). Those wrappers can break the direct
     // "parent is RenderBoxModel" check, even though the incoming constraints are
@@ -900,8 +909,11 @@ abstract class RenderBoxModel extends RenderBox
     // because that can unintentionally clamp shrink-to-fit widget elements like
     // `<flutter-button>` and make them expand to maxWidth.
     final bool shouldUseIncomingConstraints =
-        effectiveParent is RenderBoxModel || constraints.hasTightWidth || constraints.hasTightHeight;
-    BoxConstraints contentConstraints = shouldUseIncomingConstraints ? constraints : getConstraints();
+        effectiveParent is RenderBoxModel ||
+            constraints.hasTightWidth ||
+            constraints.hasTightHeight;
+    BoxConstraints contentConstraints =
+        shouldUseIncomingConstraints ? constraints : getConstraints();
 
     // When a parent enforces a definite border-box size (e.g., grid/flex cell),
     // treat that as the used size for resolving this element's "auto" sizing.
@@ -919,7 +931,8 @@ abstract class RenderBoxModel extends RenderBox
         !renderStyle.isParentRenderFlexLayout() &&
         renderStyle.position != CSSPositionType.absolute &&
         renderStyle.position != CSSPositionType.fixed) {
-      double contentW = renderStyle.deflatePaddingBorderWidth(constraints.maxWidth);
+      double contentW =
+          renderStyle.deflatePaddingBorderWidth(constraints.maxWidth);
       if (contentW.isFinite && contentW < 0) contentW = 0;
       renderStyle.contentBoxLogicalWidth = contentW;
       hasOverrideContentLogicalWidth = true;
@@ -932,7 +945,8 @@ abstract class RenderBoxModel extends RenderBox
         !renderStyle.isParentRenderFlexLayout() &&
         renderStyle.position != CSSPositionType.absolute &&
         renderStyle.position != CSSPositionType.fixed) {
-      double contentH = renderStyle.deflatePaddingBorderHeight(constraints.maxHeight);
+      double contentH =
+          renderStyle.deflatePaddingBorderHeight(constraints.maxHeight);
       if (contentH.isFinite && contentH < 0) contentH = 0;
       renderStyle.contentBoxLogicalHeight = contentH;
       hasOverrideContentLogicalHeight = true;
@@ -1394,7 +1408,8 @@ abstract class RenderBoxModel extends RenderBox
       // - others: any runtime paint adjustments.
       final Offset add = renderStyle.position == CSSPositionType.fixed
           ? getFixedScrollCompensation()
-          : Offset(additionalPaintOffsetX ?? 0.0, additionalPaintOffsetY ?? 0.0);
+          : Offset(
+              additionalPaintOffsetX ?? 0.0, additionalPaintOffsetY ?? 0.0);
       if (add.dx != 0.0 || add.dy != 0.0) {
         offset = offset.translate(add.dx, add.dy);
       }
@@ -1589,8 +1604,11 @@ abstract class RenderBoxModel extends RenderBox
     // Prefer checking raw comma-separated list so that any layer with 'local'
     // opts this element into the overflow painting path that scrolls backgrounds
     // with content. Falls back to single computed value when raw is absent.
-    final String raw =
-        renderStyle.target.style.getPropertyValue(BACKGROUND_ATTACHMENT);
+    final dynamic inlineValue =
+        renderStyle.target.inlineStyle[BACKGROUND_ATTACHMENT];
+    final String raw = inlineValue is String && inlineValue.isNotEmpty
+        ? inlineValue
+        : renderStyle.target.style.getPropertyValue(BACKGROUND_ATTACHMENT);
     if (raw.isEmpty) {
       return renderStyle.backgroundAttachment ==
           CSSBackgroundAttachmentType.local;
