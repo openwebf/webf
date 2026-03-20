@@ -9,6 +9,19 @@ void main() {
     setupTest();
   });
 
+  group('CSSStyleDeclaration CSSOM property names', () {
+    test('accepts kebab-case property names', () {
+      final CSSStyleDeclaration style = CSSStyleDeclaration();
+
+      style.setProperty('background-color', 'blue', isImportant: true);
+
+      expect(style.getPropertyValue('background-color'), 'blue');
+      expect(style.getPropertyValue(BACKGROUND_COLOR), 'blue');
+      expect(style.isImportant('background-color'), isTrue);
+      expect(style.isImportant(BACKGROUND_COLOR), isTrue);
+    });
+  });
+
   group('CSSStyleDeclaration.union', () {
     test('adopts important declarations into an empty receiver', () {
       final CSSStyleDeclaration current = CSSStyleDeclaration();
