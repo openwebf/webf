@@ -19,7 +19,8 @@ import 'package:webf/html.dart';
 import 'package:webf/css.dart';
 import 'package:webf/launcher.dart';
 
-int _colorByte(double channel) => (channel * 255.0).round().clamp(0, 255).toInt();
+int _colorByte(double channel) =>
+    (channel * 255.0).round().clamp(0, 255).toInt();
 
 String _rgbaString(Color c) =>
     'rgba(${_colorByte(c.r)},${_colorByte(c.g)},${_colorByte(c.b)},${c.a.toStringAsFixed(3)})';
@@ -148,8 +149,10 @@ enum CSSBackgroundImageType {
 /// The [CSSBackgroundMixin] mixin used to handle background shorthand and compute
 /// to single value of background.
 mixin CSSBackgroundMixin on RenderStyle {
-  static final CSSBackgroundPosition defaultBackgroundPosition = CSSBackgroundPosition(percentage: -1);
-  static final CSSBackgroundSize defaultBackgroundSize = CSSBackgroundSize(fit: BoxFit.none);
+  static final CSSBackgroundPosition defaultBackgroundPosition =
+      CSSBackgroundPosition(percentage: -1);
+  static final CSSBackgroundSize defaultBackgroundSize =
+      CSSBackgroundSize(fit: BoxFit.none);
 
   /// Background-clip
   @override
@@ -162,8 +165,8 @@ mixin CSSBackgroundMixin on RenderStyle {
     _backgroundClip = value;
     // `background-clip:text` affects how glyphs are built/painted (paragraph cache),
     // so toggling to/from it must rebuild text layout instead of paint-only.
-    final bool togglesClipText =
-        oldValue == CSSBackgroundBoundary.text || value == CSSBackgroundBoundary.text;
+    final bool togglesClipText = oldValue == CSSBackgroundBoundary.text ||
+        value == CSSBackgroundBoundary.text;
     if (togglesClipText) {
       markNeedsLayout();
     } else {
@@ -207,13 +210,16 @@ mixin CSSBackgroundMixin on RenderStyle {
     }
 
     _backgroundImage = value;
+    _backgroundImage?.warmUpImage();
     if (DebugFlags.enableBackgroundLogs) {
       try {
         final el = target;
         final id = (el.id != null && el.id!.isNotEmpty) ? '#${el.id}' : '';
         final cls = (el.className.isNotEmpty) ? '.${el.className}' : '';
-        final names = value?.functions.map((f) => f.name).toList() ?? const <String>[];
-        renderingLogger.finer('[Background] set BACKGROUND_IMAGE on <${el.tagName.toLowerCase()}$id$cls> -> $names');
+        final names =
+            value?.functions.map((f) => f.name).toList() ?? const <String>[];
+        renderingLogger.finer(
+            '[Background] set BACKGROUND_IMAGE on <${el.tagName.toLowerCase()}$id$cls> -> $names');
       } catch (_) {}
     }
     markNeedsPaint();
@@ -222,7 +228,8 @@ mixin CSSBackgroundMixin on RenderStyle {
 
   /// Background-position-x
   @override
-  CSSBackgroundPosition get backgroundPositionX => _backgroundPositionX ?? defaultBackgroundPosition;
+  CSSBackgroundPosition get backgroundPositionX =>
+      _backgroundPositionX ?? defaultBackgroundPosition;
   CSSBackgroundPosition? _backgroundPositionX;
 
   set backgroundPositionX(CSSBackgroundPosition? value) {
@@ -234,7 +241,8 @@ mixin CSSBackgroundMixin on RenderStyle {
 
   /// Background-position-y
   @override
-  CSSBackgroundPosition get backgroundPositionY => _backgroundPositionY ?? defaultBackgroundPosition;
+  CSSBackgroundPosition get backgroundPositionY =>
+      _backgroundPositionY ?? defaultBackgroundPosition;
   CSSBackgroundPosition? _backgroundPositionY;
 
   set backgroundPositionY(CSSBackgroundPosition? value) {
@@ -246,7 +254,8 @@ mixin CSSBackgroundMixin on RenderStyle {
 
   /// Background-size
   @override
-  CSSBackgroundSize get backgroundSize => _backgroundSize ?? defaultBackgroundSize;
+  CSSBackgroundSize get backgroundSize =>
+      _backgroundSize ?? defaultBackgroundSize;
   CSSBackgroundSize? _backgroundSize;
 
   set backgroundSize(CSSBackgroundSize? value) {
@@ -258,7 +267,8 @@ mixin CSSBackgroundMixin on RenderStyle {
 
   /// Background-attachment
   @override
-  CSSBackgroundAttachmentType? get backgroundAttachment => _backgroundAttachment;
+  CSSBackgroundAttachmentType? get backgroundAttachment =>
+      _backgroundAttachment;
   CSSBackgroundAttachmentType? _backgroundAttachment;
 
   set backgroundAttachment(CSSBackgroundAttachmentType? value) {
@@ -269,7 +279,8 @@ mixin CSSBackgroundMixin on RenderStyle {
         final el = target;
         final id = (el.id != null && el.id!.isNotEmpty) ? '#${el.id}' : '';
         final cls = (el.className.isNotEmpty) ? '.${el.className}' : '';
-        renderingLogger.finer('[Background] set BACKGROUND_ATTACHMENT on <${el.tagName.toLowerCase()}$id$cls> -> '
+        renderingLogger.finer(
+            '[Background] set BACKGROUND_ATTACHMENT on <${el.tagName.toLowerCase()}$id$cls> -> '
             '${_backgroundAttachment?.cssText() ?? 'null'}');
       } catch (_) {}
     }
@@ -279,7 +290,8 @@ mixin CSSBackgroundMixin on RenderStyle {
 
   /// Background-repeat
   @override
-  CSSBackgroundRepeatType get backgroundRepeat => _backgroundRepeat ?? CSSBackgroundRepeatType.repeat;
+  CSSBackgroundRepeatType get backgroundRepeat =>
+      _backgroundRepeat ?? CSSBackgroundRepeatType.repeat;
   CSSBackgroundRepeatType? _backgroundRepeat;
 
   set backgroundRepeat(CSSBackgroundRepeatType? value) {
@@ -298,6 +310,8 @@ class CSSColorStop {
 }
 
 class CSSBackgroundImage {
+  static const double _defaultDevicePixelRatio = 2.0;
+
   List<CSSFunctionalNotation> functions;
   RenderStyle renderStyle;
   WebFController controller;
@@ -305,16 +319,21 @@ class CSSBackgroundImage {
   // Optional per-layer length hint to normalize px stops, provided by painter.
   final double? gradientLengthHint;
 
-  CSSBackgroundImage(this.functions, this.renderStyle, this.controller, {this.baseHref, this.gradientLengthHint});
+  CSSBackgroundImage(this.functions, this.renderStyle, this.controller,
+      {this.baseHref, this.gradientLengthHint});
 
   ImageProvider? _image;
+  ImageStream? _prewarmImageStream;
+  ImageStreamListener? _prewarmImageListener;
 
-  static Future<ImageLoadResponse> _obtainImage(Element element, Uri url) async {
+  static Future<ImageLoadResponse> _obtainImage(
+      Element element, Uri url) async {
     ImageRequest request = ImageRequest.fromUri(url);
     // Increment count when request.
     element.ownerDocument.controller.view.document.incrementRequestCount();
 
-    ImageLoadResponse data = await request.obtainImage(element.ownerDocument.controller);
+    ImageLoadResponse data =
+        await request.obtainImage(element.ownerDocument.controller);
 
     // Decrement count when response.
     element.ownerDocument.controller.view.document.decrementRequestCount();
@@ -347,21 +366,50 @@ class CSSBackgroundImage {
           final String base = baseHref ?? controller.url;
 
           uri = controller.uriParser!.resolve(Uri.parse(base), uri);
-          FlutterView ownerFlutterView = controller.ownerFlutterView!;
+          final FlutterView? ownerFlutterView = controller.ownerFlutterView;
+          final double devicePixelRatio =
+              ownerFlutterView?.devicePixelRatio ?? _defaultDevicePixelRatio;
 
           return _image = BoxFitImage(
-            boxFit: renderStyle.backgroundSize.fit,
-            url: uri,
-            contextId: controller.view.contextId,
-            targetElementPtr: renderStyle.target.pointer!,
-            loadImage: _obtainImage,
-            onImageLoad: _handleBitFitImageLoad,
-            devicePixelRatio: ownerFlutterView.devicePixelRatio);
+              boxFit: renderStyle.backgroundSize.fit,
+              url: uri,
+              contextId: controller.view.contextId,
+              targetElementPtr: renderStyle.target.pointer!,
+              loadImage: _obtainImage,
+              onImageLoad: _handleBitFitImageLoad,
+              devicePixelRatio: devicePixelRatio);
         }
       }
     }
 
     return null;
+  }
+
+  void warmUpImage() {
+    if (_prewarmImageStream != null) return;
+    final ImageProvider? provider = image;
+    if (provider == null) return;
+
+    final ImageStream stream = provider.resolve(ImageConfiguration.empty);
+    late final ImageStreamListener listener;
+    listener = ImageStreamListener(
+      (ImageInfo imageInfo, bool synchronousCall) {
+        try {
+          renderStyle.markNeedsPaint();
+        } catch (_) {}
+        _prewarmImageStream?.removeListener(listener);
+        _prewarmImageStream = null;
+        _prewarmImageListener = null;
+      },
+      onError: (_, __) {
+        _prewarmImageStream?.removeListener(listener);
+        _prewarmImageStream = null;
+        _prewarmImageListener = null;
+      },
+    );
+    _prewarmImageStream = stream;
+    _prewarmImageListener = listener;
+    stream.addListener(listener);
   }
 
   Gradient? _gradient;
@@ -380,10 +428,12 @@ class CSSBackgroundImage {
           String arg0 = method.args[0].trim();
           double? gradientLength = gradientLengthHint;
           if (DebugFlags.enableBackgroundLogs) {
-            renderingLogger.finer('[Background] parse ${method.name}: rawArgs=${method.args}');
+            renderingLogger.finer(
+                '[Background] parse ${method.name}: rawArgs=${method.args}');
           }
           if (arg0.startsWith('to ')) {
-            final List<String> parts = splitByAsciiWhitespacePreservingGroups(arg0);
+            final List<String> parts =
+                splitByAsciiWhitespacePreservingGroups(arg0);
             if (parts.length >= 2) {
               switch (parts[1]) {
                 case LEFT:
@@ -459,13 +509,21 @@ class CSSBackgroundImage {
           // against the actual tile dimension instead of the element box.
           if (gradientLength == null) {
             final CSSBackgroundSize bs = renderStyle.backgroundSize;
-            double? bsW = (bs.width != null && !bs.width!.isAuto) ? bs.width!.computedValue : null;
-            double? bsH = (bs.height != null && !bs.height!.isAuto) ? bs.height!.computedValue : null;
+            double? bsW = (bs.width != null && !bs.width!.isAuto)
+                ? bs.width!.computedValue
+                : null;
+            double? bsH = (bs.height != null && !bs.height!.isAuto)
+                ? bs.height!.computedValue
+                : null;
             // Fallbacks when background-size is auto or layout not finalized yet.
             final double fbW = renderStyle.paddingBoxWidth ??
-                (renderStyle.target.ownerDocument.viewport?.viewportSize.width ?? 0.0);
+                (renderStyle
+                        .target.ownerDocument.viewport?.viewportSize.width ??
+                    0.0);
             final double fbH = renderStyle.paddingBoxHeight ??
-                (renderStyle.target.ownerDocument.viewport?.viewportSize.height ?? 0.0);
+                (renderStyle
+                        .target.ownerDocument.viewport?.viewportSize.height ??
+                    0.0);
             if (linearAngle != null) {
               // For angle-based gradients, approximate the gradient line length
               // using the tile size and the same projection used at shader time.
@@ -477,9 +535,11 @@ class CSSBackgroundImage {
             } else {
               // No angle provided: infer axis from begin/end and use the
               // background-size along that axis when available, else fall back to box/viewport.
-              bool isVertical = (begin == Alignment.topCenter || begin == Alignment.bottomCenter) &&
+              bool isVertical = (begin == Alignment.topCenter ||
+                      begin == Alignment.bottomCenter) &&
                   (end == Alignment.topCenter || end == Alignment.bottomCenter);
-              bool isHorizontal = (begin == Alignment.centerLeft || begin == Alignment.centerRight) &&
+              bool isHorizontal = (begin == Alignment.centerLeft ||
+                      begin == Alignment.centerRight) &&
                   (end == Alignment.centerLeft || end == Alignment.centerRight);
               if (isVertical) {
                 gradientLength = bsH ?? fbH;
@@ -493,15 +553,18 @@ class CSSBackgroundImage {
               }
             }
             if (DebugFlags.enableBackgroundLogs) {
-              renderingLogger.finer('[Background] linear-gradient choose gradientLength = '
+              renderingLogger.finer(
+                  '[Background] linear-gradient choose gradientLength = '
                   '${gradientLength.toStringAsFixed(2)} (bg-size: w=${bs.width?.computedValue.toStringAsFixed(2) ?? 'auto'}, '
                   'h=${bs.height?.computedValue.toStringAsFixed(2) ?? 'auto'}; fb: w=${fbW.toStringAsFixed(2)}, h=${fbH.toStringAsFixed(2)})');
             }
           }
           if (gradientLengthHint != null && DebugFlags.enableBackgroundLogs) {
-            renderingLogger.finer('[Background] linear-gradient using painter length hint = ${gradientLengthHint!.toStringAsFixed(2)}');
+            renderingLogger.finer(
+                '[Background] linear-gradient using painter length hint = ${gradientLengthHint!.toStringAsFixed(2)}');
           }
-          _applyColorAndStops(start, method.args, colors, stops, renderStyle, BACKGROUND_IMAGE, gradientLength);
+          _applyColorAndStops(start, method.args, colors, stops, renderStyle,
+              BACKGROUND_IMAGE, gradientLength);
           double? repeatPeriodPx;
           // For repeating-linear-gradient, normalize the stop range to one cycle [0..1]
           // so Flutter's TileMode.repeated repeats the intended segment length.
@@ -512,7 +575,8 @@ class CSSBackgroundImage {
             if (DebugFlags.enableBackgroundLogs) {
               final double gl = gradientLength;
               final double periodPx = (range > 0) ? (range * gl) : -1;
-              renderingLogger.finer('[Background] repeating-linear normalize: first=${first.toStringAsFixed(4)} last=${last.toStringAsFixed(4)} '
+              renderingLogger.finer(
+                  '[Background] repeating-linear normalize: first=${first.toStringAsFixed(4)} last=${last.toStringAsFixed(4)} '
                   'range=${range.toStringAsFixed(4)} periodPx=${periodPx >= 0 ? periodPx.toStringAsFixed(2) : '<unknown>'}');
             }
             if (range <= 0) {
@@ -522,26 +586,27 @@ class CSSBackgroundImage {
               // Capture period in device pixels for shader scaling.
               repeatPeriodPx = range * gradientLength;
               if (DebugFlags.enableBackgroundLogs) {
-                renderingLogger.finer('[Background] repeating-linear periodPx=${repeatPeriodPx.toStringAsFixed(2)}');
+                renderingLogger.finer(
+                    '[Background] repeating-linear periodPx=${repeatPeriodPx.toStringAsFixed(2)}');
               }
               for (int i = 0; i < stops.length; i++) {
                 stops[i] = ((stops[i] - first) / range).clamp(0.0, 1.0);
               }
               if (DebugFlags.enableBackgroundLogs) {
-                renderingLogger.finer('[Background] repeating-linear normalized stops=${stops.map((s)=>s.toStringAsFixed(4)).toList()}');
+                renderingLogger.finer(
+                    '[Background] repeating-linear normalized stops=${stops.map((s) => s.toStringAsFixed(4)).toList()}');
               }
             }
           }
           if (DebugFlags.enableBackgroundLogs) {
-            final cs = colors
-                .map(_rgbaString)
-                .toList();
+            final cs = colors.map(_rgbaString).toList();
             final st = stops.map((s) => s.toStringAsFixed(4)).toList();
             final dir = linearAngle != null
                 ? 'angle=${(linearAngle * 180 / math.pi).toStringAsFixed(1)}deg'
                 : 'begin=$begin end=$end';
             final len = gradientLength.toStringAsFixed(2);
-            renderingLogger.finer('[Background] ${method.name} colors=$cs stops=$st $dir gradientLength=$len');
+            renderingLogger.finer(
+                '[Background] ${method.name} colors=$cs stops=$st $dir gradientLength=$len');
           }
           if (colors.length >= 2) {
             _gradient = CSSLinearGradient(
@@ -551,11 +616,14 @@ class CSSBackgroundImage {
                 repeatPeriod: repeatPeriodPx,
                 colors: colors,
                 stops: stops,
-                tileMode: method.name == 'linear-gradient' ? TileMode.clamp : TileMode.repeated);
+                tileMode: method.name == 'linear-gradient'
+                    ? TileMode.clamp
+                    : TileMode.repeated);
             return _gradient;
           }
           if (DebugFlags.enableBackgroundLogs) {
-            renderingLogger.warning('[Background] ${method.name} dropped: need >=2 colors, got ${colors.length}. '
+            renderingLogger.warning(
+                '[Background] ${method.name} dropped: need >=2 colors, got ${colors.length}. '
                 'args=${method.args}');
           }
           break;
@@ -567,14 +635,16 @@ class CSSBackgroundImage {
         case 'repeating-radial-gradient':
           double? atX = 0.5;
           double? atY = 0.5;
-          double radius = 0.5; // normalized factor; 0.5 -> farthest-corner in CSSRadialGradient
+          double radius =
+              0.5; // normalized factor; 0.5 -> farthest-corner in CSSRadialGradient
           bool isEllipse = false;
 
           if (method.args.isNotEmpty) {
             final String prelude = method.args[0].trim();
             if (prelude.isNotEmpty) {
               // Split by whitespace while collapsing multiple spaces.
-              final List<String> tokens = splitByAsciiWhitespacePreservingGroups(prelude);
+              final List<String> tokens =
+                  splitByAsciiWhitespacePreservingGroups(prelude);
 
               // Detect ellipse/circle keywords
               isEllipse = tokens.contains('ellipse');
@@ -588,14 +658,17 @@ class CSSBackgroundImage {
                     if (s == LEFT) return 0.0;
                     if (s == CENTER) return 0.5;
                     if (s == RIGHT) return 1.0;
-                    if (CSSPercentage.isPercentage(s)) return CSSPercentage.parsePercentage(s)!;
+                    if (CSSPercentage.isPercentage(s))
+                      return CSSPercentage.parsePercentage(s)!;
                     return 0.5;
                   }
+
                   double parseY(String s) {
                     if (s == TOP) return 0.0;
                     if (s == CENTER) return 0.5;
                     if (s == BOTTOM) return 1.0;
-                    if (CSSPercentage.isPercentage(s)) return CSSPercentage.parsePercentage(s)!;
+                    if (CSSPercentage.isPercentage(s))
+                      return CSSPercentage.parsePercentage(s)!;
                     return 0.5;
                   }
 
@@ -622,25 +695,28 @@ class CSSBackgroundImage {
               // to be misclassified as a prelude and skipped. Guard against that by checking
               // whether the first token looks like a color (named/hex/rgb[a]/hsl[a]/var()).
               final String firstToken = tokens.isNotEmpty ? tokens.first : '';
-              final bool firstLooksLikeColor = CSSColor.isColor(firstToken) || firstToken.startsWith('var(');
+              final bool firstLooksLikeColor =
+                  CSSColor.isColor(firstToken) || firstToken.startsWith('var(');
 
               // Recognize common prelude markers when the first token is not a color.
-              final bool hasPrelude = !firstLooksLikeColor && (
-                  tokens.contains('circle') ||
-                  tokens.contains('ellipse') ||
-                  tokens.contains('closest-side') ||
-                  tokens.contains('closest-corner') ||
-                  tokens.contains('farthest-side') ||
-                  tokens.contains('farthest-corner') ||
-                  atIndex != -1 ||
-                  // Allow explicit numeric size in prelude only if arg[0] doesn't start with a color.
-                  tokens.any((t) => CSSPercentage.isPercentage(t) || CSSLength.isLength(t))
-              );
+              final bool hasPrelude = !firstLooksLikeColor &&
+                  (tokens.contains('circle') ||
+                      tokens.contains('ellipse') ||
+                      tokens.contains('closest-side') ||
+                      tokens.contains('closest-corner') ||
+                      tokens.contains('farthest-side') ||
+                      tokens.contains('farthest-corner') ||
+                      atIndex != -1 ||
+                      // Allow explicit numeric size in prelude only if arg[0] doesn't start with a color.
+                      tokens.any((t) =>
+                          CSSPercentage.isPercentage(t) ||
+                          CSSLength.isLength(t)));
               if (hasPrelude) start = 1;
             }
           }
           // Normalize px stops using painter-provided length hint when available.
-          _applyColorAndStops(start, method.args, colors, stops, renderStyle, BACKGROUND_IMAGE, gradientLengthHint);
+          _applyColorAndStops(start, method.args, colors, stops, renderStyle,
+              BACKGROUND_IMAGE, gradientLengthHint);
           // Ensure non-decreasing stops per CSS Images spec when explicit positions are out of order.
           if (stops.isNotEmpty) {
             double last = stops[0].clamp(0.0, 1.0);
@@ -659,8 +735,11 @@ class CSSBackgroundImage {
             final double last = stops.last;
             double range = last - first;
             if (DebugFlags.enableBackgroundLogs) {
-              final double periodPx = (gradientLengthHint != null && range > 0) ? (range * gradientLengthHint!) : -1;
-              renderingLogger.finer('[Background] repeating-radial normalize: first=${first.toStringAsFixed(4)} last=${last.toStringAsFixed(4)} '
+              final double periodPx = (gradientLengthHint != null && range > 0)
+                  ? (range * gradientLengthHint!)
+                  : -1;
+              renderingLogger.finer(
+                  '[Background] repeating-radial normalize: first=${first.toStringAsFixed(4)} last=${last.toStringAsFixed(4)} '
                   'range=${range.toStringAsFixed(4)} periodPx=${periodPx >= 0 ? periodPx.toStringAsFixed(2) : '<unknown>'}');
             }
             if (range > 0) {
@@ -671,26 +750,29 @@ class CSSBackgroundImage {
                 stops[i] = ((stops[i] - first) / range).clamp(0.0, 1.0);
               }
               if (DebugFlags.enableBackgroundLogs) {
-                renderingLogger.finer('[Background] repeating-radial normalized stops=${stops.map((s)=>s.toStringAsFixed(4)).toList()}');
+                renderingLogger.finer(
+                    '[Background] repeating-radial normalized stops=${stops.map((s) => s.toStringAsFixed(4)).toList()}');
               }
             }
           }
           if (DebugFlags.enableBackgroundLogs) {
-            final cs = colors
-                .map(_rgbaString)
-                .toList();
-            renderingLogger.finer('[Background] ${method.name} colors=$cs stops=${stops.map((s)=>s.toStringAsFixed(4)).toList()} '
+            final cs = colors.map(_rgbaString).toList();
+            renderingLogger.finer(
+                '[Background] ${method.name} colors=$cs stops=${stops.map((s) => s.toStringAsFixed(4)).toList()} '
                 'center=(${atX.toStringAsFixed(3)},${atY.toStringAsFixed(3)}) radius=$radius');
           }
           if (colors.length >= 2) {
             // Apply an ellipse transform when requested.
-            final GradientTransform? xf = isEllipse ? CSSGradientEllipseTransform(atX, atY) : null;
+            final GradientTransform? xf =
+                isEllipse ? CSSGradientEllipseTransform(atX, atY) : null;
             _gradient = CSSRadialGradient(
               center: FractionalOffset(atX, atY),
               radius: radius,
               colors: colors,
               stops: stops,
-              tileMode: method.name == 'radial-gradient' ? TileMode.clamp : TileMode.repeated,
+              tileMode: method.name == 'radial-gradient'
+                  ? TileMode.clamp
+                  : TileMode.repeated,
               transform: xf,
               repeatPeriod: repeatPeriodPx,
             );
@@ -701,8 +783,11 @@ class CSSBackgroundImage {
           double? from = 0.0;
           double? atX = 0.5;
           double? atY = 0.5;
-          if (method.args.isNotEmpty && (method.args[0].contains('from ') || method.args[0].contains('at '))) {
-            final List<String> tokens = splitByAsciiWhitespacePreservingGroups(method.args[0].trim());
+          if (method.args.isNotEmpty &&
+              (method.args[0].contains('from ') ||
+                  method.args[0].contains('at '))) {
+            final List<String> tokens =
+                splitByAsciiWhitespacePreservingGroups(method.args[0].trim());
             final int fromIndex = tokens.indexOf('from');
             final int atIndex = tokens.indexOf('at');
             if (fromIndex != -1 && fromIndex + 1 < tokens.length) {
@@ -713,16 +798,20 @@ class CSSBackgroundImage {
                 if (s == LEFT) return 0.0;
                 if (s == CENTER) return 0.5;
                 if (s == RIGHT) return 1.0;
-                if (CSSPercentage.isPercentage(s)) return CSSPercentage.parsePercentage(s)!;
+                if (CSSPercentage.isPercentage(s))
+                  return CSSPercentage.parsePercentage(s)!;
                 return 0.5;
               }
+
               double parseY(String s) {
                 if (s == TOP) return 0.0;
                 if (s == CENTER) return 0.5;
                 if (s == BOTTOM) return 1.0;
-                if (CSSPercentage.isPercentage(s)) return CSSPercentage.parsePercentage(s)!;
+                if (CSSPercentage.isPercentage(s))
+                  return CSSPercentage.parsePercentage(s)!;
                 return 0.5;
               }
+
               final List<String> pos = tokens.sublist(atIndex + 1);
               if (pos.isNotEmpty) {
                 if (pos.length == 1) {
@@ -742,13 +831,13 @@ class CSSBackgroundImage {
             }
             start = 1;
           }
-          _applyColorAndStops(start, method.args, colors, stops, renderStyle, BACKGROUND_IMAGE);
+          _applyColorAndStops(
+              start, method.args, colors, stops, renderStyle, BACKGROUND_IMAGE);
           if (DebugFlags.enableBackgroundLogs) {
-            final cs = colors
-                .map(_rgbaString)
-                .toList();
+            final cs = colors.map(_rgbaString).toList();
             final fromDeg = ((from ?? 0) * 180 / math.pi).toStringAsFixed(1);
-            renderingLogger.finer('[Background] ${method.name} from=${fromDeg}deg colors=$cs stops=${stops.map((s)=>s.toStringAsFixed(4)).toList()}');
+            renderingLogger.finer(
+                '[Background] ${method.name} from=${fromDeg}deg colors=$cs stops=${stops.map((s) => s.toStringAsFixed(4)).toList()}');
           }
           if (colors.length >= 2) {
             _gradient = CSSConicGradient(
@@ -791,6 +880,12 @@ class CSSBackgroundImage {
   }
 
   void dispose() {
+    final ImageStreamListener? listener = _prewarmImageListener;
+    if (listener != null) {
+      _prewarmImageStream?.removeListener(listener);
+    }
+    _prewarmImageStream = null;
+    _prewarmImageListener = null;
     _image = null;
   }
 }
@@ -852,7 +947,8 @@ class CSSBackgroundSize {
   CSSLengthValue? height;
 
   @override
-  String toString() => 'CSSBackgroundSize(fit: $fit, width: $width, height: $height)';
+  String toString() =>
+      'CSSBackgroundSize(fit: $fit, width: $width, height: $height)';
 
   String cssText() {
     if (fit == BoxFit.contain) {
@@ -875,7 +971,10 @@ class CSSBackgroundSize {
 
 class CSSBackground {
   static bool isValidBackgroundRepeatValue(String value) {
-    return value == REPEAT || value == NO_REPEAT || value == REPEAT_X || value == REPEAT_Y;
+    return value == REPEAT ||
+        value == NO_REPEAT ||
+        value == REPEAT_X ||
+        value == REPEAT_Y;
   }
 
   static bool isValidBackgroundSizeValue(String value) {
@@ -930,7 +1029,8 @@ class CSSBackground {
     }
   }
 
-  static CSSBackgroundSize resolveBackgroundSize(String value, RenderStyle renderStyle, String propertyName) {
+  static CSSBackgroundSize resolveBackgroundSize(
+      String value, RenderStyle renderStyle, String propertyName) {
     switch (value) {
       case CONTAIN:
         return CSSBackgroundSize(fit: BoxFit.contain);
@@ -939,17 +1039,21 @@ class CSSBackground {
       case AUTO:
         return CSSBackgroundSize(fit: BoxFit.none);
       default:
-        final List<String> values = splitByAsciiWhitespacePreservingGroups(value);
+        final List<String> values =
+            splitByAsciiWhitespacePreservingGroups(value);
 
         if (values.length == 1 && values[0].isNotEmpty) {
-          CSSLengthValue width = CSSLength.parseLength(values[0], renderStyle, propertyName, Axis.horizontal);
+          CSSLengthValue width = CSSLength.parseLength(
+              values[0], renderStyle, propertyName, Axis.horizontal);
           return CSSBackgroundSize(
             fit: BoxFit.none,
             width: width,
           );
         } else if (values.length == 2) {
-          CSSLengthValue width = CSSLength.parseLength(values[0], renderStyle, propertyName, Axis.horizontal);
-          CSSLengthValue height = CSSLength.parseLength(values[1], renderStyle, propertyName, Axis.vertical);
+          CSSLengthValue width = CSSLength.parseLength(
+              values[0], renderStyle, propertyName, Axis.horizontal);
+          CSSLengthValue height = CSSLength.parseLength(
+              values[1], renderStyle, propertyName, Axis.vertical);
           // Value which is neither length/percentage/auto is considered to be invalid.
           return CSSBackgroundSize(
             fit: BoxFit.none,
@@ -961,8 +1065,8 @@ class CSSBackground {
     }
   }
 
-  static resolveBackgroundImage(
-      String present, RenderStyle renderStyle, String property, WebFController controller, String? baseHref) {
+  static resolveBackgroundImage(String present, RenderStyle renderStyle,
+      String property, WebFController controller, String? baseHref) {
     // Expand CSS variables inside the background-image string so that
     // values like linear-gradient(..., var(--tw-gradient-stops)) work.
     // Tailwind sets --tw-gradient-stops to a comma-separated list
@@ -977,11 +1081,14 @@ class CSSBackground {
     if (functions.isNotEmpty) {
       final List<CSSFunctionalNotation> filtered = <CSSFunctionalNotation>[];
       for (final f in functions) {
-        if (f.name == 'linear-gradient' || f.name == 'repeating-linear-gradient') {
-          final bool ok = _isValidLinearGradientArgs(f.args, renderStyle, property);
+        if (f.name == 'linear-gradient' ||
+            f.name == 'repeating-linear-gradient') {
+          final bool ok =
+              _isValidLinearGradientArgs(f.args, renderStyle, property);
           if (!ok) {
             if (DebugFlags.enableBackgroundLogs) {
-              renderingLogger.warning('[Background] drop invalid ${f.name} args=${f.args} present="$present"');
+              renderingLogger.warning(
+                  '[Background] drop invalid ${f.name} args=${f.args} present="$present"');
             }
             continue;
           }
@@ -991,24 +1098,31 @@ class CSSBackground {
       functions = filtered;
     }
     if (DebugFlags.enableBackgroundLogs) {
-      renderingLogger.finer('[Background] resolveBackgroundImage present="$present" expanded="$expanded" '
+      renderingLogger.finer(
+          '[Background] resolveBackgroundImage present="$present" expanded="$expanded" '
           'fnCount=${functions.length}');
       for (final f in functions) {
         if (f.name == 'url') {
           final raw = f.args.isNotEmpty ? f.args[0] : '';
-          renderingLogger.finer('[Background] resolve image url raw=$raw baseHref=${baseHref ?? controller.url}');
+          renderingLogger.finer(
+              '[Background] resolve image url raw=$raw baseHref=${baseHref ?? controller.url}');
         } else if (f.name.contains('gradient')) {
-          renderingLogger.finer('[Background] resolve gradient ${f.name} args=${f.args.length} rawArgs=${f.args}');
+          renderingLogger.finer(
+              '[Background] resolve gradient ${f.name} args=${f.args.length} rawArgs=${f.args}');
         }
       }
     }
-    return CSSBackgroundImage(functions, renderStyle, controller, baseHref: baseHref);
+    return CSSBackgroundImage(functions, renderStyle, controller,
+        baseHref: baseHref);
   }
 
   static List<String> _tokenizeGradientStop(String src) {
     if (src.isEmpty) return const <String>[];
     // rgb[a]()/hsl[a]() may contain spaces; treat the whole function as one token.
-    if (src.startsWith('rgba(') || src.startsWith('rgb(') || src.startsWith('hsl(') || src.startsWith('hsla(')) {
+    if (src.startsWith('rgba(') ||
+        src.startsWith('rgb(') ||
+        src.startsWith('hsl(') ||
+        src.startsWith('hsla(')) {
       final int indexOfEnd = src.lastIndexOf(')');
       if (indexOfEnd != -1) {
         final List<String> out = <String>[src.substring(0, indexOfEnd + 1)];
@@ -1021,14 +1135,17 @@ class CSSBackground {
         return out;
       }
     }
-    return splitByAsciiWhitespacePreservingGroups(src).where((s) => s != ';').toList();
+    return splitByAsciiWhitespacePreservingGroups(src)
+        .where((s) => s != ';')
+        .toList();
   }
 
   static bool _looksLikeColorToken(String token) {
     return CSSColor.isColor(token);
   }
 
-  static bool _isValidLinearGradientArgs(List<String> args, RenderStyle renderStyle, String propertyName) {
+  static bool _isValidLinearGradientArgs(
+      List<String> args, RenderStyle renderStyle, String propertyName) {
     if (args.isEmpty) return false;
     int start = 0;
     final String arg0 = args[0].trim();
@@ -1042,7 +1159,9 @@ class CSSBackground {
       if (raw.isEmpty) return false;
       // A stop token may itself be a var() that expands to multiple tokens
       // (e.g., Tailwind: var(--tw-gradient-from) -> "rgb(...) var(--pos)").
-      final String expandedStop = raw.contains('var(') ? _expandBackgroundVars(raw, renderStyle).trim() : raw;
+      final String expandedStop = raw.contains('var(')
+          ? _expandBackgroundVars(raw, renderStyle).trim()
+          : raw;
       if (expandedStop.isEmpty) return false;
       final List<String> tokens = _tokenizeGradientStop(expandedStop);
       if (tokens.isEmpty) return false;
@@ -1050,7 +1169,8 @@ class CSSBackground {
       // First token must resolve to a color.
       final String colorToken = _stripTrailingSemicolons(tokens.first.trim());
       if (colorToken.isEmpty) return false;
-      final CSSColor? resolved = CSSColor.resolveColor(colorToken, renderStyle, propertyName);
+      final CSSColor? resolved =
+          CSSColor.resolveColor(colorToken, renderStyle, propertyName);
       if (resolved == null) return false;
 
       // Remaining tokens are optional stop positions (0-2). Any additional
@@ -1061,14 +1181,17 @@ class CSSBackground {
         if (t0 == ';') continue;
         // var() may represent a position token (Tailwind uses var(--tw-gradient-*-position)).
         // Resolve var() here; if it resolves to a color, treat as missing-comma (invalid).
-        final String t = _stripTrailingSemicolons(
-            t0.contains('var(') ? _expandBackgroundVars(t0, renderStyle).trim() : t0.trim());
+        final String t = _stripTrailingSemicolons(t0.contains('var(')
+            ? _expandBackgroundVars(t0, renderStyle).trim()
+            : t0.trim());
         if (t.isEmpty) {
           // An empty var() is equivalent to no token; ignore.
           continue;
         }
         if (_looksLikeColorToken(t)) return false;
-        if (CSSPercentage.isPercentage(t) || CSSLength.isLength(t) || CSSAngle.isAngle(t)) {
+        if (CSSPercentage.isPercentage(t) ||
+            CSSLength.isLength(t) ||
+            CSSAngle.isAngle(t)) {
           positionCount++;
           continue;
         }
@@ -1086,37 +1209,43 @@ class CSSBackground {
   static String _expandBackgroundVars(String input, RenderStyle renderStyle) {
     if (!input.contains('var(')) return input;
     String result = input;
-    final bool trace = DebugFlags.enableBackgroundLogs && input.contains('gradient');
+    final bool trace =
+        DebugFlags.enableBackgroundLogs && input.contains('gradient');
     // Limit to avoid infinite loops on pathological input.
     int guard = 0;
     while (result.contains('var(') && guard++ < 8) {
       final original = result;
       result = replaceCssVarFunctions(result, (String varString) {
         // Parse the var() expression to get identifier and (optional) fallback.
-        final CSSVariable? variable = CSSVariable.tryParse(renderStyle, varString);
+        final CSSVariable? variable =
+            CSSVariable.tryParse(renderStyle, varString);
         if (variable == null) {
           if (trace) {
-            renderingLogger.finer('[Background] var expand parse-failed var="$varString" input="$input"');
+            renderingLogger.finer(
+                '[Background] var expand parse-failed var="$varString" input="$input"');
           }
           return '';
         }
         // Track dependency on this variable for backgroundImage recomputation.
         final depKey = '${BACKGROUND_IMAGE}_$input';
-        final dynamic raw = renderStyle.getCSSVariable(variable.identifier, depKey);
+        final dynamic raw =
+            renderStyle.getCSSVariable(variable.identifier, depKey);
 
         if (raw == null || raw == INITIAL) {
           // Use fallback defined in var(--x, <fallback>) if provided.
           final fallback = variable.defaultValue;
           if (trace) {
-            renderingLogger.finer('[Background] var expand id=${variable.identifier} -> <null> fallback="${fallback?.toString() ?? ''}"');
+            renderingLogger.finer(
+                '[Background] var expand id=${variable.identifier} -> <null> fallback="${fallback?.toString() ?? ''}"');
           }
           return fallback?.toString() ?? '';
         }
         final String rawText = raw.toString();
         final String stripped = _stripTrailingSemicolons(rawText);
         if (trace) {
-          final suffix = (rawText != stripped) ? ' (stripped trailing ;)': '';
-          renderingLogger.finer('[Background] var expand id=${variable.identifier} -> "$rawText"$suffix');
+          final suffix = (rawText != stripped) ? ' (stripped trailing ;)' : '';
+          renderingLogger.finer(
+              '[Background] var expand id=${variable.identifier} -> "$rawText"$suffix');
         }
         return stripped;
       });
@@ -1167,19 +1296,20 @@ class CSSBackground {
   }
 }
 
-void _applyColorAndStops(
-    int start, List<String> args, List<Color> colors, List<double> stops, RenderStyle renderStyle, String propertyName,
+void _applyColorAndStops(int start, List<String> args, List<Color> colors,
+    List<double> stops, RenderStyle renderStyle, String propertyName,
     [double? gradientLength]) {
   // colors should more than one, otherwise invalid
   if (args.length - start - 1 > 0) {
     double grow = 1.0 / (args.length - start - 1);
     if (DebugFlags.enableBackgroundLogs) {
       final subset = args.sublist(start);
-      renderingLogger.finer('[Background] applyColorStops start=$start args=$subset gradientLength=${gradientLength?.toStringAsFixed(2) ?? '<none>'}');
+      renderingLogger.finer(
+          '[Background] applyColorStops start=$start args=$subset gradientLength=${gradientLength?.toStringAsFixed(2) ?? '<none>'}');
     }
     for (int i = start; i < args.length; i++) {
-      List<CSSColorStop> colorGradients =
-          _parseColorAndStop(args[i].trim(), renderStyle, propertyName, (i - start) * grow, gradientLength);
+      List<CSSColorStop> colorGradients = _parseColorAndStop(args[i].trim(),
+          renderStyle, propertyName, (i - start) * grow, gradientLength);
 
       for (var colorStop in colorGradients) {
         if (colorStop.color != null) {
@@ -1191,7 +1321,8 @@ void _applyColorAndStops(
   }
 }
 
-List<CSSColorStop> _parseColorAndStop(String src, RenderStyle renderStyle, String propertyName,
+List<CSSColorStop> _parseColorAndStop(
+    String src, RenderStyle renderStyle, String propertyName,
     [double? defaultStop, double? gradientLength]) {
   final List<CSSColorStop> colorGradients = <CSSColorStop>[];
   final String original = src.trim();
@@ -1199,10 +1330,12 @@ List<CSSColorStop> _parseColorAndStop(String src, RenderStyle renderStyle, Strin
   // A stop token may be a var() that expands to "color <position>" (Tailwind),
   // so expand the whole stop string before tokenizing.
   if (expanded.contains('var(')) {
-    expanded = CSSBackground._expandBackgroundVars(expanded, renderStyle).trim();
+    expanded =
+        CSSBackground._expandBackgroundVars(expanded, renderStyle).trim();
   }
   if (DebugFlags.enableBackgroundLogs && expanded != original) {
-    renderingLogger.finer('[Background] stop expand src="$original" -> "$expanded"');
+    renderingLogger
+        .finer('[Background] stop expand src="$original" -> "$expanded"');
   }
   final List<String> tokens = CSSBackground._tokenizeGradientStop(expanded);
   if (tokens.isEmpty) return colorGradients;
@@ -1210,10 +1343,12 @@ List<CSSColorStop> _parseColorAndStop(String src, RenderStyle renderStyle, Strin
   final String colorToken = _stripTrailingSemicolons(tokens.first.trim());
   if (colorToken.isEmpty) return colorGradients;
 
-  final CSSColor? color = CSSColor.resolveColor(colorToken, renderStyle, propertyName);
+  final CSSColor? color =
+      CSSColor.resolveColor(colorToken, renderStyle, propertyName);
   if (color == null) {
     if (DebugFlags.enableBackgroundLogs) {
-      renderingLogger.warning('[Background] stop color parse failed: token="$colorToken" src="$expanded"');
+      renderingLogger.warning(
+          '[Background] stop color parse failed: token="$colorToken" src="$expanded"');
     }
     return colorGradients;
   }
@@ -1238,7 +1373,8 @@ List<CSSColorStop> _parseColorAndStop(String src, RenderStyle renderStyle, Strin
           if (stop < 0) stop = 0;
           parsedStops.add(stop);
           if (DebugFlags.enableBackgroundLogs) {
-            renderingLogger.finer('[Background]   stop token="$t" unit=% -> ${stop.toStringAsFixed(4)} '
+            renderingLogger.finer(
+                '[Background]   stop token="$t" unit=% -> ${stop.toStringAsFixed(4)} '
                 'color=${_rgbaString(color.value)} src="$src"');
           }
         }
@@ -1248,16 +1384,21 @@ List<CSSColorStop> _parseColorAndStop(String src, RenderStyle renderStyle, Strin
           final double stop = radians / (math.pi * 2);
           parsedStops.add(stop);
           if (DebugFlags.enableBackgroundLogs) {
-            renderingLogger.finer('[Background]   stop token="$t" unit=angle -> ${stop.toStringAsFixed(4)} '
+            renderingLogger.finer(
+                '[Background]   stop token="$t" unit=angle -> ${stop.toStringAsFixed(4)} '
                 'color=${_rgbaString(color.value)} src="$src"');
           }
         }
       } else if (CSSLength.isLength(t)) {
         if (gradientLength != null && gradientLength > 0) {
-          final double stop = CSSLength.parseLength(t, renderStyle, propertyName).computedValue / gradientLength;
+          final double stop =
+              CSSLength.parseLength(t, renderStyle, propertyName)
+                      .computedValue /
+                  gradientLength;
           parsedStops.add(stop);
           if (DebugFlags.enableBackgroundLogs) {
-            renderingLogger.finer('[Background]   stop token="$t" unit=length -> ${stop.toStringAsFixed(4)} '
+            renderingLogger.finer(
+                '[Background]   stop token="$t" unit=length -> ${stop.toStringAsFixed(4)} '
                 '(gradLen=${gradientLength.toStringAsFixed(2)}) '
                 'color=${_rgbaString(color.value)} src="$src"');
           }
@@ -1272,7 +1413,8 @@ List<CSSColorStop> _parseColorAndStop(String src, RenderStyle renderStyle, Strin
     }
   } catch (e, st) {
     if (DebugFlags.enableBackgroundLogs) {
-      renderingLogger.warning('[Background] Failed to parse color stop "$src"', e, st);
+      renderingLogger.warning(
+          '[Background] Failed to parse color stop "$src"', e, st);
     }
     return const <CSSColorStop>[];
   }
@@ -1280,7 +1422,8 @@ List<CSSColorStop> _parseColorAndStop(String src, RenderStyle renderStyle, Strin
   if (parsedStops.isEmpty) {
     colorGradients.add(CSSColorStop(color.value, defaultStop));
     if (DebugFlags.enableBackgroundLogs) {
-      renderingLogger.finer('[Background]   stop default -> ${defaultStop?.toStringAsFixed(4) ?? '<none>'} '
+      renderingLogger.finer(
+          '[Background]   stop default -> ${defaultStop?.toStringAsFixed(4) ?? '<none>'} '
           'color=${_rgbaString(color.value)} src="$src"');
     }
     return colorGradients;
