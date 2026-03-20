@@ -1,3 +1,22 @@
+## 0.24.19
+
+### Performance Improvements
+
+- **CSS/Dart Engine**: significantly reduce pure-Dart style application overhead for large DOM
+  mounts by pruning redundant subtree restyles, optimizing selector and cascade evaluation,
+  speeding pseudo-element styling, reducing declaration merge/flush work, and caching parse-time
+  CSS values before resolve-time application.
+- **Bridge/DOM**: reduce UI command package overflow during large DOM mounts.
+
+### Bug Fixes
+
+- **CSS/Backgrounds**: fix mixed `background-attachment: fixed, local` multi-layer background
+  painting, preserve authored layered background values, and warm background images early enough
+  for first-paint snapshots.
+- **CSS/CSSOM**: normalize kebab-case CSSOM property names and ensure pending inline style updates
+  flush even when recomputed style matches the queued value, fixing resolved-value regressions.
+- **Dependencies**: widen `archive` and `intl` version constraints for Flutter 3.27+ compatibility.
+
 ## 0.24.18
 
 ### Major Features
