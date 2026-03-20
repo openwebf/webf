@@ -2523,8 +2523,9 @@ abstract class Element extends ContainerNode
       CSSStyleDeclaration newStyle = CSSStyleDeclaration();
       applyStyle(newStyle);
       bool hasInheritedPendingProperty = false;
+      final bool hadPendingProperties = style.hasPendingProperties;
       final bool merged = style.merge(newStyle);
-      if (merged) {
+      if (merged || hadPendingProperties) {
         hasInheritedPendingProperty = style.hasInheritedPendingProperty;
         style.flushPendingProperties();
       }

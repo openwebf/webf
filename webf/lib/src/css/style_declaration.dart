@@ -218,10 +218,12 @@ class CSSStyleDeclaration extends DynamicBindingObject
   /// Exposed for components (e.g., CSS variable resolver) that need to
   /// preserve importance when updating dependent properties.
   bool isImportant(String propertyName) {
-    return _importants[propertyName] == true;
+    return _importants[_normalizePropertyName(propertyName)] == true;
   }
 
   bool get hasImportantDeclarations => _importants.isNotEmpty;
+
+  bool get hasPendingProperties => _pendingProperties.isNotEmpty;
 
   bool get hasInheritedPendingProperty {
     return _pendingProperties.keys
@@ -243,6 +245,11 @@ class CSSStyleDeclaration extends DynamicBindingObject
   /// value is a String containing the value of the property.
   /// If not set, returns the empty string.
   String getPropertyValue(String propertyName) {
+    propertyName = _normalizePropertyName(propertyName);
+    return _getPropertyValueByNormalizedName(propertyName);
+  }
+
+  String _getPropertyValueByNormalizedName(String propertyName) {
     // Get the latest pending value first.
     return _pendingProperties[propertyName]?.value ??
         _properties[propertyName]?.value ??
@@ -251,6 +258,11 @@ class CSSStyleDeclaration extends DynamicBindingObject
 
   /// Returns the baseHref associated with a property value if available.
   String? getPropertyBaseHref(String propertyName) {
+    propertyName = _normalizePropertyName(propertyName);
+    return _getPropertyBaseHrefByNormalizedName(propertyName);
+  }
+
+  String? _getPropertyBaseHrefByNormalizedName(String propertyName) {
     return _pendingProperties[propertyName]?.baseHref ??
         _properties[propertyName]?.baseHref;
   }
@@ -389,8 +401,8 @@ class CSSStyleDeclaration extends DynamicBindingObject
     final List<String> propertyNames = _structuralPropertyNames();
     return Object.hashAll(propertyNames.map((propertyName) => Object.hash(
           propertyName,
-          getPropertyValue(propertyName),
-          getPropertyBaseHref(propertyName),
+          _getPropertyValueByNormalizedName(propertyName),
+          _getPropertyBaseHrefByNormalizedName(propertyName),
           _importants[propertyName] == true,
         )));
   }
@@ -405,12 +417,12 @@ class CSSStyleDeclaration extends DynamicBindingObject
     for (int index = 0; index < propertyNames.length; index++) {
       final String propertyName = propertyNames[index];
       if (propertyName != otherPropertyNames[index]) return false;
-      if (getPropertyValue(propertyName) !=
-          other.getPropertyValue(propertyName)) {
+      if (_getPropertyValueByNormalizedName(propertyName) !=
+          other._getPropertyValueByNormalizedName(propertyName)) {
         return false;
       }
-      if (getPropertyBaseHref(propertyName) !=
-          other.getPropertyBaseHref(propertyName)) {
+      if (_getPropertyBaseHrefByNormalizedName(propertyName) !=
+          other._getPropertyBaseHrefByNormalizedName(propertyName)) {
         return false;
       }
       if ((_importants[propertyName] == true) !=
@@ -424,6 +436,7 @@ class CSSStyleDeclaration extends DynamicBindingObject
 
   /// Removes a property from the CSS declaration.
   void removeProperty(String propertyName, [bool? isImportant]) {
+    propertyName = _normalizePropertyName(propertyName);
     switch (propertyName) {
       case PADDING:
         return CSSStyleProperty.removeShorthandPadding(this, isImportant);
@@ -888,7 +901,7 @@ class CSSStyleDeclaration extends DynamicBindingObject
     String? baseHref,
     bool validate = true,
   }) {
-    propertyName = propertyName.trim();
+    propertyName = _normalizePropertyName(propertyName);
 
     // Null or empty value means should be removed.
     if (isNullOrEmptyValue(value)) {
@@ -1560,4 +1573,15 @@ class CSSStyleDeclaration extends DynamicBindingObject
 // aB to a-b
 String _kebabize(String str) {
   return kebabizeCamelCase(str);
+}
+
+String _normalizePropertyName(String propertyName) {
+  final String trimmed = propertyName.trim();
+  if (trimmed.isEmpty || trimmed.startsWith('--')) {
+    return trimmed;
+  }
+  if (trimmed.contains('-')) {
+    return camelize(trimmed.toLowerCase());
+  }
+  return trimmed;
 }
