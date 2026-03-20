@@ -16,7 +16,73 @@ import 'package:webf/src/css/query_selector.dart';
 
 bool kShowUnavailableCSSProperties = false;
 
+class SelectorAncestorTokenSet {
+  final Element? _element;
+  Set<String>? _ids;
+  Set<String>? _classes;
+  Set<String>? _tags;
+
+  SelectorAncestorTokenSet._(
+      this._element, this._ids, this._classes, this._tags);
+
+  factory SelectorAncestorTokenSet.lazy(Element element) {
+    return SelectorAncestorTokenSet._(element, null, null, null);
+  }
+
+  factory SelectorAncestorTokenSet.eager(
+      {required Set<String> ids,
+      required Set<String> classes,
+      required Set<String> tags}) {
+    return SelectorAncestorTokenSet._(null, ids, classes, tags);
+  }
+
+  Set<String> get ids {
+    _ensureBuilt();
+    return _ids!;
+  }
+
+  Set<String> get classes {
+    _ensureBuilt();
+    return _classes!;
+  }
+
+  Set<String> get tags {
+    _ensureBuilt();
+    return _tags!;
+  }
+
+  void _ensureBuilt() {
+    if (_ids != null && _classes != null && _tags != null) {
+      return;
+    }
+
+    final Set<String> ids = <String>{};
+    final Set<String> classes = <String>{};
+    final Set<String> tags = <String>{};
+    Element? cursor = _element?.parentElement;
+    while (cursor != null) {
+      final String? cursorId = cursor.id;
+      if (cursorId != null && cursorId.isNotEmpty) {
+        ids.add(cursorId);
+      }
+      if (cursor.classList.isNotEmpty) {
+        classes.addAll(cursor.classList);
+      }
+      tags.add(cursor.tagName.toUpperCase());
+      cursor = cursor.parentElement;
+    }
+
+    _ids = ids;
+    _classes = classes;
+    _tags = tags;
+  }
+}
+
 class ElementRuleCollector {
+  SelectorAncestorTokenSet buildAncestorTokens(Element element) {
+    return _buildAncestorTokens(element);
+  }
+
   bool matchedAnyRule(RuleSet ruleSet, Element element) {
     return matchedRules(ruleSet, element).isNotEmpty;
   }
@@ -73,8 +139,14 @@ class ElementRuleCollector {
         matchRules(ruleSet.pseudoRules);
   }
 
-  List<CSSStyleRule> matchedPseudoRules(RuleSet ruleSet, Element element) {
-    final SelectorEvaluator evaluator = SelectorEvaluator();
+  List<CSSStyleRule> matchedPseudoRules(RuleSet ruleSet, Element element,
+      {SelectorAncestorTokenSet? ancestorTokens,
+      SelectorEvaluator? evaluator}) {
+    final SelectorEvaluator resolvedEvaluator = evaluator ?? SelectorEvaluator();
+    final SelectorAncestorTokenSet? resolvedAncestorTokens = ancestorTokens ??
+        (DebugFlags.enableCssAncestryFastPath
+            ? _buildAncestorTokens(element)
+            : null);
 
     // Collect candidates from all indexed buckets because many pseudo-element
     // selectors (e.g., ".foo div::before") are indexed under tag/class/id
@@ -87,9 +159,10 @@ class ElementRuleCollector {
       _collectMatchingRulesForList(
         ruleSet.idRules[id],
         element,
-        evaluator: evaluator,
+        evaluator: resolvedEvaluator,
         includePseudo: true,
-        enableAncestryFastPath: false,
+        enableAncestryFastPath: DebugFlags.enableCssAncestryFastPath,
+        ancestorTokens: resolvedAncestorTokens,
         matchedRules: candidates,
       );
     }
@@ -99,9 +172,10 @@ class ElementRuleCollector {
       _collectMatchingRulesForList(
         ruleSet.classRules[className],
         element,
-        evaluator: evaluator,
+        evaluator: resolvedEvaluator,
         includePseudo: true,
-        enableAncestryFastPath: false,
+        enableAncestryFastPath: DebugFlags.enableCssAncestryFastPath,
+        ancestorTokens: resolvedAncestorTokens,
         matchedRules: candidates,
       );
     }
@@ -111,9 +185,10 @@ class ElementRuleCollector {
       _collectMatchingRulesForList(
         ruleSet.attributeRules[attribute.toUpperCase()],
         element,
-        evaluator: evaluator,
+        evaluator: resolvedEvaluator,
         includePseudo: true,
-        enableAncestryFastPath: false,
+        enableAncestryFastPath: DebugFlags.enableCssAncestryFastPath,
+        ancestorTokens: resolvedAncestorTokens,
         matchedRules: candidates,
       );
     }
@@ -123,9 +198,10 @@ class ElementRuleCollector {
     _collectMatchingRulesForList(
       ruleSet.tagRules[tagLookup],
       element,
-      evaluator: evaluator,
+      evaluator: resolvedEvaluator,
       includePseudo: true,
-      enableAncestryFastPath: false,
+      enableAncestryFastPath: DebugFlags.enableCssAncestryFastPath,
+      ancestorTokens: resolvedAncestorTokens,
       matchedRules: candidates,
     );
 
@@ -133,9 +209,10 @@ class ElementRuleCollector {
     _collectMatchingRulesForList(
       ruleSet.universalRules,
       element,
-      evaluator: evaluator,
+      evaluator: resolvedEvaluator,
       includePseudo: true,
-      enableAncestryFastPath: false,
+      enableAncestryFastPath: DebugFlags.enableCssAncestryFastPath,
+      ancestorTokens: resolvedAncestorTokens,
       matchedRules: candidates,
     );
 
@@ -143,9 +220,10 @@ class ElementRuleCollector {
     _collectMatchingRulesForList(
       ruleSet.pseudoRules,
       element,
-      evaluator: evaluator,
+      evaluator: resolvedEvaluator,
       includePseudo: true,
-      enableAncestryFastPath: false,
+      enableAncestryFastPath: DebugFlags.enableCssAncestryFastPath,
+      ancestorTokens: resolvedAncestorTokens,
       matchedRules: candidates,
     );
 
@@ -161,17 +239,19 @@ class ElementRuleCollector {
     return list;
   }
 
-  List<CSSStyleRule> matchedRules(RuleSet ruleSet, Element element) {
+  List<CSSStyleRule> matchedRules(RuleSet ruleSet, Element element,
+      {SelectorAncestorTokenSet? ancestorTokens,
+      SelectorEvaluator? evaluator}) {
     final List<CSSStyleRule> matchedRules = <CSSStyleRule>[];
 
     // Reuse a single evaluator per matchedRules() to avoid repeated allocations.
-    final SelectorEvaluator evaluator = SelectorEvaluator();
-    // Build ancestor token sets once per call if fast-path is enabled, to avoid
-    // repeatedly walking the ancestor chain for each candidate rule.
-    final _AncestorTokenSet? ancestorTokens =
-        DebugFlags.enableCssAncestryFastPath
+    final SelectorEvaluator resolvedEvaluator = evaluator ?? SelectorEvaluator();
+    // Share one lazily materialized ancestor token set across all candidate
+    // checks in this match pass so we only walk the ancestor chain on demand.
+    final SelectorAncestorTokenSet? resolvedAncestorTokens = ancestorTokens ??
+        (DebugFlags.enableCssAncestryFastPath
             ? _buildAncestorTokens(element)
-            : null;
+            : null);
 
     if (ruleSet.isEmpty) {
       return matchedRules;
@@ -184,9 +264,9 @@ class ElementRuleCollector {
       _collectMatchingRulesForList(
         list,
         element,
-        evaluator: evaluator,
+        evaluator: resolvedEvaluator,
         enableAncestryFastPath: DebugFlags.enableCssAncestryFastPath,
-        ancestorTokens: ancestorTokens,
+        ancestorTokens: resolvedAncestorTokens,
         matchedRules: matchedRules,
       );
     }
@@ -197,9 +277,9 @@ class ElementRuleCollector {
       _collectMatchingRulesForList(
         list,
         element,
-        evaluator: evaluator,
+        evaluator: resolvedEvaluator,
         enableAncestryFastPath: DebugFlags.enableCssAncestryFastPath,
-        ancestorTokens: ancestorTokens,
+        ancestorTokens: resolvedAncestorTokens,
         matchedRules: matchedRules,
       );
     }
@@ -210,9 +290,9 @@ class ElementRuleCollector {
       _collectMatchingRulesForList(
         list,
         element,
-        evaluator: evaluator,
+        evaluator: resolvedEvaluator,
         enableAncestryFastPath: DebugFlags.enableCssAncestryFastPath,
-        ancestorTokens: ancestorTokens,
+        ancestorTokens: resolvedAncestorTokens,
         matchedRules: matchedRules,
       );
     }
@@ -223,9 +303,9 @@ class ElementRuleCollector {
     _collectMatchingRulesForList(
       listTag,
       element,
-      evaluator: evaluator,
+      evaluator: resolvedEvaluator,
       enableAncestryFastPath: DebugFlags.enableCssAncestryFastPath,
-      ancestorTokens: ancestorTokens,
+      ancestorTokens: resolvedAncestorTokens,
       matchedRules: matchedRules,
     );
 
@@ -233,9 +313,9 @@ class ElementRuleCollector {
     _collectMatchingRulesForList(
       ruleSet.universalRules,
       element,
-      evaluator: evaluator,
+      evaluator: resolvedEvaluator,
       enableAncestryFastPath: DebugFlags.enableCssAncestryFastPath,
-      ancestorTokens: ancestorTokens,
+      ancestorTokens: resolvedAncestorTokens,
       matchedRules: matchedRules,
     );
 
@@ -249,7 +329,7 @@ class ElementRuleCollector {
     final List<CSSStyleRule> matchedRules = <CSSStyleRule>[];
     // Reuse a single evaluator per call.
     final SelectorEvaluator evaluator = SelectorEvaluator();
-    final _AncestorTokenSet? ancestorTokens =
+    final SelectorAncestorTokenSet? ancestorTokens =
         DebugFlags.enableCssAncestryFastPath
             ? _buildAncestorTokens(element)
             : null;
@@ -309,8 +389,8 @@ class ElementRuleCollector {
         ruleSet.pseudoRules,
         element,
         evaluator: evaluator,
-        enableAncestryFastPath: false,
-        ancestorTokens: null,
+        enableAncestryFastPath: DebugFlags.enableCssAncestryFastPath,
+        ancestorTokens: ancestorTokens,
         includePseudo: true,
         matchedRules: matchedRules,
       );
@@ -322,8 +402,12 @@ class ElementRuleCollector {
 
   void gotoReturn(List<CSSStyleRule> matchedRules) {}
 
-  CSSStyleDeclaration collectionFromRuleSet(RuleSet ruleSet, Element element) {
-    return cascadeMatchedStyleRules(matchedRules(ruleSet, element));
+  CSSStyleDeclaration collectionFromRuleSet(RuleSet ruleSet, Element element,
+      {SelectorAncestorTokenSet? ancestorTokens, SelectorEvaluator? evaluator}) {
+    return cascadeMatchedStyleRules(
+        matchedRules(ruleSet, element,
+            ancestorTokens: ancestorTokens, evaluator: evaluator),
+        cacheVersion: ruleSet.ownerDocument.ruleSetVersion);
   }
 
   void _collectMatchingRulesForList(
@@ -331,7 +415,7 @@ class ElementRuleCollector {
     Element element, {
     required SelectorEvaluator evaluator,
     bool enableAncestryFastPath = true,
-    _AncestorTokenSet? ancestorTokens,
+    SelectorAncestorTokenSet? ancestorTokens,
     bool includePseudo = false,
     required List<CSSStyleRule> matchedRules,
   }) {
@@ -400,8 +484,8 @@ class ElementRuleCollector {
 
   bool _selectorsMayMatchAncestorHints(
       Iterable<Selector> selectors, Element element,
-      {_AncestorTokenSet? tokens}) {
-    _AncestorTokenSet? localTokens = tokens;
+      {SelectorAncestorTokenSet? tokens}) {
+    SelectorAncestorTokenSet? localTokens = tokens;
     for (final Selector selector in selectors) {
       final SelectorAncestorHints hints = selector.descendantAncestorHints;
       if (hints.isEmpty) {
@@ -416,7 +500,7 @@ class ElementRuleCollector {
   }
 
   bool _ancestorChainSatisfiesHints(
-      _AncestorTokenSet tokens, SelectorAncestorHints hints) {
+      SelectorAncestorTokenSet tokens, SelectorAncestorHints hints) {
     if (hints.isEmpty) return true;
     // All required tokens must be present somewhere in the chain.
     if (hints.ids.isNotEmpty && !tokens.ids.containsAll(hints.ids))
@@ -428,25 +512,7 @@ class ElementRuleCollector {
     return true;
   }
 
-  _AncestorTokenSet _buildAncestorTokens(Element element) {
-    final Set<String> ids = {};
-    final Set<String> classes = {};
-    final Set<String> tags = {};
-    Element? cursor = element.parentElement;
-    while (cursor != null) {
-      if (cursor.id != null && cursor.id!.isNotEmpty) ids.add(cursor.id!);
-      if (cursor.classList.isNotEmpty) classes.addAll(cursor.classList);
-      tags.add(cursor.tagName.toUpperCase());
-      cursor = cursor.parentElement;
-    }
-    return _AncestorTokenSet(ids: ids, classes: classes, tags: tags);
+  SelectorAncestorTokenSet _buildAncestorTokens(Element element) {
+    return SelectorAncestorTokenSet.lazy(element);
   }
-}
-
-class _AncestorTokenSet {
-  final Set<String> ids;
-  final Set<String> classes;
-  final Set<String> tags;
-  _AncestorTokenSet(
-      {required this.ids, required this.classes, required this.tags});
 }

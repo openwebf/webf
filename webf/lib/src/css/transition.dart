@@ -637,6 +637,7 @@ mixin CSSTransitionMixin on RenderStyle {
   set transitionProperty(List<String>? value) {
     _transitionProperty = value;
     _effectiveTransitions = null;
+    _hasRunnableTransitions = null;
     // https://github.com/WebKit/webkit/blob/master/Source/WebCore/animation/AnimationTimeline.cpp#L257
     // Any animation found in previousAnimations but not found in newAnimations is not longer current and should be canceled.
     // @HACK: There are no way to get animationList from styles(Webkit will create an new Style object when style changes, but Kraken not).
@@ -662,6 +663,7 @@ mixin CSSTransitionMixin on RenderStyle {
   set transitionDuration(List<String>? value) {
     _transitionDuration = value;
     _effectiveTransitions = null;
+    _hasRunnableTransitions = null;
   }
 
   @override
@@ -682,6 +684,7 @@ mixin CSSTransitionMixin on RenderStyle {
   set transitionTimingFunction(List<String>? value) {
     _transitionTimingFunction = value;
     _effectiveTransitions = null;
+    _hasRunnableTransitions = null;
   }
 
   @override
@@ -702,12 +705,14 @@ mixin CSSTransitionMixin on RenderStyle {
   set transitionDelay(List<String>? value) {
     _transitionDelay = value;
     _effectiveTransitions = null;
+    _hasRunnableTransitions = null;
   }
 
   @override
   List<String> get transitionDelay => _transitionDelay ?? const [_zeroSeconds];
 
   Map<String, List>? _effectiveTransitions;
+  bool? _hasRunnableTransitions;
 
   Map<String, List> get effectiveTransitions {
     if (_effectiveTransitions != null) return _effectiveTransitions!;
@@ -722,6 +727,31 @@ mixin CSSTransitionMixin on RenderStyle {
       transitions[property] = [duration, function, delay];
     }
     return _effectiveTransitions = transitions;
+  }
+
+  bool get hasRunnableTransitions {
+    final bool? cached = _hasRunnableTransitions;
+    if (cached != null) return cached;
+
+    for (final List transitionOptions in effectiveTransitions.values) {
+      final int? duration = CSSTime.parseTime(transitionOptions[0]);
+      if (duration != null && duration != 0) {
+        return _hasRunnableTransitions = true;
+      }
+    }
+    return _hasRunnableTransitions = false;
+  }
+
+  bool mayTransitionProperty(String property) {
+    if (!_didFlushStyleWhileConnected) return false;
+    if (CSSVariable.isCSSSVariableProperty(property)) return false;
+    if (!hasRunnableTransitions) return false;
+    if (!hasRenderBox() || !isBoxModelHaveSize()) return false;
+    if (cssTransitionHandlers[property] == null) return false;
+
+    final String key = _canonicalTransitionKey(property);
+    final Map<String, List> transitions = effectiveTransitions;
+    return transitions.containsKey(key) || transitions.containsKey(ALL);
   }
 
   bool shouldTransition(String property, String? prevValue, String nextValue) {
@@ -782,7 +812,9 @@ mixin CSSTransitionMixin on RenderStyle {
     }
 
     final String key = _canonicalTransitionKey(property);
-    final bool configured = effectiveTransitions.containsKey(key) || effectiveTransitions.containsKey(ALL);
+    final Map<String, List> transitions = effectiveTransitions;
+    final bool configured =
+        transitions.containsKey(key) || transitions.containsKey(ALL);
     if (!configured) {
       if (DebugFlags.shouldLogTransitionForProp(property)) {
         cssLogger
@@ -791,18 +823,11 @@ mixin CSSTransitionMixin on RenderStyle {
       return false;
     }
     if (DebugFlags.shouldLogTransitionForProp(property)) {
-      final List? opts = effectiveTransitions[key] ?? effectiveTransitions[ALL];
+      final List? opts = transitions[key] ?? transitions[ALL];
       cssLogger.info(
           '[transition][check] property=$property key=$key opts=${opts != null ? '{duration: ${opts[0]}, easing: ${opts[1]}, delay: ${opts[2]}}' : 'null'}');
     }
-    bool shouldTransition = false;
-    // Transition will be disabled when all transition has transitionDuration as 0.
-    effectiveTransitions.forEach((String transitionKey, List transitionOptions) {
-      int? duration = CSSTime.parseTime(transitionOptions[0]);
-      if (duration != null && duration != 0) {
-        shouldTransition = true;
-      }
-    });
+    final bool shouldTransition = hasRunnableTransitions;
     if (DebugFlags.shouldLogTransitionForProp(property)) {
       cssLogger.info(
           '[transition][check] property=$property configured key=$key result=$shouldTransition');

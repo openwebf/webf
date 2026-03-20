@@ -291,7 +291,7 @@ class CSSLengthValue {
       final bool parentIsFlexContainer = flexParent != null &&
           (flexParent.effectiveDisplay == CSSDisplay.flex || flexParent.effectiveDisplay == CSSDisplay.inlineFlex);
       if (parentIsFlexContainer && rs.width.isAuto && rs.flexGrow == 0 && rs.contentBoxLogicalWidth == null) {
-        final FlexDirection dir = flexParent!.flexDirection;
+        final FlexDirection dir = flexParent.flexDirection;
         final bool parentIsColumn = dir == FlexDirection.column || dir == FlexDirection.columnReverse;
         if (parentIsColumn) {
           final AlignSelf self = rs.alignSelf;
@@ -1065,6 +1065,185 @@ class CSSLengthValue {
   @override
   String toString() =>
       'CSSLengthValue(value: $value, unit: $type, computedValue: $computedValue, calcValue: $calcValue)';
+}
+
+class CSSParsedLengthValue {
+  final double? value;
+  final CSSLengthType type;
+
+  const CSSParsedLengthValue(this.value, this.type);
+
+  static const CSSParsedLengthValue zero =
+      CSSParsedLengthValue(0, CSSLengthType.PX);
+  static const CSSParsedLengthValue auto =
+      CSSParsedLengthValue(null, CSSLengthType.AUTO);
+  static const CSSParsedLengthValue initial =
+      CSSParsedLengthValue(null, CSSLengthType.INITIAL);
+  static const CSSParsedLengthValue normal =
+      CSSParsedLengthValue(null, CSSLengthType.NORMAL);
+  static const CSSParsedLengthValue none =
+      CSSParsedLengthValue(null, CSSLengthType.NONE);
+  static const CSSParsedLengthValue content =
+      CSSParsedLengthValue(null, CSSLengthType.CONTENT);
+  static const CSSParsedLengthValue minContent =
+      CSSParsedLengthValue(null, CSSLengthType.MIN_CONTENT);
+  static const CSSParsedLengthValue maxContent =
+      CSSParsedLengthValue(null, CSSLengthType.MAX_CONTENT);
+  static const CSSParsedLengthValue fitContent =
+      CSSParsedLengthValue(null, CSSLengthType.FIT_CONTENT);
+
+  static CSSParsedLengthValue? tryParse(String text) {
+    double? parsedValue;
+    CSSLengthType unit = CSSLengthType.PX;
+    if (text == ZERO) {
+      return zero;
+    } else if (text == INITIAL) {
+      return initial;
+    } else if (text == INHERIT) {
+      return null;
+    } else if (text == AUTO) {
+      return auto;
+    } else if (text == NONE) {
+      return none;
+    } else if (text == NORMAL) {
+      return normal;
+    } else if (text.toLowerCase() == 'content') {
+      return content;
+    } else if (text.toLowerCase() == 'min-content') {
+      return minContent;
+    } else if (text.toLowerCase() == 'max-content') {
+      return maxContent;
+    } else if (text.toLowerCase() == 'fit-content') {
+      return fitContent;
+    } else if (text.endsWith(REM)) {
+      parsedValue = double.tryParse(text.split(REM)[0]);
+      unit = CSSLengthType.REM;
+    } else if (text.endsWith(EM)) {
+      parsedValue = double.tryParse(text.split(EM)[0]);
+      unit = CSSLengthType.EM;
+    } else if (text.endsWith(EX)) {
+      parsedValue = double.tryParse(text.split(EX)[0]);
+      unit = CSSLengthType.EX;
+    } else if (text.endsWith(CH)) {
+      parsedValue = double.tryParse(text.split(CH)[0]);
+      unit = CSSLengthType.CH;
+    } else if (text.endsWith(RPX)) {
+      parsedValue = double.tryParse(text.split(RPX)[0]);
+      unit = CSSLengthType.RPX;
+    } else if (text.endsWith(PX)) {
+      parsedValue = double.tryParse(text.split(PX)[0]);
+    } else if (text.endsWith(VW)) {
+      parsedValue = double.tryParse(text.split(VW)[0]);
+      if (parsedValue != null) {
+        parsedValue = parsedValue / 100;
+      }
+      unit = CSSLengthType.VW;
+    } else if (text.endsWith(VH)) {
+      parsedValue = double.tryParse(text.split(VH)[0]);
+      if (parsedValue != null) {
+        parsedValue = parsedValue / 100;
+      }
+      unit = CSSLengthType.VH;
+    } else if (text.endsWith(CM)) {
+      parsedValue = double.tryParse(text.split(CM)[0]);
+      if (parsedValue != null) {
+        parsedValue = parsedValue * _1cm;
+      }
+    } else if (text.endsWith(MM)) {
+      parsedValue = double.tryParse(text.split(MM)[0]);
+      if (parsedValue != null) {
+        parsedValue = parsedValue * _1mm;
+      }
+    } else if (text.endsWith(PC)) {
+      parsedValue = double.tryParse(text.split(PC)[0]);
+      if (parsedValue != null) {
+        parsedValue = parsedValue * _1pc;
+      }
+    } else if (text.endsWith(PT)) {
+      parsedValue = double.tryParse(text.split(PT)[0]);
+      if (parsedValue != null) {
+        parsedValue = parsedValue * _1pt;
+      }
+    } else if (text.endsWith(VMIN)) {
+      parsedValue = double.tryParse(text.split(VMIN)[0]);
+      if (parsedValue != null) {
+        parsedValue = parsedValue / 100;
+      }
+      unit = CSSLengthType.VMIN;
+    } else if (text.endsWith(VMAX)) {
+      parsedValue = double.tryParse(text.split(VMAX)[0]);
+      if (parsedValue != null) {
+        parsedValue = parsedValue / 100;
+      }
+      unit = CSSLengthType.VMAX;
+    } else if (text.endsWith(IN)) {
+      parsedValue = double.tryParse(text.split(IN)[0]);
+      if (parsedValue != null) {
+        parsedValue = parsedValue * _1in;
+      }
+    } else if (text.endsWith(Q)) {
+      parsedValue = double.tryParse(text.split(Q)[0]);
+      if (parsedValue != null) {
+        parsedValue = parsedValue * _1Q;
+      }
+    } else if (text.endsWith(PERCENTAGE)) {
+      parsedValue = double.tryParse(text.split(PERCENTAGE)[0]);
+      if (parsedValue != null) {
+        parsedValue = parsedValue / 100;
+      }
+      unit = CSSLengthType.PERCENTAGE;
+    } else if (CSSFunction.isFunction(text)) {
+      return null;
+    } else {
+      parsedValue = double.tryParse(text);
+    }
+
+    if (parsedValue == 0 && unit != CSSLengthType.PERCENTAGE) {
+      return zero;
+    }
+    if (parsedValue == null) {
+      return null;
+    }
+
+    return CSSParsedLengthValue(parsedValue, unit);
+  }
+
+  CSSLengthValue resolve(RenderStyle renderStyle, String propertyName,
+      [Axis? axisType]) {
+    switch (type) {
+      case CSSLengthType.PX:
+        if (value == 0) {
+          return CSSLengthValue.zero;
+        }
+        return CSSLengthValue(value, CSSLengthType.PX);
+      case CSSLengthType.AUTO:
+        return CSSLengthValue.auto;
+      case CSSLengthType.NONE:
+        return CSSLengthValue.none;
+      case CSSLengthType.NORMAL:
+        return CSSLengthValue.normal;
+      case CSSLengthType.INITIAL:
+        return CSSLengthValue.initial;
+      case CSSLengthType.CONTENT:
+      case CSSLengthType.MIN_CONTENT:
+      case CSSLengthType.MAX_CONTENT:
+      case CSSLengthType.FIT_CONTENT:
+        return CSSLengthValue(value, type, renderStyle, propertyName, axisType);
+      case CSSLengthType.UNKNOWN:
+        return CSSLengthValue.unknown;
+      case CSSLengthType.RPX:
+      case CSSLengthType.EM:
+      case CSSLengthType.EX:
+      case CSSLengthType.CH:
+      case CSSLengthType.REM:
+      case CSSLengthType.VH:
+      case CSSLengthType.VW:
+      case CSSLengthType.VMIN:
+      case CSSLengthType.VMAX:
+      case CSSLengthType.PERCENTAGE:
+        return CSSLengthValue(value, type, renderStyle, propertyName, axisType);
+    }
+  }
 }
 
 // Cache computed length value during perform layout.
