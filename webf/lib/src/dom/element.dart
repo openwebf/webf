@@ -1943,9 +1943,14 @@ abstract class Element extends ContainerNode
       cssLogger.info(
           '[style][apply] $tagName.$property present="$present" baseHref=${baseHref ?? 'null'}');
     }
-    dynamic value = present.isEmpty
-        ? null
-        : renderStyle.resolveValue(property, present, baseHref: baseHref);
+    dynamic value;
+    if (present.isEmpty) {
+      value = null;
+    } else if (CSSVariable.isCSSSVariableProperty(property)) {
+      value = present;
+    } else {
+      value = renderStyle.resolveValue(property, present, baseHref: baseHref);
+    }
 
     setRenderStyleProperty(property, value);
   }
@@ -2011,8 +2016,12 @@ abstract class Element extends ContainerNode
     }
   }
 
-  void _applySheetStyle(CSSStyleDeclaration style) {
-    CSSStyleDeclaration matchRule = _collectMatchedRulesWithCache();
+  void _applySheetStyle(CSSStyleDeclaration style,
+      {SelectorAncestorTokenSet? ancestorTokens,
+      query_selector.SelectorEvaluator? evaluator}) {
+    CSSStyleDeclaration matchRule =
+        _collectMatchedRulesWithCache(
+            ancestorTokens: ancestorTokens, evaluator: evaluator);
     style.union(matchRule);
   }
 
@@ -2022,12 +2031,15 @@ abstract class Element extends ContainerNode
   LinkedHashMap<_MatchFingerprint, CSSStyleDeclaration>? _matchedRulesLRU;
   int _matchedRulesLRUVersion = -1;
 
-  CSSStyleDeclaration _collectMatchedRulesWithCache() {
+  CSSStyleDeclaration _collectMatchedRulesWithCache(
+      {SelectorAncestorTokenSet? ancestorTokens,
+      query_selector.SelectorEvaluator? evaluator}) {
     final RuleSet ruleSet = ownerDocument.ruleSet;
     if (!DebugFlags.enableCssMemoization) {
       _matchedRulesLRU = null;
       _matchedRulesLRUVersion = -1;
-      return _elementRuleCollector.collectionFromRuleSet(ruleSet, this);
+      return _elementRuleCollector.collectionFromRuleSet(ruleSet, this,
+          ancestorTokens: ancestorTokens, evaluator: evaluator);
     }
 
     final int version = ownerDocument.ruleSetVersion;
@@ -2051,7 +2063,8 @@ abstract class Element extends ContainerNode
     final int capRaw = DebugFlags.cssMatchedRulesCacheCapacity;
     final int capacity = capRaw <= 0 ? 1 : capRaw;
     final CSSStyleDeclaration computed =
-        _elementRuleCollector.collectionFromRuleSet(ruleSet, this);
+        _elementRuleCollector.collectionFromRuleSet(ruleSet, this,
+            ancestorTokens: ancestorTokens, evaluator: evaluator);
     if (cache.length >= capacity) {
       final _MatchFingerprint oldest = cache.keys.first;
       cache.remove(oldest);
@@ -2226,6 +2239,14 @@ abstract class Element extends ContainerNode
       String propertyName, String? prevValue, String currentValue,
       {String? baseHref}) {
     final String property = _normalizeStylePropertyName(propertyName);
+    final bool pending = _pendingTransitionProps.contains(property);
+    final bool running = renderStyle.isTransitionRunning(property);
+    if (!pending &&
+        !running &&
+        !renderStyle.mayTransitionProperty(property)) {
+      setRenderStyle(property, currentValue, baseHref: baseHref);
+      return;
+    }
     // Identify color-bearing properties up front so we can normalize
     // both the previous and current values to concrete colors for
     // transition decisions, independent of any var(...) indirection.
@@ -2283,8 +2304,6 @@ abstract class Element extends ContainerNode
     // running, avoid applying the immediate setRenderStyle which would clobber
     // the animation-driven value. The scheduled/active transition will drive
     // updates.
-    final bool pending = _pendingTransitionProps.contains(property);
-    final bool running = renderStyle.isTransitionRunning(property);
     if (DebugFlags.shouldLogTransitionForProp(property)) {
       cssLogger.info(
           '[style][route] $tagName.$property pending=$pending running=$running');
@@ -2430,22 +2449,33 @@ abstract class Element extends ContainerNode
     style.clearPseudoStyle(type);
   }
 
-  void _applyPseudoStyle(CSSStyleDeclaration style) {
-    List<CSSStyleRule> pseudoRules =
-        _elementRuleCollector.matchedPseudoRules(ownerDocument.ruleSet, this);
+  void _applyPseudoStyle(CSSStyleDeclaration style,
+      {SelectorAncestorTokenSet? ancestorTokens,
+      query_selector.SelectorEvaluator? evaluator}) {
+    List<CSSStyleRule> pseudoRules = _elementRuleCollector.matchedPseudoRules(
+        ownerDocument.ruleSet, this,
+        ancestorTokens: ancestorTokens, evaluator: evaluator);
     style.handlePseudoRules(this, pseudoRules);
   }
 
   void applyStyle(CSSStyleDeclaration style) {
+    final SelectorAncestorTokenSet? ancestorTokens =
+        DebugFlags.enableCssAncestryFastPath
+            ? _elementRuleCollector.buildAncestorTokens(this)
+            : null;
+    final query_selector.SelectorEvaluator selectorEvaluator =
+        query_selector.SelectorEvaluator();
     // Apply default style.
     applyDefaultStyle(style);
     // Init display from style directly cause renderStyle is not flushed yet.
     renderStyle.initDisplay(style);
 
     applyAttributeStyle(style);
-    _applySheetStyle(style);
+    _applySheetStyle(style,
+        ancestorTokens: ancestorTokens, evaluator: selectorEvaluator);
     applyInlineStyle(style);
-    _applyPseudoStyle(style);
+    _applyPseudoStyle(style,
+        ancestorTokens: ancestorTokens, evaluator: selectorEvaluator);
   }
 
   void applyAttributeStyle(CSSStyleDeclaration style) {

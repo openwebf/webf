@@ -77,6 +77,13 @@ List<String> _propertyOrders = [
   HEIGHT
 ];
 
+final List<String> _propertyFlushPriorityOrder =
+    List<String>.unmodifiable(_propertyOrders.reversed);
+final Map<String, int> _propertyFlushPriorityRanks = <String, int>{
+  for (int i = 0; i < _propertyFlushPriorityOrder.length; i++)
+    _propertyFlushPriorityOrder[i]: i,
+};
+
 final LinkedLruHashMap<String, Map<String, String?>> _cachedExpandedShorthand =
     LinkedLruHashMap(maximumSize: 500);
 
@@ -246,6 +253,124 @@ class CSSStyleDeclaration extends DynamicBindingObject
   String? getPropertyBaseHref(String propertyName) {
     return _pendingProperties[propertyName]?.baseHref ??
         _properties[propertyName]?.baseHref;
+  }
+
+  CSSPropertyValue? _effectiveProperty(String propertyName) {
+    return _pendingProperties[propertyName] ?? _properties[propertyName];
+  }
+
+  bool _hasEffectiveProperty(String propertyName) {
+    final CSSPropertyValue? value = _effectiveProperty(propertyName);
+    return value != null && value.value.isNotEmpty;
+  }
+
+  String _removedPropertyFallbackValue(String propertyName,
+      [bool? isImportant]) {
+    String present = EMPTY_STRING;
+    if (isImportant == true) {
+      _importants.remove(propertyName);
+      final String? value = _sheetStyle[propertyName];
+      if (!isNullOrEmptyValue(value)) {
+        present = value!;
+      }
+    } else if (isImportant == false) {
+      _sheetStyle.remove(propertyName);
+    }
+
+    if (isNullOrEmptyValue(present) &&
+        defaultStyle != null &&
+        defaultStyle!.containsKey(propertyName)) {
+      present = defaultStyle![propertyName];
+    }
+
+    if (isNullOrEmptyValue(present) &&
+        cssInitialValues.containsKey(propertyName)) {
+      final String kebabName = _kebabize(propertyName);
+      final bool isInherited = isInheritedPropertyString(kebabName);
+      if (!isInherited) {
+        present = cssInitialValues[propertyName];
+      }
+    }
+
+    return present;
+  }
+
+  bool _queueMergedPropertyValue(String propertyName, CSSPropertyValue value,
+      {required bool important}) {
+    if (!important) {
+      _sheetStyle[propertyName] = value.value;
+    }
+
+    if (!important && _importants[propertyName] == true) {
+      return false;
+    }
+
+    if (important) {
+      _importants[propertyName] = true;
+    }
+
+    _pendingProperties[propertyName] = value;
+    return true;
+  }
+
+  bool get _isEffectivelyEmpty =>
+      _properties.isEmpty && _pendingProperties.isEmpty && _importants.isEmpty;
+
+  void _adoptEffectivePropertiesFrom(CSSStyleDeclaration declaration) {
+    if (declaration._properties.isEmpty) {
+      if (declaration._pendingProperties.isNotEmpty) {
+        _pendingProperties =
+            Map<String, CSSPropertyValue>.of(declaration._pendingProperties);
+      }
+      if (declaration._importants.isNotEmpty) {
+        _importants.addAll(declaration._importants);
+      }
+      return;
+    }
+
+    final CSSStyleDeclaration cloned = declaration.cloneEffective();
+    if (cloned._pendingProperties.isNotEmpty) {
+      _pendingProperties = cloned._pendingProperties;
+    }
+    if (cloned._importants.isNotEmpty) {
+      _importants.addAll(cloned._importants);
+    }
+  }
+
+  CSSStyleDeclaration cloneEffective() {
+    final CSSStyleDeclaration cloned = CSSStyleDeclaration();
+
+    if (_properties.isEmpty) {
+      if (_pendingProperties.isNotEmpty) {
+        cloned._pendingProperties =
+            Map<String, CSSPropertyValue>.of(_pendingProperties);
+      }
+      if (_importants.isNotEmpty) {
+        cloned._importants.addAll(_importants);
+      }
+      return cloned;
+    }
+
+    for (final String propertyName in _properties.keys) {
+      if (_pendingProperties.containsKey(propertyName)) continue;
+      final CSSPropertyValue? value = _properties[propertyName];
+      if (value == null || value.value.isEmpty) continue;
+      cloned._pendingProperties[propertyName] = value;
+      if (_importants[propertyName] == true) {
+        cloned._importants[propertyName] = true;
+      }
+    }
+
+    for (final String propertyName in _pendingProperties.keys) {
+      final CSSPropertyValue value = _pendingProperties[propertyName]!;
+      if (value.value.isEmpty) continue;
+      cloned._pendingProperties[propertyName] = value;
+      if (_importants[propertyName] == true) {
+        cloned._importants[propertyName] = true;
+      }
+    }
+
+    return cloned;
   }
 
   List<String> _structuralPropertyNames() {
@@ -846,39 +971,98 @@ class CSSStyleDeclaration extends DynamicBindingObject
     // Reset first avoid set property in flush stage.
     _pendingProperties = {};
 
-    List<String> propertyNames = pendingProperties.keys.toList();
-    for (String propertyName in _propertyOrders) {
-      int index = propertyNames.indexOf(propertyName);
-      if (index > -1) {
-        propertyNames.removeAt(index);
-        propertyNames.insert(0, propertyName);
-      }
-    }
-
-    Map<String, CSSPropertyValue?> prevValues = {};
-    for (String propertyName in propertyNames) {
-      // Update the prevValue to currentValue.
-      prevValues[propertyName] = _properties[propertyName];
-      _properties[propertyName] = pendingProperties[propertyName]!;
-    }
-
-    propertyNames.sort((left, right) {
-      final isVariableLeft = CSSVariable.isCSSSVariableProperty(left) ? 1 : 0;
-      final isVariableRight = CSSVariable.isCSSSVariableProperty(right) ? 1 : 0;
-      if (isVariableLeft == 1 || isVariableRight == 1) {
-        return isVariableRight - isVariableLeft;
-      }
-      return 0;
-    });
-
-    for (String propertyName in propertyNames) {
-      CSSPropertyValue? prevValue = prevValues[propertyName];
-      CSSPropertyValue currentValue = pendingProperties[propertyName]!;
+    if (pendingProperties.length == 1) {
+      final MapEntry<String, CSSPropertyValue> entry =
+          pendingProperties.entries.first;
+      final String propertyName = entry.key;
+      final CSSPropertyValue currentValue = entry.value;
+      final CSSPropertyValue? prevValue = _properties[propertyName];
+      _properties[propertyName] = currentValue;
       _emitPropertyChanged(propertyName, prevValue?.value, currentValue.value,
           baseHref: currentValue.baseHref);
+      onStyleFlushed?.call(<String>[propertyName]);
+      return;
     }
 
-    onStyleFlushed?.call(propertyNames);
+    final List<String> variablePropertyNames = <String>[];
+    final List<CSSPropertyValue?> variablePrevValues =
+        <CSSPropertyValue?>[];
+    final List<String?> prioritizedPropertyNames =
+        List<String?>.filled(_propertyFlushPriorityOrder.length, null);
+    final List<CSSPropertyValue?> prioritizedPrevValues =
+        List<CSSPropertyValue?>.filled(_propertyFlushPriorityOrder.length, null);
+    final List<String> regularPropertyNames = <String>[];
+    final List<CSSPropertyValue?> regularPrevValues = <CSSPropertyValue?>[];
+
+    for (final MapEntry<String, CSSPropertyValue> entry
+        in pendingProperties.entries) {
+      final String propertyName = entry.key;
+      final CSSPropertyValue currentValue = entry.value;
+      final CSSPropertyValue? prevValue = _properties[propertyName];
+      _properties[propertyName] = currentValue;
+
+      if (CSSVariable.isCSSSVariableProperty(propertyName)) {
+        variablePropertyNames.add(propertyName);
+        variablePrevValues.add(prevValue);
+        continue;
+      }
+
+      final int? priorityRank = _propertyFlushPriorityRanks[propertyName];
+      if (priorityRank != null) {
+        prioritizedPropertyNames[priorityRank] = propertyName;
+        prioritizedPrevValues[priorityRank] = prevValue;
+        continue;
+      }
+
+      regularPropertyNames.add(propertyName);
+      regularPrevValues.add(prevValue);
+    }
+
+    final StyleFlushedListener? styleFlushed = onStyleFlushed;
+    final List<String>? flushedPropertyNames =
+        styleFlushed == null ? null : <String>[];
+
+    _flushOrderedPendingProperties(variablePropertyNames, variablePrevValues,
+        pendingProperties, flushedPropertyNames);
+    _flushPrioritizedPendingProperties(prioritizedPropertyNames,
+        prioritizedPrevValues, pendingProperties, flushedPropertyNames);
+    _flushOrderedPendingProperties(regularPropertyNames, regularPrevValues,
+        pendingProperties, flushedPropertyNames);
+
+    if (flushedPropertyNames != null) {
+      styleFlushed!(flushedPropertyNames);
+    }
+  }
+
+  void _flushOrderedPendingProperties(
+      List<String> propertyNames,
+      List<CSSPropertyValue?> prevValues,
+      Map<String, CSSPropertyValue> pendingProperties,
+      List<String>? flushedPropertyNames) {
+    for (int i = 0; i < propertyNames.length; i++) {
+      final String propertyName = propertyNames[i];
+      final CSSPropertyValue? prevValue = prevValues[i];
+      final CSSPropertyValue currentValue = pendingProperties[propertyName]!;
+      _emitPropertyChanged(propertyName, prevValue?.value, currentValue.value,
+          baseHref: currentValue.baseHref);
+      flushedPropertyNames?.add(propertyName);
+    }
+  }
+
+  void _flushPrioritizedPendingProperties(
+      List<String?> propertyNames,
+      List<CSSPropertyValue?> prevValues,
+      Map<String, CSSPropertyValue> pendingProperties,
+      List<String>? flushedPropertyNames) {
+    for (int i = 0; i < propertyNames.length; i++) {
+      final String? propertyName = propertyNames[i];
+      if (propertyName == null) continue;
+      final CSSPropertyValue? prevValue = prevValues[i];
+      final CSSPropertyValue currentValue = pendingProperties[propertyName]!;
+      _emitPropertyChanged(propertyName, prevValue?.value, currentValue.value,
+          baseHref: currentValue.baseHref);
+      flushedPropertyNames?.add(propertyName);
+    }
   }
 
   // Set a style property on a pseudo element (before/after/first-letter/first-line) for this element.
@@ -968,21 +1152,35 @@ class CSSStyleDeclaration extends DynamicBindingObject
 
   // Inserts the style of the given Declaration into the current Declaration.
   void union(CSSStyleDeclaration declaration) {
-    for (String propertyName in declaration._pendingProperties.keys) {
-      bool currentIsImportant = _importants[propertyName] ?? false;
-      bool otherIsImportant = declaration._importants[propertyName] ?? false;
+    final Map<String, CSSPropertyValue> incomingPending =
+        declaration._pendingProperties;
+    if (incomingPending.isEmpty && declaration._properties.isEmpty) {
+      return;
+    }
+
+    if (_isEffectivelyEmpty) {
+      _adoptEffectivePropertiesFrom(declaration);
+      return;
+    }
+
+    if (_properties.isEmpty &&
+        _importants.isEmpty &&
+        declaration._properties.isEmpty &&
+        declaration._importants.isEmpty) {
+      _pendingProperties.addAll(incomingPending);
+      return;
+    }
+
+    for (final MapEntry<String, CSSPropertyValue> entry in incomingPending.entries) {
+      final String propertyName = entry.key;
+      final bool currentIsImportant = _importants[propertyName] ?? false;
+      final bool otherIsImportant = declaration._importants[propertyName] ?? false;
       final CSSPropertyValue? currentValue =
           _pendingProperties[propertyName] ?? _properties[propertyName];
-      CSSPropertyValue? otherValue =
-          declaration._pendingProperties[propertyName];
+      final CSSPropertyValue otherValue = entry.value;
       if ((otherIsImportant || !currentIsImportant) &&
           currentValue != otherValue) {
-        // Add property.
-        if (otherValue != null) {
-          _pendingProperties[propertyName] = otherValue;
-        } else {
-          _pendingProperties.remove(propertyName);
-        }
+        _pendingProperties[propertyName] = otherValue;
         if (otherIsImportant) {
           _importants[propertyName] = true;
         }
@@ -995,24 +1193,25 @@ class CSSStyleDeclaration extends DynamicBindingObject
   /// This is used by cascade layers where `!important` reverses layer order.
   void unionByImportance(CSSStyleDeclaration declaration,
       {required bool important}) {
-    for (String propertyName in declaration._pendingProperties.keys) {
-      final bool otherIsImportant =
-          declaration._importants[propertyName] ?? false;
+    final Map<String, CSSPropertyValue> incomingPending =
+        declaration._pendingProperties;
+    if (incomingPending.isEmpty) {
+      return;
+    }
+
+    for (final MapEntry<String, CSSPropertyValue> entry in incomingPending.entries) {
+      final String propertyName = entry.key;
+      final bool otherIsImportant = declaration._importants[propertyName] ?? false;
       if (otherIsImportant != important) continue;
 
       final bool currentIsImportant = _importants[propertyName] ?? false;
       final CSSPropertyValue? currentValue =
           _pendingProperties[propertyName] ?? _properties[propertyName];
-      final CSSPropertyValue? otherValue =
-          declaration._pendingProperties[propertyName];
+      final CSSPropertyValue otherValue = entry.value;
 
       if ((otherIsImportant || !currentIsImportant) &&
           currentValue != otherValue) {
-        if (otherValue != null) {
-          _pendingProperties[propertyName] = otherValue;
-        } else {
-          _pendingProperties.remove(propertyName);
-        }
+        _pendingProperties[propertyName] = otherValue;
         if (otherIsImportant) {
           _importants[propertyName] = true;
         }
@@ -1064,25 +1263,33 @@ class CSSStyleDeclaration extends DynamicBindingObject
     }
 
     if (beforeRules != null) {
-      pseudoBeforeStyle = cascadeMatchedStyleRules(beforeRules);
+      pseudoBeforeStyle = cascadeMatchedStyleRules(beforeRules,
+          cacheVersion: parentElement.ownerDocument.ruleSetVersion,
+          copyResult: true);
     } else if (pseudoBeforeStyle != null) {
       pseudoBeforeStyle = null;
     }
 
     if (afterRules != null) {
-      pseudoAfterStyle = cascadeMatchedStyleRules(afterRules);
+      pseudoAfterStyle = cascadeMatchedStyleRules(afterRules,
+          cacheVersion: parentElement.ownerDocument.ruleSetVersion,
+          copyResult: true);
     } else if (pseudoAfterStyle != null) {
       pseudoAfterStyle = null;
     }
 
     if (firstLetterRules != null) {
-      pseudoFirstLetterStyle = cascadeMatchedStyleRules(firstLetterRules);
+      pseudoFirstLetterStyle = cascadeMatchedStyleRules(firstLetterRules,
+          cacheVersion: parentElement.ownerDocument.ruleSetVersion,
+          copyResult: true);
     } else if (pseudoFirstLetterStyle != null) {
       pseudoFirstLetterStyle = null;
     }
 
     if (firstLineRules != null) {
-      pseudoFirstLineStyle = cascadeMatchedStyleRules(firstLineRules);
+      pseudoFirstLineStyle = cascadeMatchedStyleRules(firstLineRules,
+          cacheVersion: parentElement.ownerDocument.ruleSetVersion,
+          copyResult: true);
     } else if (pseudoFirstLineStyle != null) {
       pseudoFirstLineStyle = null;
     }
@@ -1090,10 +1297,11 @@ class CSSStyleDeclaration extends DynamicBindingObject
 
   // Merge the difference between the declarations and return the updated status
   bool merge(CSSStyleDeclaration other) {
-    Map<String, CSSPropertyValue> properties = {}
-      ..addAll(_properties)
-      ..addAll(_pendingProperties);
     bool updateStatus = false;
+    final Map<String, CSSPropertyValue> otherPendingProperties =
+        other._pendingProperties;
+    final Map<String, CSSPropertyValue> otherProperties = other._properties;
+    final Map<String, bool> otherImportants = other._importants;
 
     void mergePseudoStyle({
       required CSSStyleDeclaration? currentStyle,
@@ -1104,9 +1312,7 @@ class CSSStyleDeclaration extends DynamicBindingObject
     }) {
       if (incomingStyle != null) {
         if (currentStyle == null) {
-          final CSSStyleDeclaration mergedStyle = CSSStyleDeclaration();
-          mergedStyle.merge(incomingStyle);
-          assign(mergedStyle);
+          assign(incomingStyle.cloneEffective());
         } else if (currentStyle.merge(incomingStyle)) {
           markNeedsUpdate();
         }
@@ -1115,36 +1321,98 @@ class CSSStyleDeclaration extends DynamicBindingObject
       }
     }
 
-    for (String propertyName in properties.keys) {
-      CSSPropertyValue? prevValue = properties[propertyName];
-      CSSPropertyValue? currentValue = other._pendingProperties[propertyName];
-      bool currentImportant = other._importants[propertyName] ?? false;
+    void mergeProperty(String propertyName,
+        {CSSPropertyValue? prevValue,
+        CSSPropertyValue? currentValue,
+        required bool currentImportant}) {
+      prevValue ??= _effectiveProperty(propertyName);
+      currentValue ??=
+          otherPendingProperties[propertyName] ?? otherProperties[propertyName];
 
-      if (isNullOrEmptyValue(prevValue) && isNullOrEmptyValue(currentValue)) {
-        continue;
-      } else if (!isNullOrEmptyValue(prevValue) &&
-          isNullOrEmptyValue(currentValue)) {
+      if ((prevValue == null || prevValue.value.isEmpty) &&
+          (currentValue == null || currentValue.value.isEmpty)) {
+        return;
+      }
+
+      if (prevValue != null &&
+          prevValue.value.isNotEmpty &&
+          (currentValue == null || currentValue.value.isEmpty)) {
         // Remove property.
-        removeProperty(propertyName, currentImportant);
+        _pendingProperties[propertyName] =
+            CSSPropertyValue(_removedPropertyFallbackValue(
+          propertyName,
+          currentImportant,
+        ));
         updateStatus = true;
-      } else if (prevValue != currentValue) {
+        return;
+      }
+
+      if (currentValue == null || currentValue.value.isEmpty) {
+        return;
+      }
+
+      final bool sameSerializedValue =
+          prevValue != null && prevValue.value == currentValue.value;
+      if (sameSerializedValue &&
+          !CSSVariable.isCSSVariableValue(currentValue.value)) {
+        return;
+      }
+
+      if (_queueMergedPropertyValue(propertyName, currentValue,
+          important: currentImportant)) {
         // Update property.
-        setProperty(propertyName, currentValue?.value,
-            isImportant: currentImportant, baseHref: currentValue?.baseHref);
         updateStatus = true;
       }
     }
 
-    for (String propertyName in other._pendingProperties.keys) {
-      CSSPropertyValue? prevValue = properties[propertyName];
-      CSSPropertyValue? currentValue = other._pendingProperties[propertyName];
-      bool currentImportant = other._importants[propertyName] ?? false;
-
-      if (isNullOrEmptyValue(prevValue) && !isNullOrEmptyValue(currentValue)) {
-        // Add property.
-        setProperty(propertyName, currentValue?.value,
-            isImportant: currentImportant, baseHref: currentValue?.baseHref);
-        updateStatus = true;
+    if (otherProperties.isEmpty) {
+      for (final String propertyName in _pendingProperties.keys.toList()) {
+        mergeProperty(propertyName,
+            prevValue: _pendingProperties[propertyName],
+            currentValue: otherPendingProperties[propertyName],
+            currentImportant: otherImportants[propertyName] == true);
+      }
+      for (final MapEntry<String, CSSPropertyValue> entry in _properties.entries) {
+        final String propertyName = entry.key;
+        if (_pendingProperties.containsKey(propertyName)) continue;
+        mergeProperty(propertyName,
+            prevValue: entry.value,
+            currentValue: otherPendingProperties[propertyName],
+            currentImportant: otherImportants[propertyName] == true);
+      }
+      for (final MapEntry<String, CSSPropertyValue> entry
+          in otherPendingProperties.entries) {
+        final String propertyName = entry.key;
+        if (_pendingProperties.containsKey(propertyName) ||
+            _properties.containsKey(propertyName)) {
+          continue;
+        }
+        mergeProperty(propertyName,
+            currentValue: entry.value,
+            currentImportant: otherImportants[propertyName] == true);
+      }
+    } else {
+      for (final String propertyName in _pendingProperties.keys.toList()) {
+        mergeProperty(propertyName,
+            currentImportant: otherImportants[propertyName] == true);
+      }
+      for (final String propertyName in _properties.keys) {
+        if (_pendingProperties.containsKey(propertyName)) continue;
+        mergeProperty(propertyName,
+            currentImportant: otherImportants[propertyName] == true);
+      }
+      for (final String propertyName in otherPendingProperties.keys) {
+        if (_hasEffectiveProperty(propertyName)) continue;
+        mergeProperty(propertyName,
+            currentImportant: otherImportants[propertyName] == true);
+      }
+      for (final String propertyName in otherProperties.keys) {
+        if (otherPendingProperties.containsKey(propertyName) ||
+            _hasEffectiveProperty(propertyName)) {
+          continue;
+        }
+        mergeProperty(propertyName,
+            currentImportant: otherImportants[propertyName] == true);
       }
     }
 

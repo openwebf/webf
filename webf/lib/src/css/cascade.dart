@@ -3,6 +3,7 @@
  * Licensed under GNU GPL with Enterprise exception.
  */
 
+import 'package:quiver/collection.dart';
 import 'package:webf/css.dart';
 
 /// Internal segment appended to layered rules that are directly inside a layer
@@ -14,6 +15,57 @@ import 'package:webf/css.dart';
 const String kWebFImplicitLayerSegment = '__webf__implicit_layer__';
 
 const int _kImplicitLayerSiblingIndex = 1 << 30;
+const int _kCascadeDeclarationCacheSize = 512;
+
+final LinkedLruHashMap<_CascadeCacheKey, CSSStyleDeclaration>
+    _cascadeDeclarationCache = LinkedLruHashMap<_CascadeCacheKey,
+        CSSStyleDeclaration>(maximumSize: _kCascadeDeclarationCacheSize);
+
+class _CascadeCacheKey {
+  final int version;
+  final List<CSSStyleRule> rules;
+  final int _hashCode;
+
+  _CascadeCacheKey._(this.version, this.rules, this._hashCode);
+
+  factory _CascadeCacheKey.lookup(int version, List<CSSStyleRule> rules) {
+    return _CascadeCacheKey._(version, rules, _computeHash(version, rules));
+  }
+
+  factory _CascadeCacheKey.stored(int version, List<CSSStyleRule> rules) {
+    return _CascadeCacheKey._(version,
+        List<CSSStyleRule>.of(rules, growable: false), _computeHash(version, rules));
+  }
+
+  static int _computeHash(int version, List<CSSStyleRule> rules) {
+    int hash = 0x1fffffff & (version + rules.length);
+    for (final CSSStyleRule rule in rules) {
+      hash = 0x1fffffff & (hash + identityHashCode(rule));
+      hash = 0x1fffffff & (hash + ((0x0007ffff & hash) << 10));
+      hash ^= (hash >> 6);
+    }
+    hash = 0x1fffffff & (hash + ((0x03ffffff & hash) << 3));
+    hash ^= (hash >> 11);
+    hash = 0x1fffffff & (hash + ((0x00003fff & hash) << 15));
+    return hash;
+  }
+
+  @override
+  int get hashCode => _hashCode;
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) return true;
+    if (other is! _CascadeCacheKey) return false;
+    if (version != other.version || rules.length != other.rules.length) {
+      return false;
+    }
+    for (int i = 0; i < rules.length; i++) {
+      if (!identical(rules[i], other.rules[i])) return false;
+    }
+    return true;
+  }
+}
 
 class CascadeLayerTree {
   final _LayerNode _root = _LayerNode(name: '<root>', siblingIndex: -1);
@@ -107,12 +159,22 @@ int compareStyleRulesForCascade(CSSStyleRule a, CSSStyleRule b,
   return a.position.compareTo(b.position);
 }
 
-CSSStyleDeclaration cascadeMatchedStyleRules(List<CSSStyleRule> rules) {
+CSSStyleDeclaration cascadeMatchedStyleRules(List<CSSStyleRule> rules,
+    {int? cacheVersion, bool copyResult = false}) {
   final declaration = CSSStyleDeclaration();
   if (rules.isEmpty) return declaration;
   if (rules.length == 1) {
     declaration.union(rules.first.declaration);
-    return declaration;
+    return copyResult ? declaration.cloneEffective() : declaration;
+  }
+
+  if (cacheVersion != null) {
+    final _CascadeCacheKey lookupKey =
+        _CascadeCacheKey.lookup(cacheVersion, rules);
+    final CSSStyleDeclaration? cached = _cascadeDeclarationCache[lookupKey];
+    if (cached != null) {
+      return copyResult ? cached.cloneEffective() : cached;
+    }
   }
 
   final normalOrder = List<CSSStyleRule>.from(rules)
@@ -124,7 +186,11 @@ CSSStyleDeclaration cascadeMatchedStyleRules(List<CSSStyleRule> rules) {
     for (final r in normalOrder) {
       declaration.union(r.declaration);
     }
-    return declaration;
+    if (cacheVersion != null) {
+      _cascadeDeclarationCache[
+          _CascadeCacheKey.stored(cacheVersion, rules)] = declaration;
+    }
+    return copyResult ? declaration.cloneEffective() : declaration;
   }
 
   for (final r in normalOrder) {
@@ -140,5 +206,10 @@ CSSStyleDeclaration cascadeMatchedStyleRules(List<CSSStyleRule> rules) {
     declaration.unionByImportance(r.declaration, important: true);
   }
 
-  return declaration;
+  if (cacheVersion != null) {
+    _cascadeDeclarationCache[
+        _CascadeCacheKey.stored(cacheVersion, rules)] = declaration;
+  }
+
+  return copyResult ? declaration.cloneEffective() : declaration;
 }

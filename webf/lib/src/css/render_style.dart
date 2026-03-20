@@ -15,6 +15,7 @@ import 'package:collection/collection.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/widgets.dart' as flutter;
+import 'package:quiver/collection.dart';
 import 'package:webf/css.dart';
 import 'package:webf/dom.dart';
 import 'package:webf/html.dart';
@@ -25,6 +26,345 @@ import 'package:webf/src/css/css_animation.dart';
 
 
 typedef RenderStyleVisitor<T extends RenderObject> = void Function(T renderObject);
+
+const int _kParsedStyleValueCacheSize = 2048;
+
+final LinkedLruHashMap<String, _ParsedStyleValue> _parsedStyleValueCache =
+    LinkedLruHashMap<String, _ParsedStyleValue>(
+        maximumSize: _kParsedStyleValueCacheSize);
+
+abstract class _ParsedStyleValue {
+  const _ParsedStyleValue();
+
+  dynamic resolve(CSSRenderStyle renderStyle, String propertyName,
+      {String? baseHref});
+}
+
+class _StaticParsedStyleValue extends _ParsedStyleValue {
+  final dynamic value;
+
+  const _StaticParsedStyleValue(this.value);
+
+  @override
+  dynamic resolve(CSSRenderStyle renderStyle, String propertyName,
+      {String? baseHref}) {
+    return value;
+  }
+}
+
+class _LengthParsedStyleValue extends _ParsedStyleValue {
+  final CSSParsedLengthValue value;
+
+  const _LengthParsedStyleValue(this.value);
+
+  @override
+  dynamic resolve(CSSRenderStyle renderStyle, String propertyName,
+      {String? baseHref}) {
+    return value.resolve(renderStyle, propertyName);
+  }
+}
+
+class _ScaledEmParsedStyleValue extends _ParsedStyleValue {
+  final double factor;
+
+  const _ScaledEmParsedStyleValue(this.factor);
+
+  @override
+  dynamic resolve(CSSRenderStyle renderStyle, String propertyName,
+      {String? baseHref}) {
+    return CSSLengthValue(factor, CSSLengthType.EM, renderStyle, propertyName);
+  }
+}
+
+_ParsedStyleValue? _parseLengthStyleValue(String propertyValue) {
+  final CSSParsedLengthValue? parsed = CSSParsedLengthValue.tryParse(propertyValue);
+  if (parsed == null) {
+    return null;
+  }
+  return _LengthParsedStyleValue(parsed);
+}
+
+_ParsedStyleValue? _parseFontSizeStyleValue(String propertyValue) {
+  switch (propertyValue) {
+    case 'xx-small':
+      return _StaticParsedStyleValue(CSSLengthValue(3 / 5 * 16, CSSLengthType.PX));
+    case 'x-small':
+      return _StaticParsedStyleValue(CSSLengthValue(3 / 4 * 16, CSSLengthType.PX));
+    case 'small':
+      return _StaticParsedStyleValue(CSSLengthValue(8 / 9 * 16, CSSLengthType.PX));
+    case 'medium':
+      return _StaticParsedStyleValue(CSSLengthValue(16, CSSLengthType.PX));
+    case 'large':
+      return _StaticParsedStyleValue(CSSLengthValue(6 / 5 * 16, CSSLengthType.PX));
+    case 'x-large':
+      return _StaticParsedStyleValue(CSSLengthValue(3 / 2 * 16, CSSLengthType.PX));
+    case 'xx-large':
+      return _StaticParsedStyleValue(CSSLengthValue(2 / 1 * 16, CSSLengthType.PX));
+    case 'xxx-large':
+      return _StaticParsedStyleValue(CSSLengthValue(3 / 1 * 16, CSSLengthType.PX));
+    case 'smaller':
+      return const _ScaledEmParsedStyleValue(5 / 6);
+    case 'larger':
+      return const _ScaledEmParsedStyleValue(6 / 5);
+    default:
+      return _parseLengthStyleValue(propertyValue);
+  }
+}
+
+_ParsedStyleValue? _parseLineHeightStyleValue(String propertyValue) {
+  if (propertyValue == NORMAL) {
+    return _StaticParsedStyleValue(CSSLengthValue.normal);
+  }
+  if (CSSNumber.isNumber(propertyValue)) {
+    final double? multiplier = CSSNumber.parseNumber(propertyValue);
+    if (multiplier == null) {
+      return null;
+    }
+    return _ScaledEmParsedStyleValue(multiplier);
+  }
+  return _parseLengthStyleValue(propertyValue);
+}
+
+_ParsedStyleValue? _parseCachedStyleValue(
+    String propertyName, String propertyValue) {
+  final String cacheKey = '$propertyName\u0000$propertyValue';
+  final _ParsedStyleValue? cached = _parsedStyleValueCache[cacheKey];
+  if (cached != null) {
+    return cached;
+  }
+
+  final _ParsedStyleValue? parsed =
+      _parseStyleValue(propertyName, propertyValue);
+  if (parsed != null) {
+    _parsedStyleValueCache[cacheKey] = parsed;
+  }
+  return parsed;
+}
+
+_ParsedStyleValue? _parseStyleValue(String propertyName, String propertyValue) {
+  if (propertyValue == INHERIT) {
+    return null;
+  }
+
+  switch (propertyName) {
+    case DISPLAY:
+      return _StaticParsedStyleValue(
+          CSSDisplayMixin.resolveDisplay(propertyValue));
+    case OVERFLOW_X:
+    case OVERFLOW_Y:
+      return _StaticParsedStyleValue(
+          CSSOverflowMixin.resolveOverflowType(propertyValue));
+    case POSITION:
+      return _StaticParsedStyleValue(
+          CSSPositionMixin.resolvePositionType(propertyValue));
+    case Z_INDEX:
+      return _StaticParsedStyleValue(int.tryParse(propertyValue));
+    case TOP:
+    case LEFT:
+    case BOTTOM:
+    case RIGHT:
+    case INSET_INLINE_START:
+    case INSET_INLINE_END:
+    case FLEX_BASIS:
+    case WIDTH:
+    case MIN_WIDTH:
+    case MAX_WIDTH:
+    case HEIGHT:
+    case MIN_HEIGHT:
+    case MAX_HEIGHT:
+    case X:
+    case Y:
+    case RX:
+    case RY:
+    case CX:
+    case CY:
+    case R:
+    case X1:
+    case X2:
+    case Y1:
+    case Y2:
+    case STROKE_WIDTH:
+    case TEXT_INDENT:
+    case PADDING_TOP:
+    case MARGIN_TOP:
+    case MARGIN_RIGHT:
+    case PADDING_RIGHT:
+    case PADDING_BOTTOM:
+    case MARGIN_BOTTOM:
+    case PADDING_LEFT:
+    case MARGIN_LEFT:
+    case PADDING_INLINE_START:
+    case PADDING_INLINE_END:
+    case MARGIN_INLINE_START:
+    case MARGIN_INLINE_END:
+    case LETTER_SPACING:
+    case WORD_SPACING:
+      return _parseLengthStyleValue(propertyValue);
+    case ASPECT_RATIO:
+      return _StaticParsedStyleValue(
+          CSSSizingMixin.resolveAspectRatio(propertyValue));
+    case GAP:
+    case ROW_GAP:
+    case COLUMN_GAP:
+      if (propertyValue == NORMAL) {
+        return _StaticParsedStyleValue(CSSLengthValue.normal);
+      }
+      return _parseLengthStyleValue(propertyValue);
+    case FLEX_DIRECTION:
+      return _StaticParsedStyleValue(
+          CSSFlexboxMixin.resolveFlexDirection(propertyValue));
+    case FLEX_WRAP:
+      return _StaticParsedStyleValue(
+          CSSFlexboxMixin.resolveFlexWrap(propertyValue));
+    case ALIGN_CONTENT:
+      return _StaticParsedStyleValue(
+          CSSFlexboxMixin.resolveAlignContent(propertyValue));
+    case ALIGN_ITEMS:
+      return _StaticParsedStyleValue(
+          CSSFlexboxMixin.resolveAlignItems(propertyValue));
+    case JUSTIFY_CONTENT:
+      return _StaticParsedStyleValue(
+          CSSFlexboxMixin.resolveJustifyContent(propertyValue));
+    case JUSTIFY_ITEMS:
+      return _StaticParsedStyleValue(
+          CSSGridParser.parseAxisAlignment(propertyValue, allowAuto: false));
+    case JUSTIFY_SELF:
+      return _StaticParsedStyleValue(
+          CSSGridParser.parseAxisAlignment(propertyValue, allowAuto: true));
+    case ALIGN_SELF:
+      return _StaticParsedStyleValue(
+          CSSFlexboxMixin.resolveAlignSelf(propertyValue));
+    case FLEX_GROW:
+      return _StaticParsedStyleValue(
+          CSSFlexboxMixin.resolveFlexGrow(propertyValue));
+    case FLEX_SHRINK:
+      return _StaticParsedStyleValue(
+          CSSFlexboxMixin.resolveFlexShrink(propertyValue));
+    case ORDER:
+      return _StaticParsedStyleValue(CSSOrderMixin.resolveOrder(propertyValue));
+    case SLIVER_DIRECTION:
+      return _StaticParsedStyleValue(CSSSliverMixin.resolveAxis(propertyValue));
+    case TEXT_ALIGN:
+      return _StaticParsedStyleValue(
+          CSSTextMixin.resolveTextAlign(propertyValue));
+    case DIRECTION:
+      return _StaticParsedStyleValue(
+          CSSTextMixin.resolveDirection(propertyValue));
+    case WRITING_MODE:
+      return _StaticParsedStyleValue(
+          CSSWritingModeMixin.resolveWritingMode(propertyValue));
+    case BACKGROUND_ATTACHMENT:
+      return _StaticParsedStyleValue(
+          CSSBackground.resolveBackgroundAttachment(propertyValue));
+    case BACKGROUND_REPEAT:
+      return _StaticParsedStyleValue(
+          CSSBackground.resolveBackgroundRepeat(propertyValue));
+    case BACKGROUND_CLIP:
+      return _StaticParsedStyleValue(
+          CSSBackground.resolveBackgroundClip(propertyValue));
+    case BACKGROUND_ORIGIN:
+      return _StaticParsedStyleValue(
+          CSSBackground.resolveBackgroundOrigin(propertyValue));
+    case BORDER_LEFT_WIDTH:
+    case BORDER_TOP_WIDTH:
+    case BORDER_RIGHT_WIDTH:
+    case BORDER_BOTTOM_WIDTH:
+      if (propertyValue.contains(' ')) {
+        return null;
+      }
+      return _parseLengthStyleValue(propertyValue);
+    case BORDER_LEFT_STYLE:
+    case BORDER_TOP_STYLE:
+    case BORDER_RIGHT_STYLE:
+    case BORDER_BOTTOM_STYLE:
+      if (propertyValue.contains(' ')) {
+        return null;
+      }
+      return _StaticParsedStyleValue(
+          CSSBorderSide.resolveBorderStyle(propertyValue));
+    case OPACITY:
+      return _StaticParsedStyleValue(
+          CSSOpacityMixin.resolveOpacity(propertyValue));
+    case VISIBILITY:
+      return _StaticParsedStyleValue(
+          CSSVisibilityMixin.resolveVisibility(propertyValue));
+    case CONTENT_VISIBILITY:
+      return _StaticParsedStyleValue(
+          CSSContentVisibilityMixin.resolveContentVisibility(propertyValue));
+    case TRANSFORM:
+      final List<CSSFunctionalNotation>? transform =
+          CSSTransformMixin.resolveTransform(propertyValue);
+      return _StaticParsedStyleValue(transform == null
+          ? null
+          : List<CSSFunctionalNotation>.unmodifiable(transform));
+    case FILTER:
+      final List<CSSFunctionalNotation> functions =
+          CSSFunction.parseFunction(propertyValue);
+      return _StaticParsedStyleValue(
+          List<CSSFunctionalNotation>.unmodifiable(functions));
+    case OBJECT_FIT:
+      return _StaticParsedStyleValue(
+          CSSObjectFitMixin.resolveBoxFit(propertyValue));
+    case OBJECT_POSITION:
+      return _StaticParsedStyleValue(
+          CSSObjectPositionMixin.resolveObjectPosition(propertyValue));
+    case TEXT_DECORATION_LINE:
+      return _StaticParsedStyleValue(
+          CSSText.resolveTextDecorationLine(propertyValue));
+    case TEXT_DECORATION_STYLE:
+      return _StaticParsedStyleValue(
+          CSSText.resolveTextDecorationStyle(propertyValue));
+    case FONT_WEIGHT:
+      return _StaticParsedStyleValue(CSSText.resolveFontWeight(propertyValue));
+    case FONT_SIZE:
+      return _parseFontSizeStyleValue(propertyValue);
+    case FONT_STYLE:
+      return _StaticParsedStyleValue(CSSText.resolveFontStyle(propertyValue));
+    case FONT_VARIANT:
+      return _StaticParsedStyleValue(
+          CSSText.resolveFontVariant(propertyValue));
+    case FONT_FAMILY:
+      return _StaticParsedStyleValue(List<String>.unmodifiable(
+          CSSText.resolveFontFamilyFallback(propertyValue)));
+    case LINE_HEIGHT:
+      return _parseLineHeightStyleValue(propertyValue);
+    case WHITE_SPACE:
+      return _StaticParsedStyleValue(CSSText.resolveWhiteSpace(propertyValue));
+    case TEXT_OVERFLOW:
+      return _StaticParsedStyleValue(
+          CSSText.resolveTextOverflow(propertyValue));
+    case WORD_BREAK:
+      return _StaticParsedStyleValue(CSSText.resolveWordBreak(propertyValue));
+    case TEXT_TRANSFORM:
+      return _StaticParsedStyleValue(
+          CSSText.resolveTextTransform(propertyValue));
+    case LINE_CLAMP:
+      return _StaticParsedStyleValue(CSSText.parseLineClamp(propertyValue));
+    case TAB_SIZE:
+      return _StaticParsedStyleValue(CSSNumber.parseNumber(propertyValue));
+    case VERTICAL_ALIGN:
+      return _StaticParsedStyleValue(
+          CSSInlineMixin.resolveVerticalAlign(propertyValue));
+    case TRANSITION_DELAY:
+    case TRANSITION_DURATION:
+    case TRANSITION_TIMING_FUNCTION:
+    case TRANSITION_PROPERTY:
+    case ANIMATION_DELAY:
+    case ANIMATION_DIRECTION:
+    case ANIMATION_DURATION:
+    case ANIMATION_FILL_MODE:
+    case ANIMATION_ITERATION_COUNT:
+    case ANIMATION_NAME:
+    case ANIMATION_PLAY_STATE:
+    case ANIMATION_TIMING_FUNCTION:
+      final List<String>? values =
+          CSSStyleProperty.getMultipleValues(propertyValue);
+      return _StaticParsedStyleValue(
+          values == null ? null : List<String>.unmodifiable(values));
+  }
+
+  return null;
+}
 
 class AdapterUpdateReason {}
 
@@ -2289,6 +2629,12 @@ class CSSRenderStyle extends RenderStyle
       propertyValue = CSSWritingModeMixin.expandInlineVars(propertyValue, renderStyle, propertyName);
     }
 
+    final _ParsedStyleValue? parsedStyleValue =
+        _parseCachedStyleValue(propertyName, propertyValue);
+    if (parsedStyleValue != null) {
+      return parsedStyleValue.resolve(this, propertyName, baseHref: baseHref);
+    }
+
     dynamic value;
     switch (propertyName) {
       case DISPLAY:
@@ -3728,6 +4074,7 @@ class CSSRenderStyle extends RenderStyle
 enum CSSWritingMode { horizontalTb, verticalRl, verticalLr }
 
 mixin CSSWritingModeMixin on RenderStyle {
+  @override
   CSSWritingMode get writingMode => _writingMode ?? CSSWritingMode.horizontalTb;
   CSSWritingMode? _writingMode;
   set writingMode(CSSWritingMode value) {

@@ -72,6 +72,36 @@ void main() {
       expect(decl.getPropertyValue('background-color'), 'blue');
     });
 
+    test('cascade cache invalidates when ruleSet version changes', () {
+      final rules = _prepareMatchedStyleRules('''
+        .x { color: red; }
+        .y { background-color: blue; }
+      ''');
+
+      final first = cascadeMatchedStyleRules(rules, cacheVersion: 1);
+      expect(first.getPropertyValue('color'), 'red');
+
+      rules.first.declaration.setProperty('color', 'green');
+
+      final second = cascadeMatchedStyleRules(rules, cacheVersion: 2);
+      expect(second.getPropertyValue('color'), 'green');
+    });
+
+    test('copyResult isolates cached declarations from caller mutation', () {
+      final rules = _prepareMatchedStyleRules('''
+        .x::before { color: red; }
+        .y::before { background-color: blue; }
+      ''');
+
+      final first =
+          cascadeMatchedStyleRules(rules, cacheVersion: 3, copyResult: true);
+      first.setProperty('color', 'green');
+
+      final second =
+          cascadeMatchedStyleRules(rules, cacheVersion: 3, copyResult: true);
+      expect(second.getPropertyValue('color'), 'red');
+    });
+
     test(
         'important cascade without layers follows specificity and source order',
         () {

@@ -327,6 +327,44 @@ void main() {
           afterUpdated.renderStyle.color.value.toARGB32(), equals(0xFF00FF00));
     });
 
+    testWidgets(
+        'pseudo descendant selector lists still match with ancestry fast path',
+        (WidgetTester tester) async {
+      final prepared = await WebFWidgetTestUtils.prepareWidgetTest(
+        tester: tester,
+        controllerName:
+            'pseudo-descendant-selector-list-${DateTime.now().millisecondsSinceEpoch}',
+        html: '''
+          <html>
+            <head>
+              <style>
+                .foo .target::before,
+                .bar .target::before {
+                  content: 'DESC';
+                  color: #123456;
+                }
+              </style>
+            </head>
+            <body style="margin: 0; padding: 0;">
+              <div class="bar">
+                <div id="target" class="target">Main Content</div>
+              </div>
+            </body>
+          </html>
+        ''',
+      );
+
+      final div = prepared.getElementById('target');
+
+      await tester.pump(const Duration(milliseconds: 50));
+
+      final beforeElement = findPseudoElement(div, PseudoKind.kPseudoBefore);
+      expect(beforeElement, isNotNull);
+      expect((beforeElement!.firstChild as dom.TextNode).data, equals('DESC'));
+      expect(
+          beforeElement.renderStyle.color.value.toARGB32(), equals(0xFF123456));
+    });
+
     testWidgets('pseudo element with display:none',
         (WidgetTester tester) async {
       final prepared = await WebFWidgetTestUtils.prepareWidgetTest(

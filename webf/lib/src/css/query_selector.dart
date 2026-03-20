@@ -290,8 +290,15 @@ class SelectorEvaluator extends SelectorVisitor {
   }
 
   @override
-  bool visitSelectorGroup(SelectorGroup node) =>
-      node.selectors.any(visitSelector);
+  bool visitSelectorGroup(SelectorGroup node) {
+    final List<Selector> selectors = node.selectors;
+    for (int index = 0; index < selectors.length; index++) {
+      if (visitSelector(selectors[index])) {
+        return true;
+      }
+    }
+    return false;
+  }
 
   @override
   bool visitSelector(Selector node) {
