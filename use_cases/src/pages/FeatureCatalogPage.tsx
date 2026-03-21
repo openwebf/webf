@@ -152,6 +152,34 @@ const sections: Section[] = [
     ],
   },
   {
+    title: 'Shadcn UI',
+    items: [
+      { label: 'Shadcn Showcase', path: '/shadcn-showcase', desc: 'Component gallery powered by @openwebf/react-shadcn-ui' },
+      { label: 'Buttons', path: '/shadcn/buttons', desc: 'Primary, secondary, destructive, outline, ghost, and link buttons' },
+      { label: 'Icon Button', path: '/shadcn/icon-button', desc: 'Compact icon-only actions with Lucide icons' },
+      { label: 'Input', path: '/shadcn/input', desc: 'Text, email, password, and textarea inputs' },
+      { label: 'Checkbox & Switch', path: '/shadcn/checkbox-switch', desc: 'Binary toggles for settings and consent' },
+      { label: 'Select & Combobox', path: '/shadcn/select', desc: 'Selection controls with menu variants' },
+      { label: 'Slider', path: '/shadcn/slider', desc: 'Range selection with labeled values' },
+      { label: 'Card', path: '/shadcn/card', desc: 'Container surfaces with header and footer slots' },
+      { label: 'Alert & Badge', path: '/shadcn/alert-badge', desc: 'Status chips, badges, and inline alerts' },
+      { label: 'Tabs', path: '/shadcn/tabs', desc: 'Tabbed navigation and content switching' },
+      { label: 'Accordion', path: '/shadcn/accordion', desc: 'Collapsible content sections' },
+      { label: 'Dialog & Sheet', path: '/shadcn/dialog', desc: 'Modal dialogs and bottom sheet patterns' },
+      { label: 'Table', path: '/shadcn/table', desc: 'Structured tabular data presentation' },
+      { label: 'Radio Group', path: '/shadcn/radio', desc: 'Single-choice grouped selection controls' },
+      { label: 'Avatar', path: '/shadcn/avatar', desc: 'Profile images with initials fallback' },
+      { label: 'Progress', path: '/shadcn/progress', desc: 'Determinate progress indicators' },
+      { label: 'Skeleton', path: '/shadcn/skeleton', desc: 'Loading placeholders for content-first layouts' },
+      { label: 'Breadcrumb', path: '/shadcn/breadcrumb', desc: 'Hierarchy trails and navigation context' },
+      { label: 'Calendar', path: '/shadcn/calendar', desc: 'Date picking and month-grid scheduling UI' },
+      { label: 'Dropdown Menu', path: '/shadcn/dropdown', desc: 'Compact action menus from trigger buttons' },
+      { label: 'Context Menu', path: '/shadcn/context-menu', desc: 'Contextual actions for secondary-click workflows' },
+      { label: 'Popover & Tooltip', path: '/shadcn/popover', desc: 'Floating panels and anchored overlays' },
+      { label: 'Form', path: '/shadcn/form', desc: 'Composed form layouts with validation-friendly structure' },
+    ],
+  },
+  {
     title: 'Lucide Icons',
     items: [
       { label: 'Lucide Icons Showcase', path: '/lucide-showcase', desc: 'Beautiful & consistent icon set overview' },
@@ -178,7 +206,7 @@ const sections: Section[] = [
 ];
 
 export const FeatureCatalogPage: React.FC = () => {
-  const navigate = (path: string) => WebFRouter.pushState({}, path);
+  const navigate = (path: string) => void WebFRouter.push(path, {});
 
   const Item = (props: { label: string; desc?: string; path: string }) => (
     <div
