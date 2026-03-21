@@ -22,6 +22,7 @@ class RenderWidget extends RenderBoxModel
 
   // Cache sticky children to calculate the base offset of sticky children
   final Set<RenderBoxModel> stickyChildren = {};
+  RenderBoxModel? _relayoutNotifyingChild;
 
   @override
   BoxSizeType get widthSizeType {
@@ -51,6 +52,16 @@ class RenderWidget extends RenderBoxModel
       current = current.parent;
     }
     return null;
+  }
+
+  void _updateRelayoutNotifyingChild(RenderBox? child) {
+    final RenderBoxModel? next = child is RenderBoxModel ? child : null;
+    if (identical(_relayoutNotifyingChild, next)) {
+      return;
+    }
+    _relayoutNotifyingChild?.setRelayoutParentOnSizeChange(null);
+    _relayoutNotifyingChild = next;
+    _relayoutNotifyingChild?.setRelayoutParentOnSizeChange(this);
   }
 
   void _layoutChild(RenderBox child) {
@@ -188,9 +199,22 @@ class RenderWidget extends RenderBoxModel
     // Deflate padding constraints.
     // childConstraints = renderStyle.deflatePaddingConstraints(childConstraints);
 
-    child.layout(childConstraints, parentUsesSize: true);
+    _updateRelayoutNotifyingChild(child);
 
-    Size childSize = child.size;
+    Size childSize;
+    if (child is RenderBoxModel) {
+      child.layout(childConstraints, parentUsesSize: false);
+      final Size? childBoxSize = child.boxSize;
+      if (childBoxSize != null) {
+        childSize = childBoxSize;
+      } else {
+        child.layout(childConstraints, parentUsesSize: true);
+        childSize = child.size;
+      }
+    } else {
+      child.layout(childConstraints, parentUsesSize: true);
+      childSize = child.size;
+    }
 
     setMaxScrollableSize(childSize);
     size = getBoxSize(childSize);
@@ -610,6 +634,7 @@ class RenderWidget extends RenderBoxModel
     if (nonPositionedChildren.isNotEmpty) {
       _layoutChild(nonPositionedChildren.first);
     } else {
+      _updateRelayoutNotifyingChild(null);
       performResize();
     }
 

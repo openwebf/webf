@@ -117,6 +117,12 @@ class DebugFlags {
   static int cssGridProfilingMinMs = 2;
 
   // Removed: Use FlexLog filters to enable flex logs.
+  static bool enableFlexFastPathProfiling =
+      const bool.fromEnvironment('WEBF_DEBUG_FLEX_FAST_PATH', defaultValue: false);
+  static int flexFastPathProfilingSummaryEvery =
+      const int.fromEnvironment('WEBF_DEBUG_FLEX_FAST_PATH_SUMMARY_EVERY', defaultValue: 50);
+  static int flexFastPathProfilingMaxDetailLogs =
+      const int.fromEnvironment('WEBF_DEBUG_FLEX_FAST_PATH_MAX_DETAIL_LOGS', defaultValue: 20);
 
   /// Debug flag to enable inline layout visualization.
   /// When true, paints debug information for line boxes, margins, padding, etc.
