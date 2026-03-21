@@ -1,6 +1,6 @@
 # Shadcn Component Integration Test Plan
 
-**Last Updated:** 2026-03-14
+**Last Updated:** 2026-03-16
 **Status:** In Progress
 **Target:** `integration_tests/specs/shadcn/`
 
@@ -29,6 +29,18 @@ Relevant local files:
 - Keep fixtures deterministic and repo-local.
 - Compare WebF output against Chrome before accepting new snapshot baselines.
 - Track progress in one place, PR by PR, with clear TODO lists and blockers.
+
+## Related use_cases Rollout
+
+This document still primarily tracks integration-test work. In parallel, the public
+`use_cases` demo app should expose shadcn like the existing `Cupertino UI` and
+`Lucide Icons` entries so the shipped component pages are easy to discover.
+
+- [x] Expose shadcn routes outside the `import.meta.env.DEV` gate in `use_cases/src/App.tsx`.
+- [x] Add a `Shadcn UI` quick-start card in `use_cases/src/pages/HomePage.tsx`.
+- [x] Add a `Shadcn UI` section in `use_cases/src/pages/FeatureCatalogPage.tsx`.
+- [x] Expand `use_cases/src/pages/ShadcnShowcasePage.tsx` to list all currently shipped shadcn demos.
+- [x] Align the showcase-entry navigation helpers with `WebFRouter.push(...)`.
 
 ## Non-Goals
 
@@ -258,6 +270,11 @@ Concrete PR1 blockers found so far:
   - Remaining open PR1 work: dependency decision and Chrome snapshot comparison.
 - **2026-03-14**: Added the first composed shadcn use-case case.
   - Added `specs/shadcn/use-cases/workspace-preferences.tsx` as a React settings-panel case instead of another low-level probe.
+- **2026-03-16**: Enabled the shadcn use_cases surface alongside Cupertino UI and Lucide Icons.
+  - Exposed the `/shadcn-*` routes in `use_cases/src/App.tsx` outside the previous dev-only gate.
+  - Added `Shadcn UI` discovery entries to the `HomePage` quick-start cards and the `FeatureCatalogPage`.
+  - Expanded `ShadcnShowcasePage` to list all currently shipped shadcn demo pages grouped by component area.
+  - Switched the showcase-entry navigation helpers to `WebFRouter.push(...)` so route mounting follows the hybrid-router path consistently.
   - Added local dependency files under `integration_tests/shadcn_support/workspace_preferences/` to model a small component tree with supporting data and types.
   - Reused the shared shadcn harness and extended the shared CSS with card/input/badge/toggle utility classes so future use-case specs do not need to inline component styling.
 

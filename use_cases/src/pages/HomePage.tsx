@@ -138,6 +138,13 @@ const quickStart: QuickStartItem[] = [
     gradient: 'linear-gradient(135deg, #3b82f6, #6366f1)',
   },
   {
+    title: 'Shadcn UI',
+    desc: 'Component showcase',
+    to: '/shadcn-showcase',
+    icon: LucideIcons.layoutGrid,
+    gradient: 'linear-gradient(135deg, #18181b, #57534e)',
+  },
+  {
     title: 'Lucide Icons',
     desc: '1600+ open source icons',
     to: '/lucide-showcase',
@@ -147,7 +154,7 @@ const quickStart: QuickStartItem[] = [
 ];
 
 export const HomePage: React.FC = () => {
-  const go = (path: string) => WebFRouter.pushState({}, path);
+  const go = (path: string) => void WebFRouter.push(path, {});
 
   const QuickStartCard = ({ item }: { item: QuickStartItem }) => (
     <div
@@ -156,8 +163,8 @@ export const HomePage: React.FC = () => {
         borderRadius: '16px',
         padding: '20px 16px',
         cursor: 'pointer',
-        flex: '1',
-        minWidth: '0',
+        flex: '1 1 180px',
+        minWidth: '180px',
         display: 'flex',
         flexDirection: 'column',
         gap: '10px',
@@ -351,6 +358,7 @@ export const HomePage: React.FC = () => {
           <div style={{
             display: 'flex',
             gap: '12px',
+            flexWrap: 'wrap',
           }}>
             {quickStart.map((qs) => (
               <QuickStartCard key={qs.to} item={qs} />
@@ -358,7 +366,7 @@ export const HomePage: React.FC = () => {
           </div>
         </div>
 
-         Feature Sections
+        {/* Feature Sections */}
         <div style={{
           fontSize: '13px',
           fontWeight: 600,

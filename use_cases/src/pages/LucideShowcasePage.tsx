@@ -3,7 +3,7 @@ import { WebFRouter } from '../router';
 import { WebFListView } from '@openwebf/react-core-ui';
 
 export const LucideShowcasePage: React.FC = () => {
-  const navigateTo = (path: string) => WebFRouter.pushState({}, path);
+  const navigateTo = (path: string) => void WebFRouter.push(path, {});
 
   const Item = (props: { label: string; desc: string; to?: string }) => (
     <div
