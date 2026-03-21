@@ -411,6 +411,7 @@ abstract class RenderBoxModel extends RenderBox
 
   // A flag to detect the size of this renderBox had changed during this layout.
   bool isSelfSizeChanged = false;
+  bool _lastLaidOutAsRelayoutBoundary = false;
 
   /// Mark children needs layout when drop child as Flutter did
   ///
@@ -423,6 +424,8 @@ abstract class RenderBoxModel extends RenderBox
 
   @override
   void layout(Constraints constraints, {bool parentUsesSize = false}) {
+    _lastLaidOutAsRelayoutBoundary =
+        !parentUsesSize || sizedByParent || constraints.isTight || parent == null;
     renderBoxInLayoutHashCodes.add(hashCode);
     renderBoxModelInLayoutStack.add(this);
 
@@ -835,11 +838,21 @@ abstract class RenderBoxModel extends RenderBox
 
   // Box size equals to RenderBox.size to avoid flutter complain when read size property.
   Size? _boxSize;
+  RenderObject? _relayoutParentOnSizeChange;
 
   Size? get boxSize {
-    assert(_boxSize != null, 'box does not have laid out.');
     return _boxSize;
   }
+
+  void setRelayoutParentOnSizeChange(RenderObject? parent) {
+    _relayoutParentOnSizeChange = parent;
+  }
+
+  @protected
+  RenderObject? get relayoutParentOnSizeChange => _relayoutParentOnSizeChange;
+
+  @protected
+  bool get lastLaidOutAsRelayoutBoundary => _lastLaidOutAsRelayoutBoundary;
 
   @override
   set size(Size value) {
@@ -851,6 +864,21 @@ abstract class RenderBoxModel extends RenderBox
     }
 
     super.size = value;
+  }
+
+  @override
+  void markNeedsLayout() {
+    final RenderObject? relayoutParent = _relayoutParentOnSizeChange;
+    super.markNeedsLayout();
+
+    // Some wrapper parents mirror child.boxSize while laying the child out
+    // with parentUsesSize: false to keep a local relayout boundary.
+    if (relayoutParent != null &&
+        lastLaidOutAsRelayoutBoundary &&
+        identical(parent, relayoutParent) &&
+        relayoutParent.attached) {
+      relayoutParent.markNeedsLayout();
+    }
   }
 
   Size getBoxSize(Size contentSize) {

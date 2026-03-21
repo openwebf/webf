@@ -21,10 +21,14 @@ class RenderTextBox extends RenderBox with RenderObjectWithChildMixin<RenderBox>
   String _data;
   TextPainter? _textPainter;
   TextSpan? _cachedSpan;
+  bool _hasPendingTextLayoutUpdate = false;
+
+  bool get hasPendingTextLayoutUpdate => _hasPendingTextLayoutUpdate;
 
   set data(String value) {
     if (_data == value) return;
     _data = value;
+    _hasPendingTextLayoutUpdate = true;
     // Text content changed. Since text boxes are measured and painted by the
     // parent's inline formatting context, notify the parent to relayout so the
     // paragraph gets rebuilt with the new text content.
@@ -225,6 +229,7 @@ class RenderTextBox extends RenderBox with RenderObjectWithChildMixin<RenderBox>
 
   @override
   void performLayout() {
+    _hasPendingTextLayoutUpdate = false;
     if (_data.isEmpty) {
       size = constraints.constrain(Size.zero);
       return;

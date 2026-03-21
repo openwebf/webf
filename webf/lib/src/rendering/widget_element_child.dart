@@ -52,12 +52,23 @@ class WebFWidgetElementChild extends SingleChildRenderObjectWidget {
 /// WebF HTML elements through the [findWidgetElementChild] method.
 class RenderWidgetElementChild extends RenderProxyBox {
   BoxConstraints? _effectiveChildConstraints;
+  RenderBoxModel? _relayoutNotifyingChild;
 
   /// The last constraints actually used to lay out [child].
   ///
   /// This can differ from [constraints] when [constraints] are unbounded and
   /// we collapse to intrinsic sizing before laying out the WebF subtree.
   BoxConstraints get effectiveChildConstraints => _effectiveChildConstraints ?? constraints;
+
+  void _updateRelayoutNotifyingChild(RenderBox? child) {
+    final RenderBoxModel? next = child is RenderBoxModel ? child : null;
+    if (identical(_relayoutNotifyingChild, next)) {
+      return;
+    }
+    _relayoutNotifyingChild?.setRelayoutParentOnSizeChange(null);
+    _relayoutNotifyingChild = next;
+    _relayoutNotifyingChild?.setRelayoutParentOnSizeChange(this);
+  }
 
   @override
   void performLayout() {
@@ -88,6 +99,7 @@ class RenderWidgetElementChild extends RenderProxyBox {
     }
 
     _effectiveChildConstraints = effective;
+    _updateRelayoutNotifyingChild(c);
 
     if (c is RenderBoxModel) {
       // Ensure CSS sizing queries resolve constraints against the *current*
@@ -103,9 +115,21 @@ class RenderWidgetElementChild extends RenderProxyBox {
     }
 
     if (c != null) {
-      c.layout(effective, parentUsesSize: true);
-      size = c.size;
+      if (c is RenderBoxModel) {
+        c.layout(effective, parentUsesSize: false);
+        final Size? childBoxSize = c.boxSize;
+        if (childBoxSize != null) {
+          size = childBoxSize;
+        } else {
+          c.layout(effective, parentUsesSize: true);
+          size = c.size;
+        }
+      } else {
+        c.layout(effective, parentUsesSize: true);
+        size = c.size;
+      }
     } else {
+      _updateRelayoutNotifyingChild(null);
       size = computeSizeForNoChild(incoming);
     }
   }

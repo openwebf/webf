@@ -58,7 +58,15 @@ class RenderEventListener extends RenderBoxModel
   @override
   void markNeedsLayout() {
     super.markNeedsLayout();
-    parent?.markNeedsLayout();
+
+    // Most of the engine still expects RenderEventListener to bubble layout
+    // dirtiness to its parent. Boundary-sensitive callers opt out by
+    // registering an explicit relayout parent via RenderBoxModel.
+    if (relayoutParentOnSizeChange == null &&
+        lastLaidOutAsRelayoutBoundary &&
+        parent != null) {
+      parent!.markNeedsLayout();
+    }
   }
 
   @override
