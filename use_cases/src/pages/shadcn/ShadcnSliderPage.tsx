@@ -4,7 +4,7 @@ import {
   FlutterShadcnTheme,
   FlutterShadcnSlider,
   FlutterShadcnProgress,
-} from '@openwebf/react-shadcn-ui';
+} from '../../components/shadcnCompat';
 
 export const ShadcnSliderPage: React.FC = () => {
   const [volume, setVolume] = useState(50);

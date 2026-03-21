@@ -4,7 +4,7 @@ import {
   FlutterShadcnTheme,
   FlutterShadcnCheckbox,
   FlutterShadcnSwitch,
-} from '@openwebf/react-shadcn-ui';
+} from '../../components/shadcnCompat';
 
 export const ShadcnCheckboxSwitchPage: React.FC = () => {
   const [checkboxes, setCheckboxes] = useState({

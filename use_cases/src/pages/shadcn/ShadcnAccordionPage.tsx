@@ -7,7 +7,7 @@ import {
   FlutterShadcnAccordionTrigger,
   FlutterShadcnAccordionContent,
   FlutterShadcnButton,
-} from '@openwebf/react-shadcn-ui';
+} from '../../components/shadcnCompat';
 
 export const ShadcnAccordionPage: React.FC = () => {
   // Controlled single accordion state

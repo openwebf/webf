@@ -3,7 +3,7 @@ import { WebFListView } from '@openwebf/react-core-ui';
 import {
   FlutterShadcnTheme,
   FlutterShadcnButton,
-} from '@openwebf/react-shadcn-ui';
+} from '../../components/shadcnCompat';
 
 export const ShadcnButtonsPage: React.FC = () => {
   const handleClick = (variant: string) => {

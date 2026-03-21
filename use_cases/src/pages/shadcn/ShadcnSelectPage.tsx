@@ -8,7 +8,7 @@ import {
   FlutterShadcnSelectSeparator,
   FlutterShadcnCombobox,
   FlutterShadcnComboboxItem,
-} from '@openwebf/react-shadcn-ui';
+} from '../../components/shadcnCompat';
 
 export const ShadcnSelectPage: React.FC = () => {
   const [selectedFruit, setSelectedFruit] = useState('');

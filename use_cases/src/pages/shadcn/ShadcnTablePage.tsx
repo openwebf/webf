@@ -9,7 +9,7 @@ import {
   FlutterShadcnTableHead,
   FlutterShadcnTableCell,
   FlutterShadcnBadge,
-} from '@openwebf/react-shadcn-ui';
+} from '../../components/shadcnCompat';
 
 export const ShadcnTablePage: React.FC = () => {
   const invoices = [

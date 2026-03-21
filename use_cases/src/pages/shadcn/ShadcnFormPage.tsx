@@ -15,8 +15,8 @@ import {
   FlutterShadcnSelectTrigger,
   FlutterShadcnSelectContent,
   FlutterShadcnSelectItem,
-} from '@openwebf/react-shadcn-ui';
-import type { FlutterShadcnFormElement } from '@openwebf/react-shadcn-ui';
+} from '../../components/shadcnCompat';
+import type { FlutterShadcnFormElement } from '../../components/shadcnCompat';
 
 export const ShadcnFormPage: React.FC = () => {
   const formRef = useRef<FlutterShadcnFormElement>(null);

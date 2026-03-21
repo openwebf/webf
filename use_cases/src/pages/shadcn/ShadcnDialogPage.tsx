@@ -15,7 +15,7 @@ import {
   FlutterShadcnSheetContent,
   FlutterShadcnButton,
   FlutterShadcnInput,
-} from '@openwebf/react-shadcn-ui';
+} from '../../components/shadcnCompat';
 
 export const ShadcnDialogPage: React.FC = () => {
   const [dialogOpen, setDialogOpen] = useState(false);

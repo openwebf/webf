@@ -14,7 +14,7 @@ import {
   FlutterShadcnContextMenuCheckboxItem,
   FlutterShadcnContextMenuRadioGroup,
   FlutterShadcnContextMenuRadioItem,
-} from '@openwebf/react-shadcn-ui';
+} from '../../components/shadcnCompat';
 
 export const ShadcnContextMenuPage: React.FC = () => {
   const [showBookmarksBar, setShowBookmarksBar] = useState(true);

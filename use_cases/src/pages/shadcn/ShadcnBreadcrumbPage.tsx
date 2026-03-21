@@ -11,7 +11,7 @@ import {
   FlutterShadcnBreadcrumbEllipsis,
   FlutterShadcnBreadcrumbDropdown,
   FlutterShadcnBreadcrumbDropdownItem,
-} from '@openwebf/react-shadcn-ui';
+} from '../../components/shadcnCompat';
 
 export const ShadcnBreadcrumbPage: React.FC = () => {
   const handleLinkClick = (path: string) => {

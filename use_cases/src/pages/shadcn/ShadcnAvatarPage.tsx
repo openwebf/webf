@@ -3,7 +3,7 @@ import { WebFListView } from '@openwebf/react-core-ui';
 import {
   FlutterShadcnTheme,
   FlutterShadcnAvatar,
-} from '@openwebf/react-shadcn-ui';
+} from '../../components/shadcnCompat';
 
 export const ShadcnAvatarPage: React.FC = () => {
   return (

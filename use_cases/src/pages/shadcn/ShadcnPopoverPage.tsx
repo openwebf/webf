@@ -8,7 +8,7 @@ import {
   FlutterShadcnTooltip,
   FlutterShadcnButton,
   FlutterShadcnInput,
-} from '@openwebf/react-shadcn-ui';
+} from '../../components/shadcnCompat';
 
 export const ShadcnPopoverPage: React.FC = () => {
   return (

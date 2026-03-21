@@ -6,7 +6,7 @@ import {
   FlutterShadcnAlertTitle,
   FlutterShadcnAlertDescription,
   FlutterShadcnBadge,
-} from '@openwebf/react-shadcn-ui';
+} from '../../components/shadcnCompat';
 
 export const ShadcnAlertBadgePage: React.FC = () => {
   return (

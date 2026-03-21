@@ -9,7 +9,7 @@ import {
   FlutterShadcnDropdownMenuSeparator,
   FlutterShadcnDropdownMenuLabel,
   FlutterShadcnButton,
-} from '@openwebf/react-shadcn-ui';
+} from '../../components/shadcnCompat';
 
 export const ShadcnDropdownPage: React.FC = () => {
   const handleAction = (action: string) => {

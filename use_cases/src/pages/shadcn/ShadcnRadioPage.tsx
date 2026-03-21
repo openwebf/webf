@@ -4,7 +4,7 @@ import {
   FlutterShadcnTheme,
   FlutterShadcnRadio,
   FlutterShadcnRadioItem,
-} from '@openwebf/react-shadcn-ui';
+} from '../../components/shadcnCompat';
 
 export const ShadcnRadioPage: React.FC = () => {
   const [selectedPlan, setSelectedPlan] = useState('comfortable');

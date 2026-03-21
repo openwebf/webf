@@ -6,7 +6,7 @@ import {
   FlutterShadcnCard,
   FlutterShadcnCardHeader,
   FlutterShadcnCardContent,
-} from '@openwebf/react-shadcn-ui';
+} from '../../components/shadcnCompat';
 
 export const ShadcnSkeletonPage: React.FC = () => {
   return (

@@ -3,7 +3,7 @@ import { WebFListView } from '@openwebf/react-core-ui';
 import {
   FlutterShadcnTheme,
   FlutterShadcnProgress,
-} from '@openwebf/react-shadcn-ui';
+} from '../../components/shadcnCompat';
 
 export const ShadcnProgressPage: React.FC = () => {
   const [animatedProgress, setAnimatedProgress] = useState(0);

@@ -13,7 +13,7 @@ import {
   FlutterShadcnCardContent,
   FlutterShadcnInput,
   FlutterShadcnButton,
-} from '@openwebf/react-shadcn-ui';
+} from '../../components/shadcnCompat';
 
 export const ShadcnTabsPage: React.FC = () => {
   return (

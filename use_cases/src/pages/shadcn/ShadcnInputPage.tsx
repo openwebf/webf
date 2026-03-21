@@ -5,7 +5,7 @@ import {
   FlutterShadcnInput,
   FlutterShadcnTextarea,
   FlutterShadcnButton,
-} from '@openwebf/react-shadcn-ui';
+} from '../../components/shadcnCompat';
 
 export const ShadcnInputPage: React.FC = () => {
   const [inputValue, setInputValue] = useState('');

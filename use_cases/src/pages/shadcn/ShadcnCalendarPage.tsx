@@ -8,7 +8,7 @@ import {
   FlutterShadcnCardHeader,
   FlutterShadcnCardTitle,
   FlutterShadcnCardContent,
-} from '@openwebf/react-shadcn-ui';
+} from '../../components/shadcnCompat';
 
 export const ShadcnCalendarPage: React.FC = () => {
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
