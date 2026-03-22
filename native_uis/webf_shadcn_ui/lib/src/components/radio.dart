@@ -69,39 +69,24 @@ class FlutterShadcnRadioState extends WebFWidgetElementState {
   FlutterShadcnRadio get widgetElement =>
       super.widgetElement as FlutterShadcnRadio;
 
-  List<FlutterShadcnRadioItem> _getRadioItems() {
-    return widgetElement.childNodes
-        .whereType<FlutterShadcnRadioItem>()
-        .toList();
-  }
-
   @override
   Widget build(BuildContext context) {
-    final items = _getRadioItems();
-
-    final radioItems = items.map((item) {
-      Widget? labelWidget;
-      if (item.childNodes.isNotEmpty) {
-        labelWidget = WebFWidgetElementChild(
-          child: item.childNodes.first.toWidget(),
-        );
-      }
-
-      return ShadRadio<String>(
-        value: item._itemValue ?? '',
-        enabled: !widgetElement.disabled && !item._itemDisabled,
-        label: labelWidget,
-      );
-    }).toList();
+    final groupChildren = widgetElement.childNodes
+        .map((node) => WebFWidgetElementChild(child: node.toWidget()))
+        .toList();
 
     return ShadRadioGroup<String>(
       initialValue: widgetElement.value,
+      axis: widgetElement.isHorizontal ? Axis.horizontal : Axis.vertical,
       enabled: !widgetElement.disabled,
       onChanged: (value) {
         widgetElement._value = value;
-        widgetElement.dispatchEvent(Event('change'));
+        widgetElement.dispatchEvent(
+          CustomEvent('change', detail: {'value': value}),
+        );
+        widgetElement.state?.requestUpdateState(() {});
       },
-      items: radioItems,
+      items: groupChildren,
     );
   }
 }
@@ -136,9 +121,15 @@ class FlutterShadcnRadioItem extends WidgetElement {
   }
 
   void _notifyParent() {
-    final parent = parentNode;
-    if (parent is FlutterShadcnRadio) {
-      parent.state?.requestUpdateState(() {});
+    state?.requestUpdateState(() {});
+
+    Node? current = parentNode;
+    while (current != null) {
+      if (current is FlutterShadcnRadio) {
+        current.state?.requestUpdateState(() {});
+        break;
+      }
+      current = current.parentNode;
     }
   }
 
@@ -157,6 +148,25 @@ class FlutterShadcnRadioItem extends WidgetElement {
     );
   }
 
+  static StaticDefinedBindingPropertyMap flutterShadcnRadioItemProperties = {
+    'value': StaticDefinedBindingProperty(
+      getter: (element) => castToType<FlutterShadcnRadioItem>(element).value,
+      setter: (element, value) =>
+          castToType<FlutterShadcnRadioItem>(element).value = value,
+    ),
+    'disabled': StaticDefinedBindingProperty(
+      getter: (element) => castToType<FlutterShadcnRadioItem>(element).disabled,
+      setter: (element, value) =>
+          castToType<FlutterShadcnRadioItem>(element).disabled = value,
+    ),
+  };
+
+  @override
+  List<StaticDefinedBindingPropertyMap> get properties => [
+        ...super.properties,
+        flutterShadcnRadioItemProperties,
+      ];
+
   @override
   WebFWidgetElementState createState() => FlutterShadcnRadioItemState(this);
 }
@@ -165,8 +175,41 @@ class FlutterShadcnRadioItemState extends WebFWidgetElementState {
   FlutterShadcnRadioItemState(super.widgetElement);
 
   @override
+  FlutterShadcnRadioItem get widgetElement =>
+      super.widgetElement as FlutterShadcnRadioItem;
+
+  FlutterShadcnRadio? _findRadioGroup() {
+    Node? current = widgetElement.parentNode;
+    while (current != null) {
+      if (current is FlutterShadcnRadio) return current;
+      current = current.parentNode;
+    }
+    return null;
+  }
+
+  String _extractTextContent(Iterable<Node> nodes) {
+    final buffer = StringBuffer();
+    for (final node in nodes) {
+      if (node is TextNode) {
+        buffer.write(node.data);
+      } else if (node.childNodes.isNotEmpty) {
+        buffer.write(_extractTextContent(node.childNodes));
+      }
+    }
+    return buffer.toString().trim();
+  }
+
+  @override
   Widget build(BuildContext context) {
-    // This widget is built by the parent FlutterShadcnRadio
-    return const SizedBox.shrink();
+    final radioGroup = _findRadioGroup();
+    final labelText = _extractTextContent(widgetElement.childNodes);
+    final effectiveValue =
+        widgetElement.value ?? widgetElement.getAttribute('value');
+
+    return ShadRadio<String>(
+      value: effectiveValue ?? '',
+      enabled: !(radioGroup?.disabled ?? false) && !widgetElement._itemDisabled,
+      label: labelText.isNotEmpty ? Text(labelText) : null,
+    );
   }
 }
