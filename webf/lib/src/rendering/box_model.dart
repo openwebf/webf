@@ -392,6 +392,9 @@ abstract class RenderBoxModel extends RenderBox
 
   // Whether it needs relayout due to percentage calculation.
   bool needsRelayout = false;
+  bool _hasPendingLayoutInvalidation = true;
+
+  bool get hasPendingLayoutInvalidation => _hasPendingLayoutInvalidation;
 
   // Mark parent as needs relayout used in cases such as
   // child has percentage length and parent's size can not be calculated by style
@@ -407,6 +410,7 @@ abstract class RenderBoxModel extends RenderBox
 
   void markNeedsRelayout() {
     needsRelayout = true;
+    _hasPendingLayoutInvalidation = true;
   }
 
   // A flag to detect the size of this renderBox had changed during this layout.
@@ -856,7 +860,7 @@ abstract class RenderBoxModel extends RenderBox
 
   @override
   set size(Size value) {
-    _boxSize = value;
+    _boxSize = Size.copy(value);
 
     Size? previousSize = hasSize ? super.size : null;
     if (previousSize != null && previousSize != value) {
@@ -869,6 +873,7 @@ abstract class RenderBoxModel extends RenderBox
   @override
   void markNeedsLayout() {
     final RenderObject? relayoutParent = _relayoutParentOnSizeChange;
+    _hasPendingLayoutInvalidation = true;
     super.markNeedsLayout();
 
     // Some wrapper parents mirror child.boxSize while laying the child out
@@ -1011,6 +1016,7 @@ abstract class RenderBoxModel extends RenderBox
     this.contentConstraints = contentConstraints;
     clearOverflowLayout();
     isSelfSizeChanged = false;
+    _hasPendingLayoutInvalidation = false;
 
     // Reset cached CSS baselines before a new layout pass. They will be
     // updated by subclasses that can establish inline formatting context
