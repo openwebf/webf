@@ -394,11 +394,14 @@ abstract class RenderBoxModel extends RenderBox
   // Whether it needs relayout due to percentage calculation.
   bool needsRelayout = false;
   bool _hasPendingIntrinsicMeasurementInvalidation = true;
+  bool _hasPendingSubtreeIntrinsicMeasurementInvalidation = true;
   String? _debugIntrinsicMeasurementDirtyReason = 'initial';
   int _clearIntrinsicMeasurementInvalidationAfterLayoutPass = 1;
 
   bool get hasPendingIntrinsicMeasurementInvalidation =>
       _hasPendingIntrinsicMeasurementInvalidation;
+  bool get hasPendingSubtreeIntrinsicMeasurementInvalidation =>
+      _hasPendingSubtreeIntrinsicMeasurementInvalidation;
   String? get debugIntrinsicMeasurementDirtyReason =>
       _debugIntrinsicMeasurementDirtyReason;
 
@@ -423,6 +426,29 @@ abstract class RenderBoxModel extends RenderBox
     _debugIntrinsicMeasurementDirtyReason = reason;
     _clearIntrinsicMeasurementInvalidationAfterLayoutPass =
         renderBoxModelLayoutPassId + 1;
+    _markNeedsSubtreeIntrinsicMeasurementUpdate(reason);
+  }
+
+  void markNeedsSubtreeIntrinsicMeasurementUpdate(
+      [String reason = 'descendant']) {
+    _markNeedsSubtreeIntrinsicMeasurementUpdate(reason);
+  }
+
+  void _markNeedsSubtreeIntrinsicMeasurementUpdate(String reason) {
+    if (_hasPendingSubtreeIntrinsicMeasurementInvalidation) {
+      return;
+    }
+    _hasPendingSubtreeIntrinsicMeasurementInvalidation = true;
+    RenderObject? ancestor = parent;
+    while (ancestor != null) {
+      if (ancestor is RenderBoxModel) {
+        if (ancestor._hasPendingSubtreeIntrinsicMeasurementInvalidation) {
+          break;
+        }
+        ancestor._hasPendingSubtreeIntrinsicMeasurementInvalidation = true;
+      }
+      ancestor = ancestor.parent;
+    }
   }
 
   void updateIntrinsicMeasurementInvalidationForCurrentLayoutPass() {
@@ -436,6 +462,7 @@ abstract class RenderBoxModel extends RenderBox
 
   void clearIntrinsicMeasurementInvalidationAfterMeasurement() {
     _hasPendingIntrinsicMeasurementInvalidation = false;
+    _hasPendingSubtreeIntrinsicMeasurementInvalidation = false;
     _debugIntrinsicMeasurementDirtyReason = null;
     _clearIntrinsicMeasurementInvalidationAfterLayoutPass =
         renderBoxModelLayoutPassId;
