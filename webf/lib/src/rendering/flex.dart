@@ -15,6 +15,7 @@ import 'package:webf/dom.dart';
 import 'package:webf/foundation.dart';
 import 'package:webf/rendering.dart';
 import 'package:webf/css.dart';
+import 'package:webf/src/html/forms.dart' show ButtonElement;
 import 'package:webf/src/html/text.dart';
 import 'package:webf/widget.dart';
 
@@ -53,6 +54,42 @@ String _flexFastPathRejectReasonLabel(_FlexFastPathRejectReason reason) {
       return 'wouldGrow';
     case _FlexFastPathRejectReason.wouldShrink:
       return 'wouldShrink';
+  }
+}
+
+enum _FlexAnonymousMetricsRejectReason {
+  verticalDirection,
+  wrappedContainer,
+  positionedPlaceholderChild,
+  containerAlignItemsBaseline,
+  containerAlignItemsStretch,
+  childAlignSelfBaseline,
+  childAlignSelfStretch,
+  childNotFlexNone,
+  noAnonymousFlowChild,
+}
+
+String _flexAnonymousMetricsRejectReasonLabel(
+    _FlexAnonymousMetricsRejectReason reason) {
+  switch (reason) {
+    case _FlexAnonymousMetricsRejectReason.verticalDirection:
+      return 'verticalDirection';
+    case _FlexAnonymousMetricsRejectReason.wrappedContainer:
+      return 'wrappedContainer';
+    case _FlexAnonymousMetricsRejectReason.positionedPlaceholderChild:
+      return 'positionedPlaceholderChild';
+    case _FlexAnonymousMetricsRejectReason.containerAlignItemsBaseline:
+      return 'containerAlignItemsBaseline';
+    case _FlexAnonymousMetricsRejectReason.containerAlignItemsStretch:
+      return 'containerAlignItemsStretch';
+    case _FlexAnonymousMetricsRejectReason.childAlignSelfBaseline:
+      return 'childAlignSelfBaseline';
+    case _FlexAnonymousMetricsRejectReason.childAlignSelfStretch:
+      return 'childAlignSelfStretch';
+    case _FlexAnonymousMetricsRejectReason.childNotFlexNone:
+      return 'childNotFlexNone';
+    case _FlexAnonymousMetricsRejectReason.noAnonymousFlowChild:
+      return 'noAnonymousFlowChild';
   }
 }
 
@@ -152,6 +189,160 @@ class _FlexFastPathProfiler {
     renderingLogger.info(
       '[FlexFastPath][summary] attempts=$_attempts hits=$_hits '
       'hitRate=${hitRate.toStringAsFixed(1)}% rejects=$rejects reasons=$rejectSummary',
+    );
+  }
+
+  static String _formatDetails(Map<String, Object?> details) {
+    return details.entries
+        .map((MapEntry<String, Object?> entry) => '${entry.key}=${entry.value}')
+        .join(', ');
+  }
+}
+
+class _FlexAnonymousMetricsProfiler {
+  static int _rowsEvaluated = 0;
+  static int _rowsEligible = 0;
+  static int _childCacheHits = 0;
+  static int _childCacheMisses = 0;
+  static int _detailLogs = 0;
+  static final Map<_FlexAnonymousMetricsRejectReason, int> _rejectCounts =
+      <_FlexAnonymousMetricsRejectReason, int>{};
+
+  static bool get enabled => DebugFlags.enableFlexAnonymousMetricsProfiling;
+
+  static int get _summaryEvery {
+    final int configured = DebugFlags.flexAnonymousMetricsProfilingSummaryEvery;
+    return configured > 0 ? configured : 50;
+  }
+
+  static int get _maxDetailLogs {
+    final int configured = DebugFlags.flexAnonymousMetricsProfilingMaxDetailLogs;
+    return configured >= 0 ? configured : 0;
+  }
+
+  static String get _watchedPathSubstring =>
+      DebugFlags.flexAnonymousMetricsProfilingWatchedPathContains.trim();
+
+  static bool _shouldForceDetail(String path) {
+    final String watched = _watchedPathSubstring;
+    return watched.isNotEmpty && path.contains(watched);
+  }
+
+  static void recordEligibleRow(
+    String path, {
+    required int childCount,
+    required int anonymousChildCount,
+  }) {
+    if (!enabled) return;
+    _rowsEvaluated++;
+    _rowsEligible++;
+
+    _maybeLogDetail(
+      path,
+      '[FlexAnonymousMetrics][eligible] path=$path childCount=$childCount '
+      'anonymousChildCount=$anonymousChildCount',
+    );
+    _maybeLogSummary();
+  }
+
+  static void recordRejectedRow(
+    String path,
+    _FlexAnonymousMetricsRejectReason reason, {
+    String? childLabel,
+    int? childIndex,
+    Map<String, Object?>? details,
+  }) {
+    if (!enabled) return;
+    _rowsEvaluated++;
+    _rejectCounts.update(reason, (int value) => value + 1, ifAbsent: () => 1);
+
+    final StringBuffer message = StringBuffer()
+      ..write('[FlexAnonymousMetrics][reject] path=')
+      ..write(path)
+      ..write(' reason=')
+      ..write(_flexAnonymousMetricsRejectReasonLabel(reason));
+    if (childIndex != null) {
+      message
+        ..write(' childIndex=')
+        ..write(childIndex);
+    }
+    if (childLabel != null) {
+      message
+        ..write(' child=')
+        ..write(childLabel);
+    }
+    if (details != null && details.isNotEmpty) {
+      message
+        ..write(' details=')
+        ..write(_formatDetails(details));
+    }
+    _maybeLogDetail(path, message.toString());
+    _maybeLogSummary();
+  }
+
+  static void recordChildCacheHit(
+    String path, {
+    required String childLabel,
+    required int childIndex,
+  }) {
+    if (!enabled) return;
+    _childCacheHits++;
+    _maybeLogDetail(
+      path,
+      '[FlexAnonymousMetrics][cacheHit] path=$path childIndex=$childIndex child=$childLabel',
+    );
+    _maybeLogSummary();
+  }
+
+  static void recordChildCacheMiss(
+    String path, {
+    required String childLabel,
+    required int childIndex,
+  }) {
+    if (!enabled) return;
+    _childCacheMisses++;
+    _maybeLogDetail(
+      path,
+      '[FlexAnonymousMetrics][cacheMiss] path=$path childIndex=$childIndex child=$childLabel',
+    );
+    _maybeLogSummary();
+  }
+
+  static void _maybeLogDetail(String path, String message) {
+    final bool forceDetail = _shouldForceDetail(path);
+    if (!forceDetail) {
+      if (_detailLogs >= _maxDetailLogs) return;
+      _detailLogs++;
+    }
+    renderingLogger.info(message);
+  }
+
+  static void _maybeLogSummary() {
+    if (!enabled) return;
+    if (_rowsEvaluated == 0 || _rowsEvaluated % _summaryEvery != 0) return;
+
+    final int rowsRejected = _rowsEvaluated - _rowsEligible;
+    final double rowHitRate =
+        _rowsEvaluated == 0 ? 0.0 : (_rowsEligible / _rowsEvaluated) * 100.0;
+    final int childAttempts = _childCacheHits + _childCacheMisses;
+    final double childHitRate =
+        childAttempts == 0 ? 0.0 : (_childCacheHits / childAttempts) * 100.0;
+    final List<MapEntry<_FlexAnonymousMetricsRejectReason, int>> rejectEntries =
+        _rejectCounts.entries.toList()
+          ..sort((a, b) => b.value.compareTo(a.value));
+
+    final String rejectSummary = rejectEntries.isEmpty
+        ? 'none'
+        : rejectEntries
+            .map((MapEntry<_FlexAnonymousMetricsRejectReason, int> entry) =>
+                '${_flexAnonymousMetricsRejectReasonLabel(entry.key)}=${entry.value}')
+            .join(', ');
+
+    renderingLogger.info(
+      '[FlexAnonymousMetrics][summary] rows=$_rowsEvaluated eligible=$_rowsEligible '
+      'eligibleRate=${rowHitRate.toStringAsFixed(1)}% rejected=$rowsRejected '
+      'childCacheHits=$_childCacheHits childCacheMisses=$_childCacheMisses '
+      'childHitRate=${childHitRate.toStringAsFixed(1)}% reasons=$rejectSummary',
     );
   }
 
@@ -1897,49 +2088,65 @@ class RenderFlexLayout extends RenderLayoutBox {
     bool allowAnonymous = false,
   }) {
     if (child is RenderFlowLayout) {
-      if (!allowAnonymous && child.renderStyle.isSelfAnonymousFlowLayout()) {
-        return null;
+      if (child.renderStyle.isSelfAnonymousFlowLayout()) {
+        if (!allowAnonymous || !_canReuseAnonymousFlowMeasurement(child)) {
+          return null;
+        }
       }
       return child;
     }
     if (child is RenderEventListener) {
       final RenderBox? wrapped = child.child;
-      if (wrapped is RenderFlowLayout &&
-          (allowAnonymous || !wrapped.renderStyle.isSelfAnonymousFlowLayout())) {
+      if (wrapped is RenderFlowLayout) {
+        if (wrapped.renderStyle.isSelfAnonymousFlowLayout() &&
+            (!allowAnonymous || !_canReuseAnonymousFlowMeasurement(wrapped))) {
+          return null;
+        }
         return wrapped;
       }
     }
     return null;
   }
 
+  bool _canReuseAnonymousFlowMeasurement(RenderFlowLayout flowChild) {
+    final Element? parentElement = flowChild.renderStyle.target.parentElement;
+    // Button-owned anonymous wrappers still regress :hover/:active snapshots
+    // when their intrinsic measurement is reused across flex passes.
+    return parentElement is! ButtonElement;
+  }
+
   bool _canUseAnonymousMetricsOnlyCache(List<RenderBox> children) {
-    if (!_isHorizontalFlexDirection || renderStyle.flexWrap != FlexWrap.nowrap) {
+    int anonymousFlowChildCount = 0;
+    for (int childIndex = 0; childIndex < children.length; childIndex++) {
+      final RenderBox child = children[childIndex];
+      if (_isAnonymousIntrinsicMeasureChild(child)) {
+        anonymousFlowChildCount++;
+      }
+
+      final _FlexAnonymousMetricsRejectReason? rejectReason =
+          _getAnonymousMetricsRejectReason(child);
+      if (rejectReason != null) {
+        _recordAnonymousMetricsReject(
+          rejectReason,
+          child: child,
+          childIndex: childIndex,
+        );
+        return false;
+      }
+    }
+
+    if (anonymousFlowChildCount == 0) {
+      _recordAnonymousMetricsReject(
+        _FlexAnonymousMetricsRejectReason.noAnonymousFlowChild,
+      );
       return false;
     }
 
-    bool hasAnonymousFlowChild = false;
-    for (final RenderBox child in children) {
-      if (_getEarlyNoFlexNoStretchNoBaselineRejectReason(
-            child,
-            const BoxConstraints(),
-          ) !=
-          null) {
-        return false;
-      }
-      if (!isFlexNone(child)) {
-        return false;
-      }
-
-      final RenderFlowLayout? flowChild = _getCacheableIntrinsicMeasureFlowChild(
-        child,
-        allowAnonymous: true,
-      );
-      if (flowChild != null && flowChild.renderStyle.isSelfAnonymousFlowLayout()) {
-        hasAnonymousFlowChild = true;
-      }
-    }
-
-    return hasAnonymousFlowChild;
+    _recordAnonymousMetricsEligible(
+      childCount: children.length,
+      anonymousChildCount: anonymousFlowChildCount,
+    );
+    return true;
   }
 
   bool _hasBaselineAlignmentForChild(RenderBox child) {
@@ -2120,6 +2327,34 @@ class RenderFlexLayout extends RenderLayoutBox {
     return child.runtimeType.toString();
   }
 
+  bool _isAnonymousIntrinsicMeasureChild(RenderBox child) {
+    final RenderFlowLayout? flowChild = _getCacheableIntrinsicMeasureFlowChild(
+      child,
+      allowAnonymous: true,
+    );
+    return flowChild != null && flowChild.renderStyle.isSelfAnonymousFlowLayout();
+  }
+
+  _FlexAnonymousMetricsRejectReason? _getAnonymousMetricsRejectReason(
+      RenderBox child) {
+    if (child is RenderPositionPlaceholder) {
+      return _FlexAnonymousMetricsRejectReason.positionedPlaceholderChild;
+    }
+
+    if (renderStyle.alignItems == AlignItems.baseline ||
+        renderStyle.alignItems == AlignItems.lastBaseline) {
+      return _FlexAnonymousMetricsRejectReason.containerAlignItemsBaseline;
+    }
+
+    final AlignSelf alignSelf = _getAlignSelf(child);
+    if (alignSelf == AlignSelf.baseline ||
+        alignSelf == AlignSelf.lastBaseline) {
+      return _FlexAnonymousMetricsRejectReason.childAlignSelfBaseline;
+    }
+
+    return null;
+  }
+
   void _recordEarlyFastPathReject(
     _FlexFastPathRejectReason reason, {
     RenderBox? child,
@@ -2144,6 +2379,57 @@ class RenderFlexLayout extends RenderLayoutBox {
       _describeFastPathContainer(),
       childCount: childCount,
     );
+  }
+
+  void _recordAnonymousMetricsReject(
+    _FlexAnonymousMetricsRejectReason reason, {
+    RenderBox? child,
+    int? childIndex,
+    Map<String, Object?>? details,
+  }) {
+    if (!_FlexAnonymousMetricsProfiler.enabled) return;
+    _FlexAnonymousMetricsProfiler.recordRejectedRow(
+      _describeFastPathContainer(),
+      reason,
+      childLabel: child == null ? null : _describeFastPathChild(child),
+      childIndex: childIndex,
+      details: details,
+    );
+  }
+
+  void _recordAnonymousMetricsEligible({
+    required int childCount,
+    required int anonymousChildCount,
+  }) {
+    if (!_FlexAnonymousMetricsProfiler.enabled) return;
+    _FlexAnonymousMetricsProfiler.recordEligibleRow(
+      _describeFastPathContainer(),
+      childCount: childCount,
+      anonymousChildCount: anonymousChildCount,
+    );
+  }
+
+  void _recordAnonymousMetricsChildCache(
+    RenderBox child, {
+    required int childIndex,
+    required bool hit,
+  }) {
+    if (!_FlexAnonymousMetricsProfiler.enabled) return;
+    final String path = _describeFastPathContainer();
+    final String childLabel = _describeFastPathChild(child);
+    if (hit) {
+      _FlexAnonymousMetricsProfiler.recordChildCacheHit(
+        path,
+        childLabel: childLabel,
+        childIndex: childIndex,
+      );
+    } else {
+      _FlexAnonymousMetricsProfiler.recordChildCacheMiss(
+        path,
+        childLabel: childLabel,
+        childIndex: childIndex,
+      );
+    }
   }
 
   bool _canAttemptFullEarlyFastPath(List<_RunMetrics> runMetrics) {
@@ -2768,14 +3054,25 @@ class RenderFlexLayout extends RenderLayoutBox {
         _canUseAnonymousMetricsOnlyCache(children);
     _transientChildSizeOverrides = Expando<Size>('transientChildSizeOverrides');
     try {
-      for (RenderBox child in children) {
+      for (int childIndex = 0; childIndex < children.length; childIndex++) {
+        final RenderBox child = children[childIndex];
         final BoxConstraints childConstraints = _getIntrinsicConstraints(child);
+        final bool isAnonymousMetricsChild =
+            allowAnonymousMetricsOnlyCache &&
+                _isAnonymousIntrinsicMeasureChild(child);
         final _FlexIntrinsicMeasurementCacheEntry? cacheEntry =
             _getReusableIntrinsicMeasurement(
           child,
           childConstraints,
           allowAnonymous: allowAnonymousMetricsOnlyCache,
         );
+        if (isAnonymousMetricsChild) {
+          _recordAnonymousMetricsChildCache(
+            child,
+            childIndex: childIndex,
+            hit: cacheEntry != null,
+          );
+        }
 
         final Size childSize;
         double intrinsicMain;

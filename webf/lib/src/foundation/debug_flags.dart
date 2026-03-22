@@ -123,6 +123,14 @@ class DebugFlags {
       const int.fromEnvironment('WEBF_DEBUG_FLEX_FAST_PATH_SUMMARY_EVERY', defaultValue: 50);
   static int flexFastPathProfilingMaxDetailLogs =
       const int.fromEnvironment('WEBF_DEBUG_FLEX_FAST_PATH_MAX_DETAIL_LOGS', defaultValue: 20);
+  static bool enableFlexAnonymousMetricsProfiling =
+      const bool.fromEnvironment('WEBF_DEBUG_FLEX_ANON_METRICS', defaultValue: false);
+  static int flexAnonymousMetricsProfilingSummaryEvery =
+      const int.fromEnvironment('WEBF_DEBUG_FLEX_ANON_METRICS_SUMMARY_EVERY', defaultValue: 50);
+  static int flexAnonymousMetricsProfilingMaxDetailLogs =
+      const int.fromEnvironment('WEBF_DEBUG_FLEX_ANON_METRICS_MAX_DETAIL_LOGS', defaultValue: 20);
+  static String flexAnonymousMetricsProfilingWatchedPathContains =
+      const String.fromEnvironment('WEBF_DEBUG_FLEX_ANON_METRICS_WATCH_PATH', defaultValue: '');
 
   /// Debug flag to enable inline layout visualization.
   /// When true, paints debug information for line boxes, margins, padding, etc.
