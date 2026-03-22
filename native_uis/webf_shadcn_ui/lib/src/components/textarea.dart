@@ -128,6 +128,8 @@ class FlutterShadcnTextareaState extends WebFWidgetElementState {
 
   late TextEditingController _controller;
   late FocusNode _focusNode;
+  double? _resizedWidth;
+  double? _resizedHeight;
 
   @override
   FlutterShadcnTextarea get widgetElement =>
@@ -159,6 +161,99 @@ class FlutterShadcnTextareaState extends WebFWidgetElementState {
     }
   }
 
+  _TextareaResizeMode _effectiveResizeMode() {
+    final resizeValue =
+        widgetElement.style.getPropertyValue('resize').trim().toLowerCase();
+
+    switch (resizeValue) {
+      case 'none':
+        return _TextareaResizeMode.none;
+      case 'horizontal':
+      case 'inline':
+        return _TextareaResizeMode.horizontal;
+      case 'vertical':
+      case 'block':
+        return _TextareaResizeMode.vertical;
+      case 'both':
+      case '':
+        return _TextareaResizeMode.both;
+      default:
+        return _TextareaResizeMode.both;
+    }
+  }
+
+  double _defaultHeightForRows() {
+    return (_rowsToPixels(widgetElement._rows)).clamp(80.0, 500.0);
+  }
+
+  double _rowsToPixels(int rows) {
+    return rows * 24.0 + 16.0;
+  }
+
+  double? _normalizeMax(double? value) {
+    if (value == null || !value.isFinite || value <= 0) {
+      return null;
+    }
+    return value;
+  }
+
+  double _clampWidth(double width, BoxConstraints constraints) {
+    final style = widgetElement.renderStyle;
+    final minWidth =
+        style.minWidth.computedValue > 0 ? style.minWidth.computedValue : 120.0;
+    final maxWidth = _normalizeMax(style.maxWidth.computedValue);
+    final viewportMaxWidth =
+        constraints.maxWidth.isFinite ? constraints.maxWidth : width;
+    final effectiveMaxWidth = maxWidth != null
+        ? maxWidth.clamp(minWidth, viewportMaxWidth)
+        : viewportMaxWidth;
+    return width.clamp(minWidth, effectiveMaxWidth);
+  }
+
+  double _clampHeight(double height) {
+    final style = widgetElement.renderStyle;
+    final minHeight = style.minHeight.computedValue > 0
+        ? style.minHeight.computedValue
+        : _defaultHeightForRows();
+    final maxHeight = _normalizeMax(style.maxHeight.computedValue) ?? 500.0;
+    return height.clamp(minHeight, maxHeight);
+  }
+
+  SystemMouseCursor _cursorFor(_TextareaResizeMode mode) {
+    switch (mode) {
+      case _TextareaResizeMode.horizontal:
+        return SystemMouseCursors.resizeLeftRight;
+      case _TextareaResizeMode.vertical:
+        return SystemMouseCursors.resizeUpDown;
+      case _TextareaResizeMode.both:
+        return SystemMouseCursors.resizeUpLeftDownRight;
+      case _TextareaResizeMode.none:
+        return SystemMouseCursors.basic;
+    }
+  }
+
+  void _handleResize(
+    DragUpdateDetails details, {
+    required _TextareaResizeMode mode,
+    required BoxConstraints constraints,
+    required double currentWidth,
+    required double currentHeight,
+  }) {
+    if (mode == _TextareaResizeMode.none) return;
+
+    _focusNode.requestFocus();
+
+    setState(() {
+      if (mode.allowsHorizontal) {
+        _resizedWidth =
+            _clampWidth(currentWidth + details.delta.dx, constraints);
+      }
+      if (mode.allowsVertical) {
+        _resizedHeight = _clampHeight(currentHeight + details.delta.dy);
+      }
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     // Sync controller with external value changes
@@ -166,30 +261,90 @@ class FlutterShadcnTextareaState extends WebFWidgetElementState {
       _controller.text = widgetElement.value;
     }
 
-    List<TextInputFormatter>? inputFormatters;
-    if (widgetElement._maxLength != null) {
-      inputFormatters = [
-        LengthLimitingTextInputFormatter(widgetElement._maxLength),
-      ];
-    }
+    final resizeMode = _effectiveResizeMode();
 
-    return ShadInput(
-      controller: _controller,
-      focusNode: _focusNode,
-      placeholder: widgetElement.placeholder != null
-          ? Text(widgetElement.placeholder!)
-          : null,
-      enabled: !widgetElement.disabled,
-      readOnly: widgetElement.readonly,
-      autofocus: widgetElement.autofocus,
-      inputFormatters: inputFormatters,
-      minLines: widgetElement._rows,
-      maxLines: null, // Allow expansion
-      keyboardType: TextInputType.multiline,
-      onChanged: (value) {
-        widgetElement._value = value;
-        widgetElement.dispatchEvent(Event('input'));
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final style = widgetElement.renderStyle;
+        final styleWidth =
+            style.width.computedValue > 0 ? style.width.computedValue : null;
+        final styleHeight =
+            style.height.computedValue > 0 ? style.height.computedValue : null;
+
+        final currentWidth = _resizedWidth ??
+            styleWidth ??
+            (constraints.maxWidth.isFinite ? constraints.maxWidth : null);
+        final currentHeight =
+            _resizedHeight ?? styleHeight ?? _defaultHeightForRows();
+
+        final textarea = ShadTextarea(
+          controller: _controller,
+          focusNode: _focusNode,
+          placeholder: widgetElement.placeholder != null
+              ? Text(widgetElement.placeholder!)
+              : null,
+          enabled: !widgetElement.disabled,
+          readOnly: widgetElement.readonly,
+          autofocus: widgetElement.autofocus,
+          maxLength: widgetElement._maxLength,
+          minHeight: _clampHeight(currentHeight),
+          maxHeight: _clampHeight(currentHeight),
+          resizable: false,
+          onChanged: (value) {
+            widgetElement._value = value;
+            widgetElement.dispatchEvent(Event('input'));
+          },
+        );
+
+        final sizedTextarea = SizedBox(
+          width: currentWidth,
+          child: textarea,
+        );
+
+        if (resizeMode == _TextareaResizeMode.none ||
+            widgetElement.disabled ||
+            currentWidth == null) {
+          return sizedTextarea;
+        }
+
+        return Stack(
+          children: [
+            sizedTextarea,
+            Positioned(
+              right: 2,
+              bottom: 2,
+              child: MouseRegion(
+                cursor: _cursorFor(resizeMode),
+                child: GestureDetector(
+                  behavior: HitTestBehavior.translucent,
+                  onPanUpdate: (details) => _handleResize(
+                    details,
+                    mode: resizeMode,
+                    constraints: constraints,
+                    currentWidth: currentWidth,
+                    currentHeight: currentHeight,
+                  ),
+                  child: const ShadDefaultResizeGrip(),
+                ),
+              ),
+            ),
+          ],
+        );
       },
     );
   }
+}
+
+enum _TextareaResizeMode {
+  none,
+  horizontal,
+  vertical,
+  both;
+
+  bool get allowsHorizontal =>
+      this == _TextareaResizeMode.horizontal ||
+      this == _TextareaResizeMode.both;
+
+  bool get allowsVertical =>
+      this == _TextareaResizeMode.vertical || this == _TextareaResizeMode.both;
 }
