@@ -944,6 +944,7 @@ class RenderFlexLayout extends RenderLayoutBox {
   Expando<bool> _childrenRequirePostMeasureLayout =
       Expando<bool>('childrenRequirePostMeasureLayout');
   Expando<Size>? _transientChildSizeOverrides;
+  Expando<int>? _metricsOnlyIntrinsicMeasureChildEligibilityCache;
 
   _FlexContainerInvariants? _layoutInvariants;
 
@@ -960,6 +961,7 @@ class RenderFlexLayout extends RenderLayoutBox {
     _childrenRequirePostMeasureLayout =
         Expando<bool>('childrenRequirePostMeasureLayout');
     _transientChildSizeOverrides = null;
+    _metricsOnlyIntrinsicMeasureChildEligibilityCache = null;
   }
 
   @override
@@ -2239,7 +2241,7 @@ class RenderFlexLayout extends RenderLayoutBox {
       return true;
     }
     if (root is RenderBoxModel &&
-        root.hasPendingIntrinsicMeasurementInvalidation) {
+        root.hasPendingSubtreeIntrinsicMeasurementInvalidation) {
       return true;
     }
 
@@ -2381,13 +2383,6 @@ class RenderFlexLayout extends RenderLayoutBox {
         missReason: _FlexAnonymousMetricsMissReason.childNeedsRelayout,
       );
     }
-    if (_subtreeHasPendingIntrinsicMeasureInvalidation(child)) {
-      return _FlexIntrinsicMeasurementLookupResult(
-        missReason: _FlexAnonymousMetricsMissReason.subtreeIntrinsicDirty,
-        missDetails: _describeFirstPendingIntrinsicMeasureInvalidation(child),
-      );
-    }
-
     final _FlexIntrinsicMeasurementCacheEntry? cacheEntry =
         _childrenIntrinsicMeasureCache[child];
     if (cacheEntry == null) {
@@ -2398,6 +2393,14 @@ class RenderFlexLayout extends RenderLayoutBox {
     if (cacheEntry.constraints != childConstraints) {
       return const _FlexIntrinsicMeasurementLookupResult(
         missReason: _FlexAnonymousMetricsMissReason.constraintsMismatch,
+      );
+    }
+    if (_subtreeHasPendingIntrinsicMeasureInvalidation(child)) {
+      return _FlexIntrinsicMeasurementLookupResult(
+        missReason: _FlexAnonymousMetricsMissReason.subtreeIntrinsicDirty,
+        missDetails: _FlexAnonymousMetricsProfiler.enabled
+            ? _describeFirstPendingIntrinsicMeasureInvalidation(child)
+            : null,
       );
     }
     return _FlexIntrinsicMeasurementLookupResult(entry: cacheEntry);
@@ -2507,11 +2510,20 @@ class RenderFlexLayout extends RenderLayoutBox {
   }
 
   bool _isMetricsOnlyIntrinsicMeasureChild(RenderBox child) {
+    final Expando<int>? eligibilityCache =
+        _metricsOnlyIntrinsicMeasureChildEligibilityCache;
+    final int? cachedValue = eligibilityCache?[child];
+    if (cachedValue != null) {
+      return cachedValue == 1;
+    }
     final RenderFlowLayout? flowChild = _getCacheableIntrinsicMeasureFlowChild(
       child,
       allowAnonymous: true,
     );
-    return flowChild != null && _isMetricsOnlyIntrinsicMeasureFlowChild(flowChild);
+    final bool isEligible =
+        flowChild != null && _isMetricsOnlyIntrinsicMeasureFlowChild(flowChild);
+    eligibilityCache?[child] = isEligible ? 1 : 0;
+    return isEligible;
   }
 
   bool _isMetricsOnlyIntrinsicMeasureFlowChild(RenderFlowLayout flowChild) {
@@ -3304,6 +3316,8 @@ class RenderFlexLayout extends RenderLayoutBox {
     List<_RunChild> runChildren = <_RunChild>[];
 
     // PASS 1+2: Intrinsic layout + compute run metrics in one pass.
+    _metricsOnlyIntrinsicMeasureChildEligibilityCache =
+        Expando<int>('metricsOnlyIntrinsicMeasureChildEligibilityCache');
     final bool allowAnonymousMetricsOnlyCache =
         _canUseAnonymousMetricsOnlyCache(children);
     _transientChildSizeOverrides = Expando<Size>('transientChildSizeOverrides');
@@ -3599,6 +3613,7 @@ class RenderFlexLayout extends RenderLayoutBox {
       }
     } finally {
       _transientChildSizeOverrides = null;
+      _metricsOnlyIntrinsicMeasureChildEligibilityCache = null;
     }
 
     if (runChildren.isNotEmpty) {

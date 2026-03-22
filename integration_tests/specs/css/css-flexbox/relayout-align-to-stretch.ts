@@ -16,7 +16,7 @@ describe('relayout-align', () => {
         class: 'flexbox align-items-flex-start',
         style: {
           display: 'flex',
-          '-webkit-align-items': 'flex-start',
+          'align-items': 'flex-start',
           height: '100px',
           position: 'relative',
           'box-sizing': 'border-box',
@@ -37,7 +37,6 @@ describe('relayout-align', () => {
           'data-offset-y': '0',
           class: 'align-self-auto',
           style: {
-            '-webkit-align-self': 'auto',
             'align-self': 'auto',
             border: '5px solid green',
             width: '50px',
@@ -49,7 +48,6 @@ describe('relayout-align', () => {
           'data-offset-y': '0',
           class: 'align-self-flex-start',
           style: {
-            '-webkit-align-self': 'flex-start',
             'align-self': 'flex-start',
             border: '5px solid green',
             width: '50px',
@@ -61,7 +59,6 @@ describe('relayout-align', () => {
           'data-offset-y': '90',
           class: 'align-self-flex-end',
           style: {
-            '-webkit-align-self': 'flex-end',
             'align-self': 'flex-end',
             border: '5px solid green',
             width: '50px',
@@ -73,7 +70,6 @@ describe('relayout-align', () => {
           'data-offset-y': '45',
           class: 'align-self-center',
           style: {
-            '-webkit-align-self': 'center',
             'align-self': 'center',
             border: '5px solid green',
             width: '50px',
@@ -85,7 +81,6 @@ describe('relayout-align', () => {
           'data-offset-y': '0',
           class: 'align-self-baseline',
           style: {
-            '-webkit-align-self': 'baseline',
             'align-self': 'baseline',
             border: '5px solid green',
             width: '50px',
@@ -97,7 +92,6 @@ describe('relayout-align', () => {
           'data-offset-y': '0',
           class: 'align-self-stretch',
           style: {
-            '-webkit-align-self': 'stretch',
             'align-self': 'stretch',
             border: '5px solid green',
             width: '50px',
