@@ -1892,9 +1892,12 @@ class RenderFlexLayout extends RenderLayoutBox {
     }
   }
 
-  RenderFlowLayout? _getCacheableIntrinsicMeasureFlowChild(RenderBox child) {
+  RenderFlowLayout? _getCacheableIntrinsicMeasureFlowChild(
+    RenderBox child, {
+    bool allowAnonymous = false,
+  }) {
     if (child is RenderFlowLayout) {
-      if (child.renderStyle.isSelfAnonymousFlowLayout()) {
+      if (!allowAnonymous && child.renderStyle.isSelfAnonymousFlowLayout()) {
         return null;
       }
       return child;
@@ -1902,11 +1905,41 @@ class RenderFlexLayout extends RenderLayoutBox {
     if (child is RenderEventListener) {
       final RenderBox? wrapped = child.child;
       if (wrapped is RenderFlowLayout &&
-          !wrapped.renderStyle.isSelfAnonymousFlowLayout()) {
+          (allowAnonymous || !wrapped.renderStyle.isSelfAnonymousFlowLayout())) {
         return wrapped;
       }
     }
     return null;
+  }
+
+  bool _canUseAnonymousMetricsOnlyCache(List<RenderBox> children) {
+    if (!_isHorizontalFlexDirection || renderStyle.flexWrap != FlexWrap.nowrap) {
+      return false;
+    }
+
+    bool hasAnonymousFlowChild = false;
+    for (final RenderBox child in children) {
+      if (_getEarlyNoFlexNoStretchNoBaselineRejectReason(
+            child,
+            const BoxConstraints(),
+          ) !=
+          null) {
+        return false;
+      }
+      if (!isFlexNone(child)) {
+        return false;
+      }
+
+      final RenderFlowLayout? flowChild = _getCacheableIntrinsicMeasureFlowChild(
+        child,
+        allowAnonymous: true,
+      );
+      if (flowChild != null && flowChild.renderStyle.isSelfAnonymousFlowLayout()) {
+        hasAnonymousFlowChild = true;
+      }
+    }
+
+    return hasAnonymousFlowChild;
   }
 
   bool _hasBaselineAlignmentForChild(RenderBox child) {
@@ -1951,6 +1984,9 @@ class RenderFlexLayout extends RenderLayoutBox {
   _FlexIntrinsicMeasurementCacheEntry? _getReusableIntrinsicMeasurement(
     RenderBox child,
     BoxConstraints childConstraints,
+    {
+    bool allowAnonymous = false,
+  }
   ) {
     if (!_isHorizontalFlexDirection || renderStyle.flexWrap != FlexWrap.nowrap) {
       return null;
@@ -1959,7 +1995,10 @@ class RenderFlexLayout extends RenderLayoutBox {
       return null;
     }
 
-    final RenderFlowLayout? flowChild = _getCacheableIntrinsicMeasureFlowChild(child);
+    final RenderFlowLayout? flowChild = _getCacheableIntrinsicMeasureFlowChild(
+      child,
+      allowAnonymous: allowAnonymous,
+    );
     if (flowChild == null || flowChild.needsRelayout) {
       return null;
     }
@@ -1984,7 +2023,8 @@ class RenderFlexLayout extends RenderLayoutBox {
     Size childSize,
     double intrinsicMainSize,
   ) {
-    if (_getCacheableIntrinsicMeasureFlowChild(child) == null) {
+    if (_getCacheableIntrinsicMeasureFlowChild(child, allowAnonymous: true) ==
+        null) {
       return;
     }
     _childrenIntrinsicMeasureCache[child] = _FlexIntrinsicMeasurementCacheEntry(
@@ -1995,7 +2035,10 @@ class RenderFlexLayout extends RenderLayoutBox {
   }
 
   bool _shouldRequirePostMeasureLayout(RenderBox child) {
-    final RenderFlowLayout? flowChild = _getCacheableIntrinsicMeasureFlowChild(child);
+    final RenderFlowLayout? flowChild = _getCacheableIntrinsicMeasureFlowChild(
+      child,
+      allowAnonymous: true,
+    );
     if (flowChild == null) {
       return false;
     }
@@ -2721,12 +2764,18 @@ class RenderFlexLayout extends RenderLayoutBox {
     List<_RunChild> runChildren = <_RunChild>[];
 
     // PASS 1+2: Intrinsic layout + compute run metrics in one pass.
+    final bool allowAnonymousMetricsOnlyCache =
+        _canUseAnonymousMetricsOnlyCache(children);
     _transientChildSizeOverrides = Expando<Size>('transientChildSizeOverrides');
     try {
       for (RenderBox child in children) {
         final BoxConstraints childConstraints = _getIntrinsicConstraints(child);
         final _FlexIntrinsicMeasurementCacheEntry? cacheEntry =
-            _getReusableIntrinsicMeasurement(child, childConstraints);
+            _getReusableIntrinsicMeasurement(
+          child,
+          childConstraints,
+          allowAnonymous: allowAnonymousMetricsOnlyCache,
+        );
 
         final Size childSize;
         double intrinsicMain;
