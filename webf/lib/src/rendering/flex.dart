@@ -16,6 +16,7 @@ import 'package:webf/foundation.dart';
 import 'package:webf/rendering.dart';
 import 'package:webf/css.dart';
 import 'package:webf/src/html/forms.dart' show ButtonElement;
+import 'package:webf/src/html/semantics_text.dart' show SpanElement;
 import 'package:webf/src/html/text.dart';
 import 'package:webf/widget.dart';
 
@@ -66,7 +67,8 @@ enum _FlexAnonymousMetricsRejectReason {
   childAlignSelfBaseline,
   childAlignSelfStretch,
   childNotFlexNone,
-  noAnonymousFlowChild,
+  noMetricsOnlyFlowChild,
+  mixedMetricsOnlyChildren,
 }
 
 String _flexAnonymousMetricsRejectReasonLabel(
@@ -88,8 +90,34 @@ String _flexAnonymousMetricsRejectReasonLabel(
       return 'childAlignSelfStretch';
     case _FlexAnonymousMetricsRejectReason.childNotFlexNone:
       return 'childNotFlexNone';
-    case _FlexAnonymousMetricsRejectReason.noAnonymousFlowChild:
-      return 'noAnonymousFlowChild';
+    case _FlexAnonymousMetricsRejectReason.noMetricsOnlyFlowChild:
+      return 'noMetricsOnlyFlowChild';
+    case _FlexAnonymousMetricsRejectReason.mixedMetricsOnlyChildren:
+      return 'mixedMetricsOnlyChildren';
+  }
+}
+
+enum _FlexAnonymousMetricsMissReason {
+  flowNeedsRelayout,
+  childNeedsRelayout,
+  subtreeIntrinsicDirty,
+  missingCacheEntry,
+  constraintsMismatch,
+}
+
+String _flexAnonymousMetricsMissReasonLabel(
+    _FlexAnonymousMetricsMissReason reason) {
+  switch (reason) {
+    case _FlexAnonymousMetricsMissReason.flowNeedsRelayout:
+      return 'flowNeedsRelayout';
+    case _FlexAnonymousMetricsMissReason.childNeedsRelayout:
+      return 'childNeedsRelayout';
+    case _FlexAnonymousMetricsMissReason.subtreeIntrinsicDirty:
+      return 'subtreeIntrinsicDirty';
+    case _FlexAnonymousMetricsMissReason.missingCacheEntry:
+      return 'missingCacheEntry';
+    case _FlexAnonymousMetricsMissReason.constraintsMismatch:
+      return 'constraintsMismatch';
   }
 }
 
@@ -205,8 +233,11 @@ class _FlexAnonymousMetricsProfiler {
   static int _childCacheHits = 0;
   static int _childCacheMisses = 0;
   static int _detailLogs = 0;
+  static int _lastSummaryRows = -1;
   static final Map<_FlexAnonymousMetricsRejectReason, int> _rejectCounts =
       <_FlexAnonymousMetricsRejectReason, int>{};
+  static final Map<_FlexAnonymousMetricsMissReason, int> _missCounts =
+      <_FlexAnonymousMetricsMissReason, int>{};
 
   static bool get enabled => DebugFlags.enableFlexAnonymousMetricsProfiling;
 
@@ -231,7 +262,7 @@ class _FlexAnonymousMetricsProfiler {
   static void recordEligibleRow(
     String path, {
     required int childCount,
-    required int anonymousChildCount,
+    required int candidateChildCount,
   }) {
     if (!enabled) return;
     _rowsEvaluated++;
@@ -240,7 +271,7 @@ class _FlexAnonymousMetricsProfiler {
     _maybeLogDetail(
       path,
       '[FlexAnonymousMetrics][eligible] path=$path childCount=$childCount '
-      'anonymousChildCount=$anonymousChildCount',
+      'candidateChildCount=$candidateChildCount',
     );
     _maybeLogSummary();
   }
@@ -298,12 +329,17 @@ class _FlexAnonymousMetricsProfiler {
     String path, {
     required String childLabel,
     required int childIndex,
+    required _FlexAnonymousMetricsMissReason reason,
+    Map<String, Object?>? details,
   }) {
     if (!enabled) return;
     _childCacheMisses++;
+    _missCounts.update(reason, (int value) => value + 1, ifAbsent: () => 1);
     _maybeLogDetail(
       path,
-      '[FlexAnonymousMetrics][cacheMiss] path=$path childIndex=$childIndex child=$childLabel',
+      '[FlexAnonymousMetrics][cacheMiss] path=$path childIndex=$childIndex child=$childLabel '
+      'reason=${_flexAnonymousMetricsMissReasonLabel(reason)}'
+      '${details != null && details.isNotEmpty ? ' details=${_formatDetails(details)}' : ''}',
     );
     _maybeLogSummary();
   }
@@ -320,6 +356,8 @@ class _FlexAnonymousMetricsProfiler {
   static void _maybeLogSummary() {
     if (!enabled) return;
     if (_rowsEvaluated == 0 || _rowsEvaluated % _summaryEvery != 0) return;
+    if (_lastSummaryRows == _rowsEvaluated) return;
+    _lastSummaryRows = _rowsEvaluated;
 
     final int rowsRejected = _rowsEvaluated - _rowsEligible;
     final double rowHitRate =
@@ -337,12 +375,22 @@ class _FlexAnonymousMetricsProfiler {
             .map((MapEntry<_FlexAnonymousMetricsRejectReason, int> entry) =>
                 '${_flexAnonymousMetricsRejectReasonLabel(entry.key)}=${entry.value}')
             .join(', ');
+    final List<MapEntry<_FlexAnonymousMetricsMissReason, int>> missEntries =
+        _missCounts.entries.toList()
+          ..sort((a, b) => b.value.compareTo(a.value));
+    final String missSummary = missEntries.isEmpty
+        ? 'none'
+        : missEntries
+            .map((MapEntry<_FlexAnonymousMetricsMissReason, int> entry) =>
+                '${_flexAnonymousMetricsMissReasonLabel(entry.key)}=${entry.value}')
+            .join(', ');
 
     renderingLogger.info(
       '[FlexAnonymousMetrics][summary] rows=$_rowsEvaluated eligible=$_rowsEligible '
       'eligibleRate=${rowHitRate.toStringAsFixed(1)}% rejected=$rowsRejected '
       'childCacheHits=$_childCacheHits childCacheMisses=$_childCacheMisses '
-      'childHitRate=${childHitRate.toStringAsFixed(1)}% reasons=$rejectSummary',
+      'childHitRate=${childHitRate.toStringAsFixed(1)}% reasons=$rejectSummary '
+      'misses=$missSummary',
     );
   }
 
@@ -363,6 +411,18 @@ class _FlexIntrinsicMeasurementCacheEntry {
   final BoxConstraints constraints;
   final Size size;
   final double intrinsicMainSize;
+}
+
+class _FlexIntrinsicMeasurementLookupResult {
+  const _FlexIntrinsicMeasurementLookupResult({
+    this.entry,
+    this.missReason,
+    this.missDetails,
+  });
+
+  final _FlexIntrinsicMeasurementCacheEntry? entry;
+  final _FlexAnonymousMetricsMissReason? missReason;
+  final Map<String, Object?>? missDetails;
 }
 
 // Position and size info of each run (flex line) in flex layout.
@@ -2109,18 +2169,24 @@ class RenderFlexLayout extends RenderLayoutBox {
   }
 
   bool _canReuseAnonymousFlowMeasurement(RenderFlowLayout flowChild) {
-    final Element? parentElement = flowChild.renderStyle.target.parentElement;
+    Element? parentElement = flowChild.renderStyle.target.parentElement;
     // Button-owned anonymous wrappers still regress :hover/:active snapshots
     // when their intrinsic measurement is reused across flex passes.
-    return parentElement is! ButtonElement;
+    while (parentElement != null) {
+      if (parentElement is ButtonElement) {
+        return false;
+      }
+      parentElement = parentElement.parentElement;
+    }
+    return true;
   }
 
   bool _canUseAnonymousMetricsOnlyCache(List<RenderBox> children) {
-    int anonymousFlowChildCount = 0;
+    int metricsOnlyChildCount = 0;
     for (int childIndex = 0; childIndex < children.length; childIndex++) {
       final RenderBox child = children[childIndex];
-      if (_isAnonymousIntrinsicMeasureChild(child)) {
-        anonymousFlowChildCount++;
+      if (_isMetricsOnlyIntrinsicMeasureChild(child)) {
+        metricsOnlyChildCount++;
       }
 
       final _FlexAnonymousMetricsRejectReason? rejectReason =
@@ -2135,16 +2201,26 @@ class RenderFlexLayout extends RenderLayoutBox {
       }
     }
 
-    if (anonymousFlowChildCount == 0) {
+    if (metricsOnlyChildCount == 0) {
       _recordAnonymousMetricsReject(
-        _FlexAnonymousMetricsRejectReason.noAnonymousFlowChild,
+        _FlexAnonymousMetricsRejectReason.noMetricsOnlyFlowChild,
+      );
+      return false;
+    }
+    if (metricsOnlyChildCount != children.length) {
+      _recordAnonymousMetricsReject(
+        _FlexAnonymousMetricsRejectReason.mixedMetricsOnlyChildren,
+        details: <String, Object?>{
+          'childCount': children.length,
+          'candidateChildCount': metricsOnlyChildCount,
+        },
       );
       return false;
     }
 
     _recordAnonymousMetricsEligible(
       childCount: children.length,
-      anonymousChildCount: anonymousFlowChildCount,
+      candidateChildCount: metricsOnlyChildCount,
     );
     return true;
   }
@@ -2163,7 +2239,7 @@ class RenderFlexLayout extends RenderLayoutBox {
       return true;
     }
     if (root is RenderBoxModel &&
-        (root.needsRelayout || root.hasPendingLayoutInvalidation)) {
+        root.hasPendingIntrinsicMeasurementInvalidation) {
       return true;
     }
 
@@ -2188,40 +2264,143 @@ class RenderFlexLayout extends RenderLayoutBox {
     return false;
   }
 
-  _FlexIntrinsicMeasurementCacheEntry? _getReusableIntrinsicMeasurement(
+  bool _hasWrappingFlexAncestor() {
+    RenderObject? ancestor = parent;
+    while (ancestor != null) {
+      if (ancestor is RenderFlexLayout) {
+        final FlexWrap wrap = ancestor.renderStyle.flexWrap;
+        if (wrap == FlexWrap.wrap || wrap == FlexWrap.wrapReverse) {
+          return true;
+        }
+      }
+      ancestor = ancestor.parent;
+    }
+    return false;
+  }
+
+  Map<String, Object?>? _describeFirstPendingIntrinsicMeasureInvalidation(
+      RenderBox root) {
+    if (root is RenderTextBox && root.hasPendingTextLayoutUpdate) {
+      return <String, Object?>{
+        'dirtyNode': 'RenderTextBox',
+        'dirtyType': root.runtimeType,
+        'dirtyReason': 'pendingTextLayoutUpdate',
+      };
+    }
+    if (root is RenderBoxModel &&
+        root.hasPendingIntrinsicMeasurementInvalidation) {
+      return <String, Object?>{
+        'dirtyNode': _describeFastPathChild(root),
+        'dirtyType': root.runtimeType,
+        'dirtyReason': root.debugIntrinsicMeasurementDirtyReason ?? 'unknown',
+      };
+    }
+
+    if (root is ContainerRenderObjectMixin<RenderBox, ContainerBoxParentData<RenderBox>>) {
+      RenderBox? child = (root as dynamic).firstChild as RenderBox?;
+      while (child != null) {
+        final Map<String, Object?>? details =
+            _describeFirstPendingIntrinsicMeasureInvalidation(child);
+        if (details != null) return details;
+        child = (root as dynamic).childAfter(child) as RenderBox?;
+      }
+      return null;
+    }
+
+    if (root is RenderObjectWithChildMixin<RenderBox>) {
+      final RenderBox? child = (root as dynamic).child as RenderBox?;
+      if (child != null) {
+        return _describeFirstPendingIntrinsicMeasureInvalidation(child);
+      }
+    }
+
+    return null;
+  }
+
+  void _clearSubtreeIntrinsicMeasurementInvalidationAfterMeasurement(
+      RenderBox root) {
+    if (root is RenderTextBox && root.hasPendingTextLayoutUpdate) {
+      root.clearPendingTextLayoutUpdateAfterMeasurement();
+    }
+    if (root is RenderBoxModel) {
+      root.clearIntrinsicMeasurementInvalidationAfterMeasurement();
+    }
+
+    if (root
+        is ContainerRenderObjectMixin<RenderBox, ContainerBoxParentData<RenderBox>>) {
+      RenderBox? child = (root as dynamic).firstChild as RenderBox?;
+      while (child != null) {
+        _clearSubtreeIntrinsicMeasurementInvalidationAfterMeasurement(child);
+        child = (root as dynamic).childAfter(child) as RenderBox?;
+      }
+      return;
+    }
+
+    if (root is RenderObjectWithChildMixin<RenderBox>) {
+      final RenderBox? child = (root as dynamic).child as RenderBox?;
+      if (child != null) {
+        _clearSubtreeIntrinsicMeasurementInvalidationAfterMeasurement(child);
+      }
+    }
+  }
+
+  _FlexIntrinsicMeasurementLookupResult _lookupReusableIntrinsicMeasurement(
     RenderBox child,
     BoxConstraints childConstraints,
     {
     bool allowAnonymous = false,
   }
   ) {
-    if (!_isHorizontalFlexDirection || renderStyle.flexWrap != FlexWrap.nowrap) {
-      return null;
+    if (!allowAnonymous) {
+      return const _FlexIntrinsicMeasurementLookupResult();
     }
-    if (_hasBaselineAlignmentForChild(child)) {
-      return null;
-    }
-
     final RenderFlowLayout? flowChild = _getCacheableIntrinsicMeasureFlowChild(
       child,
       allowAnonymous: allowAnonymous,
     );
-    if (flowChild == null || flowChild.needsRelayout) {
-      return null;
+    final bool allowMetricsOnlyReuse =
+        flowChild != null &&
+        _isMetricsOnlyIntrinsicMeasureFlowChild(flowChild);
+    if ((!_isHorizontalFlexDirection || renderStyle.flexWrap != FlexWrap.nowrap) &&
+        !allowMetricsOnlyReuse) {
+      return const _FlexIntrinsicMeasurementLookupResult();
+    }
+    if (_hasBaselineAlignmentForChild(child)) {
+      return const _FlexIntrinsicMeasurementLookupResult();
+    }
+    if (flowChild == null) {
+      return const _FlexIntrinsicMeasurementLookupResult();
+    }
+    if (flowChild.needsRelayout) {
+      return const _FlexIntrinsicMeasurementLookupResult(
+        missReason: _FlexAnonymousMetricsMissReason.flowNeedsRelayout,
+      );
     }
     if (child is RenderBoxModel && child.needsRelayout) {
-      return null;
+      return const _FlexIntrinsicMeasurementLookupResult(
+        missReason: _FlexAnonymousMetricsMissReason.childNeedsRelayout,
+      );
     }
     if (_subtreeHasPendingIntrinsicMeasureInvalidation(child)) {
-      return null;
+      return _FlexIntrinsicMeasurementLookupResult(
+        missReason: _FlexAnonymousMetricsMissReason.subtreeIntrinsicDirty,
+        missDetails: _describeFirstPendingIntrinsicMeasureInvalidation(child),
+      );
     }
 
     final _FlexIntrinsicMeasurementCacheEntry? cacheEntry =
         _childrenIntrinsicMeasureCache[child];
-    if (cacheEntry == null || cacheEntry.constraints != childConstraints) {
-      return null;
+    if (cacheEntry == null) {
+      return const _FlexIntrinsicMeasurementLookupResult(
+        missReason: _FlexAnonymousMetricsMissReason.missingCacheEntry,
+      );
     }
-    return cacheEntry;
+    if (cacheEntry.constraints != childConstraints) {
+      return const _FlexIntrinsicMeasurementLookupResult(
+        missReason: _FlexAnonymousMetricsMissReason.constraintsMismatch,
+      );
+    }
+    return _FlexIntrinsicMeasurementLookupResult(entry: cacheEntry);
   }
 
   void _storeIntrinsicMeasurementCache(
@@ -2327,12 +2506,83 @@ class RenderFlexLayout extends RenderLayoutBox {
     return child.runtimeType.toString();
   }
 
-  bool _isAnonymousIntrinsicMeasureChild(RenderBox child) {
+  bool _isMetricsOnlyIntrinsicMeasureChild(RenderBox child) {
     final RenderFlowLayout? flowChild = _getCacheableIntrinsicMeasureFlowChild(
       child,
       allowAnonymous: true,
     );
-    return flowChild != null && flowChild.renderStyle.isSelfAnonymousFlowLayout();
+    return flowChild != null && _isMetricsOnlyIntrinsicMeasureFlowChild(flowChild);
+  }
+
+  bool _isMetricsOnlyIntrinsicMeasureFlowChild(RenderFlowLayout flowChild) {
+    if (!_canReuseAnonymousFlowMeasurement(flowChild)) {
+      return false;
+    }
+    if (flowChild.renderStyle.isSelfAnonymousFlowLayout()) {
+      return true;
+    }
+    if (flowChild.renderStyle.target is SpanElement) {
+      return false;
+    }
+    return _flowSubtreeContainsReusableTextHeavyContent(flowChild);
+  }
+
+  bool _flowSubtreeContainsReusableTextHeavyContent(RenderBox root) {
+    if (root is RenderPositionPlaceholder) {
+      return false;
+    }
+
+    RenderBox effectiveRoot = root;
+    if (root is RenderEventListener) {
+      final RenderBox? wrapped = root.child;
+      if (wrapped == null) {
+        return false;
+      }
+      effectiveRoot = wrapped;
+    }
+
+    if (effectiveRoot is RenderTextBox) {
+      return effectiveRoot.data.trim().isNotEmpty;
+    }
+
+    if (effectiveRoot is RenderBoxModel) {
+      final CSSPositionType position = effectiveRoot.renderStyle.position;
+      if (position == CSSPositionType.absolute ||
+          position == CSSPositionType.fixed) {
+        return false;
+      }
+    }
+
+    if (effectiveRoot is RenderFlowLayout) {
+      if (effectiveRoot.renderStyle.isSelfAnonymousFlowLayout()) {
+        return _canReuseAnonymousFlowMeasurement(effectiveRoot);
+      }
+      if (effectiveRoot.establishIFC ||
+          effectiveRoot.inlineFormattingContext != null) {
+        return true;
+      }
+    }
+
+    if (effectiveRoot
+        is ContainerRenderObjectMixin<RenderBox, ContainerBoxParentData<RenderBox>>) {
+      RenderBox? child = (effectiveRoot as dynamic).firstChild as RenderBox?;
+      while (child != null) {
+        if (_flowSubtreeContainsReusableTextHeavyContent(child)) {
+          return true;
+        }
+        child = (effectiveRoot as dynamic).childAfter(child) as RenderBox?;
+      }
+      return false;
+    }
+
+    if (effectiveRoot is RenderObjectWithChildMixin<RenderBox>) {
+      final RenderBox? child = (effectiveRoot as dynamic).child as RenderBox?;
+      if (child != null) {
+        return _flowSubtreeContainsReusableTextHeavyContent(child);
+      }
+    }
+
+    return false;
   }
 
   _FlexAnonymousMetricsRejectReason? _getAnonymousMetricsRejectReason(
@@ -2399,13 +2649,13 @@ class RenderFlexLayout extends RenderLayoutBox {
 
   void _recordAnonymousMetricsEligible({
     required int childCount,
-    required int anonymousChildCount,
+    required int candidateChildCount,
   }) {
     if (!_FlexAnonymousMetricsProfiler.enabled) return;
     _FlexAnonymousMetricsProfiler.recordEligibleRow(
       _describeFastPathContainer(),
       childCount: childCount,
-      anonymousChildCount: anonymousChildCount,
+      candidateChildCount: candidateChildCount,
     );
   }
 
@@ -2413,6 +2663,8 @@ class RenderFlexLayout extends RenderLayoutBox {
     RenderBox child, {
     required int childIndex,
     required bool hit,
+    _FlexAnonymousMetricsMissReason? missReason,
+    Map<String, Object?>? missDetails,
   }) {
     if (!_FlexAnonymousMetricsProfiler.enabled) return;
     final String path = _describeFastPathContainer();
@@ -2428,6 +2680,8 @@ class RenderFlexLayout extends RenderLayoutBox {
         path,
         childLabel: childLabel,
         childIndex: childIndex,
+        reason: missReason ?? _FlexAnonymousMetricsMissReason.missingCacheEntry,
+        details: missDetails,
       );
     }
   }
@@ -3057,20 +3311,24 @@ class RenderFlexLayout extends RenderLayoutBox {
       for (int childIndex = 0; childIndex < children.length; childIndex++) {
         final RenderBox child = children[childIndex];
         final BoxConstraints childConstraints = _getIntrinsicConstraints(child);
-        final bool isAnonymousMetricsChild =
+        final bool isMetricsOnlyMeasureChild =
             allowAnonymousMetricsOnlyCache &&
-                _isAnonymousIntrinsicMeasureChild(child);
-        final _FlexIntrinsicMeasurementCacheEntry? cacheEntry =
-            _getReusableIntrinsicMeasurement(
+                _isMetricsOnlyIntrinsicMeasureChild(child);
+        final _FlexIntrinsicMeasurementLookupResult cacheLookup =
+            _lookupReusableIntrinsicMeasurement(
           child,
           childConstraints,
           allowAnonymous: allowAnonymousMetricsOnlyCache,
         );
-        if (isAnonymousMetricsChild) {
+        final _FlexIntrinsicMeasurementCacheEntry? cacheEntry =
+            cacheLookup.entry;
+        if (isMetricsOnlyMeasureChild) {
           _recordAnonymousMetricsChildCache(
             child,
             childIndex: childIndex,
             hit: cacheEntry != null,
+            missReason: cacheLookup.missReason,
+            missDetails: cacheLookup.missDetails,
           );
         }
 
@@ -3080,11 +3338,19 @@ class RenderFlexLayout extends RenderLayoutBox {
           childSize = cacheEntry.size;
           intrinsicMain = cacheEntry.intrinsicMainSize;
           _transientChildSizeOverrides![child] = childSize;
-          if (_shouldRequirePostMeasureLayout(child)) {
+          if (_shouldRequirePostMeasureLayout(child) ||
+              isMetricsOnlyMeasureChild) {
             _childrenRequirePostMeasureLayout[child] = true;
           }
         } else {
           _layoutChildForFlex(child, childConstraints);
+          if (isMetricsOnlyMeasureChild &&
+              renderStyle.flexWrap == FlexWrap.nowrap &&
+              !_hasWrappingFlexAncestor()) {
+            _clearSubtreeIntrinsicMeasurementInvalidationAfterMeasurement(
+              child,
+            );
+          }
 
           if (child is RenderBoxModel) {
             child.clearOverrideContentSize();

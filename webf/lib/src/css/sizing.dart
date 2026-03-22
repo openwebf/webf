@@ -222,6 +222,7 @@ mixin CSSSizingMixin on RenderStyle {
 
   void _markSelfAndParentNeedsLayout() {
     if (!hasRenderBox()) return;
+    markNeedsIntrinsicMeasurement('sizing');
     markNeedsLayout();
 
     // Sizing may affect parent size, mark parent as needsLayout in case

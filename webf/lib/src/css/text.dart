@@ -265,6 +265,7 @@ mixin CSSTextMixin on RenderStyle {
 
   void updateFontRelativeLength() {
     if (_fontRelativeProperties.isEmpty) return;
+    markNeedsIntrinsicMeasurement('fontRelativeLength');
     markNeedsLayout();
     if (isSelfBoxModelSizeTight()) {
       markParentNeedsLayout();
@@ -278,6 +279,7 @@ mixin CSSTextMixin on RenderStyle {
 
   void updateRootFontRelativeLength() {
     if (_rootFontRelativeProperties.isEmpty) return;
+    markNeedsIntrinsicMeasurement('rootFontRelativeLength');
     markNeedsLayout();
     if (isSelfBoxModelSizeTight()) {
       markParentNeedsLayout();
@@ -597,6 +599,7 @@ mixin CSSTextMixin on RenderStyle {
   // text and layout (line-height, white-space) changes.
   void _markNestChildrenTextAndLayoutNeedsLayout(RenderStyle renderStyle, String styleProperty) {
     if (renderStyle.isSelfRenderLayoutBox()) {
+      renderStyle.markNeedsIntrinsicMeasurement('textLayout:$styleProperty');
       renderStyle.markNeedsLayout();
 
       visitor(RenderObject child) {
@@ -620,6 +623,7 @@ mixin CSSTextMixin on RenderStyle {
   void _markTextNeedsLayout() {
     visitor(RenderObject child) {
       if (child is RenderTextBox) {
+        child.renderStyle.markNeedsIntrinsicMeasurement('textDirect');
         child.renderStyle.markNeedsLayout();
       } else {
         child.visitChildren(visitor);
@@ -635,7 +639,9 @@ mixin CSSTextMixin on RenderStyle {
   void _markChildrenTextNeedsLayout(RenderStyle renderStyle, String styleProperty) {
     visitor(dom.Node child) {
       if (child is dom.TextNode) {
-        child.parentElement!.attachedRenderer?.markNeedsLayout();
+        final RenderStyle parentStyle = child.parentElement!.renderStyle;
+        parentStyle.markNeedsIntrinsicMeasurement('textInherited:$styleProperty');
+        parentStyle.markNeedsLayout();
       }
 
       if (child is dom.Element && child.style[styleProperty].isEmpty) {

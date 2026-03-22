@@ -1285,6 +1285,14 @@ abstract class RenderStyle extends DiagnosticableTree with Diagnosticable {
   }
 
   @pragma('vm:prefer-inline')
+  void markNeedsIntrinsicMeasurement([String reason = 'renderStyle']) {
+    everyAttachedWidgetRenderBox((element, renderObject) {
+      renderObject.markNeedsIntrinsicMeasurementUpdate(reason);
+      return true;
+    });
+  }
+
+  @pragma('vm:prefer-inline')
   void markNeedsLayout() {
     everyAttachedWidgetRenderBox((element, renderObject) {
       renderObject.markNeedsLayout();

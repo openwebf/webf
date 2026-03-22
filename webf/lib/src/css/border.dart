@@ -154,6 +154,7 @@ mixin CSSBorderMixin on RenderStyle {
   set borderTopWidth(CSSLengthValue? value) {
     if (value == _borderTopWidth) return;
     _borderTopWidth = value;
+    markNeedsIntrinsicMeasurement('borderWidth');
     markNeedsLayout();
     resetBoxDecoration();
   }
@@ -170,6 +171,7 @@ mixin CSSBorderMixin on RenderStyle {
   set borderRightWidth(CSSLengthValue? value) {
     if (value == _borderRightWidth) return;
     _borderRightWidth = value;
+    markNeedsIntrinsicMeasurement('borderWidth');
     markNeedsLayout();
     resetBoxDecoration();
   }
@@ -186,6 +188,7 @@ mixin CSSBorderMixin on RenderStyle {
   set borderBottomWidth(CSSLengthValue? value) {
     if (value == _borderBottomWidth) return;
     _borderBottomWidth = value;
+    markNeedsIntrinsicMeasurement('borderWidth');
     markNeedsLayout();
     resetBoxDecoration();
   }
@@ -202,6 +205,7 @@ mixin CSSBorderMixin on RenderStyle {
   set borderLeftWidth(CSSLengthValue? value) {
     if (value == _borderLeftWidth) return;
     _borderLeftWidth = value;
+    markNeedsIntrinsicMeasurement('borderWidth');
     markNeedsLayout();
     resetBoxDecoration();
   }
@@ -266,6 +270,8 @@ mixin CSSBorderMixin on RenderStyle {
   set borderTopStyle(CSSBorderStyleType? value) {
     if (value == _borderTopStyle) return;
     _borderTopStyle = value;
+    markNeedsIntrinsicMeasurement('borderStyle');
+    markNeedsLayout();
     markNeedsPaint();
     resetBoxDecoration();
   }
@@ -277,6 +283,8 @@ mixin CSSBorderMixin on RenderStyle {
   set borderRightStyle(CSSBorderStyleType? value) {
     if (value == _borderRightStyle) return;
     _borderRightStyle = value;
+    markNeedsIntrinsicMeasurement('borderStyle');
+    markNeedsLayout();
     markNeedsPaint();
     resetBoxDecoration();
   }
@@ -288,6 +296,8 @@ mixin CSSBorderMixin on RenderStyle {
   set borderBottomStyle(CSSBorderStyleType? value) {
     if (value == _borderBottomStyle) return;
     _borderBottomStyle = value;
+    markNeedsIntrinsicMeasurement('borderStyle');
+    markNeedsLayout();
     markNeedsPaint();
     resetBoxDecoration();
   }
@@ -299,6 +309,8 @@ mixin CSSBorderMixin on RenderStyle {
   set borderLeftStyle(CSSBorderStyleType? value) {
     if (value == _borderLeftStyle) return;
     _borderLeftStyle = value;
+    markNeedsIntrinsicMeasurement('borderStyle');
+    markNeedsLayout();
     markNeedsPaint();
     resetBoxDecoration();
   }
