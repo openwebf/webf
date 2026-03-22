@@ -1,3 +1,21 @@
+## 0.24.20
+
+### Performance Improvements
+
+- **Rendering/Flexbox**: reduce flex layout cost for large or text-heavy containers by caching and
+  reusing safe intrinsic measurements for anonymous, wrapped, and text-heavy flow children; skip
+  speculative metrics for simple row layouts; and prune redundant subtree intrinsic-measurement
+  checks during relayout.
+
+### Bug Fixes
+
+- **Rendering/Flexbox**: use aligned child offsets when computing flex scrollable overflow,
+  fixing extra trailing scroll range in overflowing column layouts with centered/aligned children
+  and adding regression coverage for chat-style `flex-grow` layouts.
+- **Android/Build**: restore Android test-bridge compilation and native library loading by wiring
+  `ENABLE_TEST` through the Android build, including test bridge sources for non-release builds,
+  and removing redundant `quickjs` loading from `WebFPlugin`.
+
 ## 0.24.19
 
 ### Performance Improvements
