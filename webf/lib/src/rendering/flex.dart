@@ -5218,6 +5218,12 @@ class RenderFlexLayout extends RenderLayoutBox {
   // Set the size of scrollable overflow area for flex layout.
   // https://drafts.csswg.org/css-overflow-3/#scrollable
   void _setMaxScrollableSize(List<_RunMetrics> runMetrics) {
+    final double physicalMainAxisStartBorder = _isHorizontalFlexDirection
+        ? renderStyle.effectiveBorderLeftWidth.computedValue
+        : renderStyle.effectiveBorderTopWidth.computedValue;
+    final double physicalMainAxisEndPadding = _isHorizontalFlexDirection
+        ? renderStyle.paddingRight.computedValue
+        : renderStyle.paddingBottom.computedValue;
     // Scrollable main size collection of each line.
     List<double> scrollableMainSizeOfLines = [];
     // Scrollable cross size collection of each line.
@@ -5238,6 +5244,7 @@ class RenderFlexLayout extends RenderLayoutBox {
         Size childScrollableSize = _getChildSize(child)!;
         double childOffsetX = 0;
         double childOffsetY = 0;
+        double childTransformMainOverflow = 0;
 
         if (child is RenderBoxModel) {
           final RenderStyle childRenderStyle = child.renderStyle;
@@ -5269,26 +5276,46 @@ class RenderFlexLayout extends RenderLayoutBox {
           if (transformOffset != null) {
             childOffsetX += transformOffset.dx;
             childOffsetY += transformOffset.dy;
+            childTransformMainOverflow = math.max(
+              0,
+              _isHorizontalFlexDirection ? transformOffset.dx : transformOffset.dy,
+            );
           }
         }
 
         final Size childSize = _getChildSize(child)!;
         final double childBoxMainSize = _isHorizontalFlexDirection ? childSize.width : childSize.height;
         final double childBoxCrossSize = _isHorizontalFlexDirection ? childSize.height : childSize.width;
-        final double childMainOffset = _isHorizontalFlexDirection ? childOffsetX : childOffsetY;
         final double childCrossOffset = _isHorizontalFlexDirection ? childOffsetY : childOffsetX;
         final double childScrollableMainExtent = _isHorizontalFlexDirection
-            ? childScrollableSize.width + childOffsetX
-            : childScrollableSize.height + childOffsetY;
+            ? childScrollableSize.width + childTransformMainOverflow
+            : childScrollableSize.height + childTransformMainOverflow;
         final double childScrollableCrossExtent = _isHorizontalFlexDirection
             ? childScrollableSize.height + childOffsetY
             : childScrollableSize.width + childOffsetX;
 
-        // The child's extent must cover at least its offset border-box.
-        // child.scrollableSize may only cover padding-box, but offsets (margin/relative/transform)
-        // still need to be preserved so negative offsets don't create phantom trailing scroll range.
-        final double childScrollableMain = preSiblingsMainSize +
-            math.max(childBoxMainSize + childMainOffset, childScrollableMainExtent);
+        final RenderLayoutParentData? childParentData =
+            child.parentData as RenderLayoutParentData?;
+        final double childMainPosition = _isHorizontalFlexDirection
+            ? (childParentData?.offset.dx ?? preSiblingsMainSize)
+            : (childParentData?.offset.dy ?? preSiblingsMainSize);
+        double childPhysicalMainEndMargin = 0;
+        if (child is RenderBoxModel) {
+          childPhysicalMainEndMargin = _isHorizontalFlexDirection
+              ? child.renderStyle.marginRight.computedValue
+              : child.renderStyle.marginBottom.computedValue;
+        }
+
+        // Use the actual laid-out main-axis position so scrollable overflow follows
+        // post-alignment geometry (e.g. justify-content:center on overflowing columns)
+        // instead of the pre-alignment stacked size. This prevents blank trailing
+        // scroll range after children are shifted by negative leading space.
+        final double childScrollableMain = math.max(
+          0,
+          childMainPosition - physicalMainAxisStartBorder,
+        ) +
+            math.max(childBoxMainSize, childScrollableMainExtent) +
+            childPhysicalMainEndMargin;
         final double childScrollableCross = math.max(
             childBoxCrossSize + childCrossOffset,
             childScrollableCrossExtent);
@@ -5335,10 +5362,10 @@ class RenderFlexLayout extends RenderLayoutBox {
     bool isScrollContainer = renderStyle.effectiveOverflowX != CSSOverflowType.visible ||
         renderStyle.effectiveOverflowY != CSSOverflowType.visible;
 
-    // Padding in the end direction of axis should be included in scroll container.
+    // Child positions already include physical start padding. Only the trailing
+    // padding needs to be added here.
     double maxScrollableMainSizeOfChildren = maxScrollableMainSizeOfLines +
-        _flowAwareMainAxisPadding() +
-        (isScrollContainer ? _flowAwareMainAxisPadding(isEnd: true) : 0);
+        (isScrollContainer ? physicalMainAxisEndPadding : 0);
 
     // Max scrollable cross size of all lines.
     double maxScrollableCrossSizeOfLines = scrollableCrossSizeOfLines.isEmpty

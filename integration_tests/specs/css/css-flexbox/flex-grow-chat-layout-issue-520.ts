@@ -102,6 +102,17 @@ describe('flex-grow column chat layout (issue #520)', () => {
 
     await snapshot();
 
+    const lastItem = list.querySelectorAll('.list-item')[13] as HTMLElement;
+    const listRect = list.getBoundingClientRect();
+    const lastRect = lastItem.getBoundingClientRect();
+    const itemStyle = getComputedStyle(lastItem);
+    const listStyle = getComputedStyle(list);
+    const bottomOverflowAtTop = lastRect.bottom - listRect.bottom;
+    const expectedScrollGap =
+      bottomOverflowAtTop +
+      parseFloat(itemStyle.marginBottom || '0') +
+      parseFloat(listStyle.paddingBottom || '0');
+
     // Programmatic assertions to ensure expected layout behavior
     const chatH = chat.offsetHeight;
     const headerH = header.offsetHeight;
@@ -119,6 +130,9 @@ describe('flex-grow column chat layout (issue #520)', () => {
     expect(firstItem.offsetHeight).toBe(secondItem.offsetHeight);
     // Items should not be stretched to container height
     expect(firstItem.offsetHeight).toBeLessThan(listH);
+    // Centered overflow should not leave extra blank scroll range after the
+    // last item's margin box and the container's bottom padding.
+    expect(Math.round(list.scrollHeight - list.clientHeight))
+      .toBe(Math.round(expectedScrollGap));
   });
 });
-
