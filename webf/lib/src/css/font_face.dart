@@ -13,6 +13,7 @@ import 'package:flutter/rendering.dart';
 import 'package:webf/css.dart';
 import 'package:webf/foundation.dart';
 import 'package:webf/launcher.dart';
+import 'package:webf/rendering.dart';
 import 'dart:convert';
 import 'package:webf/src/foundation/logger.dart';
 
@@ -72,6 +73,9 @@ class CSSFontFace {
 
   static void _markRenderSubtreeNeedsLayout(RenderObject root) {
     root.visitChildren(_markRenderSubtreeNeedsLayout);
+    if (root is RenderBoxModel) {
+      root.markNeedsIntrinsicMeasurementUpdate('fontFaceSubtree');
+    }
     root.markNeedsLayout();
     root.markNeedsPaint();
   }
@@ -357,6 +361,7 @@ class CSSFontFace {
     } finally {
       // Remove from loading map when done
       _loadingFonts.remove(descriptorKey);
+      renderStyle.markNeedsIntrinsicMeasurement('fontFaceLoad');
       renderStyle.markNeedsLayout();
     }
   }

@@ -25,6 +25,10 @@ class RenderTextBox extends RenderBox with RenderObjectWithChildMixin<RenderBox>
 
   bool get hasPendingTextLayoutUpdate => _hasPendingTextLayoutUpdate;
 
+  void clearPendingTextLayoutUpdateAfterMeasurement() {
+    _hasPendingTextLayoutUpdate = false;
+  }
+
   set data(String value) {
     if (_data == value) return;
     _data = value;

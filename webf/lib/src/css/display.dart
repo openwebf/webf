@@ -33,6 +33,7 @@ mixin CSSDisplayMixin on RenderStyle {
   set display(CSSDisplay? value) {
     if (_display != value) {
       _display = value;
+      markNeedsIntrinsicMeasurement('display');
       markNeedsLayout();
       // CSS display affects accessibility visibility (e.g., display:none)
       attachedRenderBoxModel?.markNeedsSemanticsUpdate();

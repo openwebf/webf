@@ -28,6 +28,7 @@ List<int> renderBoxInLayoutHashCodes = [];
 // tree instance in cases where the same DOM element is mounted into multiple
 // Flutter subtrees simultaneously (e.g. CupertinoContextMenu preview/modal).
 final List<RenderBoxModel> renderBoxModelInLayoutStack = <RenderBoxModel>[];
+int renderBoxModelLayoutPassId = 0;
 
 class RenderLayoutParentData extends ContainerBoxParentData<RenderBox> {
   // Row index of child when wrapping
@@ -392,9 +393,14 @@ abstract class RenderBoxModel extends RenderBox
 
   // Whether it needs relayout due to percentage calculation.
   bool needsRelayout = false;
-  bool _hasPendingLayoutInvalidation = true;
+  bool _hasPendingIntrinsicMeasurementInvalidation = true;
+  String? _debugIntrinsicMeasurementDirtyReason = 'initial';
+  int _clearIntrinsicMeasurementInvalidationAfterLayoutPass = 1;
 
-  bool get hasPendingLayoutInvalidation => _hasPendingLayoutInvalidation;
+  bool get hasPendingIntrinsicMeasurementInvalidation =>
+      _hasPendingIntrinsicMeasurementInvalidation;
+  String? get debugIntrinsicMeasurementDirtyReason =>
+      _debugIntrinsicMeasurementDirtyReason;
 
   // Mark parent as needs relayout used in cases such as
   // child has percentage length and parent's size can not be calculated by style
@@ -410,7 +416,29 @@ abstract class RenderBoxModel extends RenderBox
 
   void markNeedsRelayout() {
     needsRelayout = true;
-    _hasPendingLayoutInvalidation = true;
+  }
+
+  void markNeedsIntrinsicMeasurementUpdate([String reason = 'unspecified']) {
+    _hasPendingIntrinsicMeasurementInvalidation = true;
+    _debugIntrinsicMeasurementDirtyReason = reason;
+    _clearIntrinsicMeasurementInvalidationAfterLayoutPass =
+        renderBoxModelLayoutPassId + 1;
+  }
+
+  void updateIntrinsicMeasurementInvalidationForCurrentLayoutPass() {
+    if (_hasPendingIntrinsicMeasurementInvalidation &&
+        renderBoxModelLayoutPassId >
+            _clearIntrinsicMeasurementInvalidationAfterLayoutPass) {
+      _hasPendingIntrinsicMeasurementInvalidation = false;
+      _debugIntrinsicMeasurementDirtyReason = null;
+    }
+  }
+
+  void clearIntrinsicMeasurementInvalidationAfterMeasurement() {
+    _hasPendingIntrinsicMeasurementInvalidation = false;
+    _debugIntrinsicMeasurementDirtyReason = null;
+    _clearIntrinsicMeasurementInvalidationAfterLayoutPass =
+        renderBoxModelLayoutPassId;
   }
 
   // A flag to detect the size of this renderBox had changed during this layout.
@@ -421,6 +449,7 @@ abstract class RenderBoxModel extends RenderBox
   ///
   @override
   void dropChild(RenderObject child) {
+    markNeedsIntrinsicMeasurementUpdate('dropChild');
     super.dropChild(child);
   }
 
@@ -430,6 +459,9 @@ abstract class RenderBoxModel extends RenderBox
   void layout(Constraints constraints, {bool parentUsesSize = false}) {
     _lastLaidOutAsRelayoutBoundary =
         !parentUsesSize || sizedByParent || constraints.isTight || parent == null;
+    if (renderBoxModelInLayoutStack.isEmpty) {
+      renderBoxModelLayoutPassId++;
+    }
     renderBoxInLayoutHashCodes.add(hashCode);
     renderBoxModelInLayoutStack.add(this);
 
@@ -873,7 +905,6 @@ abstract class RenderBoxModel extends RenderBox
   @override
   void markNeedsLayout() {
     final RenderObject? relayoutParent = _relayoutParentOnSizeChange;
-    _hasPendingLayoutInvalidation = true;
     super.markNeedsLayout();
 
     // Some wrapper parents mirror child.boxSize while laying the child out
@@ -1016,7 +1047,7 @@ abstract class RenderBoxModel extends RenderBox
     this.contentConstraints = contentConstraints;
     clearOverflowLayout();
     isSelfSizeChanged = false;
-    _hasPendingLayoutInvalidation = false;
+    updateIntrinsicMeasurementInvalidationForCurrentLayoutPass();
 
     // Reset cached CSS baselines before a new layout pass. They will be
     // updated by subclasses that can establish inline formatting context

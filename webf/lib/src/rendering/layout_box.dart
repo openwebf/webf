@@ -507,24 +507,28 @@ abstract class RenderLayoutBox extends RenderBoxModel
   void insert(RenderBox child, {RenderBox? after}) {
     super.insert(child, after: after);
     _cachedPaintingOrder = null;
+    markNeedsIntrinsicMeasurementUpdate('childListInsert');
   }
 
   @override
   void remove(RenderBox child) {
     super.remove(child);
     _cachedPaintingOrder = null;
+    markNeedsIntrinsicMeasurementUpdate('childListRemove');
   }
 
   @override
   void removeAll() {
     super.removeAll();
     _cachedPaintingOrder = null;
+    markNeedsIntrinsicMeasurementUpdate('childListRemoveAll');
   }
 
   @override
   void move(RenderBox child, {RenderBox? after}) {
     super.move(child, after: after);
     _cachedPaintingOrder = null;
+    markNeedsIntrinsicMeasurementUpdate('childListMove');
   }
 
   @override

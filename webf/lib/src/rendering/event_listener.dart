@@ -169,6 +169,7 @@ class RenderEventListener extends RenderBoxModel
 
   @override
   void performLayout() {
+    updateIntrinsicMeasurementInvalidationForCurrentLayoutPass();
     size = (child?..layout(constraints, parentUsesSize: true))?.size ??
         computeSizeForNoChild(constraints);
 
