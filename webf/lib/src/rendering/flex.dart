@@ -690,6 +690,8 @@ class RenderFlexLayout extends RenderLayoutBox {
   Expando<BoxConstraints> _childrenOldConstraints = Expando<BoxConstraints>('childrenOldConstraints');
   Expando<_FlexIntrinsicMeasurementCacheEntry> _childrenIntrinsicMeasureCache =
       Expando<_FlexIntrinsicMeasurementCacheEntry>('childrenIntrinsicMeasureCache');
+  Expando<bool> _childrenRequirePostMeasureLayout =
+      Expando<bool>('childrenRequirePostMeasureLayout');
   Expando<Size>? _transientChildSizeOverrides;
 
   _FlexContainerInvariants? _layoutInvariants;
@@ -704,6 +706,8 @@ class RenderFlexLayout extends RenderLayoutBox {
     _childrenOldConstraints = Expando<BoxConstraints>('childrenOldConstraints');
     _childrenIntrinsicMeasureCache =
         Expando<_FlexIntrinsicMeasurementCacheEntry>('childrenIntrinsicMeasureCache');
+    _childrenRequirePostMeasureLayout =
+        Expando<bool>('childrenRequirePostMeasureLayout');
     _transientChildSizeOverrides = null;
   }
 
@@ -1895,6 +1899,13 @@ class RenderFlexLayout extends RenderLayoutBox {
       }
       return child;
     }
+    if (child is RenderEventListener) {
+      final RenderBox? wrapped = child.child;
+      if (wrapped is RenderFlowLayout &&
+          !wrapped.renderStyle.isSelfAnonymousFlowLayout()) {
+        return wrapped;
+      }
+    }
     return null;
   }
 
@@ -1911,7 +1922,8 @@ class RenderFlexLayout extends RenderLayoutBox {
     if (root is RenderTextBox && root.hasPendingTextLayoutUpdate) {
       return true;
     }
-    if (root is RenderBoxModel && root.needsRelayout) {
+    if (root is RenderBoxModel &&
+        (root.needsRelayout || root.hasPendingLayoutInvalidation)) {
       return true;
     }
 
@@ -1982,6 +1994,14 @@ class RenderFlexLayout extends RenderLayoutBox {
     );
   }
 
+  bool _shouldRequirePostMeasureLayout(RenderBox child) {
+    final RenderFlowLayout? flowChild = _getCacheableIntrinsicMeasureFlowChild(child);
+    if (flowChild == null) {
+      return false;
+    }
+    return child is RenderEventListener || flowChild.renderStyle.isSelfAnonymousFlowLayout();
+  }
+
   bool _shouldAvoidParentUsesSizeForFlexChild(RenderBox child) {
     // Match Flutter's relayout-boundary model when the flex container only
     // needs the wrapper's cached boxSize, not RenderBox.size dependency wiring.
@@ -2000,6 +2020,7 @@ class RenderFlexLayout extends RenderLayoutBox {
       childConstraints,
       parentUsesSize: !_shouldAvoidParentUsesSizeForFlexChild(child),
     );
+    _childrenRequirePostMeasureLayout[child] = false;
   }
 
   _FlexFastPathRejectReason? _getEarlyNoFlexNoStretchNoBaselineRejectReason(
@@ -2331,6 +2352,9 @@ class RenderFlexLayout extends RenderLayoutBox {
   // 3. Set flex container size according to children size and its own size styles.
   // 4. Align children according to alignment properties.
   void _layoutFlexItems(List<RenderBox> children) {
+    _childrenRequirePostMeasureLayout =
+        Expando<bool>('childrenRequirePostMeasureLayout');
+
     // If no child exists, stop layout.
     if (children.isEmpty) {
       _setContainerSizeWithNoChild();
@@ -2710,6 +2734,9 @@ class RenderFlexLayout extends RenderLayoutBox {
           childSize = cacheEntry.size;
           intrinsicMain = cacheEntry.intrinsicMainSize;
           _transientChildSizeOverrides![child] = childSize;
+          if (_shouldRequirePostMeasureLayout(child)) {
+            _childrenRequirePostMeasureLayout[child] = true;
+          }
         } else {
           _layoutChildForFlex(child, childConstraints);
 
@@ -3375,7 +3402,8 @@ class RenderFlexLayout extends RenderLayoutBox {
         final double childOldMainSize = _getMainSize(child);
         final double? desiredPreservedMain = _childrenIntrinsicMainSizes[child];
 
-        bool needsLayout = effectiveChild.needsRelayout;
+        bool needsLayout = effectiveChild.needsRelayout ||
+            (_childrenRequirePostMeasureLayout[child] == true);
         if (!needsLayout && desiredPreservedMain != null && desiredPreservedMain != childOldMainSize) {
           needsLayout = true;
         }
@@ -3636,7 +3664,8 @@ class RenderFlexLayout extends RenderLayoutBox {
         }
 
         bool needsLayout = (childFlexedMainSize != null) ||
-            (effectiveChild.needsRelayout);
+            (effectiveChild.needsRelayout) ||
+            (_childrenRequirePostMeasureLayout[child] == true);
         if (!needsLayout && desiredPreservedMain != null && (desiredPreservedMain != childOldMainSize)) {
           needsLayout = true;
         }
