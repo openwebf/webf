@@ -201,8 +201,69 @@ class FlutterShadcnInputState extends WebFWidgetElementState {
     }
   }
 
+  BorderRadius _resolveBorderRadius() {
+    final cssBorderRadius = widgetElement.renderStyle.borderRadius;
+    if (cssBorderRadius != null && cssBorderRadius.length >= 4) {
+      return BorderRadius.only(
+        topLeft: cssBorderRadius[0],
+        topRight: cssBorderRadius[1],
+        bottomRight: cssBorderRadius[2],
+        bottomLeft: cssBorderRadius[3],
+      );
+    }
+    return BorderRadius.circular(12);
+  }
+
+  Color _resolveRingColor(ShadThemeData theme) {
+    return theme.brightness == Brightness.dark
+        ? const Color.fromRGBO(250, 250, 250, 0.18)
+        : const Color.fromRGBO(24, 24, 27, 0.15);
+  }
+
+  Color _resolveBorderColor(ShadThemeData theme) {
+    final cssBorderColor = widgetElement.renderStyle.borderTopColor.value;
+    final fallback = theme.brightness == Brightness.dark
+        ? const Color(0xFF27272A)
+        : const Color(0xFFE4E4E7);
+
+    if (cssBorderColor.a == 0) {
+      return fallback;
+    }
+
+    return cssBorderColor;
+  }
+
+  ShadDecoration _resolveDecoration(ShadThemeData theme) {
+    final radius = _resolveBorderRadius();
+    final borderColor = _resolveBorderColor(theme);
+    final ringColor = _resolveRingColor(theme);
+
+    return ShadDecoration(
+      color: widgetElement.renderStyle.backgroundColor?.value,
+      border: ShadBorder.all(
+        width: 1,
+        color: borderColor,
+        radius: radius,
+      ),
+      focusedBorder: ShadBorder.all(
+        width: 1,
+        color: borderColor,
+        radius: radius,
+      ),
+      secondaryBorder: ShadBorder.none,
+      secondaryFocusedBorder: ShadBorder.all(
+        width: 4,
+        color: ringColor,
+        radius: BorderRadius.circular(16),
+        offset: 2,
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
+    final theme = ShadTheme.of(context);
+
     // Sync controller with external value changes
     if (_controller.text != widgetElement.value) {
       _controller.text = widgetElement.value;
@@ -227,6 +288,7 @@ class FlutterShadcnInputState extends WebFWidgetElementState {
       keyboardType: widgetElement.keyboardType,
       autofocus: widgetElement.autofocus,
       inputFormatters: inputFormatters,
+      decoration: _resolveDecoration(theme),
       onChanged: (value) {
         widgetElement._value = value;
         widgetElement.dispatchEvent(Event('input'));
