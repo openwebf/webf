@@ -2509,6 +2509,7 @@ abstract class Element extends ContainerNode
     if (forceRecalculate ||
         renderStyle.display != CSSDisplay.none ||
         shouldUpdateCSSVariables) {
+      renderStyle.resetInheritedTextCaches();
       // Structural mutations (childList changes) can change selector matching
       // results even when this element's own tag/id/class/attrs stay the same.
       // The per-element matched-rules memoization fingerprint does not include

@@ -509,6 +509,26 @@ mixin CSSTextMixin on RenderStyle {
   }
 
   TextDirection? _direction;
+  TextDirection? _cachedInheritedDirection;
+  dom.Element? _cachedInheritedDirectionParent;
+
+  void resetInheritedTextCaches() {
+    _cachedInheritedDirection = null;
+    _cachedInheritedDirectionParent = null;
+  }
+
+  void _resetInheritedDirectionCacheForDescendants() {
+    void visitor(dom.Node node) {
+      if (node is! dom.Element) return;
+      if (node.style[DIRECTION].isNotEmpty) {
+        return;
+      }
+      node.renderStyle.resetInheritedTextCaches();
+      node.visitChildren(visitor);
+    }
+
+    target.visitChildren(visitor);
+  }
 
   @override
   TextDirection get direction {
@@ -517,18 +537,28 @@ mixin CSSTextMixin on RenderStyle {
     // renderStyle over the render tree parent to ensure correct inheritance.
     if (_direction != null) return _direction!;
     final dom.Element? domParent = target.parentElement;
-    if (domParent != null) {
-      return domParent.renderStyle.direction;
+    if (_cachedInheritedDirection != null &&
+        identical(_cachedInheritedDirectionParent, domParent)) {
+      return _cachedInheritedDirection!;
     }
-    // Fallback to render parent when DOM parent is unavailable (e.g., root).
-    final RenderStyle? renderParent = parent;
-    if (renderParent != null) return renderParent.direction;
-    return TextDirection.ltr;
+    final TextDirection resolved;
+    if (domParent != null) {
+      resolved = domParent.renderStyle.direction;
+    } else {
+      // Fallback to render parent when DOM parent is unavailable (e.g., root).
+      final RenderStyle? renderParent = parent;
+      resolved = renderParent?.direction ?? TextDirection.ltr;
+    }
+    _cachedInheritedDirectionParent = domParent;
+    _cachedInheritedDirection = resolved;
+    return resolved;
   }
 
   set direction(TextDirection? value) {
     if (_direction == value) return;
     _direction = value;
+    resetInheritedTextCaches();
+    _resetInheritedDirectionCacheForDescendants();
     // Update all the children text and flow layout with specified style property not set due to style inheritance.
     _markNestChildrenTextAndLayoutNeedsLayout(this, DIRECTION);
 
