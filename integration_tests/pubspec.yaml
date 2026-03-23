@@ -27,6 +27,7 @@ dependencies:
   colorize: ^3.0.0
   flutter:
     sdk: flutter
+  path: ^1.8.1
   webf: 0.23.0
   image: ^3.0.2
   waterfall_flow: ^3.0.1
@@ -41,6 +42,8 @@ dependencies:
 
 dev_dependencies:
   flutter_test:
+    sdk: flutter
+  integration_test:
     sdk: flutter
   test: ^1.20.2
   ansicolor: ^2.0.1

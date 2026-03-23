@@ -9,6 +9,7 @@
     "integration": "cross-env npm run clean && node scripts/core_integration_starter",
     "multiple_page_integration": "node scripts/multiple_page_integration",
     "memory_leak_integration": "node scripts/memory_leak_integration",
+    "profile_hotspots": "node scripts/profile_hotspots_integration.js",
     "compare": "npm run compare:build && node compare-snapshots.js",
     "compare:all": "npm run compare:build && node compare-all-snapshots.js",
     "compare:build": "node scripts/build-comparison-tools.js",
