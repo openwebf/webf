@@ -174,12 +174,14 @@ abstract class Node extends EventTarget implements RenderObjectNode, LifecycleCa
   ContainerNode? get parentNode => parentOrShadowHostNode;
 
   ContainerNode? _parentOrShadowHostNode;
+  Element? _parentElementCache;
 
   @pragma('vm:prefer-inline')
   ContainerNode? get parentOrShadowHostNode => _parentOrShadowHostNode;
 
   set parentOrShadowHostNode(ContainerNode? value) {
     _parentOrShadowHostNode = value;
+    _parentElementCache = value is Element ? value : null;
   }
 
   Node? previousSibling;
@@ -230,12 +232,7 @@ abstract class Node extends EventTarget implements RenderObjectNode, LifecycleCa
   /// The Node.parentElement read-only property returns the DOM node's parent Element,
   /// or null if the node either has no parent, or its parent isn't a DOM Element.
   @pragma('vm:prefer-inline')
-  Element? get parentElement {
-    if (parentNode != null && parentNode!.nodeType == NodeType.ELEMENT_NODE) {
-      return parentNode as Element;
-    }
-    return null;
-  }
+  Element? get parentElement => _parentElementCache;
 
   Element? get previousElementSibling {
     Node? previous = previousSibling;
