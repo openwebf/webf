@@ -209,12 +209,31 @@ class RenderEventListener extends RenderBoxModel
 
   @override
   void calculateBaseline() {
-    double? childBase = child?.getDistanceToBaseline(TextBaseline.alphabetic);
-    // Convert child's local baseline to this wrapper's coordinate system
-    if (childBase != null && child is RenderBox) {
-      final BoxParentData pd = (child as RenderBox).parentData as BoxParentData;
+    final RenderBox? currentChild = child;
+    double? childBase;
+
+    if (currentChild is RenderBoxModel) {
+      childBase =
+          currentChild.computeCssFirstBaselineOf(TextBaseline.alphabetic);
+    } else if (currentChild is RenderPositionPlaceholder) {
+      childBase = currentChild.positioned
+          ?.computeCssFirstBaselineOf(TextBaseline.alphabetic);
+    }
+
+    if (childBase == null && currentChild != null) {
+      if (!currentChild.attached) {
+        childBase = currentChild.hasSize ? currentChild.size.height : null;
+      } else {
+        childBase = currentChild.getDistanceToBaseline(TextBaseline.alphabetic);
+      }
+    }
+
+    // Convert child's local baseline to this wrapper's coordinate system.
+    if (childBase != null && currentChild is RenderBox) {
+      final BoxParentData pd = currentChild.parentData as BoxParentData;
       childBase += pd.offset.dy;
     }
+
     setCssBaselines(first: childBase, last: childBase);
   }
 

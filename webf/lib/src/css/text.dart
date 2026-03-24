@@ -170,22 +170,28 @@ mixin CSSTextMixin on RenderStyle {
   }
 
   FontStyle? _fontStyle;
+  FontStyle? _cachedInheritedFontStyle;
+  dom.Element? _cachedInheritedFontStyleParent;
 
   @override
   FontStyle get fontStyle {
-    // Get style from self or closest parent if specified style property is not set
-    // due to style inheritance.
-    if (_fontStyle == null && parent != null) {
-      return parent!.fontStyle;
+    if (_fontStyle != null) return _fontStyle!;
+    final dom.Element? domParent = target.parentElement;
+    if (_cachedInheritedFontStyle != null &&
+        identical(_cachedInheritedFontStyleParent, domParent)) {
+      return _cachedInheritedFontStyle!;
     }
-
-    // The root element has no fontWeight, and the fontWeight is initial.
-    return _fontStyle ?? FontStyle.normal;
+    final FontStyle resolved = domParent?.renderStyle.fontStyle ?? FontStyle.normal;
+    _cachedInheritedFontStyleParent = domParent;
+    _cachedInheritedFontStyle = resolved;
+    return resolved;
   }
 
   set fontStyle(FontStyle? value) {
     if (_fontStyle == value) return;
     _fontStyle = value;
+    resetInheritedTextCaches();
+    _resetInheritedTextCacheForDescendants(FONT_STYLE);
     // Update all the children text with specified style property not set due to style inheritance.
     _markChildrenTextNeedsLayout(this, FONT_STYLE);
   }
@@ -211,20 +217,28 @@ mixin CSSTextMixin on RenderStyle {
   }
 
   List<String>? _fontFamily;
+  List<String>? _cachedInheritedFontFamily;
+  dom.Element? _cachedInheritedFontFamilyParent;
 
   @override
   List<String>? get fontFamily {
-    // Get style from self or closest parent if specified style property is not set
-    // due to style inheritance.
-    if (_fontFamily == null && parent != null) {
-      return parent!.fontFamily;
+    if (_fontFamily != null) return _fontFamily;
+    final dom.Element? domParent = target.parentElement;
+    if (_cachedInheritedFontFamily != null &&
+        identical(_cachedInheritedFontFamilyParent, domParent)) {
+      return _cachedInheritedFontFamily;
     }
-    return _fontFamily ?? CSSText.defaultFontFamilyFallback;
+    final List<String>? resolved = domParent?.renderStyle.fontFamily ?? CSSText.defaultFontFamilyFallback;
+    _cachedInheritedFontFamilyParent = domParent;
+    _cachedInheritedFontFamily = resolved;
+    return resolved;
   }
 
   set fontFamily(List<String>? value) {
     if (_fontFamily == value) return;
     _fontFamily = value;
+    resetInheritedTextCaches();
+    _resetInheritedTextCacheForDescendants(FONT_FAMILY);
     // Update all the children text with specified style property not set due to style inheritance.
     _markChildrenTextNeedsLayout(this, FONT_FAMILY);
   }
@@ -356,17 +370,27 @@ mixin CSSTextMixin on RenderStyle {
 
   // text-indent (inherited)
   CSSLengthValue? _textIndent;
+  CSSLengthValue? _cachedInheritedTextIndent;
+  dom.Element? _cachedInheritedTextIndentParent;
 
   CSSLengthValue get textIndent {
-    if (_textIndent == null && parent != null) {
-      return (parent as CSSRenderStyle).textIndent;
+    if (_textIndent != null) return _textIndent!;
+    final dom.Element? domParent = target.parentElement;
+    if (_cachedInheritedTextIndent != null &&
+        identical(_cachedInheritedTextIndentParent, domParent)) {
+      return _cachedInheritedTextIndent!;
     }
-    return _textIndent ?? CSSLengthValue.zero;
+    final CSSLengthValue resolved = domParent?.renderStyle.textIndent ?? CSSLengthValue.zero;
+    _cachedInheritedTextIndentParent = domParent;
+    _cachedInheritedTextIndent = resolved;
+    return resolved;
   }
 
   set textIndent(CSSLengthValue? value) {
     if (_textIndent == value) return;
     _textIndent = value;
+    resetInheritedTextCaches();
+    _resetInheritedTextCacheForDescendants(TEXT_INDENT);
     _markChildrenTextNeedsLayout(this, TEXT_INDENT);
   }
 
@@ -409,37 +433,55 @@ mixin CSSTextMixin on RenderStyle {
 
   // word-break (inherited)
   WordBreak? _wordBreak;
+  WordBreak? _cachedInheritedWordBreak;
+  dom.Element? _cachedInheritedWordBreakParent;
 
   @override
   WordBreak get wordBreak {
-    if (_wordBreak == null && parent != null) {
-      return parent!.wordBreak;
+    if (_wordBreak != null) return _wordBreak!;
+    final dom.Element? domParent = target.parentElement;
+    if (_cachedInheritedWordBreak != null &&
+        identical(_cachedInheritedWordBreakParent, domParent)) {
+      return _cachedInheritedWordBreak!;
     }
-    return _wordBreak ?? WordBreak.normal;
+    final WordBreak resolved = domParent?.renderStyle.wordBreak ?? WordBreak.normal;
+    _cachedInheritedWordBreakParent = domParent;
+    _cachedInheritedWordBreak = resolved;
+    return resolved;
   }
 
   set wordBreak(WordBreak? value) {
     if (_wordBreak == value) return;
     _wordBreak = value;
+    resetInheritedTextCaches();
+    _resetInheritedTextCacheForDescendants(WORD_BREAK);
     // Text-related inherited property affects text layout of descendants
     _markChildrenTextNeedsLayout(this, 'wordBreak');
   }
 
   WhiteSpace? _whiteSpace;
+  WhiteSpace? _cachedInheritedWhiteSpace;
+  dom.Element? _cachedInheritedWhiteSpaceParent;
 
   @override
   WhiteSpace get whiteSpace {
-    // Get style from self or closest parent if specified style property is not set
-    // due to style inheritance.
-    if (_whiteSpace == null && parent != null) {
-      return parent!.whiteSpace;
+    if (_whiteSpace != null) return _whiteSpace!;
+    final dom.Element? domParent = target.parentElement;
+    if (_cachedInheritedWhiteSpace != null &&
+        identical(_cachedInheritedWhiteSpaceParent, domParent)) {
+      return _cachedInheritedWhiteSpace!;
     }
-    return _whiteSpace ?? WhiteSpace.normal;
+    final WhiteSpace resolved = domParent?.renderStyle.whiteSpace ?? WhiteSpace.normal;
+    _cachedInheritedWhiteSpaceParent = domParent;
+    _cachedInheritedWhiteSpace = resolved;
+    return resolved;
   }
 
   set whiteSpace(WhiteSpace? value) {
     if (_whiteSpace == value) return;
     _whiteSpace = value;
+    resetInheritedTextCaches();
+    _resetInheritedTextCacheForDescendants(WHITE_SPACE);
     markNeedsInlineCollection();
     // Update all the children layout and text with specified style property not set due to style inheritance.
     _markNestChildrenTextAndLayoutNeedsLayout(this, WHITE_SPACE);
@@ -532,6 +574,16 @@ mixin CSSTextMixin on RenderStyle {
   dom.Element? _cachedInheritedDirectionParent;
 
   void resetInheritedTextCaches() {
+    _cachedInheritedFontStyle = null;
+    _cachedInheritedFontStyleParent = null;
+    _cachedInheritedFontFamily = null;
+    _cachedInheritedFontFamilyParent = null;
+    _cachedInheritedTextIndent = null;
+    _cachedInheritedTextIndentParent = null;
+    _cachedInheritedWordBreak = null;
+    _cachedInheritedWordBreakParent = null;
+    _cachedInheritedWhiteSpace = null;
+    _cachedInheritedWhiteSpaceParent = null;
     _cachedInheritedTextAlign = null;
     _cachedInheritedTextAlignParent = null;
     _cachedInheritedDirection = null;
@@ -549,6 +601,17 @@ mixin CSSTextMixin on RenderStyle {
     }
 
     target.visitChildren(visitor);
+
+    void renderVisitor(RenderObject child) {
+      if (child is RenderBoxModel) {
+        if (child.renderStyle.target.style[propertyName].isEmpty) {
+          child.renderStyle.resetInheritedTextCaches();
+        }
+      }
+      child.visitChildren(renderVisitor);
+    }
+
+    visitChildren(renderVisitor);
   }
 
   @override
