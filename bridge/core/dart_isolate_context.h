@@ -69,6 +69,7 @@ class DartIsolateContext {
     dispatcher_ = std::move(dispatcher);
   }
   FORCE_INLINE StringCache* stringCache() const { return string_cache_.get(); }
+  StringCache* ensureStringCache(JSContext* ctx) const;
   FORCE_INLINE MetricsRegistry* metrics() { return &metrics_; }
   FORCE_INLINE const MetricsRegistry* metrics() const { return &metrics_; }
 

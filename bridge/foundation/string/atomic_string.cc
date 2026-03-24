@@ -125,7 +125,8 @@ AtomicString::AtomicString(JSContext* ctx, JSValue qjs_value) {
   auto* context = ExecutingContext::From(ctx);
   if (context != nullptr) {
     JSAtom atom = JS_ValueToAtom(ctx, qjs_value);
-    string_ = context->dartIsolateContext()->stringCache()->GetStringFromJSAtom(ctx, atom);
+    auto* string_cache = context->dartIsolateContext()->ensureStringCache(ctx);
+    string_ = string_cache->GetStringFromJSAtom(ctx, atom);
     JS_FreeAtom(ctx, atom);
   } else {
     size_t len;
@@ -140,7 +141,8 @@ AtomicString::AtomicString(JSContext* ctx, JSValue qjs_value) {
 
 AtomicString::AtomicString(JSContext* ctx, JSAtom qjs_atom) {
   auto* context = ExecutingContext::From(ctx);
-  string_ = context->dartIsolateContext()->stringCache()->GetStringFromJSAtom(ctx, qjs_atom);
+  auto* string_cache = context->dartIsolateContext()->ensureStringCache(ctx);
+  string_ = string_cache->GetStringFromJSAtom(ctx, qjs_atom);
 }
 
 AtomicString::AtomicString(const std::unique_ptr<AutoFreeNativeString>& native_string) {
