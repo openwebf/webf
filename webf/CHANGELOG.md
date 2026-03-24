@@ -1,3 +1,22 @@
+## 0.24.22
+
+### Performance Improvements
+
+- **Rendering/Flex/Inline**: reduce flex-driven inline layout hot spots by reusing safe intrinsic
+  measurements, caching attached render-style lookups and inherited text properties, memoizing
+  paragraph/baseline work across repeated flow relayouts, and trimming repeated CSS length
+  resolution in text-heavy flex layouts.
+
+### Bug Fixes
+
+- **Rendering/Flexbox/Grid**: invalidate parent flex/grid layout when child `flex-*`,
+  `align-self`, or `grid-row`/`grid-column` properties change; bubble relayout through nested
+  flow/flex relayout boundaries; and restore correct root `<html>` sizing for dynamic
+  `documentElement` height updates.
+- **Rendering/Text**: clear inherited text caches through anonymous render-tree descendants so
+  nested text, multilingual text effects, and `text-align`-driven layouts update correctly after
+  style changes.
+
 ## 0.24.21
 
 ### Performance Improvements
