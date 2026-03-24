@@ -133,6 +133,15 @@ JSRuntime* DartIsolateContext::runtime() {
 
 DartIsolateContext::~DartIsolateContext() {}
 
+StringCache* DartIsolateContext::ensureStringCache(JSContext* ctx) const {
+  if (string_cache_ == nullptr) {
+    JSRuntime* runtime = ctx != nullptr ? JS_GetRuntime(ctx) : runtime_;
+    DCHECK(runtime != nullptr);
+    string_cache_ = std::make_unique<StringCache>(runtime);
+  }
+  return string_cache_.get();
+}
+
 void DartIsolateContext::InitializeGlobalsPerThread() {
   DCHECK(runtime_ != nullptr);
   if (string_cache_ == nullptr) {

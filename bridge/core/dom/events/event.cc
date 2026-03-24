@@ -118,7 +118,7 @@ void Event::NamedPropertyEnumerator(std::vector<AtomicString>& names, webf::Exce
 #endif
   for (int i = 0; i < raw_event_->props_len; i++) {
     std::shared_ptr<StringImpl> string =
-        GetExecutingContext()->dartIsolateContext()->stringCache()->GetStringFromJSAtom(ctx(),
+        GetExecutingContext()->dartIsolateContext()->ensureStringCache(ctx())->GetStringFromJSAtom(ctx(),
                                                                                         raw_event_props[i].key_atom);
     AtomicString key = AtomicString(string);
     names.emplace_back(key);
@@ -135,7 +135,7 @@ bool Event::NamedPropertyQuery(const AtomicString& key, ExceptionState& exceptio
   auto* raw_event_props = raw_event_->props;
 #endif
   for (int i = 0; i < raw_event_->props_len; i++) {
-    JSAtom atom = GetExecutingContext()->dartIsolateContext()->stringCache()->GetJSAtomFromString(ctx(), key.Impl());
+    JSAtom atom = GetExecutingContext()->dartIsolateContext()->ensureStringCache(ctx())->GetJSAtomFromString(ctx(), key.Impl());
     if (atom == raw_event_props[i].key_atom) {
       return true;
     }
@@ -155,7 +155,7 @@ ScriptValue Event::item(const AtomicString& key, ExceptionState& exception_state
 
   if (raw_event_props != nullptr) {
     for (int i = 0; i < raw_event_->props_len; i++) {
-      JSAtom atom = GetExecutingContext()->dartIsolateContext()->stringCache()->GetJSAtomFromString(ctx(), key.Impl());
+      JSAtom atom = GetExecutingContext()->dartIsolateContext()->ensureStringCache(ctx())->GetJSAtomFromString(ctx(), key.Impl());
       if (atom == raw_event_props[i].key_atom) {
         return ScriptValue(ctx(), raw_event_props[i].value, true);
       }
@@ -173,7 +173,7 @@ void set_event_prop(JSContext* ctx,
                     ExceptionState& exception_state) {
   event->customized_event_props_.emplace_back(value);
   prop->key_atom =
-      ExecutingContext::From(ctx)->dartIsolateContext()->stringCache()->GetJSAtomFromString(ctx, key.Impl());
+      ExecutingContext::From(ctx)->dartIsolateContext()->ensureStringCache(ctx)->GetJSAtomFromString(ctx, key.Impl());
   ;
   prop->value = value.ToNative(ctx, exception_state, true);
 }
@@ -202,7 +202,7 @@ bool Event::SetItem(const AtomicString& key, const ScriptValue& value, webf::Exc
 #else
     auto* raw_event_props = raw_event_->props;
 #endif
-    StringCache* string_cache = GetExecutingContext()->dartIsolateContext()->stringCache();
+    StringCache* string_cache = GetExecutingContext()->dartIsolateContext()->ensureStringCache(ctx());
     for (int i = 0; i < raw_event_->props_len; i++) {
       if (string_cache->GetStringFromJSAtom(ctx(), raw_event_props[i].key_atom) == key.Impl()) {
         prop_index = i;
@@ -239,7 +239,7 @@ bool Event::DeleteItem(const webf::AtomicString& key, webf::ExceptionState& exce
 #else
   auto* raw_event_props = raw_event_->props;
 #endif
-  StringCache* string_cache = GetExecutingContext()->dartIsolateContext()->stringCache();
+  StringCache* string_cache = GetExecutingContext()->dartIsolateContext()->ensureStringCache(ctx());
   for (int i = 0; i < raw_event_->props_len; i++) {
     if (string_cache->GetStringFromJSAtom(ctx(), raw_event_props[i].key_atom) == key.Impl()) {
       for (int j = i + 1; j < raw_event_->props_len; j++) {
