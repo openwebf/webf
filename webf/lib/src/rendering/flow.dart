@@ -753,6 +753,12 @@ class RenderFlowLayout extends RenderLayoutBox {
   void markNeedsLayout() {
     _baselineConstraintsAtLastLayout = null;
     super.markNeedsLayout();
+
+    if (relayoutParentOnSizeChange == null &&
+        lastLaidOutAsRelayoutBoundary &&
+        parent != null) {
+      parent!.markNeedsLayout();
+    }
   }
 
   @override

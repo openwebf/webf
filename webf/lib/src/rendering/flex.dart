@@ -103,6 +103,7 @@ enum _FlexAnonymousMetricsMissReason {
   subtreeIntrinsicDirty,
   missingCacheEntry,
   constraintsMismatch,
+  reusableStateMismatch,
 }
 
 String _flexAnonymousMetricsMissReasonLabel(
@@ -118,6 +119,8 @@ String _flexAnonymousMetricsMissReasonLabel(
       return 'missingCacheEntry';
     case _FlexAnonymousMetricsMissReason.constraintsMismatch:
       return 'constraintsMismatch';
+    case _FlexAnonymousMetricsMissReason.reusableStateMismatch:
+      return 'reusableStateMismatch';
   }
 }
 
@@ -406,11 +409,59 @@ class _FlexIntrinsicMeasurementCacheEntry {
     required this.constraints,
     required this.size,
     required this.intrinsicMainSize,
+    this.reusableStateSignature,
   });
 
   final BoxConstraints constraints;
   final Size size;
   final double intrinsicMainSize;
+  final int? reusableStateSignature;
+}
+
+class _FlexIntrinsicMeasurementCacheBucket {
+  static const int maxEntries = 6;
+
+  final List<_FlexIntrinsicMeasurementCacheEntry> entries =
+      <_FlexIntrinsicMeasurementCacheEntry>[];
+
+  _FlexIntrinsicMeasurementCacheEntry? lookupLatest(
+    BoxConstraints constraints,
+  ) {
+    for (final _FlexIntrinsicMeasurementCacheEntry entry in entries) {
+      if (entry.constraints == constraints) {
+        return entry;
+      }
+    }
+    return null;
+  }
+
+  _FlexIntrinsicMeasurementCacheEntry? lookupReusable(
+    BoxConstraints constraints,
+    int? reusableStateSignature,
+  ) {
+    if (reusableStateSignature == null) {
+      return null;
+    }
+    for (final _FlexIntrinsicMeasurementCacheEntry entry in entries) {
+      if (entry.constraints == constraints &&
+          entry.reusableStateSignature == reusableStateSignature) {
+        return entry;
+      }
+    }
+    return null;
+  }
+
+  void store(_FlexIntrinsicMeasurementCacheEntry entry) {
+    entries.removeWhere(
+      (_FlexIntrinsicMeasurementCacheEntry existing) =>
+          existing.constraints == entry.constraints &&
+          existing.reusableStateSignature == entry.reusableStateSignature,
+    );
+    entries.insert(0, entry);
+    if (entries.length > maxEntries) {
+      entries.removeRange(maxEntries, entries.length);
+    }
+  }
 }
 
 class _FlexIntrinsicMeasurementLookupResult {
@@ -743,6 +794,17 @@ class RenderFlexLayout extends RenderLayoutBox {
     addAll(children);
   }
 
+  @override
+  void markNeedsLayout() {
+    super.markNeedsLayout();
+
+    if (relayoutParentOnSizeChange == null &&
+        lastLaidOutAsRelayoutBoundary &&
+        parent != null) {
+      parent!.markNeedsLayout();
+    }
+  }
+
   double _intrinsicPaddingBorderHorizontal() {
     return renderStyle.paddingLeft.computedValue +
         renderStyle.paddingRight.computedValue +
@@ -939,8 +1001,8 @@ class RenderFlexLayout extends RenderLayoutBox {
 
   // Cache original constraints of children on the first layout.
   Expando<BoxConstraints> _childrenOldConstraints = Expando<BoxConstraints>('childrenOldConstraints');
-  Expando<_FlexIntrinsicMeasurementCacheEntry> _childrenIntrinsicMeasureCache =
-      Expando<_FlexIntrinsicMeasurementCacheEntry>('childrenIntrinsicMeasureCache');
+  Expando<_FlexIntrinsicMeasurementCacheBucket> _childrenIntrinsicMeasureCache =
+      Expando<_FlexIntrinsicMeasurementCacheBucket>('childrenIntrinsicMeasureCache');
   Expando<bool> _childrenRequirePostMeasureLayout =
       Expando<bool>('childrenRequirePostMeasureLayout');
   Expando<Size>? _transientChildSizeOverrides;
@@ -957,7 +1019,7 @@ class RenderFlexLayout extends RenderLayoutBox {
     _childrenIntrinsicMainSizes = Expando<double>('childrenIntrinsicMainSizes');
     _childrenOldConstraints = Expando<BoxConstraints>('childrenOldConstraints');
     _childrenIntrinsicMeasureCache =
-        Expando<_FlexIntrinsicMeasurementCacheEntry>('childrenIntrinsicMeasureCache');
+        Expando<_FlexIntrinsicMeasurementCacheBucket>('childrenIntrinsicMeasureCache');
     _childrenRequirePostMeasureLayout =
         Expando<bool>('childrenRequirePostMeasureLayout');
     _transientChildSizeOverrides = null;
@@ -2346,6 +2408,140 @@ class RenderFlexLayout extends RenderLayoutBox {
     }
   }
 
+  @pragma('vm:prefer-inline')
+  int _hashReusableIntrinsicMeasurementState(int hash, int value) {
+    hash = 0x1fffffff & (hash + value);
+    hash = 0x1fffffff & (hash + ((0x0007ffff & hash) << 10));
+    return hash ^ (hash >> 6);
+  }
+
+  @pragma('vm:prefer-inline')
+  int _finishReusableIntrinsicMeasurementState(int hash) {
+    hash = 0x1fffffff & (hash + ((0x03ffffff & hash) << 3));
+    hash ^= (hash >> 11);
+    return 0x1fffffff & (hash + ((0x00003fff & hash) << 15));
+  }
+
+  @pragma('vm:prefer-inline')
+  int _quantizeReusableIntrinsicMeasurementDouble(double value) {
+    if (!value.isFinite) {
+      if (value.isNaN) return 0x1ffffffe;
+      return value.isNegative ? -0x1ffffffe : 0x1ffffffd;
+    }
+    return (value * 100).round();
+  }
+
+  int? _computeReusableIntrinsicMeasurementStateSignature(
+    RenderBox child,
+    BoxConstraints childConstraints, {
+    RenderFlowLayout? flowChild,
+  }) {
+    final RenderFlowLayout? effectiveFlowChild =
+        flowChild ??
+        _getCacheableIntrinsicMeasureFlowChild(
+          child,
+          allowAnonymous: true,
+        );
+    if (effectiveFlowChild == null) {
+      return null;
+    }
+
+    int hash = 0;
+    final CSSRenderStyle style = effectiveFlowChild.renderStyle;
+    hash = _hashReusableIntrinsicMeasurementState(hash, effectiveFlowChild.hashCode);
+    hash = _hashReusableIntrinsicMeasurementState(
+      hash,
+      _quantizeReusableIntrinsicMeasurementDouble(childConstraints.minWidth),
+    );
+    hash = _hashReusableIntrinsicMeasurementState(
+      hash,
+      _quantizeReusableIntrinsicMeasurementDouble(childConstraints.maxWidth),
+    );
+    hash = _hashReusableIntrinsicMeasurementState(
+      hash,
+      _quantizeReusableIntrinsicMeasurementDouble(childConstraints.minHeight),
+    );
+    hash = _hashReusableIntrinsicMeasurementState(
+      hash,
+      _quantizeReusableIntrinsicMeasurementDouble(childConstraints.maxHeight),
+    );
+    hash = _hashReusableIntrinsicMeasurementState(hash, style.display.hashCode);
+    hash = _hashReusableIntrinsicMeasurementState(hash, style.position.hashCode);
+    hash = _hashReusableIntrinsicMeasurementState(hash, style.whiteSpace.hashCode);
+    hash = _hashReusableIntrinsicMeasurementState(hash, style.wordBreak.hashCode);
+    hash = _hashReusableIntrinsicMeasurementState(hash, style.textAlign.hashCode);
+    hash = _hashReusableIntrinsicMeasurementState(hash, style.fontStyle.hashCode);
+    hash = _hashReusableIntrinsicMeasurementState(hash, style.fontWeight.value);
+    hash = _hashReusableIntrinsicMeasurementState(
+      hash,
+      _quantizeReusableIntrinsicMeasurementDouble(style.fontSize.computedValue),
+    );
+    hash = _hashReusableIntrinsicMeasurementState(
+      hash,
+      _quantizeReusableIntrinsicMeasurementDouble(style.lineHeight.computedValue),
+    );
+    hash = _hashReusableIntrinsicMeasurementState(
+      hash,
+      _quantizeReusableIntrinsicMeasurementDouble(style.textIndent.computedValue),
+    );
+    hash = _hashReusableIntrinsicMeasurementState(hash, style.width.type.hashCode);
+    hash = _hashReusableIntrinsicMeasurementState(hash, style.height.type.hashCode);
+    hash = _hashReusableIntrinsicMeasurementState(hash, style.minWidth.type.hashCode);
+    hash = _hashReusableIntrinsicMeasurementState(hash, style.maxWidth.type.hashCode);
+    hash = _hashReusableIntrinsicMeasurementState(hash, style.minHeight.type.hashCode);
+    hash = _hashReusableIntrinsicMeasurementState(hash, style.maxHeight.type.hashCode);
+    if (style.width.isNotAuto) {
+      hash = _hashReusableIntrinsicMeasurementState(
+        hash,
+        _quantizeReusableIntrinsicMeasurementDouble(style.width.computedValue),
+      );
+    }
+    if (style.height.isNotAuto) {
+      hash = _hashReusableIntrinsicMeasurementState(
+        hash,
+        _quantizeReusableIntrinsicMeasurementDouble(style.height.computedValue),
+      );
+    }
+    if (style.minWidth.isNotAuto) {
+      hash = _hashReusableIntrinsicMeasurementState(
+        hash,
+        _quantizeReusableIntrinsicMeasurementDouble(style.minWidth.computedValue),
+      );
+    }
+    if (!style.maxWidth.isNone) {
+      hash = _hashReusableIntrinsicMeasurementState(
+        hash,
+        _quantizeReusableIntrinsicMeasurementDouble(style.maxWidth.computedValue),
+      );
+    }
+    if (style.minHeight.isNotAuto) {
+      hash = _hashReusableIntrinsicMeasurementState(
+        hash,
+        _quantizeReusableIntrinsicMeasurementDouble(style.minHeight.computedValue),
+      );
+    }
+    if (!style.maxHeight.isNone) {
+      hash = _hashReusableIntrinsicMeasurementState(
+        hash,
+        _quantizeReusableIntrinsicMeasurementDouble(style.maxHeight.computedValue),
+      );
+    }
+    if (style.flexBasis != null) {
+      hash = _hashReusableIntrinsicMeasurementState(
+        hash,
+        style.flexBasis!.type.hashCode,
+      );
+    }
+    final InlineFormattingContext? ifc = effectiveFlowChild.inlineFormattingContext;
+    if (ifc != null) {
+      hash = _hashReusableIntrinsicMeasurementState(
+        hash,
+        ifc.layoutReuseSignature(childConstraints),
+      );
+    }
+    return _finishReusableIntrinsicMeasurementState(hash);
+  }
+
   _FlexIntrinsicMeasurementLookupResult _lookupReusableIntrinsicMeasurement(
     RenderBox child,
     BoxConstraints childConstraints,
@@ -2356,15 +2552,14 @@ class RenderFlexLayout extends RenderLayoutBox {
     if (!allowAnonymous) {
       return const _FlexIntrinsicMeasurementLookupResult();
     }
+    if (_getMainAxisGap() > 0) {
+      return const _FlexIntrinsicMeasurementLookupResult();
+    }
     final RenderFlowLayout? flowChild = _getCacheableIntrinsicMeasureFlowChild(
       child,
       allowAnonymous: allowAnonymous,
     );
-    final bool allowMetricsOnlyReuse =
-        flowChild != null &&
-        _isMetricsOnlyIntrinsicMeasureFlowChild(flowChild);
-    if ((!_isHorizontalFlexDirection || renderStyle.flexWrap != FlexWrap.nowrap) &&
-        !allowMetricsOnlyReuse) {
+    if (!_isHorizontalFlexDirection || renderStyle.flexWrap != FlexWrap.nowrap) {
       return const _FlexIntrinsicMeasurementLookupResult();
     }
     if (_hasBaselineAlignmentForChild(child)) {
@@ -2373,31 +2568,51 @@ class RenderFlexLayout extends RenderLayoutBox {
     if (flowChild == null) {
       return const _FlexIntrinsicMeasurementLookupResult();
     }
-    if (flowChild.needsRelayout) {
-      return const _FlexIntrinsicMeasurementLookupResult(
-        missReason: _FlexAnonymousMetricsMissReason.flowNeedsRelayout,
-      );
-    }
-    if (child is RenderBoxModel && child.needsRelayout) {
-      return const _FlexIntrinsicMeasurementLookupResult(
-        missReason: _FlexAnonymousMetricsMissReason.childNeedsRelayout,
-      );
-    }
-    final _FlexIntrinsicMeasurementCacheEntry? cacheEntry =
+    final _FlexIntrinsicMeasurementCacheBucket? cacheBucket =
         _childrenIntrinsicMeasureCache[child];
-    if (cacheEntry == null) {
+    if (cacheBucket == null || cacheBucket.entries.isEmpty) {
       return const _FlexIntrinsicMeasurementLookupResult(
         missReason: _FlexAnonymousMetricsMissReason.missingCacheEntry,
       );
     }
-    if (cacheEntry.constraints != childConstraints) {
+    final _FlexIntrinsicMeasurementCacheEntry? cacheEntry =
+        cacheBucket.lookupLatest(childConstraints);
+    if (cacheEntry == null) {
       return const _FlexIntrinsicMeasurementLookupResult(
         missReason: _FlexAnonymousMetricsMissReason.constraintsMismatch,
       );
     }
-    if (_subtreeHasPendingIntrinsicMeasureInvalidation(child)) {
+    final bool flowNeedsRelayout = flowChild.needsRelayout;
+    final bool childNeedsRelayout =
+        child is RenderBoxModel && child.needsRelayout;
+    final bool subtreeIntrinsicDirty =
+        _subtreeHasPendingIntrinsicMeasureInvalidation(child);
+    if (flowNeedsRelayout || childNeedsRelayout || subtreeIntrinsicDirty) {
+      final int? reusableStateSignature =
+          _computeReusableIntrinsicMeasurementStateSignature(
+        child,
+        childConstraints,
+        flowChild: flowChild,
+      );
+      final _FlexIntrinsicMeasurementCacheEntry? reusableEntry =
+          cacheBucket.lookupReusable(childConstraints, reusableStateSignature);
+      if (reusableEntry != null) {
+        return _FlexIntrinsicMeasurementLookupResult(entry: reusableEntry);
+      }
+      if (flowNeedsRelayout) {
+        return const _FlexIntrinsicMeasurementLookupResult(
+          missReason: _FlexAnonymousMetricsMissReason.flowNeedsRelayout,
+        );
+      }
+      if (childNeedsRelayout) {
+        return const _FlexIntrinsicMeasurementLookupResult(
+          missReason: _FlexAnonymousMetricsMissReason.childNeedsRelayout,
+        );
+      }
       return _FlexIntrinsicMeasurementLookupResult(
-        missReason: _FlexAnonymousMetricsMissReason.subtreeIntrinsicDirty,
+        missReason: reusableStateSignature == null
+            ? _FlexAnonymousMetricsMissReason.subtreeIntrinsicDirty
+            : _FlexAnonymousMetricsMissReason.reusableStateMismatch,
         missDetails: _FlexAnonymousMetricsProfiler.enabled
             ? _describeFirstPendingIntrinsicMeasureInvalidation(child)
             : null,
@@ -2412,15 +2627,25 @@ class RenderFlexLayout extends RenderLayoutBox {
     Size childSize,
     double intrinsicMainSize,
   ) {
-    if (_getCacheableIntrinsicMeasureFlowChild(child, allowAnonymous: true) ==
-        null) {
+    final RenderFlowLayout? flowChild =
+        _getCacheableIntrinsicMeasureFlowChild(child, allowAnonymous: true);
+    if (flowChild == null) {
       return;
     }
-    _childrenIntrinsicMeasureCache[child] = _FlexIntrinsicMeasurementCacheEntry(
+    final _FlexIntrinsicMeasurementCacheBucket bucket =
+        _childrenIntrinsicMeasureCache[child] ??
+        _FlexIntrinsicMeasurementCacheBucket();
+    bucket.store(_FlexIntrinsicMeasurementCacheEntry(
       constraints: childConstraints,
       size: Size.copy(childSize),
       intrinsicMainSize: intrinsicMainSize,
-    );
+      reusableStateSignature: _computeReusableIntrinsicMeasurementStateSignature(
+        child,
+        childConstraints,
+        flowChild: flowChild,
+      ),
+    ));
+    _childrenIntrinsicMeasureCache[child] = bucket;
   }
 
   bool _shouldRequirePostMeasureLayout(RenderBox child) {
@@ -4853,6 +5078,10 @@ class RenderFlexLayout extends RenderLayoutBox {
         child.renderStyle.display == CSSDisplay.inlineBlock ||
         child.renderStyle.display == CSSDisplay.inlineFlex) &&
         (child.renderStyle.isSelfRenderFlowLayout() || child.renderStyle.isSelfRenderFlexLayout());
+    bool isAutoHeightLayoutContainer =
+        child.renderStyle.height.isAuto &&
+        (child.renderStyle.isSelfRenderFlowLayout() ||
+            child.renderStyle.isSelfRenderFlexLayout());
     // Block-level flex items whose contents form an inline formatting context (e.g., a <div> with only text)
     // also need height to be unconstrained on the secondary pass so text can wrap after flex-shrink.
     // This mirrors browser behavior: first resolve the used main size, then measure cross size with auto height.
@@ -4862,12 +5091,18 @@ class RenderFlexLayout extends RenderLayoutBox {
     // Allow dynamic height adjustment during secondary layout when width has changed and height is auto
     bool allowDynamicHeight = _isHorizontalFlexDirection &&
         isSecondaryLayoutPass &&
-        (isTextElement || isInlineElementWithText || establishesIFC) &&
+        (isTextElement ||
+            isInlineElementWithText ||
+            establishesIFC ||
+            isAutoHeightLayoutContainer) &&
         // For non-flexed items, only allow when this is the only item on the line
         // so the line cross-size is content-driven.
         (childFlexedMainSize != null || (preserveMainAxisSize != null && lineChildrenCount == 1)) &&
-        // Do not override stretch to a sibling's definite height when multiple items exist.
-        (childStretchedCrossSize == null || lineChildrenCount == 1) &&
+        // Layout containers with auto height need a chance to grow past the
+        // previous stretched cross size when their own contents change.
+        (childStretchedCrossSize == null ||
+            lineChildrenCount == 1 ||
+            isAutoHeightLayoutContainer) &&
         child.renderStyle.height.isAuto;
 
     if (allowDynamicHeight) {

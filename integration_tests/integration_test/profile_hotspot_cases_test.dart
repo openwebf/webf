@@ -16,6 +16,8 @@ import 'package:webf/webf.dart';
 
 final developer.UserTag _paragraphRebuildProfileTag =
     developer.UserTag('profile_hotspots.paragraph_rebuild');
+final developer.UserTag _flexInlineLayoutProfileTag =
+    developer.UserTag('profile_hotspots.flex_inline_layout');
 
 void main() {
   final IntegrationTestWidgetsFlutterBinding binding =
@@ -190,6 +192,52 @@ void main() {
       );
 
       expect(stage.className, isEmpty);
+    });
+
+    testWidgets('profiles flex inline layout hotspot',
+        (WidgetTester tester) async {
+      final _PreparedProfileCase prepared = await _prepareProfileCase(
+        tester,
+        controllerName:
+            'profile-flex-inline-${DateTime.now().millisecondsSinceEpoch}',
+        html: _buildFlexInlineLayoutHtml(cardCount: 24),
+      );
+
+      final dom.Element host = prepared.getElementById('host');
+      final dom.Element board = prepared.getElementById('board');
+
+      binding.reportData ??= <String, dynamic>{};
+      binding.reportData!['flex_inline_layout_meta'] = <String, dynamic>{
+        'cardCount': 24,
+        'mutationIterations': 32,
+        'styleMutationPhases': 4,
+      };
+
+      await _runFlexInlineLayoutLoop(
+        prepared,
+        mutationIterations: 10,
+        widths: const <String>['360px', '324px', '296px', '344px'],
+      );
+
+      binding.reportData!['flex_inline_layout_cpu_samples'] =
+          await _captureCpuSamples(
+        userTag: _flexInlineLayoutProfileTag,
+        action: () async {
+          await binding.traceAction(
+            () async {
+              await _runFlexInlineLayoutLoop(
+                prepared,
+                mutationIterations: 32,
+                widths: const <String>['360px', '324px', '296px', '344px'],
+              );
+            },
+            reportKey: 'flex_inline_layout_timeline',
+          );
+        },
+      );
+
+      expect(host.getBoundingClientRect().width, greaterThan(0));
+      expect(board.getBoundingClientRect().height, greaterThan(0));
     });
   });
 }
@@ -382,6 +430,26 @@ Future<void> _runParagraphRebuildLoop(
     paragraph.className = 'phase-$phase';
 
     paragraph.ownerDocument.updateStyleIfNeeded();
+    await _pumpFrames(prepared.tester, 2);
+  }
+}
+
+Future<void> _runFlexInlineLayoutLoop(
+  _PreparedProfileCase prepared, {
+  required int mutationIterations,
+  required List<String> widths,
+}) async {
+  final dom.Element host = prepared.getElementById('host');
+  final dom.Element board = prepared.getElementById('board');
+  for (int iteration = 0; iteration < mutationIterations; iteration++) {
+    final int phase = iteration % widths.length;
+    host.setInlineStyle('width', widths[phase]);
+    host.setInlineStyle('padding', phase.isEven ? '10px' : '8px');
+    board.className = 'phase-$phase';
+    board.setInlineStyle('letterSpacing', phase == 1 ? '0.12px' : '0px');
+    board.setInlineStyle('wordSpacing', phase == 2 ? '0.35px' : '0px');
+    board.style.flushPendingProperties();
+    board.ownerDocument.updateStyleIfNeeded();
     await _pumpFrames(prepared.tester, 2);
   }
 }
@@ -643,6 +711,197 @@ String _buildOpacityTransitionHtml({
 </head>
 <body>
   <div id="stage">$tiles</div>
+</body>
+</html>
+''';
+}
+
+String _buildFlexInlineLayoutHtml({
+  required int cardCount,
+}) {
+  final String cards = List<String>.generate(cardCount, (int index) {
+    final int tone = index % 4;
+    return '''
+<a class="card tone$tone" href="#card-${index + 1}">
+  <div class="headline">
+    <span class="eyebrow">series ${index + 1}</span>
+    <span class="title">issue cluster ${index + 1}</span>
+    <span class="chip priority">p${(index % 3) + 1}</span>
+  </div>
+  <div class="summary">
+    <span class="copy">Long wrapped summary for inline layout and flex relayout sample ${index + 1}</span>
+    <span class="chip status">active</span>
+    <span class="copy emphasis">baseline measurement path ${index + 1}</span>
+    <label class="toggle">
+      <select class="picker">
+        <option ${index.isEven ? 'selected' : ''}>watch</option>
+        <option ${index.isOdd ? 'selected' : ''}>mute</option>
+      </select>
+      <input class="note" type="text" value="S${index + 1}" />
+    </label>
+  </div>
+  <div class="meta">
+    <span class="metric">ETA ${12 + (index % 9)}h</span>
+    <span class="metric">owner ${index + 3}</span>
+    <span class="chip soft">series-${(index % 5) + 1}</span>
+    <span class="metric trailing">needs follow-up</span>
+  </div>
+</a>
+''';
+  }).join();
+
+  return '''
+<!doctype html>
+<html>
+<head>
+  <style>
+    body {
+      margin: 0;
+      font: 15px/1.45 AlibabaSans, sans-serif;
+      background: #ffffff;
+    }
+    #host {
+      width: 360px;
+      padding: 10px;
+      border: 1px solid #d8dde6;
+      box-sizing: border-box;
+    }
+    #board {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      align-items: flex-start;
+      align-content: flex-start;
+    }
+    .card {
+      display: block;
+      flex: 1 1 156px;
+      min-width: 140px;
+      padding: 8px 10px;
+      border: 1px solid rgba(148, 163, 184, 0.45);
+      border-radius: 12px;
+      color: #0f172a;
+      text-decoration: none;
+      background: rgba(248, 250, 252, 0.96);
+      box-sizing: border-box;
+    }
+    .headline,
+    .summary,
+    .meta {
+      display: block;
+    }
+    .headline {
+      margin-bottom: 6px;
+      line-height: 1.35;
+    }
+    .summary {
+      text-indent: 6px;
+      line-height: 1.55;
+    }
+    .meta {
+      margin-top: 6px;
+      color: #475569;
+      line-height: 1.4;
+    }
+    .eyebrow {
+      color: #64748b;
+      margin-right: 4px;
+    }
+    .title {
+      font-weight: 700;
+      margin-right: 4px;
+    }
+    .copy {
+      color: #1e293b;
+    }
+    .copy.emphasis {
+      font-style: italic;
+    }
+    .metric {
+      margin-right: 6px;
+    }
+    .metric.trailing {
+      font-style: italic;
+    }
+    .chip {
+      display: inline-block;
+      margin: 0 4px;
+      padding: 1px 7px;
+      border-radius: 999px;
+      border: 1px solid rgba(59, 130, 246, 0.24);
+      background: rgba(191, 219, 254, 0.38);
+      font-size: 12px;
+      line-height: 18px;
+      vertical-align: middle;
+    }
+    .toggle {
+      display: inline-block;
+      margin-left: 4px;
+      padding: 1px 0;
+      vertical-align: middle;
+    }
+    .toggle .picker,
+    .toggle .note {
+      vertical-align: middle;
+      margin-right: 3px;
+      font: inherit;
+      line-height: 18px;
+    }
+    .toggle .picker {
+      min-width: 58px;
+      height: 22px;
+    }
+    .toggle .note {
+      width: 44px;
+      height: 22px;
+      padding: 0 4px;
+      box-sizing: border-box;
+    }
+    #board.phase-1 .card {
+      flex-basis: 148px;
+    }
+    #board.phase-1 .headline {
+      font-style: italic;
+    }
+    #board.phase-1 .summary {
+      text-indent: 10px;
+      line-height: 1.62;
+    }
+    #board.phase-2 .card {
+      flex-basis: 168px;
+    }
+    #board.phase-2 .chip {
+      padding: 2px 9px;
+      font-size: 13px;
+    }
+    #board.phase-2 .copy.emphasis {
+      font-weight: 700;
+    }
+    #board.phase-3 .summary {
+      word-break: break-word;
+      line-height: 1.7;
+    }
+    #board.phase-3 .meta {
+      letter-spacing: 0.2px;
+    }
+    .tone0 .priority {
+      background: rgba(253, 230, 138, 0.55);
+    }
+    .tone1 .priority {
+      background: rgba(187, 247, 208, 0.55);
+    }
+    .tone2 .priority {
+      background: rgba(216, 180, 254, 0.45);
+    }
+    .tone3 .priority {
+      background: rgba(254, 205, 211, 0.5);
+    }
+  </style>
+</head>
+<body>
+  <div id="host">
+    <div id="board">$cards</div>
+  </div>
 </body>
 </html>
 ''';
