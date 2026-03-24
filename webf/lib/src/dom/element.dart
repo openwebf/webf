@@ -1413,6 +1413,7 @@ abstract class Element extends ContainerNode
   @override
   void childrenChanged(ChildrenChange change) {
     super.childrenChanged(change);
+    renderStyle.markNeedsInlineCollection();
     renderStyle.requestWidgetToRebuild(UpdateChildNodeUpdateReason());
     // Children mutations (e.g., text nodes inserted or updated) can alter the
     // accessible name/description. Ensure semantics pick up the change.
@@ -2019,9 +2020,8 @@ abstract class Element extends ContainerNode
   void _applySheetStyle(CSSStyleDeclaration style,
       {SelectorAncestorTokenSet? ancestorTokens,
       query_selector.SelectorEvaluator? evaluator}) {
-    CSSStyleDeclaration matchRule =
-        _collectMatchedRulesWithCache(
-            ancestorTokens: ancestorTokens, evaluator: evaluator);
+    CSSStyleDeclaration matchRule = _collectMatchedRulesWithCache(
+        ancestorTokens: ancestorTokens, evaluator: evaluator);
     style.union(matchRule);
   }
 
@@ -2241,9 +2241,7 @@ abstract class Element extends ContainerNode
     final String property = _normalizeStylePropertyName(propertyName);
     final bool pending = _pendingTransitionProps.contains(property);
     final bool running = renderStyle.isTransitionRunning(property);
-    if (!pending &&
-        !running &&
-        !renderStyle.mayTransitionProperty(property)) {
+    if (!pending && !running && !renderStyle.mayTransitionProperty(property)) {
       setRenderStyle(property, currentValue, baseHref: baseHref);
       return;
     }

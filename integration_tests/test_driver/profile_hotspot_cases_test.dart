@@ -25,7 +25,9 @@ Future<void> main() async {
       );
 
       for (final MapEntry<String, dynamic> entry in response.entries) {
-        if (entry.key.endsWith('_timeline') && entry.value is Map) {
+        if ((entry.key.endsWith('_timeline') ||
+                entry.key.endsWith('_cpu_samples')) &&
+            entry.value is Map) {
           await _writeJson(
             outputDirectory,
             Map<String, dynamic>.from(entry.value as Map),

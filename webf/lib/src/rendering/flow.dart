@@ -60,6 +60,13 @@ class RenderFlowLayout extends RenderLayoutBox {
     addAll(children);
   }
 
+  BoxConstraints? _baselineConstraintsAtLastLayout;
+
+  @pragma('vm:prefer-inline')
+  void markNeedsCollectInlines() {
+    _inlineFormattingContext?.setNeedsCollectInlines();
+  }
+
   bool _hasAncestorEstablishingIFC() {
     RenderObject? node = parent;
     while (node != null) {
@@ -730,13 +737,46 @@ class RenderFlowLayout extends RenderLayoutBox {
         _doPerformLayout();
         needsRelayout = false;
       }
+
+      _baselineConstraintsAtLastLayout = constraints;
     } catch (e, stack) {
+      _baselineConstraintsAtLastLayout = null;
       if (!kReleaseMode) {
         layoutExceptions = '$e\n$stack';
         reportException('performLayout', e, stack);
       }
       rethrow;
     }
+  }
+
+  @override
+  void markNeedsLayout() {
+    _baselineConstraintsAtLastLayout = null;
+    super.markNeedsLayout();
+  }
+
+  @override
+  void insert(RenderBox child, {RenderBox? after}) {
+    super.insert(child, after: after);
+    markNeedsCollectInlines();
+  }
+
+  @override
+  void remove(RenderBox child) {
+    super.remove(child);
+    markNeedsCollectInlines();
+  }
+
+  @override
+  void removeAll() {
+    super.removeAll();
+    markNeedsCollectInlines();
+  }
+
+  @override
+  void move(RenderBox child, {RenderBox? after}) {
+    super.move(child, after: after);
+    markNeedsCollectInlines();
   }
 
   bool _establishIFC = false;
@@ -753,13 +793,14 @@ class RenderFlowLayout extends RenderLayoutBox {
 
     final bool nextEstablishIFC =
         renderStyle.shouldEstablishInlineFormattingContext() || _shouldEstablishLocalIFCForInlineRoot();
-    // This context is not reused across layout passes. Dispose eagerly to avoid
-    // leaking paragraph/style caches when IFC establishment toggles or the box
-    // relayouts frequently.
-    _inlineFormattingContext?.dispose();
-    _inlineFormattingContext = null;
     _establishIFC = nextEstablishIFC;
     if (_establishIFC) {
+      _inlineFormattingContext ??= InlineFormattingContext(container: this);
+    } else {
+      _inlineFormattingContext?.dispose();
+      _inlineFormattingContext = null;
+    }
+    if (_establishIFC && _inlineFormattingContext == null) {
       _inlineFormattingContext = InlineFormattingContext(container: this);
     }
 
@@ -1570,6 +1611,23 @@ class RenderFlowLayout extends RenderLayoutBox {
       return last;
     }
     return boxSize?.height;
+  }
+
+  @override
+  double? computeDryBaseline(covariant BoxConstraints constraints, TextBaseline baseline) {
+    final BoxConstraints? lastConstraints = _baselineConstraintsAtLastLayout;
+    if (lastConstraints != null && constraints == lastConstraints) {
+      final double? first = computeCssFirstBaselineOf(baseline);
+      if (first != null) {
+        return first;
+      }
+      final double? last = computeCssLastBaselineOf(baseline);
+      if (last != null) {
+        return last;
+      }
+      return boxSize?.height;
+    }
+    return null;
   }
 
   // Set the size of scrollable overflow area for inline formatting context.

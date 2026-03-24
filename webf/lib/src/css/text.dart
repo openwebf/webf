@@ -395,6 +395,7 @@ mixin CSSTextMixin on RenderStyle {
   set textTransform(TextTransform? value) {
     if (_textTransform == value) return;
     _textTransform = value;
+    markNeedsInlineCollection();
     // Inherited: update descendants’ text layout
     _markChildrenTextNeedsLayout(this, TEXT_TRANSFORM);
   }
@@ -439,6 +440,7 @@ mixin CSSTextMixin on RenderStyle {
   set whiteSpace(WhiteSpace? value) {
     if (_whiteSpace == value) return;
     _whiteSpace = value;
+    markNeedsInlineCollection();
     // Update all the children layout and text with specified style property not set due to style inheritance.
     _markNestChildrenTextAndLayoutNeedsLayout(this, WHITE_SPACE);
   }
@@ -490,20 +492,37 @@ mixin CSSTextMixin on RenderStyle {
   }
 
   TextAlign? _textAlign;
+  TextAlign? _cachedInheritedTextAlign;
+  dom.Element? _cachedInheritedTextAlignParent;
 
   @override
   TextAlign get textAlign {
-    // Get style from self or closest parent if specified style property is not set
-    // due to style inheritance.
-    if (_textAlign == null && getAttachedRenderParentRenderStyle() != null) {
-      return getAttachedRenderParentRenderStyle()!.textAlign;
+    // CSS 'text-align' is inherited via the DOM parent chain. Prefer the DOM
+    // parent’s renderStyle so out-of-flow render reparenting does not change
+    // inheritance semantics.
+    if (_textAlign != null) return _textAlign!;
+    final dom.Element? domParent = target.parentElement;
+    if (_cachedInheritedTextAlign != null &&
+        identical(_cachedInheritedTextAlignParent, domParent)) {
+      return _cachedInheritedTextAlign!;
     }
-    return _textAlign ?? TextAlign.start;
+    final TextAlign resolved;
+    if (domParent != null) {
+      resolved = domParent.renderStyle.textAlign;
+    } else {
+      final RenderStyle? renderParent = parent;
+      resolved = renderParent?.textAlign ?? TextAlign.start;
+    }
+    _cachedInheritedTextAlignParent = domParent;
+    _cachedInheritedTextAlign = resolved;
+    return resolved;
   }
 
   set textAlign(TextAlign? value) {
     if (_textAlign == value) return;
     _textAlign = value;
+    resetInheritedTextCaches();
+    _resetInheritedTextCacheForDescendants(TEXT_ALIGN);
     // Update all the children flow layout with specified style property not set due to style inheritance.
     _markNestFlowLayoutNeedsLayout(this, TEXT_ALIGN);
   }
@@ -513,14 +532,16 @@ mixin CSSTextMixin on RenderStyle {
   dom.Element? _cachedInheritedDirectionParent;
 
   void resetInheritedTextCaches() {
+    _cachedInheritedTextAlign = null;
+    _cachedInheritedTextAlignParent = null;
     _cachedInheritedDirection = null;
     _cachedInheritedDirectionParent = null;
   }
 
-  void _resetInheritedDirectionCacheForDescendants() {
+  void _resetInheritedTextCacheForDescendants(String propertyName) {
     void visitor(dom.Node node) {
       if (node is! dom.Element) return;
-      if (node.style[DIRECTION].isNotEmpty) {
+      if (node.style[propertyName].isNotEmpty) {
         return;
       }
       node.renderStyle.resetInheritedTextCaches();
@@ -557,8 +578,9 @@ mixin CSSTextMixin on RenderStyle {
   set direction(TextDirection? value) {
     if (_direction == value) return;
     _direction = value;
+    markNeedsInlineCollection();
     resetInheritedTextCaches();
-    _resetInheritedDirectionCacheForDescendants();
+    _resetInheritedTextCacheForDescendants(DIRECTION);
     // Update all the children text and flow layout with specified style property not set due to style inheritance.
     _markNestChildrenTextAndLayoutNeedsLayout(this, DIRECTION);
 
