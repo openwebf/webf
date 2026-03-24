@@ -4,6 +4,9 @@ import { createRoot, Root } from 'react-dom/client';
 const DEFAULT_CONTAINER_ID = 'react-spec-root';
 
 type ReactSpecOptions = {
+  containerId?: string;
+  containerClassName?: string;
+  containerStyle?: Record<string, string>;
   framesToWait?: number;
 };
 
@@ -39,6 +42,17 @@ const waitForFrames = (count: number = 1): Promise<void> => {
 
 const ensureContainer = (options: ReactSpecOptions): { container: HTMLElement } => {
   const container = document.createElement('div');
+  if (options.containerId != null) {
+    container.id = options.containerId;
+  }
+  if (options.containerClassName != null) {
+    container.className = options.containerClassName;
+  }
+  if (options.containerStyle != null) {
+    for (const [name, value] of Object.entries(options.containerStyle)) {
+      container.style.setProperty(name, value);
+    }
+  }
   document.body.appendChild(container);
   return { container};
 };
