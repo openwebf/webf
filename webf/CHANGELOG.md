@@ -1,3 +1,19 @@
+## 0.24.21
+
+### Performance Improvements
+
+- **Rendering/Text**: reduce profiled inline-layout and paint hot spots by caching inherited
+  `direction`/`text-align` resolution and DOM parent lookups, reusing flow dry-baseline results,
+  and memoizing paragraph/decoration metrics across repeated inline formatting passes.
+- **Rendering/Opacity**: avoid redundant child sorting and compositing-bit invalidation during
+  opacity animations unless the value crosses stacking/compositing boundaries.
+
+### Bug Fixes
+
+- **Bridge/Initialization**: lazily initialize the native string cache across isolate, wrapper,
+  atomic-string, and event access paths to prevent worker-thread page startup crashes in profiled
+  and integration-test environments.
+
 ## 0.24.20
 
 ### Performance Improvements
