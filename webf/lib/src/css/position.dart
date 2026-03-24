@@ -129,6 +129,7 @@ mixin CSSPositionMixin on RenderStyle {
     _position = value;
 
     // Position effect the stacking context.
+    markNeedsInlineCollection();
     _markNeedsSort();
     _markContainingBlockNeedsLayout();
     // Position change may affect transformed display

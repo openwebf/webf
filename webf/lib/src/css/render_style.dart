@@ -1411,6 +1411,23 @@ abstract class RenderStyle extends DiagnosticableTree with Diagnosticable {
     getAttachedRenderParentRenderStyle()?.markChildrenNeedsSort();
   }
 
+  @pragma('vm:prefer-inline')
+  void markNeedsInlineCollection() {
+    everyAttachedWidgetRenderBox((_, renderObject) {
+      RenderObject? node = renderObject;
+      while (node != null) {
+        if (node is RenderFlowLayout) {
+          node.markNeedsCollectInlines();
+          if (node.establishIFC) {
+            break;
+          }
+        }
+        node = node.parent;
+      }
+      return true;
+    });
+  }
+
   // Whether this element itself establishes a stacking context.
   // Follows MDN/Specs triggers:
   // - Root element (<html>)

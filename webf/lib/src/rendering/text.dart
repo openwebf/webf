@@ -40,11 +40,26 @@ class RenderTextBox extends RenderBox with RenderObjectWithChildMixin<RenderBox>
     }
   }
 
+  void _markAncestorInlineCollectionNeedsUpdate() {
+    RenderObject? ancestor = parent;
+    while (ancestor != null) {
+      if (ancestor is RenderFlowLayout) {
+        ancestor.markNeedsCollectInlines();
+        ancestor.markNeedsLayout();
+        if (ancestor.establishIFC) {
+          break;
+        }
+      }
+      ancestor = ancestor.parent;
+    }
+  }
+
   set data(String value) {
     if (_data == value) return;
     _data = value;
     _hasPendingTextLayoutUpdate = true;
     _markAncestorSubtreeIntrinsicMeasurementUpdate();
+    _markAncestorInlineCollectionNeedsUpdate();
     // Text content changed. Since text boxes are measured and painted by the
     // parent's inline formatting context, notify the parent to relayout so the
     // paragraph gets rebuilt with the new text content.

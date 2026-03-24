@@ -1,5 +1,7 @@
 import 'dart:convert';
+import 'dart:developer' as developer;
 import 'dart:io';
+import 'dart:isolate';
 import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
@@ -7,8 +9,13 @@ import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:integration_test/integration_test.dart';
 import 'package:path/path.dart' as path;
+import 'package:vm_service/vm_service.dart' as vm;
+import 'package:vm_service/vm_service_io.dart';
 import 'package:webf/dom.dart' as dom;
 import 'package:webf/webf.dart';
+
+final developer.UserTag _paragraphRebuildProfileTag =
+    developer.UserTag('profile_hotspots.paragraph_rebuild');
 
 void main() {
   final IntegrationTestWidgetsFlutterBinding binding =
@@ -127,15 +134,26 @@ void main() {
         widths: const <String>['340px', '190px', '260px', '220px'],
       );
 
-      await binding.traceAction(
-        () async {
-          await _runParagraphRebuildLoop(
-            prepared,
-            mutationIterations: 48,
-            widths: const <String>['340px', '190px', '260px', '220px'],
+      binding.reportData!['paragraph_rebuild_cpu_samples'] =
+          await _captureCpuSamples(
+        userTag: _paragraphRebuildProfileTag,
+        action: () async {
+          await binding.traceAction(
+            () async {
+              await _runParagraphRebuildLoop(
+                prepared,
+                mutationIterations: 48,
+                widths: const <String>[
+                  '340px',
+                  '190px',
+                  '260px',
+                  '220px',
+                ],
+              );
+            },
+            reportKey: 'paragraph_rebuild_timeline',
           );
         },
-        reportKey: 'paragraph_rebuild_timeline',
       );
 
       expect(host.getBoundingClientRect().width, greaterThan(0));
@@ -176,6 +194,50 @@ void main() {
   });
 }
 
+Future<Map<String, dynamic>> _captureCpuSamples({
+  required Future<void> Function() action,
+  required developer.UserTag userTag,
+}) async {
+  final developer.ServiceProtocolInfo info = await developer.Service.getInfo();
+  final Uri? serviceUri = info.serverWebSocketUri;
+  if (serviceUri == null) {
+    throw StateError('VM service websocket URI is unavailable.');
+  }
+
+  // ignore: deprecated_member_use
+  final String? isolateId = developer.Service.getIsolateID(Isolate.current);
+  if (isolateId == null) {
+    throw StateError('Current isolate is not visible to the VM service.');
+  }
+
+  final vm.VmService service = await vmServiceConnectUri(serviceUri.toString());
+  try {
+    final int startMicros = (await service.getVMTimelineMicros()).timestamp!;
+    final developer.UserTag previousTag = userTag.makeCurrent();
+    try {
+      await action();
+    } finally {
+      previousTag.makeCurrent();
+    }
+
+    final int endMicros = (await service.getVMTimelineMicros()).timestamp!;
+    final int timeExtentMicros =
+        endMicros > startMicros ? endMicros - startMicros : 1;
+    final vm.CpuSamples samples =
+        await service.getCpuSamples(isolateId, startMicros, timeExtentMicros);
+
+    return <String, dynamic>{
+      'profileLabel': userTag.label,
+      'isolateId': isolateId,
+      'timeOriginMicros': startMicros,
+      'timeExtentMicros': timeExtentMicros,
+      'samples': samples.toJson(),
+    };
+  } finally {
+    await service.dispose();
+  }
+}
+
 Future<void> _configureProfileTestEnvironment() async {
   NavigatorModule.setCustomUserAgent('webf/profile-tests');
 
@@ -184,8 +246,7 @@ Future<void> _configureProfileTestEnvironment() async {
   if (externalBridgePath != null && externalBridgePath.isNotEmpty) {
     // The macOS test app already embeds libwebf.dylib. Forcing another path
     // here loads a second copy of the bridge and splits bridge globals/TLS.
-    WebFDynamicLibrary.dynamicLibraryPath =
-        path.normalize(externalBridgePath);
+    WebFDynamicLibrary.dynamicLibraryPath = path.normalize(externalBridgePath);
   }
 
   final Directory tempDirectory = Directory(
@@ -339,7 +400,8 @@ String _buildDirectionInheritanceHtml({
   required int depth,
   required int runCount,
 }) {
-  final String openNodes = List<String>.filled(depth, '<div class="level">').join();
+  final String openNodes =
+      List<String>.filled(depth, '<div class="level">').join();
   final String closeNodes = List<String>.filled(depth, '</div>').join();
   final String content = List<String>.generate(
     runCount,
@@ -383,12 +445,12 @@ String _buildTextAlignInheritanceHtml({
   required int depth,
   required int runCount,
 }) {
-  final String openNodes = List<String>.filled(depth, '<div class="level">').join();
+  final String openNodes =
+      List<String>.filled(depth, '<div class="level">').join();
   final String closeNodes = List<String>.filled(depth, '</div>').join();
   final String content = List<String>.generate(
     runCount,
-    (int index) =>
-        '<span class="token">alignment sample ${index + 1}</span>',
+    (int index) => '<span class="token">alignment sample ${index + 1}</span>',
   ).join();
 
   return '''
@@ -596,7 +658,8 @@ class _PreparedProfileCase {
   final WidgetTester tester;
 
   dom.Element getElementById(String id) {
-    final dom.Element? element = controller.view.document.getElementById(<String>[id]);
+    final dom.Element? element =
+        controller.view.document.getElementById(<String>[id]);
     expect(element, isNotNull, reason: 'Expected element with id "$id".');
     return element!;
   }

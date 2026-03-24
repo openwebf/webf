@@ -28,21 +28,32 @@ mixin CSSOpacityMixin on RenderStyle {
   set opacity(double? value) {
     if (_opacity == value) return;
 
+    final double previousOpacity = opacity;
+    final int previousAlpha = ui.Color.getAlphaFromOpacity(previousOpacity);
+    final bool previousCreatesStackingContext = previousOpacity < 1.0;
+    final bool previousNeedsCompositing = previousAlpha != 0 && previousAlpha != 255;
+
     _opacity = value;
-    int alpha = ui.Color.getAlphaFromOpacity(opacity);
+    final double nextOpacity = opacity;
+    final int alpha = ui.Color.getAlphaFromOpacity(nextOpacity);
+    final bool nextCreatesStackingContext = nextOpacity < 1.0;
+    final bool nextNeedsCompositing = alpha != 0 && alpha != 255;
     getSelfRenderBoxValue((renderBoxModel, _) {
       renderBoxModel.alpha = alpha;
     });
 
-    // Mark the compositing state for this render object as dirty
-    // cause it will create new layer when opacity is valid.
-    if (alpha != 0 && alpha != 255) {
+    // Opacity only changes compositing requirements when it crosses the
+    // intermediate alpha range that uses an opacity layer.
+    if (previousNeedsCompositing != nextNeedsCompositing) {
       markNeedsCompositingBitsUpdate();
     }
 
-    // Opacity effect the stacking context.
-    RenderStyle? parentRenderStyle = getAttachedRenderParentRenderStyle();
-    parentRenderStyle?.markChildrenNeedsSort();
+    // Opacity affects stacking order only when it starts or stops creating a
+    // stacking context. Fractional opacity changes within the same range do not
+    // require resorting siblings every frame.
+    if (previousCreatesStackingContext != nextCreatesStackingContext) {
+      getAttachedRenderParentRenderStyle()?.markChildrenNeedsSort();
+    }
 
     markNeedsPaint();
   }

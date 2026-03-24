@@ -47,6 +47,7 @@ dev_dependencies:
     sdk: flutter
   test: ^1.20.2
   ansicolor: ^2.0.1
+  vm_service: ^14.2.4
 
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec

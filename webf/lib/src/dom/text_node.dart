@@ -8,6 +8,7 @@
  */
 import 'package:flutter/rendering.dart';
 import 'package:flutter/widgets.dart' as flutter;
+import 'package:webf/css.dart';
 import 'package:webf/dom.dart';
 import 'package:webf/rendering.dart';
 import 'package:webf/bridge.dart';
@@ -38,12 +39,26 @@ class TextNode extends CharacterData {
 
     _data = newData;
 
-
-    // Notify attached widgets to rebuild
+    // Update attached render objects immediately so paragraph-based inline
+    // layout sees the new text even when no parent widget rebuild occurs.
     for (var element in _attachedFlutterWidgetElements) {
       if (element.mounted) {
+        element.renderObject.data = newData;
         element.markNeedsBuild();
       }
+    }
+
+    Element? currentElement = parentElement;
+    while (currentElement != null) {
+      currentElement.renderStyle.markNeedsInlineCollection();
+      currentElement.renderStyle.requestWidgetToRebuild(
+        UpdateChildNodeUpdateReason(),
+      );
+      currentElement.renderStyle.attachedRenderBoxModel?.markNeedsLayout();
+      if (currentElement.renderStyle.display != CSSDisplay.inline) {
+        break;
+      }
+      currentElement = currentElement.parentElement;
     }
 
     // Also mark the nearest render container for layout so IFC can rebuild
