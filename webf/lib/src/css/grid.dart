@@ -851,7 +851,11 @@ mixin CSSGridMixin on RenderStyle {
   set gridColumnStart(GridPlacement? value) {
     if (_gridColumnStart == value) return;
     _gridColumnStart = value;
+    markNeedsIntrinsicMeasurement('gridColumnStart');
     markNeedsLayout();
+    if (isParentRenderGridLayout()) {
+      markParentNeedsLayout();
+    }
   }
 
   GridPlacement? _gridColumnEnd;
@@ -860,7 +864,11 @@ mixin CSSGridMixin on RenderStyle {
   set gridColumnEnd(GridPlacement? value) {
     if (_gridColumnEnd == value) return;
     _gridColumnEnd = value;
+    markNeedsIntrinsicMeasurement('gridColumnEnd');
     markNeedsLayout();
+    if (isParentRenderGridLayout()) {
+      markParentNeedsLayout();
+    }
   }
 
   GridPlacement? _gridRowStart;
@@ -869,7 +877,11 @@ mixin CSSGridMixin on RenderStyle {
   set gridRowStart(GridPlacement? value) {
     if (_gridRowStart == value) return;
     _gridRowStart = value;
+    markNeedsIntrinsicMeasurement('gridRowStart');
     markNeedsLayout();
+    if (isParentRenderGridLayout()) {
+      markParentNeedsLayout();
+    }
   }
 
   GridPlacement? _gridRowEnd;
@@ -878,7 +890,11 @@ mixin CSSGridMixin on RenderStyle {
   set gridRowEnd(GridPlacement? value) {
     if (_gridRowEnd == value) return;
     _gridRowEnd = value;
+    markNeedsIntrinsicMeasurement('gridRowEnd');
     markNeedsLayout();
+    if (isParentRenderGridLayout()) {
+      markParentNeedsLayout();
+    }
   }
 
   GridTemplateAreasDefinition? _gridTemplateAreasDefinition;

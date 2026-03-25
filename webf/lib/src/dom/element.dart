@@ -1961,6 +1961,12 @@ abstract class Element extends ContainerNode
     if (element.children.isNotEmpty) {
       for (final Element child in element.children) {
         if (!child.renderStyle.hasColor) {
+          final String specifiedColor =
+              child.style.getPropertyValue(COLOR).trim().toLowerCase();
+          if (specifiedColor == CURRENT_COLOR) {
+            child.renderStyle.markNeedsIntrinsicMeasurement('currentColor');
+            child.renderStyle.markNeedsLayout();
+          }
           _updateColorRelativePropertyWithColor(child);
         }
       }

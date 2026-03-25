@@ -170,7 +170,6 @@ mixin CSSTextMixin on RenderStyle {
   }
 
   FontStyle? _fontStyle;
-
   @override
   FontStyle get fontStyle {
     // Get style from self or closest parent if specified style property is not set
@@ -211,7 +210,6 @@ mixin CSSTextMixin on RenderStyle {
   }
 
   List<String>? _fontFamily;
-
   @override
   List<String>? get fontFamily {
     // Get style from self or closest parent if specified style property is not set
@@ -356,7 +354,6 @@ mixin CSSTextMixin on RenderStyle {
 
   // text-indent (inherited)
   CSSLengthValue? _textIndent;
-
   CSSLengthValue get textIndent {
     if (_textIndent == null && parent != null) {
       return (parent as CSSRenderStyle).textIndent;
@@ -409,7 +406,6 @@ mixin CSSTextMixin on RenderStyle {
 
   // word-break (inherited)
   WordBreak? _wordBreak;
-
   @override
   WordBreak get wordBreak {
     if (_wordBreak == null && parent != null) {
@@ -549,6 +545,17 @@ mixin CSSTextMixin on RenderStyle {
     }
 
     target.visitChildren(visitor);
+
+    void renderVisitor(RenderObject child) {
+      if (child is RenderBoxModel) {
+        if (child.renderStyle.target.style[propertyName].isEmpty) {
+          child.renderStyle.resetInheritedTextCaches();
+        }
+      }
+      child.visitChildren(renderVisitor);
+    }
+
+    visitChildren(renderVisitor);
   }
 
   @override
@@ -650,14 +657,25 @@ mixin CSSTextMixin on RenderStyle {
   // Mark all nested layout and text children as needs layout when properties that will affect both
   // text and layout (line-height, white-space) changes.
   void _markNestChildrenTextAndLayoutNeedsLayout(RenderStyle renderStyle, String styleProperty) {
+    if (renderStyle is CSSTextMixin) {
+      renderStyle._markTextNeedsLayout();
+    }
     if (renderStyle.isSelfRenderLayoutBox()) {
       renderStyle.markNeedsIntrinsicMeasurement('textLayout:$styleProperty');
       renderStyle.markNeedsLayout();
 
       visitor(RenderObject child) {
         if (child is RenderLayoutBox && child is! RenderEventListener) {
+          final String specifiedValue =
+              child.renderStyle.target.style.getPropertyValue(styleProperty);
+          final bool dependsOnCurrentColor = styleProperty == COLOR &&
+              specifiedValue.trim().toLowerCase() == CURRENT_COLOR;
           // Only need to layout when the specified style property is not set.
-          if (child.renderStyle.target.style[styleProperty].isEmpty) {
+          if (child.renderStyle.target.style[styleProperty].isEmpty ||
+              dependsOnCurrentColor) {
+            if (dependsOnCurrentColor && child.renderStyle is CSSTextMixin) {
+              (child.renderStyle as CSSTextMixin)._markTextNeedsLayout();
+            }
             _markNestChildrenTextAndLayoutNeedsLayout(child.renderStyle, styleProperty);
           }
         } else {
@@ -673,8 +691,13 @@ mixin CSSTextMixin on RenderStyle {
   // None inheritable style change should only loop direct children to update text node with specified
   // style property not set in its parent.
   void _markTextNeedsLayout() {
+    markNeedsInlineCollection();
+    markNeedsIntrinsicMeasurement('textDirectSelf');
+    markNeedsLayout();
+    requestWidgetToRebuild(UpdateChildNodeUpdateReason());
     visitor(RenderObject child) {
       if (child is RenderTextBox) {
+        child.markTextStyleNeedsLayout();
         child.renderStyle.markNeedsIntrinsicMeasurement('textDirect');
         child.renderStyle.markNeedsLayout();
       } else {
@@ -689,15 +712,27 @@ mixin CSSTextMixin on RenderStyle {
   // Inheritable style change should loop nest children to update text node with specified style property
   // not set in its parent.
   void _markChildrenTextNeedsLayout(RenderStyle renderStyle, String styleProperty) {
+    if (renderStyle is CSSTextMixin) {
+      renderStyle._markTextNeedsLayout();
+    }
     visitor(dom.Node child) {
       if (child is dom.TextNode) {
+        child.markTextStyleNeedsLayout();
         final RenderStyle parentStyle = child.parentElement!.renderStyle;
         parentStyle.markNeedsIntrinsicMeasurement('textInherited:$styleProperty');
         parentStyle.markNeedsLayout();
       }
 
-      if (child is dom.Element && child.style[styleProperty].isEmpty) {
-        child.visitChildren(visitor);
+      if (child is dom.Element) {
+        final String specifiedValue = child.style.getPropertyValue(styleProperty);
+        final bool dependsOnCurrentColor = styleProperty == COLOR &&
+            specifiedValue.trim().toLowerCase() == CURRENT_COLOR;
+        if (child.style[styleProperty].isEmpty || dependsOnCurrentColor) {
+          if (dependsOnCurrentColor && child.renderStyle is CSSTextMixin) {
+            (child.renderStyle as CSSTextMixin)._markTextNeedsLayout();
+          }
+          child.visitChildren(visitor);
+        }
       }
     }
 

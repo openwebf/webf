@@ -798,10 +798,88 @@ abstract class RenderStyle extends DiagnosticableTree with Diagnosticable {
   double getHeightByAspectRatio();
 
   final Map<flutter.RenderObjectElement, RenderBoxModel> _widgetRenderObjects = {};
+  RenderBoxModel? _cachedAttachedSizedRenderBoxModel;
+  RenderBoxModel? _cachedAttachedRenderBoxModel;
+  RenderBoxModel? _cachedParentLookupRenderBoxModel;
+  RenderObject? _cachedParentLookupDirectParent;
+  RenderObject? _cachedParentLookupRenderObject;
+  RenderStyle? _cachedAttachedParentRenderStyle;
 
   Map<flutter.RenderObjectElement, RenderBoxModel> get widgetRenderObjects => _widgetRenderObjects;
 
   Iterable<RenderBoxModel> get widgetRenderObjectIterator => _widgetRenderObjects.values;
+
+  @pragma('vm:prefer-inline')
+  void _clearRenderObjectAccessCaches() {
+    _cachedAttachedSizedRenderBoxModel = null;
+    _cachedAttachedRenderBoxModel = null;
+    _cachedParentLookupRenderBoxModel = null;
+    _cachedParentLookupDirectParent = null;
+    _cachedParentLookupRenderObject = null;
+    _cachedAttachedParentRenderStyle = null;
+  }
+
+  @pragma('vm:prefer-inline')
+  RenderBoxModel? _preferredAttachedRenderBoxModel({required bool requireSize}) {
+    if (requireSize) {
+      final RenderBoxModel? cached = _cachedAttachedSizedRenderBoxModel;
+      if (cached != null && cached.attached && cached.hasSize) {
+        return cached;
+      }
+    } else {
+      final RenderBoxModel? cached = _cachedAttachedRenderBoxModel;
+      if (cached != null && cached.attached) {
+        return cached;
+      }
+    }
+
+    RenderBoxModel? resolved =
+        _widgetRenderObjects.values.firstWhereOrNull((renderBox) => renderBox.attached && renderBox.hasSize);
+    resolved ??= _widgetRenderObjects.values.firstWhereOrNull((renderBox) => renderBox.attached);
+
+    if (resolved != null) {
+      _cachedAttachedRenderBoxModel = resolved;
+      if (resolved.hasSize) {
+        _cachedAttachedSizedRenderBoxModel = resolved;
+      } else if (identical(_cachedAttachedSizedRenderBoxModel, resolved)) {
+        _cachedAttachedSizedRenderBoxModel = null;
+      }
+    }
+
+    return resolved;
+  }
+
+  @pragma('vm:prefer-inline')
+  RenderObject? _resolveAttachedParentRenderObject(RenderBoxModel renderBoxModel) {
+    final RenderObject? directParent = renderBoxModel.parent;
+    if (identical(_cachedParentLookupRenderBoxModel, renderBoxModel) &&
+        identical(_cachedParentLookupDirectParent, directParent)) {
+      return _cachedParentLookupRenderObject;
+    }
+
+    RenderObject? parent = directParent;
+    while (parent != null) {
+      if (parent is RenderEventListener && identical(parent.renderStyle, this)) {
+        parent = parent.parent;
+        continue;
+      }
+      if (parent is RenderLayoutBoxWrapper && identical(parent.renderStyle, this)) {
+        parent = parent.parent;
+        continue;
+      }
+      if (parent is RenderFlowLayout && identical(parent.renderStyle, this)) {
+        parent = parent.parent;
+        continue;
+      }
+      break;
+    }
+
+    _cachedParentLookupRenderBoxModel = renderBoxModel;
+    _cachedParentLookupDirectParent = directParent;
+    _cachedParentLookupRenderObject = parent;
+    _cachedAttachedParentRenderStyle = parent is RenderBoxModel ? parent.renderStyle : null;
+    return parent;
+  }
 
   // For some style changes, we needs to upgrade
   void requestWidgetToRebuild(AdapterUpdateReason reason) {
@@ -1185,7 +1263,17 @@ abstract class RenderStyle extends DiagnosticableTree with Diagnosticable {
 
   @pragma('vm:prefer-inline')
   T? getAttachedRenderParentRenderStyle<T extends RenderStyle>() {
-    return getRenderBoxValueByType(RenderObjectGetType.parent, (_, renderStyle) => renderStyle) as T? ??
+    final RenderBoxModel? renderBoxModel = attachedRenderBoxModel;
+    if (renderBoxModel == null) {
+      return target.parentElement?.renderStyle as T?;
+    }
+
+    final RenderObject? parent = _resolveAttachedParentRenderObject(renderBoxModel);
+    if (parent is RenderBoxModel) {
+      return parent.renderStyle as T?;
+    }
+
+    return _cachedAttachedParentRenderStyle as T? ??
         target.parentElement?.renderStyle as T?;
   }
 
@@ -1414,6 +1502,16 @@ abstract class RenderStyle extends DiagnosticableTree with Diagnosticable {
   @pragma('vm:prefer-inline')
   void markNeedsInlineCollection() {
     everyAttachedWidgetRenderBox((_, renderObject) {
+      void markOwnedFlowSubtree(RenderObject node) {
+        if (node is RenderFlowLayout && identical(node.renderStyle, this)) {
+          node.markNeedsCollectInlines();
+          node.markNeedsLayout();
+        }
+        node.visitChildren(markOwnedFlowSubtree);
+      }
+
+      markOwnedFlowSubtree(renderObject);
+
       RenderObject? node = renderObject;
       while (node != null) {
         if (node is RenderFlowLayout) {
@@ -1503,9 +1601,8 @@ abstract class RenderStyle extends DiagnosticableTree with Diagnosticable {
   }
 
   dynamic getRenderBoxValueByType(RenderObjectGetType getType, RenderBoxModelGetter getter) {
-    RenderBoxModel? widgetRenderBoxModel =
-        widgetRenderObjectIterator.firstWhereOrNull((renderBox) => renderBox.attached && renderBox.hasSize) ??
-            widgetRenderObjectIterator.firstWhereOrNull((renderBox) => renderBox.attached);
+    final RenderBoxModel? widgetRenderBoxModel =
+        _preferredAttachedRenderBoxModel(requireSize: true);
 
     if (widgetRenderBoxModel == null) return null;
 
@@ -1527,26 +1624,7 @@ abstract class RenderStyle extends DiagnosticableTree with Diagnosticable {
         return matcher(renderBoxModel, renderBoxModel.renderStyle);
 
       case RenderObjectGetType.parent:
-        final directParent = renderBoxModel.parent;
-        RenderObject? parent = directParent;
-        while (parent != null) {
-          // Only skip wrappers that belong to this same element (same RenderStyle),
-          // otherwise we may accidentally skip a real ancestor element's render box
-          // and break layout/constraint resolution for many specs.
-          if (parent is RenderEventListener && identical(parent.renderStyle, this)) {
-            parent = parent.parent;
-            continue;
-          }
-          if (parent is RenderLayoutBoxWrapper && identical(parent.renderStyle, this)) {
-            parent = parent.parent;
-            continue;
-          }
-          if (parent is RenderFlowLayout && identical(parent.renderStyle, this)) {
-            parent = parent.parent;
-            continue;
-          }
-          break;
-        }
+        final RenderObject? parent = _resolveAttachedParentRenderObject(renderBoxModel);
         return matcher(parent, parent is RenderBoxModel ? parent.renderStyle : null);
 
       case RenderObjectGetType.firstChild:
@@ -1629,6 +1707,7 @@ abstract class RenderStyle extends DiagnosticableTree with Diagnosticable {
   }
 
   void removeAllRenderObject() {
+    _clearRenderObjectAccessCaches();
     _widgetRenderObjects.clear();
   }
 
@@ -1641,10 +1720,12 @@ abstract class RenderStyle extends DiagnosticableTree with Diagnosticable {
 
   void addOrUpdateWidgetRenderObjects(
       flutter.RenderObjectElement ownerRenderObjectElement, RenderBoxModel targetRenderBoxModel) {
+    _clearRenderObjectAccessCaches();
     _widgetRenderObjects[ownerRenderObjectElement] = targetRenderBoxModel;
   }
 
   void unmountWidgetRenderObject(flutter.Element ownerRenderObjectElement) {
+    _clearRenderObjectAccessCaches();
     _widgetRenderObjects.remove(ownerRenderObjectElement);
   }
 
@@ -1653,7 +1734,7 @@ abstract class RenderStyle extends DiagnosticableTree with Diagnosticable {
   }
 
   RenderBoxModel? get attachedRenderBoxModel {
-    return _widgetRenderObjects.values.firstWhereOrNull((renderBox) => renderBox.attached);
+    return _preferredAttachedRenderBoxModel(requireSize: false);
   }
 
   flutter.RenderObjectElement? get attachedRenderObjectElement {
@@ -1688,6 +1769,7 @@ abstract class RenderStyle extends DiagnosticableTree with Diagnosticable {
   }
 
   void dispose() {
+    _clearRenderObjectAccessCaches();
     _widgetRenderObjects.clear();
   }
 }
