@@ -1,3 +1,17 @@
+## 0.24.23
+
+### Performance Improvements
+
+- **Rendering/Flex/Inline**: further reduce relayout cost in text-heavy flex containers by
+  improving flex run-metric fast paths, trimming repeated paragraph/layout recomputation, and
+  reducing repeated style/baseline lookup work during inline layout.
+
+### Bug Fixes
+
+- **Rendering/Text/CSS**: fix stale nested text rendering after descendant class, style, and CSS
+  variable updates by invalidating owned inline formatting contexts and direct text layout more
+  precisely, including `currentColor`-driven descendants.
+
 ## 0.24.22
 
 ### Performance Improvements
