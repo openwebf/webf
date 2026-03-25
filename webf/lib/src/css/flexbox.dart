@@ -255,7 +255,9 @@ mixin CSSFlexboxMixin on RenderStyle {
     if (_alignSelf == value) return;
     _alignSelf = value;
     if (isParentRenderFlexLayout() || isParentRenderGridLayout()) {
+      markNeedsIntrinsicMeasurement('flexItemAlignment');
       markNeedsLayout();
+      markParentNeedsLayout();
     }
   }
 
@@ -269,7 +271,9 @@ mixin CSSFlexboxMixin on RenderStyle {
     }
     _flexBasis = value;
     if (isParentRenderFlexLayout()) {
+      markNeedsIntrinsicMeasurement('flexBasis');
       markNeedsLayout();
+      markParentNeedsLayout();
     }
   }
 
@@ -280,7 +284,9 @@ mixin CSSFlexboxMixin on RenderStyle {
     if (_flexGrow == value) return;
     _flexGrow = value;
     if (isParentRenderFlexLayout()) {
+      markNeedsIntrinsicMeasurement('flexGrow');
       markNeedsLayout();
+      markParentNeedsLayout();
     }
   }
 
@@ -291,7 +297,9 @@ mixin CSSFlexboxMixin on RenderStyle {
     if (_flexShrink == value) return;
     _flexShrink = value;
     if (isParentRenderFlexLayout()) {
+      markNeedsIntrinsicMeasurement('flexShrink');
       markNeedsLayout();
+      markParentNeedsLayout();
     }
   }
 

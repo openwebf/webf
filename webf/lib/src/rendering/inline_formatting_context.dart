@@ -65,6 +65,9 @@ bool _containsInteriorWhitespace(String input) {
   return false;
 }
 
+const bool _enableInlineProfileSections =
+    bool.fromEnvironment('WEBF_ENABLE_INLINE_PROFILE_SECTIONS');
+
 /// Manages the inline formatting context for a block container.
 /// Based on Blink's InlineNode.
 class InlineFormattingContext {
@@ -77,7 +80,7 @@ class InlineFormattingContext {
 
   T _profileSection<T>(String label, T Function() action,
       {Map<String, Object?>? arguments}) {
-    if (kReleaseMode) {
+    if (kReleaseMode || !_enableInlineProfileSections) {
       return action();
     }
 
@@ -225,6 +228,10 @@ class InlineFormattingContext {
       <int, List<ui.TextBox>>{};
   final Map<int, int> _cachedRectLineIndices = <int, int>{};
   List<ui.Paragraph>? _cachedTextRunParagraphsForReuse;
+  bool? _cachedAncestorHasHorizontalScroll;
+  static const int _resolvedLayoutPassCacheLimit = 8;
+  final Map<int, _ResolvedLayoutPassCacheEntry> _resolvedLayoutPassCache =
+      <int, _ResolvedLayoutPassCacheEntry>{};
 
   // Public helpers for consumers outside IFC to query inline element metrics
   // without relying on legacy line boxes.
@@ -489,6 +496,140 @@ class InlineFormattingContext {
     _cachedDecorationTextMetrics.clear();
     _resetParagraphGeometryCaches();
     _cachedTextRunParagraphsForReuse = null;
+    _cachedAncestorHasHorizontalScroll = null;
+  }
+
+  @pragma('vm:prefer-inline')
+  int _hashCombineInt(int hash, int value) {
+    hash = 0x1fffffff & (hash + value);
+    hash = 0x1fffffff & (hash + ((0x0007ffff & hash) << 10));
+    return hash ^ (hash >> 6);
+  }
+
+  @pragma('vm:prefer-inline')
+  int _hashFinishInt(int hash) {
+    hash = 0x1fffffff & (hash + ((0x03ffffff & hash) << 3));
+    hash ^= (hash >> 11);
+    return 0x1fffffff & (hash + ((0x00003fff & hash) << 15));
+  }
+
+  @pragma('vm:prefer-inline')
+  int _quantizeDouble(double value) {
+    if (!value.isFinite) {
+      if (value.isNaN) return 0x1ffffffe;
+      return value.isNegative ? -0x1ffffffe : 0x1ffffffd;
+    }
+    return (value * 100).round();
+  }
+
+  int _resolvedLayoutStyleSignature(CSSRenderStyle style) {
+    int hash = 0;
+    hash = _hashCombineInt(hash, style.display.hashCode);
+    hash = _hashCombineInt(hash, style.direction.hashCode);
+    hash = _hashCombineInt(hash, style.whiteSpace.hashCode);
+    hash = _hashCombineInt(hash, style.wordBreak.hashCode);
+    hash = _hashCombineInt(hash, style.textAlign.hashCode);
+    hash = _hashCombineInt(hash, style.textTransform.hashCode);
+    hash = _hashCombineInt(hash, style.verticalAlign.hashCode);
+    hash = _hashCombineInt(hash, style.fontStyle.hashCode);
+    hash = _hashCombineInt(hash, style.fontWeight.value);
+    hash = _hashCombineInt(hash, _quantizeDouble(style.fontSize.computedValue));
+    hash = _hashCombineInt(hash, _quantizeDouble(style.lineHeight.computedValue));
+    hash = _hashCombineInt(hash, _quantizeDouble(style.textIndent.computedValue));
+    hash = _hashCombineInt(
+      hash,
+      style.letterSpacing == null ? 0 : _quantizeDouble(style.letterSpacing!.computedValue),
+    );
+    hash = _hashCombineInt(
+      hash,
+      style.wordSpacing == null ? 0 : _quantizeDouble(style.wordSpacing!.computedValue),
+    );
+    hash = _hashCombineInt(hash, _quantizeDouble(style.marginLeft.computedValue));
+    hash = _hashCombineInt(hash, _quantizeDouble(style.marginRight.computedValue));
+    hash = _hashCombineInt(hash, _quantizeDouble(style.marginTop.computedValue));
+    hash = _hashCombineInt(hash, _quantizeDouble(style.marginBottom.computedValue));
+    hash = _hashCombineInt(hash, _quantizeDouble(style.paddingLeft.computedValue));
+    hash = _hashCombineInt(hash, _quantizeDouble(style.paddingRight.computedValue));
+    hash = _hashCombineInt(hash, _quantizeDouble(style.paddingTop.computedValue));
+    hash = _hashCombineInt(hash, _quantizeDouble(style.paddingBottom.computedValue));
+    hash = _hashCombineInt(hash, _quantizeDouble(style.effectiveBorderLeftWidth.computedValue));
+    hash = _hashCombineInt(hash, _quantizeDouble(style.effectiveBorderRightWidth.computedValue));
+    hash = _hashCombineInt(hash, _quantizeDouble(style.effectiveBorderTopWidth.computedValue));
+    hash = _hashCombineInt(hash, _quantizeDouble(style.effectiveBorderBottomWidth.computedValue));
+    return _hashFinishInt(hash);
+  }
+
+  int _resolvedLayoutItemSignature(InlineItem item) {
+    int hash = 0;
+    hash = _hashCombineInt(hash, item.type.hashCode);
+    hash = _hashCombineInt(hash, item.startOffset);
+    hash = _hashCombineInt(hash, item.endOffset);
+    if (item.direction != null) {
+      hash = _hashCombineInt(hash, item.direction.hashCode);
+    }
+    final CSSRenderStyle? style = item.style;
+    if (style != null) {
+      hash = _hashCombineInt(hash, _resolvedLayoutStyleSignature(style));
+    }
+    final RenderBoxModel? renderBox = item.renderBox;
+    if (renderBox != null) {
+      hash = _hashCombineInt(hash, renderBox.hashCode);
+      final Size? boxSize = renderBox.boxSize;
+      if (boxSize != null) {
+        hash = _hashCombineInt(hash, _quantizeDouble(boxSize.width));
+        hash = _hashCombineInt(hash, _quantizeDouble(boxSize.height));
+      }
+    }
+    return _hashFinishInt(hash);
+  }
+
+  int _resolvedLayoutPassSignature(BoxConstraints constraints) {
+    int hash = 0;
+    hash = _hashCombineInt(hash, _items.length);
+    hash = _hashCombineInt(hash, _textContent.hashCode);
+    hash = _hashCombineInt(hash, _quantizeDouble(constraints.minWidth));
+    hash = _hashCombineInt(hash, _quantizeDouble(constraints.maxWidth));
+    hash = _hashCombineInt(hash, _quantizeDouble(constraints.minHeight));
+    hash = _hashCombineInt(hash, _quantizeDouble(constraints.maxHeight));
+    hash = _hashCombineInt(
+      hash,
+      _resolvedLayoutStyleSignature((container as RenderBoxModel).renderStyle),
+    );
+    for (final InlineItem item in _items) {
+      hash = _hashCombineInt(hash, _resolvedLayoutItemSignature(item));
+    }
+    return _hashFinishInt(hash);
+  }
+
+  _ResolvedLayoutPassCacheEntry? _lookupResolvedLayoutPassCache(int signature) {
+    final _ResolvedLayoutPassCacheEntry? entry =
+        _resolvedLayoutPassCache.remove(signature);
+    if (entry != null) {
+      _resolvedLayoutPassCache[signature] = entry;
+    }
+    return entry;
+  }
+
+  void _storeResolvedLayoutPassCache(
+    int signature, {
+    required Set<RenderBoxModel> forceRightExtrasOwners,
+    required List<double>? textRunBaselineOffsets,
+    required List<double>? atomicBaselineOffsets,
+  }) {
+    _resolvedLayoutPassCache.remove(signature);
+    if (_resolvedLayoutPassCache.length >= _resolvedLayoutPassCacheLimit) {
+      final int eldestKey = _resolvedLayoutPassCache.keys.first;
+      _resolvedLayoutPassCache.remove(eldestKey);
+    }
+    _resolvedLayoutPassCache[signature] = _ResolvedLayoutPassCacheEntry(
+      forceRightExtrasOwners: forceRightExtrasOwners.toList(growable: false),
+      textRunBaselineOffsets: textRunBaselineOffsets == null
+          ? null
+          : List<double>.of(textRunBaselineOffsets, growable: false),
+      atomicBaselineOffsets: atomicBaselineOffsets == null
+          ? null
+          : List<double>.of(atomicBaselineOffsets, growable: false),
+    );
   }
 
   @pragma('vm:prefer-inline')
@@ -607,6 +748,10 @@ class InlineFormattingContext {
   }
 
   bool _ancestorHasHorizontalScroll() {
+    final bool? cached = _cachedAncestorHasHorizontalScroll;
+    if (cached != null) {
+      return cached;
+    }
     RenderObject? p = container.parent;
     while (p != null) {
       if (p is RenderBoxModel) {
@@ -619,6 +764,7 @@ class InlineFormattingContext {
         }
         final o = p.renderStyle.effectiveOverflowX;
         if (o == CSSOverflowType.scroll || o == CSSOverflowType.auto) {
+          _cachedAncestorHasHorizontalScroll = true;
           return true;
         }
       }
@@ -626,6 +772,7 @@ class InlineFormattingContext {
       if (p is RenderWidget) break;
       p = p.parent;
     }
+    _cachedAncestorHasHorizontalScroll = false;
     return false;
   }
 
@@ -1306,6 +1453,7 @@ class InlineFormattingContext {
   /// Mark that inline collection is needed.
   void setNeedsCollectInlines() {
     _needsCollectInlines = true;
+    _resolvedLayoutPassCache.clear();
     // Debug: Log when recollection is triggered
     // print('InlineFormattingContext: setNeedsCollectInlines called');
   }
@@ -1318,6 +1466,11 @@ class InlineFormattingContext {
       _collectInlines();
       _needsCollectInlines = false;
     }
+  }
+
+  int layoutReuseSignature(BoxConstraints constraints) {
+    prepareLayout();
+    return _resolvedLayoutPassSignature(constraints);
   }
 
   // Expose paragraph intrinsic widths when available.
@@ -1695,41 +1848,64 @@ class InlineFormattingContext {
     try {
       // Prepare items if needed
       prepareLayout();
+      final int layoutSignature = _resolvedLayoutPassSignature(constraints);
+      final _ResolvedLayoutPassCacheEntry? resolvedLayoutCacheEntry =
+          _lookupResolvedLayoutPassCache(layoutSignature);
       _resetBuildAndLayoutParagraphCaches();
-      // Two-pass build: first lay out without right-extras placeholders to
-      // observe natural breaks, then re-layout with right-extras only for
-      // inline elements that do not fragment across lines.
-      _suppressAllRightExtras = true;
-      _forceRightExtrasOwners.clear();
-      _buildAndLayoutParagraph(constraints);
-      // Compute baseline offsets for text-run vertical-align placeholders (top/middle/bottom)
-      bool needsVARebuild =
-          _computeTextRunBaselineOffsets() | _computeAtomicBaselineOffsets();
-
-      // Second pass: Only add right-extras placeholders for inline elements that
-      // did NOT fragment across lines in pass 1. For fragmented spans, we rely on
-      // per-line trailing reserves to avoid altering the chosen breaks.
-      _forceRightExtrasOwners.clear();
-      for (final entry in _elementRanges.entries) {
-        final box = entry.key;
-        final (int sIdx, int eIdx) = entry.value;
-        if (eIdx <= sIdx) continue;
-        final styleR = box.renderStyle;
-        final double extraR = styleR.paddingRight.computedValue +
-            styleR.effectiveBorderRightWidth.computedValue +
-            styleR.marginRight.computedValue;
-        if (extraR <= 0) continue;
-        final rects = _paragraph!.getBoxesForRange(sIdx, eIdx);
-        if (rects.isEmpty) continue;
-        final int firstLine = _lineIndexForRect(rects.first);
-        final int lastLine = _lineIndexForRect(rects.last);
-        if (firstLine >= 0 && firstLine == lastLine) {
-          _forceRightExtrasOwners.add(box);
-        }
-      }
-      if (_forceRightExtrasOwners.isNotEmpty || needsVARebuild) {
+      if (resolvedLayoutCacheEntry != null) {
         _suppressAllRightExtras = false;
+        _forceRightExtrasOwners
+          ..clear()
+          ..addAll(resolvedLayoutCacheEntry.forceRightExtrasOwners);
+        _textRunBaselineOffsets = resolvedLayoutCacheEntry.textRunBaselineOffsets == null
+            ? null
+            : List<double>.of(resolvedLayoutCacheEntry.textRunBaselineOffsets!);
+        _atomicBaselineOffsets = resolvedLayoutCacheEntry.atomicBaselineOffsets == null
+            ? null
+            : List<double>.of(resolvedLayoutCacheEntry.atomicBaselineOffsets!);
         _buildAndLayoutParagraph(constraints);
+      } else {
+        // Two-pass build: first lay out without right-extras placeholders to
+        // observe natural breaks, then re-layout with right-extras only for
+        // inline elements that do not fragment across lines.
+        _suppressAllRightExtras = true;
+        _forceRightExtrasOwners.clear();
+        _buildAndLayoutParagraph(constraints);
+        // Compute baseline offsets for text-run vertical-align placeholders (top/middle/bottom)
+        bool needsVARebuild =
+            _computeTextRunBaselineOffsets() | _computeAtomicBaselineOffsets();
+
+        // Second pass: Only add right-extras placeholders for inline elements that
+        // did NOT fragment across lines in pass 1. For fragmented spans, we rely on
+        // per-line trailing reserves to avoid altering the chosen breaks.
+        _forceRightExtrasOwners.clear();
+        for (final entry in _elementRanges.entries) {
+          final box = entry.key;
+          final (int sIdx, int eIdx) = entry.value;
+          if (eIdx <= sIdx) continue;
+          final styleR = box.renderStyle;
+          final double extraR = styleR.paddingRight.computedValue +
+              styleR.effectiveBorderRightWidth.computedValue +
+              styleR.marginRight.computedValue;
+          if (extraR <= 0) continue;
+          final rects = _paragraph!.getBoxesForRange(sIdx, eIdx);
+          if (rects.isEmpty) continue;
+          final int firstLine = _lineIndexForRect(rects.first);
+          final int lastLine = _lineIndexForRect(rects.last);
+          if (firstLine >= 0 && firstLine == lastLine) {
+            _forceRightExtrasOwners.add(box);
+          }
+        }
+        if (_forceRightExtrasOwners.isNotEmpty || needsVARebuild) {
+          _suppressAllRightExtras = false;
+          _buildAndLayoutParagraph(constraints);
+        }
+        _storeResolvedLayoutPassCache(
+          layoutSignature,
+          forceRightExtrasOwners: _forceRightExtrasOwners,
+          textRunBaselineOffsets: _textRunBaselineOffsets,
+          atomicBaselineOffsets: _atomicBaselineOffsets,
+        );
         // Clear offsets after they are consumed in PASS 2
         _textRunBaselineOffsets = null;
         _atomicBaselineOffsets = null;
@@ -5560,6 +5736,7 @@ class InlineFormattingContext {
 
   void dispose() {
     _resetBuildAndLayoutParagraphCaches();
+    _resolvedLayoutPassCache.clear();
     _atomicInlineItems.clear();
     _items.clear();
     _placeholderBoxes = const [];
@@ -5780,6 +5957,18 @@ class _InlinePlaceholder {
 
   factory _InlinePlaceholder.textRun(RenderBoxModel owner) =>
       _InlinePlaceholder._(_PHKind.textRun, owner: owner);
+}
+
+class _ResolvedLayoutPassCacheEntry {
+  const _ResolvedLayoutPassCacheEntry({
+    required this.forceRightExtrasOwners,
+    required this.textRunBaselineOffsets,
+    required this.atomicBaselineOffsets,
+  });
+
+  final List<RenderBoxModel> forceRightExtrasOwners;
+  final List<double>? textRunBaselineOffsets;
+  final List<double>? atomicBaselineOffsets;
 }
 
 class _SpanPaintEntry {
