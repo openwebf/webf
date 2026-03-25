@@ -913,10 +913,29 @@ class RenderWidget extends RenderBoxModel
     double paddingTop = renderStyle.paddingTop.computedValue;
     double topInset = borderTop + paddingTop;
 
-    double? firstBaseline =
-        firstChild?.getDistanceToBaseline(TextBaseline.alphabetic);
-    double? lastBaseline =
-        lastChild?.getDistanceToBaseline(TextBaseline.alphabetic);
+    double? resolveBaseline(RenderBox? candidate, {required bool useLast}) {
+      if (candidate == null) return null;
+
+      if (candidate is RenderBoxModel) {
+        final double? cssBaseline = useLast
+            ? candidate.computeCssLastBaselineOf(TextBaseline.alphabetic)
+            : candidate.computeCssFirstBaselineOf(TextBaseline.alphabetic);
+        if (cssBaseline != null) {
+          return cssBaseline;
+        }
+      }
+
+      if (!candidate.attached) {
+        return candidate.hasSize ? candidate.size.height : null;
+      }
+
+      return candidate.getDistanceToBaseline(TextBaseline.alphabetic);
+    }
+
+    double? firstBaseline = resolveBaseline(firstChild, useLast: false);
+    double? lastBaseline = identical(lastChild, firstChild)
+        ? firstBaseline
+        : resolveBaseline(lastChild, useLast: true);
 
     if (firstBaseline != null) firstBaseline += topInset;
     if (lastBaseline != null) lastBaseline += topInset;

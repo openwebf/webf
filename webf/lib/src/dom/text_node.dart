@@ -33,6 +33,14 @@ class TextNode extends CharacterData {
 
   String get data => _data;
 
+  void markTextStyleNeedsLayout() {
+    for (final element in _attachedFlutterWidgetElements) {
+      if (!element.mounted) continue;
+      element.renderObject.markTextStyleNeedsLayout();
+      element.markNeedsBuild();
+    }
+  }
+
   set data(String newData) {
     String oldData = data;
     if (oldData == newData) return;

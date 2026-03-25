@@ -29,6 +29,17 @@ class RenderTextBox extends RenderBox with RenderObjectWithChildMixin<RenderBox>
     _hasPendingTextLayoutUpdate = false;
   }
 
+  void markTextStyleNeedsLayout() {
+    _hasPendingTextLayoutUpdate = true;
+    _markAncestorSubtreeIntrinsicMeasurementUpdate();
+    _markAncestorInlineCollectionNeedsUpdate();
+    parent?.markNeedsLayout();
+    markNeedsLayout();
+    markNeedsPaint();
+    _cachedSpan = null;
+    _textPainter = null;
+  }
+
   void _markAncestorSubtreeIntrinsicMeasurementUpdate() {
     RenderObject? ancestor = parent;
     while (ancestor != null) {

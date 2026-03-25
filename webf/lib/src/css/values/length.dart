@@ -154,12 +154,16 @@ class CSSLengthValue {
   final CSSCalcValue? calcValue;
   final double? value;
   final CSSLengthType type;
+  final String? _realPropertyName;
 
   CSSLengthValue.calc(this.calcValue, this.renderStyle, this.propertyName)
       : value = null,
-        type = CSSLengthType.PX;
+        type = CSSLengthType.PX,
+        _realPropertyName = _normalizeRealPropertyName(propertyName);
 
-  CSSLengthValue(this.value, this.type, [this.renderStyle, this.propertyName, this.axisType]) : calcValue = null {
+  CSSLengthValue(this.value, this.type, [this.renderStyle, this.propertyName, this.axisType])
+      : calcValue = null,
+        _realPropertyName = _normalizeRealPropertyName(propertyName) {
     if (propertyName != null) {
       if (type == CSSLengthType.EM) {
         renderStyle!.addFontRelativeProperty(propertyName!);
@@ -175,6 +179,13 @@ class CSSLengthValue {
     if (isViewportSizeRelatedLength()) {
       renderStyle?.addViewportSizeRelativeProperty();
     }
+  }
+
+  static String? _normalizeRealPropertyName(String? propertyName) {
+    if (propertyName == null) return null;
+    final int separatorIndex = propertyName.indexOf('_');
+    if (separatorIndex <= 0) return propertyName;
+    return propertyName.substring(0, separatorIndex);
   }
 
   bool isViewportSizeRelatedLength() {
@@ -323,24 +334,32 @@ class CSSLengthValue {
       return _computedValue!;
     }
 
+    final RenderStyle? currentRenderStyle = renderStyle;
+    final String? currentPropertyName = propertyName;
+
     // Use cached value if type is not percentage which may needs 2 layout passes to resolve the
     // final computed value.
-    if (renderStyle?.hasRenderBox() == true &&
-        propertyName != null &&
+    if (currentRenderStyle?.hasRenderBox() == true &&
+        currentPropertyName != null &&
         type != CSSLengthType.PERCENTAGE) {
-      double? cachedValue = getCachedComputedValue(renderStyle!, propertyName!);
+      double? cachedValue = getCachedComputedValue(currentRenderStyle!, currentPropertyName);
       if (cachedValue != null) {
         return cachedValue;
       }
     }
 
-    final realPropertyName = propertyName?.split('_').first ?? propertyName;
+    RenderStyle? attachedParentRenderStyle;
+    RenderStyle? getAttachedParentRenderStyle() {
+      return attachedParentRenderStyle ??= currentRenderStyle?.getAttachedRenderParentRenderStyle();
+    }
+
+    final String? realPropertyName = _realPropertyName;
     switch (type) {
       case CSSLengthType.PX:
         _computedValue = value;
         break;
       case CSSLengthType.RPX:
-        FlutterView window = renderStyle!.currentFlutterView;
+        FlutterView window = currentRenderStyle!.currentFlutterView;
         _computedValue = value! / 750.0 * window.physicalSize.width / window.devicePixelRatio;
         break;
       case CSSLengthType.EM:
@@ -348,13 +367,14 @@ class CSSLengthValue {
         // and font size of the element itself, in the case of other properties like width.
         if (realPropertyName == FONT_SIZE) {
           // If root element set fontSize as em unit.
-          if (renderStyle!.getAttachedRenderParentRenderStyle() == null) {
+          final RenderStyle? parentRenderStyle = getAttachedParentRenderStyle();
+          if (parentRenderStyle == null) {
             _computedValue = value! * 16;
           } else {
-            _computedValue = value! * renderStyle!.getAttachedRenderParentRenderStyle()!.fontSize.computedValue;
+            _computedValue = value! * parentRenderStyle.fontSize.computedValue;
           }
         } else {
-          _computedValue = value! * renderStyle!.fontSize.computedValue;
+          _computedValue = value! * currentRenderStyle!.fontSize.computedValue;
         }
         break;
       case CSSLengthType.EX:
@@ -363,13 +383,14 @@ class CSSLengthValue {
         // font-size are relative to the inherited font-size).
         double baseEmPx;
         if (realPropertyName == FONT_SIZE) {
-          if (renderStyle!.getAttachedRenderParentRenderStyle() == null) {
+          final RenderStyle? parentRenderStyle = getAttachedParentRenderStyle();
+          if (parentRenderStyle == null) {
             baseEmPx = 16; // default root font size baseline
           } else {
-            baseEmPx = renderStyle!.getAttachedRenderParentRenderStyle()!.fontSize.computedValue;
+            baseEmPx = parentRenderStyle.fontSize.computedValue;
           }
         } else {
-          baseEmPx = renderStyle!.fontSize.computedValue;
+          baseEmPx = currentRenderStyle!.fontSize.computedValue;
         }
         _computedValue = value! * (baseEmPx * _exToEmFallbackRatio);
         break;
@@ -380,9 +401,9 @@ class CSSLengthValue {
 
         // Avoid recursion when resolving `font-size` in terms of `ch` by measuring against the
         // inherited font style instead of the element's own (yet-to-be-computed) font size.
-        RenderStyle? metricBaseStyle = renderStyle;
+        RenderStyle? metricBaseStyle = currentRenderStyle;
         if (realPropertyName == FONT_SIZE) {
-          metricBaseStyle = renderStyle!.getAttachedRenderParentRenderStyle();
+          metricBaseStyle = getAttachedParentRenderStyle();
         }
 
         double baseEmPx;
@@ -393,7 +414,7 @@ class CSSLengthValue {
             baseEmPx = metricBaseStyle.fontSize.computedValue;
           }
         } else {
-          baseEmPx = renderStyle!.fontSize.computedValue;
+          baseEmPx = currentRenderStyle!.fontSize.computedValue;
         }
         oneChPx = baseEmPx * _chToEmFallbackRatio;
 
@@ -416,36 +437,37 @@ class CSSLengthValue {
         break;
       case CSSLengthType.REM:
         // If root element set fontSize as rem unit.
-        if (renderStyle!.getAttachedRenderParentRenderStyle() == null) {
+        if (getAttachedParentRenderStyle() == null) {
           _computedValue = value! * 16;
         } else {
           // Font rem is calculated against the root element's font size.
-          _computedValue = value! * renderStyle!.rootFontSize;
+          _computedValue = value! * currentRenderStyle!.rootFontSize;
         }
         break;
       case CSSLengthType.VH:
-        _computedValue = value! * (renderStyle!.getCurrentViewportBox()?.boxSize ?? renderStyle!.viewportSize).height;
+        _computedValue =
+            value! * (currentRenderStyle!.getCurrentViewportBox()?.boxSize ?? currentRenderStyle.viewportSize).height;
         break;
       case CSSLengthType.VW:
-        _computedValue = value! * (renderStyle!.getCurrentViewportBox()?.boxSize ?? renderStyle!.viewportSize).width;
+        _computedValue =
+            value! * (currentRenderStyle!.getCurrentViewportBox()?.boxSize ?? currentRenderStyle.viewportSize).width;
         break;
       // 1% of viewport's smaller (vw or vh) dimension.
       // If the height of the viewport is less than its width, 1vmin will be equivalent to 1vh.
       // If the width of the viewport is less than it’s height, 1vmin is equvialent to 1vw.
       case CSSLengthType.VMIN:
-        _computedValue = value! * renderStyle!.viewportSize.shortestSide;
+        _computedValue = value! * currentRenderStyle!.viewportSize.shortestSide;
         break;
       case CSSLengthType.VMAX:
-        _computedValue = value! * renderStyle!.viewportSize.longestSide;
+        _computedValue = value! * currentRenderStyle!.viewportSize.longestSide;
         break;
       case CSSLengthType.PERCENTAGE:
-        CSSPositionType positionType = renderStyle!.position;
+        CSSPositionType positionType = currentRenderStyle!.position;
         bool isPositioned = positionType == CSSPositionType.absolute || positionType == CSSPositionType.fixed;
-        RenderStyle? currentRenderStyle = renderStyle;
 
         RenderStyle? parentRenderStyle = isPositioned
-            ? currentRenderStyle?.target.getContainingBlockElement()?.renderStyle
-            : currentRenderStyle?.getAttachedRenderParentRenderStyle();
+            ? currentRenderStyle.target.getContainingBlockElement()?.renderStyle
+            : getAttachedParentRenderStyle();
 
         // Should access the renderStyle of renderBoxModel parent but not renderStyle parent
         // cause the element of renderStyle parent may not equal to containing block.
@@ -464,7 +486,7 @@ class CSSLengthValue {
         if (currentLayoutBox != null && identical(currentLayoutBox.renderStyle, currentRenderStyle)) {
           renderWidgetElementChild = currentLayoutBox.findWidgetElementChild();
         }
-        renderWidgetElementChild ??= currentRenderStyle?.target.attachedRenderer?.findWidgetElementChild();
+        renderWidgetElementChild ??= currentRenderStyle.target.attachedRenderer?.findWidgetElementChild();
         bool shouldInheritRenderWidgetElementConstraintsWidth =
             parentRenderStyle?.isSelfRenderWidget() == true && renderWidgetElementChild != null;
         double? parentWidgetConstraintWidth;
@@ -476,7 +498,7 @@ class CSSLengthValue {
               renderWidgetElementChild != null &&
               renderWidgetElementChild.effectiveChildConstraints.maxHeight.isFinite &&
               renderWidgetElementChild.effectiveChildConstraints.maxHeight !=
-                  currentRenderStyle!.target.ownerView.currentViewport!.boxSize!.height;
+                  currentRenderStyle.target.ownerView.currentViewport!.boxSize!.height;
           parentWidgetConstraintHeight = renderWidgetElementChild?.effectiveChildConstraints.maxHeight;
         } catch (_) {}
 
@@ -541,10 +563,11 @@ class CSSLengthValue {
         switch (realPropertyName) {
           case FONT_SIZE:
             // Relative to the parent font size.
-            if (renderStyle!.getAttachedRenderParentRenderStyle() == null) {
+            final RenderStyle? parentFontRenderStyle = getAttachedParentRenderStyle();
+            if (parentFontRenderStyle == null) {
               _computedValue = value! * 16;
             } else {
-              _computedValue = value! * renderStyle!.getAttachedRenderParentRenderStyle()!.fontSize.computedValue;
+              _computedValue = value! * parentFontRenderStyle.fontSize.computedValue;
             }
             break;
           case TEXT_INDENT:
@@ -562,17 +585,17 @@ class CSSLengthValue {
                 if (rbox != null && rbox.hasSize && rbox.constraints.maxWidth.isFinite) {
                   _computedValue = value! * rbox.constraints.maxWidth;
                 } else {
-                  _computedValue = value! * renderStyle!.viewportSize.width;
+                  _computedValue = value! * currentRenderStyle.viewportSize.width;
                 }
               }
             } else {
               // Root-level: resolve against viewport.
-              _computedValue = value! * renderStyle!.viewportSize.width;
+              _computedValue = value! * currentRenderStyle.viewportSize.width;
             }
             break;
           case LINE_HEIGHT:
             // Relative to the font size of the element itself.
-            _computedValue = value! * renderStyle!.fontSize.computedValue;
+            _computedValue = value! * currentRenderStyle.fontSize.computedValue;
             break;
           case WIDTH:
           case MIN_WIDTH:
@@ -727,7 +750,7 @@ class CSSLengthValue {
           case FLEX_BASIS:
             // Flex-basis computation is called in RenderFlexLayout which
             // will ensure parent exists.
-            RenderStyle? parentRenderStyle = renderStyle!.getAttachedRenderParentRenderStyle();
+            RenderStyle? parentRenderStyle = getAttachedParentRenderStyle();
             if (parentRenderStyle == null) {
               _computedValue = 0;
               break;
@@ -977,8 +1000,8 @@ class CSSLengthValue {
     }
 
     // Cache computed value.
-    if (renderStyle?.hasRenderBox() == true && propertyName != null && type != CSSLengthType.PERCENTAGE) {
-      cacheComputedValue(renderStyle!, propertyName!, _computedValue!);
+    if (currentRenderStyle?.hasRenderBox() == true && currentPropertyName != null && type != CSSLengthType.PERCENTAGE) {
+      cacheComputedValue(currentRenderStyle!, currentPropertyName, _computedValue!);
     }
     return _computedValue!;
   }

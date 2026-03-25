@@ -8,6 +8,7 @@
  */
 
 import 'package:webf/css.dart';
+import 'package:webf/dom.dart' as dom;
 import 'package:webf/rendering.dart';
 
 // CSS Box Sizing: https://drafts.csswg.org/css-sizing-3/
@@ -261,6 +262,17 @@ mixin CSSSizingMixin on RenderStyle {
     // Should notify to window's renderObject.
     if (isParentRenderViewportBox()) {
       markParentNeedsLayout();
+    }
+
+    if (isDocumentRootBox()) {
+      void visitor(dom.Node node) {
+        if (node is! dom.Element) return;
+        node.renderStyle.markNeedsIntrinsicMeasurement('rootSizing');
+        node.renderStyle.markNeedsLayout();
+        node.visitChildren(visitor);
+      }
+
+      target.visitChildren(visitor);
     }
   }
 
