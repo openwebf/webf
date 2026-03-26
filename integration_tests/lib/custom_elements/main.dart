@@ -24,6 +24,7 @@ import 'flutter_max_height_container.dart';
 import 'flutter_fixed_height_slot.dart';
 import 'flutter_cupertino_portal_modal_popup.dart';
 import 'flutter_portal_popup_item.dart';
+import 'flutter_bottom_sheet.dart';
 import 'flutter_ifc_host.dart';
 
 void defineWebFCustomElements() {
@@ -56,6 +57,8 @@ void defineWebFCustomElements() {
   WebF.defineCustomElement(
       'flutter-cupertino-portal-modal-popup', (context) => FlutterCupertinoPortalModalPopup(context));
   WebF.defineCustomElement('flutter-portal-popup-item', (context) => FlutterPortalPopupItem(context));
+  WebF.defineCustomElement('flutter-bottom-sheet', (context) => FlutterBottomSheetElement(context));
+  WebF.defineCustomElement('flutter-popup-item', (context) => FlutterPopupItemElement(context));
   WebF.defineCustomElement('flutter-intrinsic-container', (context) => FlutterIntrinsicContainer(context));
   WebF.defineCustomElement('sample-container', (context) => SampleContainer(context));
   WebF.defineCustomElement('native-flex', (context) => NativeFlexContainer(context));
