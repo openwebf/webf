@@ -25,6 +25,12 @@ apply plugin: 'com.android.library'
 def enableTestBridge =
     System.getenv('WEBF_ENABLE_TEST') == 'true' ||
     System.getenv('KRAKEN_ENABLE_TEST') == 'true'
+def webfTargetAbis =
+    ((project.findProperty('webfTargetAbis') ?: 'arm64-v8a')
+        .toString()
+        .split(','))
+        .collect { it.trim() }
+        .findAll { !it.isEmpty() }
 
 
 android {
@@ -42,6 +48,9 @@ android {
 
     defaultConfig {
         minSdk = 21
+        ndk {
+            abiFilters.addAll(webfTargetAbis)
+        }
         externalNativeBuild {
             cmake {
                 arguments "-DANDROID_STL=c++_shared", "-DIS_ANDROID=TRUE", "-DANDROID_SUPPORT_FLEXIBLE_PAGE_SIZES=ON"
