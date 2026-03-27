@@ -1703,6 +1703,54 @@ class RenderFlexLayout extends RenderLayoutBox {
     return false;
   }
 
+  bool _constraintValueClose(double a, double b) {
+    if (a.isInfinite || b.isInfinite) return a == b;
+    return (a - b).abs() < 0.5;
+  }
+
+  bool _tightensMainAxisToCurrentSizeWithoutCrossChange(
+    BoxConstraints applied,
+    BoxConstraints candidate,
+    double currentMainSize,
+  ) {
+    final double candidateMainMin =
+        _isHorizontalFlexDirection ? candidate.minWidth : candidate.minHeight;
+    final double candidateMainMax =
+        _isHorizontalFlexDirection ? candidate.maxWidth : candidate.maxHeight;
+    final double appliedMainMin =
+        _isHorizontalFlexDirection ? applied.minWidth : applied.minHeight;
+    final double appliedMainMax =
+        _isHorizontalFlexDirection ? applied.maxWidth : applied.maxHeight;
+    final double candidateCrossMin =
+        _isHorizontalFlexDirection ? candidate.minHeight : candidate.minWidth;
+    final double candidateCrossMax =
+        _isHorizontalFlexDirection ? candidate.maxHeight : candidate.maxWidth;
+    final double appliedCrossMin =
+        _isHorizontalFlexDirection ? applied.minHeight : applied.minWidth;
+    final double appliedCrossMax =
+        _isHorizontalFlexDirection ? applied.maxHeight : applied.maxWidth;
+
+    final bool crossUnchanged =
+        _constraintValueClose(candidateCrossMin, appliedCrossMin) &&
+            _constraintValueClose(candidateCrossMax, appliedCrossMax);
+    if (!crossUnchanged) {
+      return false;
+    }
+
+    final bool candidatePinsCurrentSize = candidateMainMax.isFinite &&
+        (candidateMainMax - currentMainSize).abs() < 0.5 &&
+        candidateMainMin <= currentMainSize + 0.5;
+    if (!candidatePinsCurrentSize) {
+      return false;
+    }
+
+    final bool currentSatisfiesApplied =
+        appliedMainMin <= currentMainSize + 0.5 &&
+            (!appliedMainMax.isFinite ||
+                currentMainSize <= appliedMainMax + 0.5);
+    return currentSatisfiesApplied;
+  }
+
   void _setFlexRelayoutForTextParent(RenderBoxModel textParentBoxModel) {
     if (textParentBoxModel.renderStyle.display == CSSDisplay.flex &&
         textParentBoxModel.renderStyle.width.isAuto &&
@@ -2447,10 +2495,14 @@ class RenderFlexLayout extends RenderLayoutBox {
 
   bool _canUseAnonymousMetricsOnlyCache(List<RenderBox> children) {
     int metricsOnlyChildCount = 0;
+    int flexingMetricsOnlyChildCount = 0;
     for (int childIndex = 0; childIndex < children.length; childIndex++) {
       final RenderBox child = children[childIndex];
       if (_isMetricsOnlyIntrinsicMeasureChild(child)) {
         metricsOnlyChildCount++;
+        if (_getFlexGrow(child) > 0 || _getFlexShrink(child) > 0) {
+          flexingMetricsOnlyChildCount++;
+        }
       }
 
       final _FlexAnonymousMetricsRejectReason? rejectReason =
@@ -2471,12 +2523,14 @@ class RenderFlexLayout extends RenderLayoutBox {
       );
       return false;
     }
-    if (metricsOnlyChildCount != children.length) {
+    if (metricsOnlyChildCount != children.length &&
+        flexingMetricsOnlyChildCount > 0) {
       _recordAnonymousMetricsReject(
         _FlexAnonymousMetricsRejectReason.mixedMetricsOnlyChildren,
         details: <String, Object?>{
           'childCount': children.length,
           'candidateChildCount': metricsOnlyChildCount,
+          'flexingCandidateChildCount': flexingMetricsOnlyChildCount,
         },
       );
       return false;
@@ -3125,8 +3179,11 @@ class RenderFlexLayout extends RenderLayoutBox {
 
   bool _canAttemptFullEarlyFastPath(List<_RunMetrics> runMetrics) {
     for (final _RunMetrics metrics in runMetrics) {
+      final bool hasFlexibleLengths =
+          metrics.totalFlexGrow > 0 || metrics.totalFlexShrink > 0;
       for (final _RunChild runChild in metrics.runChildren) {
-        if (!_hasEffectivelyTightMainAxisSize(runChild)) {
+        if (hasFlexibleLengths &&
+            !_hasEffectivelyTightMainAxisSize(runChild)) {
           _recordEarlyFastPathReject(
             _FlexFastPathRejectReason.childNonTightWidth,
             child: runChild.child,
@@ -3174,6 +3231,15 @@ class RenderFlexLayout extends RenderLayoutBox {
       return false;
     }
 
+    final double constraintMaxMainAxisSize = _isHorizontalFlexDirection
+        ? childConstraints.maxWidth
+        : childConstraints.maxHeight;
+    if (constraintMaxMainAxisSize.isFinite &&
+        constraintMaxMainAxisSize > 0 &&
+        (usedMainAxisSize - constraintMaxMainAxisSize).abs() < 0.5) {
+      return true;
+    }
+
     final double resolvedMainAxisSize = explicitMainSize.computedValue;
     if (!resolvedMainAxisSize.isFinite || resolvedMainAxisSize <= 0) {
       return false;
@@ -3193,19 +3259,43 @@ class RenderFlexLayout extends RenderLayoutBox {
     }
 
     for (final _RunMetrics metrics in runMetrics) {
+      final bool hasFlexibleLengths =
+          metrics.totalFlexGrow > 0 || metrics.totalFlexShrink > 0;
       for (final _RunChild runChild in metrics.runChildren) {
         final RenderBoxModel? effectiveChild = runChild.effectiveChild;
         if (effectiveChild == null) {
           return false;
         }
 
-        if (!_hasEffectivelyTightMainAxisSize(runChild)) {
+        if (hasFlexibleLengths &&
+            !_hasEffectivelyTightMainAxisSize(runChild)) {
           return false;
         }
       }
     }
 
     return true;
+  }
+
+  void _storePercentageConstraintChildrenOldConstraints(List<RenderBox> children) {
+    for (final RenderBox child in children) {
+      final RenderBoxModel? box = child is RenderBoxModel
+          ? child
+          : (child is RenderEventListener ? child.child as RenderBoxModel? : null);
+      if (box == null) {
+        continue;
+      }
+
+      final bool hasPercentageMaxWidth =
+          box.renderStyle.maxWidth.type == CSSLengthType.PERCENTAGE;
+      final bool hasPercentageMaxHeight =
+          box.renderStyle.maxHeight.type == CSSLengthType.PERCENTAGE;
+      if (!hasPercentageMaxWidth && !hasPercentageMaxHeight) {
+        continue;
+      }
+
+      _childrenOldConstraints[box] = box.getConstraints();
+    }
   }
 
   List<_RunMetrics>? _tryBuildEarlyNoFlexNoStretchNoBaselineRunMetrics(List<RenderBox> children) {
@@ -3292,6 +3382,7 @@ class RenderFlexLayout extends RenderLayoutBox {
     ];
 
     _flexLineBoxMetrics = runMetrics;
+    _storePercentageConstraintChildrenOldConstraints(children);
     return runMetrics;
   }
 
@@ -4133,22 +4224,8 @@ class RenderFlexLayout extends RenderLayoutBox {
     _flexLineBoxMetrics = runMetrics;
 
     // PASS 3: Store percentage constraints for later use in _adjustChildrenSize
-    // This ensures they are calculated with the final parent dimensions
-    for (RenderBox child in children) {
-      RenderBoxModel? box = child is RenderBoxModel
-          ? child
-          : (child is RenderEventListener ? child.child as RenderBoxModel? : null);
-      if (box != null) {
-        bool hasPercentageMaxWidth = box.renderStyle.maxWidth.type == CSSLengthType.PERCENTAGE;
-        bool hasPercentageMaxHeight = box.renderStyle.maxHeight.type == CSSLengthType.PERCENTAGE;
-
-        if (hasPercentageMaxWidth || hasPercentageMaxHeight) {
-          // Store the final constraints for use in _adjustChildrenSize
-          BoxConstraints finalConstraints = box.getConstraints();
-          _childrenOldConstraints[box] = finalConstraints;
-        }
-      }
-    }
+    // This ensures they are calculated with the final parent dimensions.
+    _storePercentageConstraintChildrenOldConstraints(children);
 
     return runMetrics;
   }
@@ -4609,9 +4686,16 @@ class RenderFlexLayout extends RenderLayoutBox {
                     candidateMainMax + 0.5 >= childOldMainSize;
             final bool reusesAppliedConstraints =
                 candidateConstraints == applied;
+            final bool tightensToCurrentSize =
+                _tightensMainAxisToCurrentSizeWithoutCrossChange(
+              applied,
+              candidateConstraints,
+              childOldMainSize,
+            );
             final bool canSkipRelayout =
                 preservedMainMatches &&
                     (reusesAppliedConstraints ||
+                        tightensToCurrentSize ||
                         (textOnlySubtree && fitsCandidateMain));
             if (!canSkipRelayout) {
               needsLayout = true;
