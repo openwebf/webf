@@ -10,6 +10,8 @@ void main() {
       expect(CSSColor.parseColor('#abcd')!.value, const Color(0xDDAABBCC).value);
       expect(CSSColor.parseColor('#AABBCC')!.value, const Color(0xFFAABBCC).value);
       expect(CSSColor.parseColor('#AABBCCDD')!.value, const Color(0xDDAABBCC).value);
+      expect(CSSColor.parseColor('#ffffffe6')!.value, const Color(0xE6FFFFFF).value);
+      expect(CSSColor.parseColor('#0000000d')!.value, const Color(0x0D000000).value);
     });
 
     test('parses rgb()/rgba() comma and space syntaxes', () {
@@ -22,6 +24,10 @@ void main() {
       expect(
         CSSColor.parseColor('rgb(255 0 128 / 50%)')!.value,
         Color.fromRGBO(255, 0, 128, 0.5).value,
+      );
+      expect(
+        CSSColor.parseColor('rgba(15, 23, 42, 0.08)')!.value,
+        Color.fromRGBO(15, 23, 42, 0.08).value,
       );
     });
 
@@ -39,4 +45,3 @@ void main() {
     });
   });
 }
-

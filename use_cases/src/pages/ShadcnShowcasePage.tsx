@@ -23,9 +23,22 @@ export const ShadcnShowcasePage: React.FC = () => {
       <WebFListView className="w-full px-3 md:px-6 max-w-4xl mx-auto py-6">
         <div className="w-full flex justify-center items-center">
           <div className="bg-gradient-to-tr from-zinc-800 to-zinc-600 p-6 rounded-2xl text-white shadow">
-            <h1 className="text-[28px] font-bold mb-2 drop-shadow">Shadcn UI</h1>
-            <p className="text-[16px]/[1.5] opacity-90">Beautiful components built with WebF and shadcn_ui</p>
+            <h1 className="text-[28px] font-bold mb-2 drop-shadow">Shadcn UI Legacy</h1>
+            <p className="text-[16px]/[1.5] opacity-90">Deprecated demo surface backed by the legacy WebF shadcn wrapper.</p>
           </div>
+        </div>
+
+        <div className="mt-4 rounded-xl border border-amber-300 bg-amber-50 px-4 py-3 text-[14px] leading-6 text-amber-950">
+          This section is legacy and deprecated. New `use_cases` work should target the official `shadcn/ui`
+          integration instead of `@openwebf/react-shadcn-ui`.
+        </div>
+
+        <div className="mt-4 overflow-hidden rounded-xl border border-emerald-200 bg-emerald-50">
+          <Item
+            label="Official Shadcn Showcase"
+            desc="New source-based shadcn/ui showcase using official component patterns and Radix primitives"
+            to="/shadcn"
+          />
         </div>
 
         <div className="mt-6">

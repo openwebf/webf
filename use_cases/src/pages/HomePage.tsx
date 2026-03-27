@@ -131,6 +131,13 @@ type QuickStartItem = {
 
 const quickStart: QuickStartItem[] = [
   {
+    title: 'Shadcn UI',
+    desc: 'Official shadcn showcase',
+    to: '/shadcn',
+    icon: LucideIcons.layers,
+    gradient: 'linear-gradient(135deg, #0f172a, #334155)',
+  },
+  {
     title: 'Cupertino UI',
     desc: 'Native iOS components',
     to: '/cupertino-showcase',

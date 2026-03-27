@@ -55,8 +55,9 @@ void main() {
 
   group('Interactive Pseudo-classes - State Matching', () {
     group(':hover pseudo-class', () {
-      testWidgets('element matches :hover when hover state is set',
-          (WidgetTester tester) async {
+      testWidgets('element matches :hover when hover state is set', (
+        WidgetTester tester,
+      ) async {
         final prepared = await WebFWidgetTestUtils.prepareWidgetTest(
           tester: tester,
           controllerName: 'hover-test-${DateTime.now().millisecondsSinceEpoch}',
@@ -81,8 +82,10 @@ void main() {
         // Initially not hovered
         expect(div.isHovered, isFalse);
         expect(div.matches(':hover'), isFalse);
-        expect(div.renderStyle.color.value.toARGB32(),
-            equals(CSSColor.parseColor('blue')!.toARGB32()));
+        expect(
+          div.renderStyle.color.value.toARGB32(),
+          equals(CSSColor.parseColor('blue')!.toARGB32()),
+        );
 
         // Set hover state
         div.updateHoverState(true);
@@ -90,8 +93,10 @@ void main() {
 
         expect(div.isHovered, isTrue);
         expect(div.matches(':hover'), isTrue);
-        expect(div.renderStyle.color.value.toARGB32(),
-            equals(CSSColor.parseColor('green')!.toARGB32()));
+        expect(
+          div.renderStyle.color.value.toARGB32(),
+          equals(CSSColor.parseColor('green')!.toARGB32()),
+        );
 
         // Clear hover state
         div.updateHoverState(false);
@@ -99,18 +104,82 @@ void main() {
 
         expect(div.isHovered, isFalse);
         expect(div.matches(':hover'), isFalse);
-        expect(div.renderStyle.color.value.toARGB32(),
-            equals(CSSColor.parseColor('blue')!.toARGB32()));
+        expect(
+          div.renderStyle.color.value.toARGB32(),
+          equals(CSSColor.parseColor('blue')!.toARGB32()),
+        );
+      });
+
+      testWidgets('element matches :hover from real mouse movement', (
+        WidgetTester tester,
+      ) async {
+        final prepared = await _prepareMaterialWidgetTest(
+          tester: tester,
+          controllerName:
+              'hover-mouse-test-${DateTime.now().millisecondsSinceEpoch}',
+          html: '''
+            <html>
+              <head>
+                <style>
+                  body { margin: 0; }
+                  .target {
+                    width: 120px;
+                    height: 40px;
+                    color: blue;
+                  }
+                  .target:hover { color: green; }
+                </style>
+              </head>
+              <body>
+                <div id="test" class="target">Hover me</div>
+              </body>
+            </html>
+          ''',
+        );
+
+        final div = prepared.getElementById('test');
+        await tester.pump(const Duration(milliseconds: 50));
+
+        final rect = div.getBoundingClientRect();
+        final Offset inside = Offset(rect.left + 10, rect.top + 10);
+        const Offset outside = Offset(300, 300);
+        final TestGesture mouse = await tester.createGesture(
+          kind: PointerDeviceKind.mouse,
+        );
+        await mouse.addPointer(location: outside);
+        await tester.pump();
+
+        expect(div.isHovered, isFalse);
+
+        await mouse.moveTo(inside);
+        await tester.pump(const Duration(milliseconds: 50));
+
+        expect(div.isHovered, isTrue);
+        expect(div.matches(':hover'), isTrue);
+        expect(
+          div.renderStyle.color.value.toARGB32(),
+          equals(CSSColor.parseColor('green')!.toARGB32()),
+        );
+
+        await mouse.moveTo(outside);
+        await tester.pump(const Duration(milliseconds: 50));
+
+        expect(div.isHovered, isFalse);
+        expect(div.matches(':hover'), isFalse);
+        expect(
+          div.renderStyle.color.value.toARGB32(),
+          equals(CSSColor.parseColor('blue')!.toARGB32()),
+        );
       });
 
       testWidgets(
-          'document hover targeting only activates target-side :hover matches',
-          (WidgetTester tester) async {
-        final prepared = await WebFWidgetTestUtils.prepareWidgetTest(
-          tester: tester,
-          controllerName:
-              'hover-target-only-${DateTime.now().millisecondsSinceEpoch}',
-          html: '''
+        'document hover targeting only activates target-side :hover matches',
+        (WidgetTester tester) async {
+          final prepared = await WebFWidgetTestUtils.prepareWidgetTest(
+            tester: tester,
+            controllerName:
+                'hover-target-only-${DateTime.now().millisecondsSinceEpoch}',
+            html: '''
             <html>
               <head>
                 <style>
@@ -125,33 +194,34 @@ void main() {
               </body>
             </html>
           ''',
-        );
+          );
 
-        final parent = prepared.getElementById('parent');
-        final child = prepared.getElementById('child');
-        await tester.pump(Duration(milliseconds: 50));
+          final parent = prepared.getElementById('parent');
+          final child = prepared.getElementById('child');
+          await tester.pump(Duration(milliseconds: 50));
 
-        prepared.document.updateHoverTarget(child);
-        await tester.pump(Duration(milliseconds: 50));
+          prepared.document.updateHoverTarget(child);
+          await tester.pump(Duration(milliseconds: 50));
 
-        expect(child.matches(':hover'), isTrue);
-        expect(parent.matches(':hover'), isFalse);
+          expect(child.matches(':hover'), isTrue);
+          expect(parent.matches(':hover'), isFalse);
 
-        prepared.document.clearHoverTarget(child);
-        await tester.pump(Duration(milliseconds: 50));
+          prepared.document.clearHoverTarget(child);
+          await tester.pump(Duration(milliseconds: 50));
 
-        expect(child.matches(':hover'), isFalse);
-        expect(parent.matches(':hover'), isFalse);
-      });
+          expect(child.matches(':hover'), isFalse);
+          expect(parent.matches(':hover'), isFalse);
+        },
+      );
 
       testWidgets(
-          'document hover targeting ignores elements without target-side :hover selectors',
-          (WidgetTester tester) async {
-        final prepared = await WebFWidgetTestUtils.prepareWidgetTest(
-          tester: tester,
-          controllerName:
-              'hover-target-gating-${DateTime.now().millisecondsSinceEpoch}',
-          html: '''
+        'document hover targeting ignores elements without target-side :hover selectors',
+        (WidgetTester tester) async {
+          final prepared = await WebFWidgetTestUtils.prepareWidgetTest(
+            tester: tester,
+            controllerName:
+                'hover-target-gating-${DateTime.now().millisecondsSinceEpoch}',
+            html: '''
             <html>
               <head>
                 <style>
@@ -165,27 +235,28 @@ void main() {
               </body>
             </html>
           ''',
-        );
+          );
 
-        final parent = prepared.getElementById('parent');
-        final child = prepared.getElementById('child');
-        await tester.pump(Duration(milliseconds: 50));
+          final parent = prepared.getElementById('parent');
+          final child = prepared.getElementById('child');
+          await tester.pump(Duration(milliseconds: 50));
 
-        prepared.document.updateHoverTarget(child);
-        await tester.pump(Duration(milliseconds: 50));
+          prepared.document.updateHoverTarget(child);
+          await tester.pump(Duration(milliseconds: 50));
 
-        expect(child.matches(':hover'), isFalse);
-        expect(parent.matches(':hover'), isFalse);
-      });
+          expect(child.matches(':hover'), isFalse);
+          expect(parent.matches(':hover'), isFalse);
+        },
+      );
 
       testWidgets(
-          'document hover queue keeps the leaf target when ancestors receive the same event',
-          (WidgetTester tester) async {
-        final prepared = await WebFWidgetTestUtils.prepareWidgetTest(
-          tester: tester,
-          controllerName:
-              'hover-leaf-wins-${DateTime.now().millisecondsSinceEpoch}',
-          html: '''
+        'document hover queue keeps the leaf target when ancestors receive the same event',
+        (WidgetTester tester) async {
+          final prepared = await WebFWidgetTestUtils.prepareWidgetTest(
+            tester: tester,
+            controllerName:
+                'hover-leaf-wins-${DateTime.now().millisecondsSinceEpoch}',
+            html: '''
             <html>
               <head>
                 <style>
@@ -199,32 +270,33 @@ void main() {
               </body>
             </html>
           ''',
-        );
+          );
 
-        final parent = prepared.getElementById('parent');
-        final child = prepared.getElementById('child');
-        final event = PointerHoverEvent(
-          pointer: 1,
-          timeStamp: const Duration(milliseconds: 1),
-          kind: PointerDeviceKind.mouse,
-        );
+          final parent = prepared.getElementById('parent');
+          final child = prepared.getElementById('child');
+          final event = PointerHoverEvent(
+            pointer: 1,
+            timeStamp: const Duration(milliseconds: 1),
+            kind: PointerDeviceKind.mouse,
+          );
 
-        prepared.document.queueHoverTargetUpdate(event, child);
-        prepared.document.queueHoverTargetUpdate(event, parent);
-        await tester.pump();
+          prepared.document.queueHoverTargetUpdate(event, child);
+          prepared.document.queueHoverTargetUpdate(event, parent);
+          await tester.pump();
 
-        expect(child.matches(':hover'), isTrue);
-        expect(parent.matches(':hover'), isFalse);
-      });
+          expect(child.matches(':hover'), isTrue);
+          expect(parent.matches(':hover'), isFalse);
+        },
+      );
 
       testWidgets(
-          'document hover queue keeps the leaf target when ancestor exit clears the same batch',
-          (WidgetTester tester) async {
-        final prepared = await WebFWidgetTestUtils.prepareWidgetTest(
-          tester: tester,
-          controllerName:
-              'hover-leaf-over-clear-${DateTime.now().millisecondsSinceEpoch}',
-          html: '''
+        'document hover queue keeps the leaf target when ancestor exit clears the same batch',
+        (WidgetTester tester) async {
+          final prepared = await WebFWidgetTestUtils.prepareWidgetTest(
+            tester: tester,
+            controllerName:
+                'hover-leaf-over-clear-${DateTime.now().millisecondsSinceEpoch}',
+            html: '''
             <html>
               <head>
                 <style>
@@ -238,33 +310,35 @@ void main() {
               </body>
             </html>
           ''',
-        );
+          );
 
-        final parent = prepared.getElementById('parent');
-        final child = prepared.getElementById('child');
-        final hoverEvent = PointerHoverEvent(
-          pointer: 1,
-          timeStamp: const Duration(milliseconds: 1),
-          kind: PointerDeviceKind.mouse,
-        );
-        final exitEvent = PointerExitEvent(
-          pointer: 1,
-          timeStamp: const Duration(milliseconds: 1),
-          kind: PointerDeviceKind.mouse,
-        );
+          final parent = prepared.getElementById('parent');
+          final child = prepared.getElementById('child');
+          final hoverEvent = PointerHoverEvent(
+            pointer: 1,
+            timeStamp: const Duration(milliseconds: 1),
+            kind: PointerDeviceKind.mouse,
+          );
+          final exitEvent = PointerExitEvent(
+            pointer: 1,
+            timeStamp: const Duration(milliseconds: 1),
+            kind: PointerDeviceKind.mouse,
+          );
 
-        prepared.document.queueHoverTargetUpdate(hoverEvent, child);
-        prepared.document.queueHoverTargetClear(exitEvent, parent);
-        await tester.pump();
+          prepared.document.queueHoverTargetUpdate(hoverEvent, child);
+          prepared.document.queueHoverTargetClear(exitEvent, parent);
+          await tester.pump();
 
-        expect(child.matches(':hover'), isTrue);
-        expect(parent.matches(':hover'), isFalse);
-      });
+          expect(child.matches(':hover'), isTrue);
+          expect(parent.matches(':hover'), isFalse);
+        },
+      );
     });
 
     group(':active pseudo-class', () {
-      testWidgets('element matches :active when active state is set',
-          (WidgetTester tester) async {
+      testWidgets('element matches :active when active state is set', (
+        WidgetTester tester,
+      ) async {
         final prepared = await WebFWidgetTestUtils.prepareWidgetTest(
           tester: tester,
           controllerName:
@@ -306,13 +380,13 @@ void main() {
       });
 
       testWidgets(
-          'document active targeting only activates target-side :active matches',
-          (WidgetTester tester) async {
-        final prepared = await WebFWidgetTestUtils.prepareWidgetTest(
-          tester: tester,
-          controllerName:
-              'active-target-only-${DateTime.now().millisecondsSinceEpoch}',
-          html: '''
+        'document active targeting only activates target-side :active matches',
+        (WidgetTester tester) async {
+          final prepared = await WebFWidgetTestUtils.prepareWidgetTest(
+            tester: tester,
+            controllerName:
+                'active-target-only-${DateTime.now().millisecondsSinceEpoch}',
+            html: '''
             <html>
               <head>
                 <style>
@@ -327,33 +401,34 @@ void main() {
               </body>
             </html>
           ''',
-        );
+          );
 
-        final parent = prepared.getElementById('parent');
-        final child = prepared.getElementById('child');
-        await tester.pump(Duration(milliseconds: 50));
+          final parent = prepared.getElementById('parent');
+          final child = prepared.getElementById('child');
+          await tester.pump(Duration(milliseconds: 50));
 
-        prepared.document.updateActiveTarget(child);
-        await tester.pump(Duration(milliseconds: 50));
+          prepared.document.updateActiveTarget(child);
+          await tester.pump(Duration(milliseconds: 50));
 
-        expect(child.matches(':active'), isTrue);
-        expect(parent.matches(':active'), isFalse);
+          expect(child.matches(':active'), isTrue);
+          expect(parent.matches(':active'), isFalse);
 
-        prepared.document.clearActiveTarget(child);
-        await tester.pump(Duration(milliseconds: 50));
+          prepared.document.clearActiveTarget(child);
+          await tester.pump(Duration(milliseconds: 50));
 
-        expect(child.matches(':active'), isFalse);
-        expect(parent.matches(':active'), isFalse);
-      });
+          expect(child.matches(':active'), isFalse);
+          expect(parent.matches(':active'), isFalse);
+        },
+      );
 
       testWidgets(
-          'document active targeting ignores elements without target-side :active selectors',
-          (WidgetTester tester) async {
-        final prepared = await WebFWidgetTestUtils.prepareWidgetTest(
-          tester: tester,
-          controllerName:
-              'active-target-gating-${DateTime.now().millisecondsSinceEpoch}',
-          html: '''
+        'document active targeting ignores elements without target-side :active selectors',
+        (WidgetTester tester) async {
+          final prepared = await WebFWidgetTestUtils.prepareWidgetTest(
+            tester: tester,
+            controllerName:
+                'active-target-gating-${DateTime.now().millisecondsSinceEpoch}',
+            html: '''
             <html>
               <head>
                 <style>
@@ -367,23 +442,25 @@ void main() {
               </body>
             </html>
           ''',
-        );
+          );
 
-        final parent = prepared.getElementById('parent');
-        final child = prepared.getElementById('child');
-        await tester.pump(Duration(milliseconds: 50));
+          final parent = prepared.getElementById('parent');
+          final child = prepared.getElementById('child');
+          await tester.pump(Duration(milliseconds: 50));
 
-        prepared.document.updateActiveTarget(child);
-        await tester.pump(Duration(milliseconds: 50));
+          prepared.document.updateActiveTarget(child);
+          await tester.pump(Duration(milliseconds: 50));
 
-        expect(child.matches(':active'), isFalse);
-        expect(parent.matches(':active'), isFalse);
-      });
+          expect(child.matches(':active'), isFalse);
+          expect(parent.matches(':active'), isFalse);
+        },
+      );
     });
 
     group(':focus pseudo-class', () {
-      testWidgets('element matches :focus when focus state is set',
-          (WidgetTester tester) async {
+      testWidgets('element matches :focus when focus state is set', (
+        WidgetTester tester,
+      ) async {
         final prepared = await WebFWidgetTestUtils.prepareWidgetTest(
           tester: tester,
           controllerName: 'focus-test-${DateTime.now().millisecondsSinceEpoch}',
@@ -425,8 +502,9 @@ void main() {
     });
 
     group(':focus-visible pseudo-class', () {
-      testWidgets('element matches :focus-visible when focus-visible is set',
-          (WidgetTester tester) async {
+      testWidgets('element matches :focus-visible when focus-visible is set', (
+        WidgetTester tester,
+      ) async {
         final prepared = await WebFWidgetTestUtils.prepareWidgetTest(
           tester: tester,
           controllerName:
@@ -467,8 +545,9 @@ void main() {
         expect(div.matches(':focus-visible'), isFalse);
       });
 
-      testWidgets('focus without focus-visible does not match :focus-visible',
-          (WidgetTester tester) async {
+      testWidgets('focus without focus-visible does not match :focus-visible', (
+        WidgetTester tester,
+      ) async {
         final prepared = await WebFWidgetTestUtils.prepareWidgetTest(
           tester: tester,
           controllerName:
@@ -497,8 +576,9 @@ void main() {
     });
 
     group(':focus-within pseudo-class', () {
-      testWidgets('parent matches :focus-within when child is focused',
-          (WidgetTester tester) async {
+      testWidgets('parent matches :focus-within when child is focused', (
+        WidgetTester tester,
+      ) async {
         final prepared = await _prepareMaterialWidgetTest(
           tester: tester,
           controllerName:
@@ -548,8 +628,9 @@ void main() {
         expect(parent.matches(':focus-within'), isFalse);
       });
 
-      testWidgets('deeply nested focus propagates :focus-within',
-          (WidgetTester tester) async {
+      testWidgets('deeply nested focus propagates :focus-within', (
+        WidgetTester tester,
+      ) async {
         final prepared = await WebFWidgetTestUtils.prepareWidgetTest(
           tester: tester,
           controllerName:
@@ -586,8 +667,9 @@ void main() {
 
   group('Form Control Pseudo-classes', () {
     group(':enabled and :disabled pseudo-classes', () {
-      testWidgets('button matches :enabled when not disabled',
-          (WidgetTester tester) async {
+      testWidgets('button matches :enabled when not disabled', (
+        WidgetTester tester,
+      ) async {
         final prepared = await WebFWidgetTestUtils.prepareWidgetTest(
           tester: tester,
           controllerName:
@@ -614,8 +696,9 @@ void main() {
         expect(disabledBtn.matches(':disabled'), isTrue);
       });
 
-      testWidgets('input matches :enabled/:disabled correctly',
-          (WidgetTester tester) async {
+      testWidgets('input matches :enabled/:disabled correctly', (
+        WidgetTester tester,
+      ) async {
         final prepared = await _prepareMaterialWidgetTest(
           tester: tester,
           controllerName:
@@ -642,8 +725,9 @@ void main() {
         expect(disabledInput.matches(':disabled'), isTrue);
       });
 
-      testWidgets('select matches :enabled/:disabled correctly',
-          (WidgetTester tester) async {
+      testWidgets('select matches :enabled/:disabled correctly', (
+        WidgetTester tester,
+      ) async {
         final prepared = await WebFWidgetTestUtils.prepareWidgetTest(
           tester: tester,
           controllerName:
@@ -670,8 +754,9 @@ void main() {
         expect(disabledSelect.matches(':disabled'), isTrue);
       });
 
-      testWidgets('textarea matches :enabled/:disabled correctly',
-          (WidgetTester tester) async {
+      testWidgets('textarea matches :enabled/:disabled correctly', (
+        WidgetTester tester,
+      ) async {
         final prepared = await _prepareMaterialWidgetTest(
           tester: tester,
           controllerName:
@@ -698,8 +783,9 @@ void main() {
         expect(disabledTextarea.matches(':disabled'), isTrue);
       });
 
-      testWidgets('non-form element does not match :enabled/:disabled',
-          (WidgetTester tester) async {
+      testWidgets('non-form element does not match :enabled/:disabled', (
+        WidgetTester tester,
+      ) async {
         final prepared = await WebFWidgetTestUtils.prepareWidgetTest(
           tester: tester,
           controllerName:
@@ -723,8 +809,9 @@ void main() {
     });
 
     group(':required and :optional pseudo-classes', () {
-      testWidgets('input matches :required when required attribute is set',
-          (WidgetTester tester) async {
+      testWidgets('input matches :required when required attribute is set', (
+        WidgetTester tester,
+      ) async {
         final prepared = await _prepareMaterialWidgetTest(
           tester: tester,
           controllerName:
@@ -753,8 +840,9 @@ void main() {
     });
 
     group(':checked pseudo-class', () {
-      testWidgets('checkbox matches :checked when checked attribute is set',
-          (WidgetTester tester) async {
+      testWidgets('checkbox matches :checked when checked attribute is set', (
+        WidgetTester tester,
+      ) async {
         final prepared = await _prepareMaterialWidgetTest(
           tester: tester,
           controllerName:
@@ -778,8 +866,9 @@ void main() {
         expect(uncheckedCb.matches(':checked'), isFalse);
       });
 
-      testWidgets('radio matches :checked when checked attribute is set',
-          (WidgetTester tester) async {
+      testWidgets('radio matches :checked when checked attribute is set', (
+        WidgetTester tester,
+      ) async {
         final prepared = await _prepareMaterialWidgetTest(
           tester: tester,
           controllerName:
@@ -803,8 +892,9 @@ void main() {
         expect(uncheckedRadio.matches(':checked'), isFalse);
       });
 
-      testWidgets('option matches :checked when selected',
-          (WidgetTester tester) async {
+      testWidgets('option matches :checked when selected', (
+        WidgetTester tester,
+      ) async {
         final prepared = await WebFWidgetTestUtils.prepareWidgetTest(
           tester: tester,
           controllerName:
@@ -833,13 +923,13 @@ void main() {
 
     group(':placeholder-shown pseudo-class', () {
       testWidgets(
-          'input matches :placeholder-shown when has placeholder and empty value',
-          (WidgetTester tester) async {
-        final prepared = await _prepareMaterialWidgetTest(
-          tester: tester,
-          controllerName:
-              'placeholder-shown-test-${DateTime.now().millisecondsSinceEpoch}',
-          html: '''
+        'input matches :placeholder-shown when has placeholder and empty value',
+        (WidgetTester tester) async {
+          final prepared = await _prepareMaterialWidgetTest(
+            tester: tester,
+            controllerName:
+                'placeholder-shown-test-${DateTime.now().millisecondsSinceEpoch}',
+            html: '''
             <html>
               <body>
                 <input id="t1" type="text" />
@@ -850,35 +940,37 @@ void main() {
               </body>
             </html>
           ''',
-        );
+          );
 
-        await tester.pump(Duration(milliseconds: 50));
+          await tester.pump(Duration(milliseconds: 50));
 
-        // No placeholder attribute - should not match
-        final t1 = prepared.getElementById('t1');
-        expect(t1.matches(':placeholder-shown'), isFalse);
+          // No placeholder attribute - should not match
+          final t1 = prepared.getElementById('t1');
+          expect(t1.matches(':placeholder-shown'), isFalse);
 
-        // Placeholder attribute without value - spec says empty string placeholder doesn't show
-        final t2 = prepared.getElementById('t2');
-        expect(t2.matches(':placeholder-shown'), isFalse);
+          // Placeholder attribute without value - spec says empty string placeholder doesn't show
+          final t2 = prepared.getElementById('t2');
+          expect(t2.matches(':placeholder-shown'), isFalse);
 
-        // Placeholder attribute - empty string - doesn't match per spec
-        final t3 = prepared.getElementById('t3');
-        expect(t3.matches(':placeholder-shown'), isFalse);
+          // Placeholder attribute - empty string - doesn't match per spec
+          final t3 = prepared.getElementById('t3');
+          expect(t3.matches(':placeholder-shown'), isFalse);
 
-        // Placeholder attribute - non-empty string, no value - should match
-        final t4 = prepared.getElementById('t4');
-        expect(t4.matches(':placeholder-shown'), isTrue);
+          // Placeholder attribute - non-empty string, no value - should match
+          final t4 = prepared.getElementById('t4');
+          expect(t4.matches(':placeholder-shown'), isTrue);
 
-        // Placeholder attribute with value - should not match
-        final t5 = prepared.getElementById('t5');
-        expect(t5.matches(':placeholder-shown'), isFalse);
-      });
+          // Placeholder attribute with value - should not match
+          final t5 = prepared.getElementById('t5');
+          expect(t5.matches(':placeholder-shown'), isFalse);
+        },
+      );
     });
 
     group(':valid and :invalid pseudo-classes', () {
-      testWidgets('required input is invalid when empty',
-          (WidgetTester tester) async {
+      testWidgets('required input is invalid when empty', (
+        WidgetTester tester,
+      ) async {
         final prepared = await _prepareMaterialWidgetTest(
           tester: tester,
           controllerName: 'valid-test-${DateTime.now().millisecondsSinceEpoch}',
@@ -945,8 +1037,9 @@ void main() {
         expect(emptyEmail.matches(':invalid'), isFalse);
       });
 
-      testWidgets('disabled input matches neither :valid nor :invalid',
-          (WidgetTester tester) async {
+      testWidgets('disabled input matches neither :valid nor :invalid', (
+        WidgetTester tester,
+      ) async {
         final prepared = await _prepareMaterialWidgetTest(
           tester: tester,
           controllerName:
@@ -972,8 +1065,9 @@ void main() {
   });
 
   group('Compound Selectors with Interactive Pseudo-classes', () {
-    testWidgets('compound selector :not(:disabled) matches enabled controls',
-        (WidgetTester tester) async {
+    testWidgets('compound selector :not(:disabled) matches enabled controls', (
+      WidgetTester tester,
+    ) async {
       final prepared = await WebFWidgetTestUtils.prepareWidgetTest(
         tester: tester,
         controllerName:
@@ -1001,13 +1095,13 @@ void main() {
     });
 
     testWidgets(
-        'compound selector :not(:enabled) matches disabled and non-controls',
-        (WidgetTester tester) async {
-      final prepared = await WebFWidgetTestUtils.prepareWidgetTest(
-        tester: tester,
-        controllerName:
-            'not-enabled-test-${DateTime.now().millisecondsSinceEpoch}',
-        html: '''
+      'compound selector :not(:enabled) matches disabled and non-controls',
+      (WidgetTester tester) async {
+        final prepared = await WebFWidgetTestUtils.prepareWidgetTest(
+          tester: tester,
+          controllerName:
+              'not-enabled-test-${DateTime.now().millisecondsSinceEpoch}',
+          html: '''
           <html>
             <body>
               <button id="btn_enabled">Enabled</button>
@@ -1016,21 +1110,23 @@ void main() {
             </body>
           </html>
         ''',
-      );
+        );
 
-      await tester.pump(Duration(milliseconds: 50));
+        await tester.pump(Duration(milliseconds: 50));
 
-      final btnEnabled = prepared.getElementById('btn_enabled');
-      final btnDisabled = prepared.getElementById('btn_disabled');
-      final notControl = prepared.getElementById('not_control');
+        final btnEnabled = prepared.getElementById('btn_enabled');
+        final btnDisabled = prepared.getElementById('btn_disabled');
+        final notControl = prepared.getElementById('not_control');
 
-      expect(btnEnabled.matches(':not(:enabled)'), isFalse);
-      expect(btnDisabled.matches(':not(:enabled)'), isTrue);
-      expect(notControl.matches(':not(:enabled)'), isTrue);
-    });
+        expect(btnEnabled.matches(':not(:enabled)'), isFalse);
+        expect(btnDisabled.matches(':not(:enabled)'), isTrue);
+        expect(notControl.matches(':not(:enabled)'), isTrue);
+      },
+    );
 
-    testWidgets('selector list with :hover and :focus',
-        (WidgetTester tester) async {
+    testWidgets('selector list with :hover and :focus', (
+      WidgetTester tester,
+    ) async {
       final prepared = await WebFWidgetTestUtils.prepareWidgetTest(
         tester: tester,
         controllerName:
@@ -1077,8 +1173,9 @@ void main() {
   });
 
   group('querySelectorAll with Interactive Pseudo-classes', () {
-    testWidgets('querySelectorAll :enabled returns only enabled controls',
-        (WidgetTester tester) async {
+    testWidgets('querySelectorAll :enabled returns only enabled controls', (
+      WidgetTester tester,
+    ) async {
       final prepared = await _prepareMaterialWidgetTest(
         tester: tester,
         controllerName:
@@ -1105,13 +1202,17 @@ void main() {
 
       // Should only match enabled form controls
       for (final element in enabledElements) {
-        expect(element.id?.endsWith('_enabled'), isTrue,
-            reason: 'Element ${element.id} should end with _enabled');
+        expect(
+          element.id?.endsWith('_enabled'),
+          isTrue,
+          reason: 'Element ${element.id} should end with _enabled',
+        );
       }
     });
 
-    testWidgets('querySelectorAll :disabled returns only disabled controls',
-        (WidgetTester tester) async {
+    testWidgets('querySelectorAll :disabled returns only disabled controls', (
+      WidgetTester tester,
+    ) async {
       final prepared = await _prepareMaterialWidgetTest(
         tester: tester,
         controllerName:
@@ -1138,8 +1239,11 @@ void main() {
 
       // Should only match disabled form controls
       for (final element in disabledElements) {
-        expect(element.id?.endsWith('_disabled'), isTrue,
-            reason: 'Element ${element.id} should end with _disabled');
+        expect(
+          element.id?.endsWith('_disabled'),
+          isTrue,
+          reason: 'Element ${element.id} should end with _disabled',
+        );
       }
     });
   });

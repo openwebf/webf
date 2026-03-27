@@ -13,6 +13,7 @@
 const String DISPLAY = 'display';
 const String POSITION = 'position';
 const String OPACITY = 'opacity';
+const String CURSOR = 'cursor';
 const String Z_INDEX = 'zIndex';
 const String VISIBILITY = 'visibility';
 const String CONTENT_VISIBILITY = 'contentVisibility';

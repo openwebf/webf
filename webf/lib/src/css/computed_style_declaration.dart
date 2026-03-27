@@ -19,42 +19,55 @@ class ComputedCSSStyleDeclaration extends CSSStyleDeclaration {
 
   final ffi.Pointer<NativeBindingObject> _pointer;
 
-  ComputedCSSStyleDeclaration(BindingContext super.context, this._element, this._pseudoElementName)
+  ComputedCSSStyleDeclaration(
+      BindingContext super.context, this._element, this._pseudoElementName)
       : _pointer = context.pointer;
 
   @override
   get pointer => _pointer;
 
-  static final StaticDefinedSyncBindingObjectMethodMap _computedStyleSyncMethods = {
+  static final StaticDefinedSyncBindingObjectMethodMap
+      _computedStyleSyncMethods = {
     'getPropertyValue': StaticDefinedSyncBindingObjectMethod(
-        call: (style, args) => castToType<ComputedCSSStyleDeclaration>(style).getPropertyValue(args[0])),
+        call: (style, args) => castToType<ComputedCSSStyleDeclaration>(style)
+            .getPropertyValue(args[0])),
     'setProperty': StaticDefinedSyncBindingObjectMethod(
-        call: (style, args) => castToType<ComputedCSSStyleDeclaration>(style).setProperty(args[0], args[1])),
+        call: (style, args) => castToType<ComputedCSSStyleDeclaration>(style)
+            .setProperty(args[0], args[1])),
     'removeProperty': StaticDefinedSyncBindingObjectMethod(
-        call: (style, args) => castToType<ComputedCSSStyleDeclaration>(style).removeProperty(args[0])),
+        call: (style, args) => castToType<ComputedCSSStyleDeclaration>(style)
+            .removeProperty(args[0])),
     'checkCSSProperty': StaticDefinedSyncBindingObjectMethod(
-        call: (style, args) => castToType<ComputedCSSStyleDeclaration>(style).checkCSSProperty(args[0])),
+        call: (style, args) => castToType<ComputedCSSStyleDeclaration>(style)
+            .checkCSSProperty(args[0])),
     'getFullCSSPropertyList': StaticDefinedSyncBindingObjectMethod(
-        call: (style, args) => castToType<ComputedCSSStyleDeclaration>(style).getFullCSSPropertyList()),
+        call: (style, args) => castToType<ComputedCSSStyleDeclaration>(style)
+            .getFullCSSPropertyList()),
   };
 
   @override
-  List<StaticDefinedSyncBindingObjectMethodMap> get methods => [...super.methods, _computedStyleSyncMethods];
-
+  List<StaticDefinedSyncBindingObjectMethodMap> get methods =>
+      [...super.methods, _computedStyleSyncMethods];
 
   static final StaticDefinedBindingPropertyMap _computedStyleProperties = {
     'cssText': StaticDefinedBindingProperty(
-        getter: (style) => castToType<ComputedCSSStyleDeclaration>(style).cssText,
-        setter: (style, value) => castToType<ComputedCSSStyleDeclaration>(style).cssText = value),
-    'length': StaticDefinedBindingProperty(getter: (style) => castToType<ComputedCSSStyleDeclaration>(style).length)
+        getter: (style) =>
+            castToType<ComputedCSSStyleDeclaration>(style).cssText,
+        setter: (style, value) =>
+            castToType<ComputedCSSStyleDeclaration>(style).cssText = value),
+    'length': StaticDefinedBindingProperty(
+        getter: (style) =>
+            castToType<ComputedCSSStyleDeclaration>(style).length)
   };
 
   @override
-  List<StaticDefinedBindingPropertyMap> get properties => [...super.properties, _computedStyleProperties];
+  List<StaticDefinedBindingPropertyMap> get properties =>
+      [...super.properties, _computedStyleProperties];
 
   @override
   String get cssText {
-    Map<CSSPropertyID, String> reverse(Map map) => {for (var e in map.entries) e.value: e.key};
+    Map<CSSPropertyID, String> reverse(Map map) =>
+        {for (var e in map.entries) e.value: e.key};
     final propertyMap = reverse(CSSPropertyNameMap);
 
     StringBuffer result = StringBuffer();
@@ -86,7 +99,8 @@ class ComputedCSSStyleDeclaration extends CSSStyleDeclaration {
 
   @override
   String getPropertyValue(String propertyName) {
-    CSSPropertyID? propertyID = CSSPropertyNameMap[propertyName] ?? CSSPropertyNameMap[kebabize(propertyName)];
+    CSSPropertyID? propertyID = CSSPropertyNameMap[propertyName] ??
+        CSSPropertyNameMap[kebabize(propertyName)];
     if (propertyID == null) {
       _element.ownerDocument.updateStyleIfNeeded();
       CSSRenderStyle? style = _element.computedStyle(_pseudoElementName);
@@ -115,7 +129,8 @@ class ComputedCSSStyleDeclaration extends CSSStyleDeclaration {
     throw UnimplementedError('Not implemented');
   }
 
-  String _valueForPropertyInStyle(CSSPropertyID propertyID, {bool needUpdateStyle = false}) {
+  String _valueForPropertyInStyle(CSSPropertyID propertyID,
+      {bool needUpdateStyle = false}) {
     if (needUpdateStyle) {
       _element.ownerDocument.updateStyleIfNeeded();
     }
@@ -135,7 +150,8 @@ class ComputedCSSStyleDeclaration extends CSSStyleDeclaration {
         return _getBackgroundShorthandValue();
       case CSSPropertyID.BackgroundColor:
         // Per CSSOM, computed background-color defaults to transparent.
-        return style.backgroundColor?.cssText() ?? CSSColor(const Color(0x00000000)).cssText();
+        return style.backgroundColor?.cssText() ??
+            CSSColor(const Color(0x00000000)).cssText();
       case CSSPropertyID.BackgroundImage:
         return style.backgroundImage?.cssText() ?? 'none';
       case CSSPropertyID.BackgroundRepeat:
@@ -149,14 +165,22 @@ class ComputedCSSStyleDeclaration extends CSSStyleDeclaration {
       case CSSPropertyID.BackgroundSize:
         return style.backgroundSize.cssText();
       case CSSPropertyID.BackgroundAttachment:
-        return (style.backgroundAttachment ?? CSSBackgroundAttachmentType.scroll).cssText();
+        return (style.backgroundAttachment ??
+                CSSBackgroundAttachmentType.scroll)
+            .cssText();
       case CSSPropertyID.BackgroundClip:
-        return (style.backgroundClip ?? CSSBackgroundBoundary.borderBox).cssText();
+        return (style.backgroundClip ?? CSSBackgroundBoundary.borderBox)
+            .cssText();
       case CSSPropertyID.BackgroundOrigin:
-        return (style.backgroundOrigin ?? CSSBackgroundBoundary.paddingBox).cssText();
+        return (style.backgroundOrigin ?? CSSBackgroundBoundary.paddingBox)
+            .cssText();
       case CSSPropertyID.Border:
         final value = _valueForPropertyInStyle(CSSPropertyID.BorderTop);
-        final ids = [CSSPropertyID.BorderRight, CSSPropertyID.BorderBottom, CSSPropertyID.BorderLeft];
+        final ids = [
+          CSSPropertyID.BorderRight,
+          CSSPropertyID.BorderBottom,
+          CSSPropertyID.BorderLeft
+        ];
         for (CSSPropertyID propertyID in ids) {
           if (_valueForPropertyInStyle(propertyID) != value) {
             return '';
@@ -188,7 +212,11 @@ class ComputedCSSStyleDeclaration extends CSSStyleDeclaration {
       case CSSPropertyID.BorderLeftWidth:
         return '${style.effectiveBorderLeftWidth.computedValue.cssText()}px';
       case CSSPropertyID.BorderTop:
-        final properties = [CSSPropertyID.BorderTopWidth, CSSPropertyID.BorderTopStyle, CSSPropertyID.BorderTopColor];
+        final properties = [
+          CSSPropertyID.BorderTopWidth,
+          CSSPropertyID.BorderTopStyle,
+          CSSPropertyID.BorderTopColor
+        ];
         return properties.map((e) => _valueForPropertyInStyle(e)).join(' ');
       case CSSPropertyID.BorderLeft:
         final properties = [
@@ -213,27 +241,27 @@ class ComputedCSSStyleDeclaration extends CSSStyleDeclaration {
         return properties.map((e) => _valueForPropertyInStyle(e)).join(' ');
       case CSSPropertyID.BorderColor:
         return _getCSSPropertyValuesForSidesShorthand([
-          CSSPropertyID.BorderTopColor,
-          CSSPropertyID.BorderRightColor,
-          CSSPropertyID.BorderBottomColor,
-          CSSPropertyID.BorderLeftColor
-        ])?.join(' ') ??
+              CSSPropertyID.BorderTopColor,
+              CSSPropertyID.BorderRightColor,
+              CSSPropertyID.BorderBottomColor,
+              CSSPropertyID.BorderLeftColor
+            ])?.join(' ') ??
             '';
       case CSSPropertyID.BorderStyle:
         return _getCSSPropertyValuesForSidesShorthand([
-          CSSPropertyID.BorderTopStyle,
-          CSSPropertyID.BorderRightStyle,
-          CSSPropertyID.BorderBottomStyle,
-          CSSPropertyID.BorderLeftStyle
-        ])?.join(' ') ??
+              CSSPropertyID.BorderTopStyle,
+              CSSPropertyID.BorderRightStyle,
+              CSSPropertyID.BorderBottomStyle,
+              CSSPropertyID.BorderLeftStyle
+            ])?.join(' ') ??
             '';
       case CSSPropertyID.BorderWidth:
         return _getCSSPropertyValuesForSidesShorthand([
-          CSSPropertyID.BorderTopWidth,
-          CSSPropertyID.BorderRightWidth,
-          CSSPropertyID.BorderBottomWidth,
-          CSSPropertyID.BorderLeftWidth
-        ])?.join(' ') ??
+              CSSPropertyID.BorderTopWidth,
+              CSSPropertyID.BorderRightWidth,
+              CSSPropertyID.BorderBottomWidth,
+              CSSPropertyID.BorderLeftWidth
+            ])?.join(' ') ??
             '';
       case CSSPropertyID.BorderTopLeftRadius:
         return style.borderTopLeftRadius.cssText();
@@ -285,7 +313,8 @@ class ComputedCSSStyleDeclaration extends CSSStyleDeclaration {
       case CSSPropertyID.Width:
         if (style.width.isAuto) {
           if (style.isBoxModelHaveSize()) {
-            double? boxWidth = style.getSelfRenderBoxValue((renderBox, _) => renderBox.boxSize?.width);
+            double? boxWidth = style.getSelfRenderBoxValue(
+                (renderBox, _) => renderBox.boxSize?.width);
             if (boxWidth != null && boxWidth > 0) {
               return '${boxWidth.cssText()}px';
             }
@@ -295,7 +324,8 @@ class ComputedCSSStyleDeclaration extends CSSStyleDeclaration {
       case CSSPropertyID.Height:
         if (style.height.isAuto) {
           if (style.isBoxModelHaveSize()) {
-            double? boxHeight = style.getSelfRenderBoxValue((renderBox, _) => renderBox.boxSize?.height);
+            double? boxHeight = style.getSelfRenderBoxValue(
+                (renderBox, _) => renderBox.boxSize?.height);
             if (boxHeight != null && boxHeight > 0) {
               return '${boxHeight.cssText()}px';
             }
@@ -336,6 +366,8 @@ class ComputedCSSStyleDeclaration extends CSSStyleDeclaration {
         return style.objectFit.toString();
       case CSSPropertyID.Opacity:
         return style.opacity.toString();
+      case CSSPropertyID.Cursor:
+        return style.cursor.cssText();
       case CSSPropertyID.OverflowX:
         return style.overflowX.cssText();
       case CSSPropertyID.OverflowY:
@@ -432,7 +464,6 @@ class ComputedCSSStyleDeclaration extends CSSStyleDeclaration {
       case CSSPropertyID.ListStyleType:
       case CSSPropertyID.ImageRendering:
       case CSSPropertyID.TabSize:
-      case CSSPropertyID.Cursor:
       case CSSPropertyID.EmptyCells:
       case CSSPropertyID.Direction:
       case CSSPropertyID.BorderCollapse:
@@ -442,7 +473,7 @@ class ComputedCSSStyleDeclaration extends CSSStyleDeclaration {
       case CSSPropertyID.Clip:
       case CSSPropertyID.Speak:
         break;
-    /* Individual properties not part of the spec */
+      /* Individual properties not part of the spec */
       case CSSPropertyID.BackgroundRepeatX:
       case CSSPropertyID.BackgroundRepeatY:
       case CSSPropertyID.TextLineThrough:
@@ -462,13 +493,13 @@ class ComputedCSSStyleDeclaration extends CSSStyleDeclaration {
       case CSSPropertyID.TextUnderlineWidth:
         break;
 
-    /* Unimplemented @font-face properties */
+      /* Unimplemented @font-face properties */
       case CSSPropertyID.FontStretch:
       case CSSPropertyID.Src:
       case CSSPropertyID.UnicodeRange:
         break;
 
-    /* Other unimplemented properties */
+      /* Other unimplemented properties */
       case CSSPropertyID.Page: // for @page
       case CSSPropertyID.Quotes: // FIXME: needs implementation
       case CSSPropertyID.Size: // for @page
@@ -539,17 +570,19 @@ class ComputedCSSStyleDeclaration extends CSSStyleDeclaration {
   }
 
   String _borderRadiusShorthandValue(RenderStyle style) {
-    final showHorizontalBottomLeft = style.borderTopRightRadius.x != style.borderBottomLeftRadius.x;
-    final showHorizontalBottomRight =
-        showHorizontalBottomLeft || (style.borderBottomRightRadius.x != style.borderTopLeftRadius.x);
-    final showHorizontalTopRight =
-        showHorizontalBottomRight || (style.borderTopRightRadius.x != style.borderTopLeftRadius.x);
+    final showHorizontalBottomLeft =
+        style.borderTopRightRadius.x != style.borderBottomLeftRadius.x;
+    final showHorizontalBottomRight = showHorizontalBottomLeft ||
+        (style.borderBottomRightRadius.x != style.borderTopLeftRadius.x);
+    final showHorizontalTopRight = showHorizontalBottomRight ||
+        (style.borderTopRightRadius.x != style.borderTopLeftRadius.x);
 
-    final showVerticalBottomLeft = style.borderTopRightRadius.y != style.borderBottomLeftRadius.y;
-    final showVerticalBottomRight =
-        showVerticalBottomLeft || (style.borderBottomRightRadius.y != style.borderTopLeftRadius.y);
-    final showVerticalTopRight =
-        showVerticalBottomRight || (style.borderTopRightRadius.y != style.borderTopLeftRadius.y);
+    final showVerticalBottomLeft =
+        style.borderTopRightRadius.y != style.borderBottomLeftRadius.y;
+    final showVerticalBottomRight = showVerticalBottomLeft ||
+        (style.borderBottomRightRadius.y != style.borderTopLeftRadius.y);
+    final showVerticalTopRight = showVerticalBottomRight ||
+        (style.borderTopRightRadius.y != style.borderTopLeftRadius.y);
 
     final topLeftRadius = style.borderTopLeftRadius;
     final topRightRadius = style.borderTopRightRadius;
@@ -585,8 +618,10 @@ class ComputedCSSStyleDeclaration extends CSSStyleDeclaration {
   }
 
   // top -> right -> bottom -> left
-  List<String>? _getCSSPropertyValuesForSidesShorthand(List<CSSPropertyID> propertyIDs) {
-    assert(propertyIDs.length == 4, 'The sides dose not include top | right | bottom | left');
+  List<String>? _getCSSPropertyValuesForSidesShorthand(
+      List<CSSPropertyID> propertyIDs) {
+    assert(propertyIDs.length == 4,
+        'The sides dose not include top | right | bottom | left');
     final top = _valueForPropertyInStyle(propertyIDs[0]);
     final right = _valueForPropertyInStyle(propertyIDs[1]);
     final bottom = _valueForPropertyInStyle(propertyIDs[2]);
@@ -606,20 +641,24 @@ class ComputedCSSStyleDeclaration extends CSSStyleDeclaration {
       CSSPropertyID.BackgroundOrigin,
       CSSPropertyID.BackgroundClip
     ];
-    final backgroundColor = _valueForPropertyInStyle(CSSPropertyID.BackgroundColor);
-    final beforeValue = beforeSlashSeparator.map((e) => _valueForPropertyInStyle(e)).join(' ');
-    final afterValue = afterSlashSeparator.map((e) => _valueForPropertyInStyle(e)).join(' ');
+    final backgroundColor =
+        _valueForPropertyInStyle(CSSPropertyID.BackgroundColor);
+    final beforeValue =
+        beforeSlashSeparator.map((e) => _valueForPropertyInStyle(e)).join(' ');
+    final afterValue =
+        afterSlashSeparator.map((e) => _valueForPropertyInStyle(e)).join(' ');
     return '$backgroundColor $beforeValue / $afterValue';
   }
 
   @override
-  String toString({ DiagnosticLevel minLevel = DiagnosticLevel.info }) {
+  String toString({DiagnosticLevel minLevel = DiagnosticLevel.info}) {
     return 'ComputedCSSStyleDeclaration($_element)';
   }
 }
 
 List<T>? _compressSlidesValue<T>(List<T> values) {
-  assert(values.length == 4, 'The sides dose not include top | right | bottom | left');
+  assert(values.length == 4,
+      'The sides dose not include top | right | bottom | left');
   final top = values[0];
   final right = values[1];
   final bottom = values[2];
@@ -647,7 +686,10 @@ List<T>? _compressSlidesValue<T>(List<T> values) {
 
 extension CSSEdgeInsetsText on EdgeInsets {
   String cssText() {
-    return _compressSlidesValue<double>([top, right, bottom, left])?.map((e) => '${e}px').join(' ') ?? '0px';
+    return _compressSlidesValue<double>([top, right, bottom, left])
+            ?.map((e) => '${e}px')
+            .join(' ') ??
+        '0px';
   }
 }
 
@@ -816,7 +858,6 @@ extension VisibilityText on Visibility {
 }
 
 enum WhiteSpace { normal, nowrap, pre, preWrap, preLine, breakSpaces }
-
 
 extension WhiteSpaceText on WhiteSpace {
   String cssText() {
@@ -1003,7 +1044,8 @@ String _gridTrackListToCss(
     } else {
       buffer.write(_gridTrackValueToCss(track));
     }
-    if (track.trailingLineNames.isNotEmpty && (i < tracks.length - 1 || includeTrailingEndNames)) {
+    if (track.trailingLineNames.isNotEmpty &&
+        (i < tracks.length - 1 || includeTrailingEndNames)) {
       buffer.write(' ');
       buffer.write(_gridLineNamesToCss(track.trailingLineNames));
     }
@@ -1025,7 +1067,9 @@ String _gridPlacementToCss(
     case GridPlacementKind.line:
       if (placement.lineName != null) {
         final int occurrence = placement.lineNameOccurrence ?? 1;
-        if (placement.hasExplicitLineNameOccurrence || forceIncludeOccurrence || occurrence != 1) {
+        if (placement.hasExplicitLineNameOccurrence ||
+            forceIncludeOccurrence ||
+            occurrence != 1) {
           return '${placement.lineName} $occurrence';
         }
         return placement.lineName!;
@@ -1044,7 +1088,8 @@ String _gridPlacementShorthand(
 }) {
   final String startText =
       _gridPlacementToCss(start, forceIncludeOccurrence: forceStartOccurrence);
-  final String endText = _gridPlacementToCss(end, forceIncludeOccurrence: forceEndOccurrence);
+  final String endText =
+      _gridPlacementToCss(end, forceIncludeOccurrence: forceEndOccurrence);
   return '$startText / $endText';
 }
 
@@ -1174,7 +1219,8 @@ String _gapToCss(CSSLengthValue value) {
 }
 
 String? _valueForGridProperty(String propertyName, CSSRenderStyle style) {
-  String normalized = propertyName.contains('-') ? propertyName : kebabize(propertyName);
+  String normalized =
+      propertyName.contains('-') ? propertyName : kebabize(propertyName);
   if (normalized.startsWith('-')) {
     normalized = normalized.substring(1);
   }
@@ -1184,7 +1230,8 @@ String? _valueForGridProperty(String propertyName, CSSRenderStyle style) {
     case 'column-gap':
       return _gapToCss(style.columnGap);
     case 'gap':
-      return _placeShorthandToCss(_gapToCss(style.rowGap), _gapToCss(style.columnGap));
+      return _placeShorthandToCss(
+          _gapToCss(style.rowGap), _gapToCss(style.columnGap));
     case 'grid-auto-flow':
       return _gridAutoFlowToCss(style.gridAutoFlow);
     case 'grid-template-columns':

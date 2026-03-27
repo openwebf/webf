@@ -24,8 +24,8 @@ import 'package:webf/foundation.dart';
 import 'package:webf/widget.dart';
 import 'package:webf/src/css/css_animation.dart';
 
-
-typedef RenderStyleVisitor<T extends RenderObject> = void Function(T renderObject);
+typedef RenderStyleVisitor<T extends RenderObject> = void Function(
+    T renderObject);
 
 const int _kParsedStyleValueCacheSize = 2048;
 
@@ -77,7 +77,8 @@ class _ScaledEmParsedStyleValue extends _ParsedStyleValue {
 }
 
 _ParsedStyleValue? _parseLengthStyleValue(String propertyValue) {
-  final CSSParsedLengthValue? parsed = CSSParsedLengthValue.tryParse(propertyValue);
+  final CSSParsedLengthValue? parsed =
+      CSSParsedLengthValue.tryParse(propertyValue);
   if (parsed == null) {
     return null;
   }
@@ -87,21 +88,28 @@ _ParsedStyleValue? _parseLengthStyleValue(String propertyValue) {
 _ParsedStyleValue? _parseFontSizeStyleValue(String propertyValue) {
   switch (propertyValue) {
     case 'xx-small':
-      return _StaticParsedStyleValue(CSSLengthValue(3 / 5 * 16, CSSLengthType.PX));
+      return _StaticParsedStyleValue(
+          CSSLengthValue(3 / 5 * 16, CSSLengthType.PX));
     case 'x-small':
-      return _StaticParsedStyleValue(CSSLengthValue(3 / 4 * 16, CSSLengthType.PX));
+      return _StaticParsedStyleValue(
+          CSSLengthValue(3 / 4 * 16, CSSLengthType.PX));
     case 'small':
-      return _StaticParsedStyleValue(CSSLengthValue(8 / 9 * 16, CSSLengthType.PX));
+      return _StaticParsedStyleValue(
+          CSSLengthValue(8 / 9 * 16, CSSLengthType.PX));
     case 'medium':
       return _StaticParsedStyleValue(CSSLengthValue(16, CSSLengthType.PX));
     case 'large':
-      return _StaticParsedStyleValue(CSSLengthValue(6 / 5 * 16, CSSLengthType.PX));
+      return _StaticParsedStyleValue(
+          CSSLengthValue(6 / 5 * 16, CSSLengthType.PX));
     case 'x-large':
-      return _StaticParsedStyleValue(CSSLengthValue(3 / 2 * 16, CSSLengthType.PX));
+      return _StaticParsedStyleValue(
+          CSSLengthValue(3 / 2 * 16, CSSLengthType.PX));
     case 'xx-large':
-      return _StaticParsedStyleValue(CSSLengthValue(2 / 1 * 16, CSSLengthType.PX));
+      return _StaticParsedStyleValue(
+          CSSLengthValue(2 / 1 * 16, CSSLengthType.PX));
     case 'xxx-large':
-      return _StaticParsedStyleValue(CSSLengthValue(3 / 1 * 16, CSSLengthType.PX));
+      return _StaticParsedStyleValue(
+          CSSLengthValue(3 / 1 * 16, CSSLengthType.PX));
     case 'smaller':
       return const _ScaledEmParsedStyleValue(5 / 6);
     case 'larger':
@@ -285,6 +293,9 @@ _ParsedStyleValue? _parseStyleValue(String propertyName, String propertyValue) {
     case OPACITY:
       return _StaticParsedStyleValue(
           CSSOpacityMixin.resolveOpacity(propertyValue));
+    case CURSOR:
+      return _StaticParsedStyleValue(
+          CSSCursorMixin.resolveCursor(propertyValue));
     case VISIBILITY:
       return _StaticParsedStyleValue(
           CSSVisibilityMixin.resolveVisibility(propertyValue));
@@ -321,8 +332,7 @@ _ParsedStyleValue? _parseStyleValue(String propertyName, String propertyValue) {
     case FONT_STYLE:
       return _StaticParsedStyleValue(CSSText.resolveFontStyle(propertyValue));
     case FONT_VARIANT:
-      return _StaticParsedStyleValue(
-          CSSText.resolveFontVariant(propertyValue));
+      return _StaticParsedStyleValue(CSSText.resolveFontVariant(propertyValue));
     case FONT_FAMILY:
       return _StaticParsedStyleValue(List<String>.unmodifiable(
           CSSText.resolveFontFamilyFallback(propertyValue)));
@@ -382,6 +392,8 @@ class UpdateTransformReason extends AdapterUpdateReason {}
 
 class UpdateDirectionReason extends AdapterUpdateReason {}
 
+class UpdateCursorReason extends AdapterUpdateReason {}
+
 class UpdateChildNodeUpdateReason extends AdapterUpdateReason {}
 
 // Used by Blink style-sync to reveal elements that were temporarily hidden to
@@ -400,14 +412,16 @@ class ToPositionPlaceHolderUpdateReason extends AdapterUpdateReason {
   Element positionedElement;
   Element containingBlockElement;
 
-  ToPositionPlaceHolderUpdateReason({required this.positionedElement, required this.containingBlockElement});
+  ToPositionPlaceHolderUpdateReason(
+      {required this.positionedElement, required this.containingBlockElement});
 }
 
 class AttachPositionedChild extends AdapterUpdateReason {
   Element positionedElement;
   Element containingBlockElement;
 
-  AttachPositionedChild({required this.positionedElement, required this.containingBlockElement});
+  AttachPositionedChild(
+      {required this.positionedElement, required this.containingBlockElement});
 }
 
 class ToStaticLayoutUpdateReason extends AdapterUpdateReason {}
@@ -418,15 +432,27 @@ class RemovePositionedChild extends AdapterUpdateReason {
   RemovePositionedChild(this.positionedElement);
 }
 
-typedef SomeRenderBoxModelHandlerCallback = bool Function(RenderBoxModel renderBoxModel);
-typedef EveryRenderBoxModelHandlerCallback = bool Function(flutter.Element?, RenderBoxModel renderBoxModel);
-typedef RenderObjectMatchers = dynamic Function(RenderObject? renderObject, RenderStyle? renderStyle);
-typedef RenderBoxModelMatcher = bool Function(RenderBoxModel renderBoxModel, RenderStyle renderStyle);
+typedef SomeRenderBoxModelHandlerCallback = bool Function(
+    RenderBoxModel renderBoxModel);
+typedef EveryRenderBoxModelHandlerCallback = bool Function(
+    flutter.Element?, RenderBoxModel renderBoxModel);
+typedef RenderObjectMatchers = dynamic Function(
+    RenderObject? renderObject, RenderStyle? renderStyle);
+typedef RenderBoxModelMatcher = bool Function(
+    RenderBoxModel renderBoxModel, RenderStyle renderStyle);
 typedef RenderStyleMatcher = bool Function(RenderStyle renderStyle);
 typedef RenderStyleValueGetter = dynamic Function(RenderStyle renderStyle);
-typedef RenderBoxModelGetter = dynamic Function(RenderBoxModel renderBoxModel, RenderStyle renderStyle);
+typedef RenderBoxModelGetter = dynamic Function(
+    RenderBoxModel renderBoxModel, RenderStyle renderStyle);
 
-enum RenderObjectGetType { self, parent, firstChild, lastChild, previousSibling, nextSibling }
+enum RenderObjectGetType {
+  self,
+  parent,
+  firstChild,
+  lastChild,
+  previousSibling,
+  nextSibling
+}
 
 /// The abstract class for render-style, declare the
 /// getter interface for all available CSS rule.
@@ -733,6 +759,8 @@ abstract class RenderStyle extends DiagnosticableTree with Diagnosticable {
   // Misc
   double get opacity;
 
+  CSSCursor get cursor;
+
   Visibility get visibility;
 
   ContentVisibility get contentVisibility;
@@ -797,11 +825,14 @@ abstract class RenderStyle extends DiagnosticableTree with Diagnosticable {
 
   double getHeightByAspectRatio();
 
-  final Map<flutter.RenderObjectElement, RenderBoxModel> _widgetRenderObjects = {};
+  final Map<flutter.RenderObjectElement, RenderBoxModel> _widgetRenderObjects =
+      {};
 
-  Map<flutter.RenderObjectElement, RenderBoxModel> get widgetRenderObjects => _widgetRenderObjects;
+  Map<flutter.RenderObjectElement, RenderBoxModel> get widgetRenderObjects =>
+      _widgetRenderObjects;
 
-  Iterable<RenderBoxModel> get widgetRenderObjectIterator => _widgetRenderObjects.values;
+  Iterable<RenderBoxModel> get widgetRenderObjectIterator =>
+      _widgetRenderObjects.values;
 
   // For some style changes, we needs to upgrade
   void requestWidgetToRebuild(AdapterUpdateReason reason) {
@@ -873,52 +904,59 @@ abstract class RenderStyle extends DiagnosticableTree with Diagnosticable {
     return _widgetRenderObjects.isNotEmpty;
   }
 
-  RenderBoxModel? getSelfRenderBox(flutter.RenderObjectElement? flutterWidgetElement) {
+  RenderBoxModel? getSelfRenderBox(
+      flutter.RenderObjectElement? flutterWidgetElement) {
     return _widgetRenderObjects[flutterWidgetElement];
   }
 
   @pragma('vm:prefer-inline')
   bool isSelfParentDataAreRenderLayoutParentData() {
     return everyRenderObjectByTypeAndMatch(
-        RenderObjectGetType.self, (renderObject, _) => renderObject?.parentData is RenderLayoutParentData);
+        RenderObjectGetType.self,
+        (renderObject, _) =>
+            renderObject?.parentData is RenderLayoutParentData);
   }
 
   @pragma('vm:prefer-inline')
   bool isParentRenderBoxModel() {
-    return everyRenderObjectByTypeAndMatch(
-        RenderObjectGetType.parent, (renderObject, _) => renderObject is RenderBoxModel);
+    return everyRenderObjectByTypeAndMatch(RenderObjectGetType.parent,
+        (renderObject, _) => renderObject is RenderBoxModel);
   }
 
   @pragma('vm:prefer-inline')
   bool isParentRenderLayoutBox() {
-    return getAttachedRenderParentRenderStyle()?.isSelfRenderLayoutBox() == true;
+    return getAttachedRenderParentRenderStyle()?.isSelfRenderLayoutBox() ==
+        true;
   }
 
   @pragma('vm:prefer-inline')
   bool isParentRenderFlexLayout() {
-    return getAttachedRenderParentRenderStyle()?.isSelfRenderFlexLayout() == true;
+    return getAttachedRenderParentRenderStyle()?.isSelfRenderFlexLayout() ==
+        true;
   }
 
   @pragma('vm:prefer-inline')
   bool isParentRenderGridLayout() {
-    return getAttachedRenderParentRenderStyle()?.isSelfRenderGridLayout() == true;
+    return getAttachedRenderParentRenderStyle()?.isSelfRenderGridLayout() ==
+        true;
   }
 
   @pragma('vm:prefer-inline')
   bool isParentRenderFlowLayout() {
-    return getAttachedRenderParentRenderStyle()?.isSelfRenderFlowLayout() == true;
+    return getAttachedRenderParentRenderStyle()?.isSelfRenderFlowLayout() ==
+        true;
   }
 
   @pragma('vm:prefer-inline')
   bool isLayoutBox() {
-    return everyRenderObjectByTypeAndMatch(
-        RenderObjectGetType.self, (renderObject, _) => renderObject is RenderLayoutBox);
+    return everyRenderObjectByTypeAndMatch(RenderObjectGetType.self,
+        (renderObject, _) => renderObject is RenderLayoutBox);
   }
 
   @pragma('vm:prefer-inline')
   bool isBoxModel() {
-    return everyRenderObjectByTypeAndMatch(
-        RenderObjectGetType.self, (renderObject, _) => renderObject is RenderBoxModel);
+    return everyRenderObjectByTypeAndMatch(RenderObjectGetType.self,
+        (renderObject, _) => renderObject is RenderBoxModel);
   }
 
   @pragma('vm:prefer-inline')
@@ -928,7 +966,8 @@ abstract class RenderStyle extends DiagnosticableTree with Diagnosticable {
 
   @pragma('vm:prefer-inline')
   bool isPreviousSiblingAreRenderObject() {
-    return target.attachedRenderPreviousSibling?.attachedRenderer is RenderObject;
+    return target.attachedRenderPreviousSibling?.attachedRenderer
+        is RenderObject;
   }
 
   // DOM-scanning helpers removed; sibling relationships are derived from attached render siblings.
@@ -982,8 +1021,8 @@ abstract class RenderStyle extends DiagnosticableTree with Diagnosticable {
 
   @pragma('vm:prefer-inline')
   bool isBoxModelHaveSize() {
-    return everyRenderObjectByTypeAndMatch(
-        RenderObjectGetType.self, (boxModel, _) => boxModel is RenderBoxModel && boxModel.hasSize);
+    return everyRenderObjectByTypeAndMatch(RenderObjectGetType.self,
+        (boxModel, _) => boxModel is RenderBoxModel && boxModel.hasSize);
   }
 
   @pragma('vm:prefer-inline')
@@ -998,50 +1037,55 @@ abstract class RenderStyle extends DiagnosticableTree with Diagnosticable {
 
   @pragma('vm:prefer-inline')
   bool isSelfScrollingContainer() {
-    return (overflowX == CSSOverflowType.scroll || overflowX == CSSOverflowType.auto) ||
-        (overflowY == CSSOverflowType.scroll || overflowY == CSSOverflowType.auto);
+    return (overflowX == CSSOverflowType.scroll ||
+            overflowX == CSSOverflowType.auto) ||
+        (overflowY == CSSOverflowType.scroll ||
+            overflowY == CSSOverflowType.auto);
   }
 
   @pragma('vm:prefer-inline')
   bool isSelfRenderFlexLayout() {
-    return everyAttachedRenderObjectByTypeAndMatch(
-        RenderObjectGetType.self, (renderObject, _) => renderObject is RenderFlexLayout);
+    return everyAttachedRenderObjectByTypeAndMatch(RenderObjectGetType.self,
+        (renderObject, _) => renderObject is RenderFlexLayout);
   }
 
   @pragma('vm:prefer-inline')
   bool isSelfRenderGridLayout() {
-    return everyAttachedRenderObjectByTypeAndMatch(
-        RenderObjectGetType.self, (renderObject, _) => renderObject is RenderGridLayout);
+    return everyAttachedRenderObjectByTypeAndMatch(RenderObjectGetType.self,
+        (renderObject, _) => renderObject is RenderGridLayout);
   }
 
   @pragma('vm:prefer-inline')
   bool isSelfRenderFlowLayout() {
-    return everyAttachedRenderObjectByTypeAndMatch(
-        RenderObjectGetType.self, (renderObject, _) => renderObject is RenderFlowLayout);
+    return everyAttachedRenderObjectByTypeAndMatch(RenderObjectGetType.self,
+        (renderObject, _) => renderObject is RenderFlowLayout);
   }
 
   @pragma('vm:prefer-inline')
   bool isSelfAnonymousFlowLayout() {
-    return everyAttachedRenderObjectByTypeAndMatch(RenderObjectGetType.self,
-        (renderObject, _) => renderObject is RenderBoxModel && renderObject.renderStyle.target.tagName == 'Anonymous');
+    return everyAttachedRenderObjectByTypeAndMatch(
+        RenderObjectGetType.self,
+        (renderObject, _) =>
+            renderObject is RenderBoxModel &&
+            renderObject.renderStyle.target.tagName == 'Anonymous');
   }
 
   @pragma('vm:prefer-inline')
   bool isSelfRenderReplaced() {
-    return everyAttachedRenderObjectByTypeAndMatch(
-        RenderObjectGetType.self, (renderObject, _) => renderObject is RenderReplaced);
+    return everyAttachedRenderObjectByTypeAndMatch(RenderObjectGetType.self,
+        (renderObject, _) => renderObject is RenderReplaced);
   }
 
   @pragma('vm:prefer-inline')
   bool isSelfRenderWidget() {
-    return everyAttachedRenderObjectByTypeAndMatch(
-        RenderObjectGetType.self, (renderObject, _) => renderObject is RenderWidget);
+    return everyAttachedRenderObjectByTypeAndMatch(RenderObjectGetType.self,
+        (renderObject, _) => renderObject is RenderWidget);
   }
 
   @pragma('vm:prefer-inline')
   bool isSelfRenderLayoutBox() {
-    return everyAttachedRenderObjectByTypeAndMatch(
-        RenderObjectGetType.self, (renderObject, _) => renderObject is RenderLayoutBox);
+    return everyAttachedRenderObjectByTypeAndMatch(RenderObjectGetType.self,
+        (renderObject, _) => renderObject is RenderLayoutBox);
   }
 
   @pragma('vm:prefer-inline')
@@ -1051,17 +1095,20 @@ abstract class RenderStyle extends DiagnosticableTree with Diagnosticable {
 
   @pragma('vm:prefer-inline')
   bool isPositionHolderParentIsRenderFlexLayout() {
-    return attachedRenderBoxModel?.renderPositionPlaceholder?.parent is RenderFlexLayout;
+    return attachedRenderBoxModel?.renderPositionPlaceholder?.parent
+        is RenderFlexLayout;
   }
 
   @pragma('vm:prefer-inline')
   bool isPositionHolderParentIsRenderLayoutBox() {
-    return attachedRenderBoxModel?.renderPositionPlaceholder?.parent is RenderLayoutBox;
+    return attachedRenderBoxModel?.renderPositionPlaceholder?.parent
+        is RenderLayoutBox;
   }
 
   @pragma('vm:prefer-inline')
   bool isSelfPositioned() {
-    return position == CSSPositionType.absolute || position == CSSPositionType.fixed;
+    return position == CSSPositionType.absolute ||
+        position == CSSPositionType.fixed;
   }
 
   @pragma('vm:prefer-inline')
@@ -1087,7 +1134,8 @@ abstract class RenderStyle extends DiagnosticableTree with Diagnosticable {
   @pragma('vm:prefer-inline')
   bool isSelfBoxModelMatch(RenderBoxModelMatcher matcher) {
     if (attachedRenderBoxModel != null) {
-      return matcher(attachedRenderBoxModel!, attachedRenderBoxModel!.renderStyle);
+      return matcher(
+          attachedRenderBoxModel!, attachedRenderBoxModel!.renderStyle);
     }
     return false;
   }
@@ -1101,8 +1149,10 @@ abstract class RenderStyle extends DiagnosticableTree with Diagnosticable {
   bool isParentBoxModelMatch(RenderBoxModelMatcher matcher) {
     RenderBoxModel? selfRender = attachedRenderBoxModel;
     if (selfRender == null) return false;
-    if (selfRender is RenderEventListener && selfRender.parent is RenderBoxModel) {
-      return matcher(selfRender.parent as RenderBoxModel, selfRender.renderStyle);
+    if (selfRender is RenderEventListener &&
+        selfRender.parent is RenderBoxModel) {
+      return matcher(
+          selfRender.parent as RenderBoxModel, selfRender.renderStyle);
     }
 
     if (selfRender.parent is RenderEventListener) {
@@ -1111,7 +1161,8 @@ abstract class RenderStyle extends DiagnosticableTree with Diagnosticable {
 
     if (selfRender.parent is! RenderBoxModel) return false;
 
-    return matcher(selfRender.parent as RenderBoxModel, (selfRender.parent as RenderBoxModel).renderStyle);
+    return matcher(selfRender.parent as RenderBoxModel,
+        (selfRender.parent as RenderBoxModel).renderStyle);
   }
 
   RenderViewportBox? getCurrentViewportBox() {
@@ -1133,7 +1184,8 @@ abstract class RenderStyle extends DiagnosticableTree with Diagnosticable {
 
   @pragma('vm:prefer-inline')
   T? getSelfRenderStyle<T extends RenderStyle>() {
-    return getRenderBoxValueByType(RenderObjectGetType.self, (_, renderStyle) => renderStyle) as T?;
+    return getRenderBoxValueByType(
+        RenderObjectGetType.self, (_, renderStyle) => renderStyle) as T?;
   }
 
   @pragma('vm:prefer-inline')
@@ -1185,18 +1237,22 @@ abstract class RenderStyle extends DiagnosticableTree with Diagnosticable {
 
   @pragma('vm:prefer-inline')
   T? getAttachedRenderParentRenderStyle<T extends RenderStyle>() {
-    return getRenderBoxValueByType(RenderObjectGetType.parent, (_, renderStyle) => renderStyle) as T? ??
+    return getRenderBoxValueByType(
+                RenderObjectGetType.parent, (_, renderStyle) => renderStyle)
+            as T? ??
         target.parentElement?.renderStyle as T?;
   }
 
   @pragma('vm:prefer-inline')
   double? clientHeight() {
-    return getSelfRenderBoxValue((renderBoxModel, _) => renderBoxModel.clientHeight);
+    return getSelfRenderBoxValue(
+        (renderBoxModel, _) => renderBoxModel.clientHeight);
   }
 
   @pragma('vm:prefer-inline')
   double? clientWidth() {
-    return getSelfRenderBoxValue((renderBoxModel, _) => renderBoxModel.clientWidth);
+    return getSelfRenderBoxValue(
+        (renderBoxModel, _) => renderBoxModel.clientWidth);
   }
 
   // Get the offset of current element relative to specified ancestor element.
@@ -1207,7 +1263,8 @@ abstract class RenderStyle extends DiagnosticableTree with Diagnosticable {
   // This applies even when the ancestor is a RenderLayoutBoxWrapper for
   // scroll containers, since the wrapper shares the same RenderStyle (and thus
   // border metrics) as the scrolling element.
-  Offset getOffset({RenderBoxModel? ancestorRenderBox, bool excludeScrollOffset = false}) {
+  Offset getOffset(
+      {RenderBoxModel? ancestorRenderBox, bool excludeScrollOffset = false}) {
     // Returns (0, 0) when ancestor is null.
     if (ancestorRenderBox == null) {
       return Offset.zero;
@@ -1238,49 +1295,60 @@ abstract class RenderStyle extends DiagnosticableTree with Diagnosticable {
 
   @pragma('vm:prefer-inline')
   Size? scrollableSize() {
-    return getSelfRenderBoxValue((renderBoxModel, _) => renderBoxModel.scrollableSize);
+    return getSelfRenderBoxValue(
+        (renderBoxModel, _) => renderBoxModel.scrollableSize);
   }
 
   @pragma('vm:prefer-inline')
   BoxConstraints constraints() {
-    return getRenderBoxValueByType(RenderObjectGetType.self, (renderBoxModel, _) => renderBoxModel.constraints);
+    return getRenderBoxValueByType(RenderObjectGetType.self,
+        (renderBoxModel, _) => renderBoxModel.constraints);
   }
 
   @pragma('vm:prefer-inline')
   BoxConstraints? contentConstraints() {
-    return getRenderBoxValueByType(RenderObjectGetType.self, (renderBoxModel, _) => renderBoxModel.contentConstraints);
+    return getRenderBoxValueByType(RenderObjectGetType.self,
+        (renderBoxModel, _) => renderBoxModel.contentConstraints);
   }
 
   @pragma('vm:prefer-inline')
   Size? boxSize() {
-    return getRenderBoxValueByType(RenderObjectGetType.self, (renderBoxModel, _) => renderBoxModel.boxSize);
+    return getRenderBoxValueByType(RenderObjectGetType.self,
+        (renderBoxModel, _) => renderBoxModel.boxSize);
   }
 
   @pragma('vm:prefer-inline')
   BoxSizeType widthSizeType() {
-    return getRenderBoxValueByType(RenderObjectGetType.self, (renderBoxModel, _) => renderBoxModel.widthSizeType);
+    return getRenderBoxValueByType(RenderObjectGetType.self,
+        (renderBoxModel, _) => renderBoxModel.widthSizeType);
   }
 
   @pragma('vm:prefer-inline')
   BoxSizeType heightSizeType() {
-    return getRenderBoxValueByType(RenderObjectGetType.self, (renderBoxModel, _) => renderBoxModel.heightSizeType);
+    return getRenderBoxValueByType(RenderObjectGetType.self,
+        (renderBoxModel, _) => renderBoxModel.heightSizeType);
   }
 
   @pragma('vm:prefer-inline')
   bool isRepaintBoundary() {
-    return getRenderBoxValueByType(RenderObjectGetType.self, (renderBoxModel, _) => renderBoxModel.isRepaintBoundary) ??
+    return getRenderBoxValueByType(RenderObjectGetType.self,
+            (renderBoxModel, _) => renderBoxModel.isRepaintBoundary) ??
         false;
   }
 
   @pragma('vm:prefer-inline')
   Offset localToGlobal(Offset point, {RenderObject? ancestor}) {
     return getRenderBoxValueByType(
-        RenderObjectGetType.self, (renderBoxModel, _) => renderBoxModel.localToGlobal(point, ancestor: ancestor));
+        RenderObjectGetType.self,
+        (renderBoxModel, _) =>
+            renderBoxModel.localToGlobal(point, ancestor: ancestor));
   }
 
   @pragma('vm:prefer-inline')
-  void clearIntersectionChangeListeners([flutter.RenderObjectElement? flutterWidgetElement]) {
-    RenderBoxModel? widgetRenderBox = _widgetRenderObjects[flutterWidgetElement];
+  void clearIntersectionChangeListeners(
+      [flutter.RenderObjectElement? flutterWidgetElement]) {
+    RenderBoxModel? widgetRenderBox =
+        _widgetRenderObjects[flutterWidgetElement];
     widgetRenderBox?.clearIntersectionChangeListeners();
   }
 
@@ -1362,7 +1430,8 @@ abstract class RenderStyle extends DiagnosticableTree with Diagnosticable {
   }
 
   @pragma('vm:prefer-inline')
-  void addIntersectionChangeListener(IntersectionChangeCallback entryCallback, List<double> thresholds) {
+  void addIntersectionChangeListener(
+      IntersectionChangeCallback entryCallback, List<double> thresholds) {
     everyWidgetRenderBox((_, renderBoxModel) {
       renderBoxModel.addIntersectionChangeListener(entryCallback, thresholds);
       if (renderBoxModel.attached) {
@@ -1373,7 +1442,8 @@ abstract class RenderStyle extends DiagnosticableTree with Diagnosticable {
     });
   }
 
-  void removeIntersectionChangeListener(IntersectionChangeCallback entryCallback) {
+  void removeIntersectionChangeListener(
+      IntersectionChangeCallback entryCallback) {
     everyWidgetRenderBox((_, renderBoxModel) {
       renderBoxModel.removeIntersectionChangeListener(entryCallback);
       if (renderBoxModel.attached) {
@@ -1425,18 +1495,23 @@ abstract class RenderStyle extends DiagnosticableTree with Diagnosticable {
     if (isDocumentRootBox()) return true;
 
     // Fixed or sticky always establish a stacking context
-    if (position == CSSPositionType.fixed || position == CSSPositionType.sticky) return true;
+    if (position == CSSPositionType.fixed || position == CSSPositionType.sticky)
+      return true;
 
     // Positioned with non-auto z-index
-    if ((position == CSSPositionType.absolute || position == CSSPositionType.relative) && zIndex != null) {
+    if ((position == CSSPositionType.absolute ||
+            position == CSSPositionType.relative) &&
+        zIndex != null) {
       return true;
     }
 
     // Flex or Grid items with non-auto z-index
     final CSSRenderStyle? parent = getAttachedRenderParentRenderStyle();
     if (parent != null &&
-        ((parent.display == CSSDisplay.flex || parent.display == CSSDisplay.inlineFlex) ||
-            (parent.display == CSSDisplay.grid || parent.display == CSSDisplay.inlineGrid)) &&
+        ((parent.display == CSSDisplay.flex ||
+                parent.display == CSSDisplay.inlineFlex) ||
+            (parent.display == CSSDisplay.grid ||
+                parent.display == CSSDisplay.inlineGrid)) &&
         zIndex != null) {
       return true;
     }
@@ -1462,18 +1537,21 @@ abstract class RenderStyle extends DiagnosticableTree with Diagnosticable {
   }
 
   void ensureEventResponderBound() {
-    everyRenderObjectByTypeAndMatch(RenderObjectGetType.self, (renderObject, _) {
+    everyRenderObjectByTypeAndMatch(RenderObjectGetType.self,
+        (renderObject, _) {
       if (renderObject is! RenderBoxModel) return true;
       // Must bind event responder on render box model whatever there is no event listener.
 
       if (target.hasIntersectionObserverEvent()) {
-        renderObject.addIntersectionChangeListener(target.handleIntersectionChange);
+        renderObject
+            .addIntersectionChangeListener(target.handleIntersectionChange);
         // Mark the compositing state for this render object as dirty
         // cause it will create new layer.
         renderObject.markNeedsCompositingBitsUpdate();
       } else {
         // Remove listener when no intersection related event
-        renderObject.removeIntersectionChangeListener(target.handleIntersectionChange);
+        renderObject
+            .removeIntersectionChangeListener(target.handleIntersectionChange);
       }
       if (target.hasResizeObserverEvent()) {
         renderObject.addResizeListener(target.handleResizeChange);
@@ -1485,14 +1563,18 @@ abstract class RenderStyle extends DiagnosticableTree with Diagnosticable {
     });
   }
 
-  dynamic getRenderBoxValueByType(RenderObjectGetType getType, RenderBoxModelGetter getter) {
+  dynamic getRenderBoxValueByType(
+      RenderObjectGetType getType, RenderBoxModelGetter getter) {
     RenderBoxModel? widgetRenderBoxModel =
-        widgetRenderObjectIterator.firstWhereOrNull((renderBox) => renderBox.attached && renderBox.hasSize) ??
-            widgetRenderObjectIterator.firstWhereOrNull((renderBox) => renderBox.attached);
+        widgetRenderObjectIterator.firstWhereOrNull(
+                (renderBox) => renderBox.attached && renderBox.hasSize) ??
+            widgetRenderObjectIterator
+                .firstWhereOrNull((renderBox) => renderBox.attached);
 
     if (widgetRenderBoxModel == null) return null;
 
-    return _renderObjectMatchFn(widgetRenderBoxModel, getType, (renderObject, renderStyle) {
+    return _renderObjectMatchFn(widgetRenderBoxModel, getType,
+        (renderObject, renderStyle) {
       if (renderObject is RenderBoxModel && renderStyle != null) {
         return getter(renderObject, renderStyle);
       }
@@ -1501,10 +1583,10 @@ abstract class RenderStyle extends DiagnosticableTree with Diagnosticable {
   }
 
   dynamic _renderObjectMatchFn(
-      RenderBoxModel renderBoxModel,
-      RenderObjectGetType getType,
-      RenderObjectMatchers matcher,
-      ) {
+    RenderBoxModel renderBoxModel,
+    RenderObjectGetType getType,
+    RenderObjectMatchers matcher,
+  ) {
     switch (getType) {
       case RenderObjectGetType.self:
         return matcher(renderBoxModel, renderBoxModel.renderStyle);
@@ -1516,33 +1598,39 @@ abstract class RenderStyle extends DiagnosticableTree with Diagnosticable {
           // Only skip wrappers that belong to this same element (same RenderStyle),
           // otherwise we may accidentally skip a real ancestor element's render box
           // and break layout/constraint resolution for many specs.
-          if (parent is RenderEventListener && identical(parent.renderStyle, this)) {
+          if (parent is RenderEventListener &&
+              identical(parent.renderStyle, this)) {
             parent = parent.parent;
             continue;
           }
-          if (parent is RenderLayoutBoxWrapper && identical(parent.renderStyle, this)) {
+          if (parent is RenderLayoutBoxWrapper &&
+              identical(parent.renderStyle, this)) {
             parent = parent.parent;
             continue;
           }
-          if (parent is RenderFlowLayout && identical(parent.renderStyle, this)) {
+          if (parent is RenderFlowLayout &&
+              identical(parent.renderStyle, this)) {
             parent = parent.parent;
             continue;
           }
           break;
         }
-        return matcher(parent, parent is RenderBoxModel ? parent.renderStyle : null);
+        return matcher(
+            parent, parent is RenderBoxModel ? parent.renderStyle : null);
 
       case RenderObjectGetType.firstChild:
         if (renderBoxModel is RenderLayoutBox) {
           final firstChild = renderBoxModel.firstChild;
-          return matcher(firstChild, firstChild is RenderBoxModel ? firstChild.renderStyle : null);
+          return matcher(firstChild,
+              firstChild is RenderBoxModel ? firstChild.renderStyle : null);
         }
         return false;
 
       case RenderObjectGetType.lastChild:
         if (renderBoxModel is RenderLayoutBox) {
           final lastChild = renderBoxModel.lastChild;
-          return matcher(lastChild, lastChild is RenderBoxModel ? lastChild.renderStyle : null);
+          return matcher(lastChild,
+              lastChild is RenderBoxModel ? lastChild.renderStyle : null);
         }
         return false;
 
@@ -1550,7 +1638,8 @@ abstract class RenderStyle extends DiagnosticableTree with Diagnosticable {
         final pd = renderBoxModel.parentData;
         if (pd is RenderLayoutParentData) {
           final prev = pd.previousSibling;
-          return matcher(prev, prev is RenderBoxModel ? prev.renderStyle : null);
+          return matcher(
+              prev, prev is RenderBoxModel ? prev.renderStyle : null);
         }
         return false;
 
@@ -1558,19 +1647,22 @@ abstract class RenderStyle extends DiagnosticableTree with Diagnosticable {
         final pd = renderBoxModel.parentData;
         if (pd is RenderLayoutParentData) {
           final next = pd.nextSibling;
-          return matcher(next, next is RenderBoxModel ? next.renderStyle : null);
+          return matcher(
+              next, next is RenderBoxModel ? next.renderStyle : null);
         }
         return false;
     }
   }
 
-  bool everyRenderObjectByTypeAndMatch(RenderObjectGetType getType, RenderObjectMatchers matcher) {
+  bool everyRenderObjectByTypeAndMatch(
+      RenderObjectGetType getType, RenderObjectMatchers matcher) {
     return everyWidgetRenderBox((_, renderBoxModel) {
       return _renderObjectMatchFn(renderBoxModel, getType, matcher);
     });
   }
 
-  bool everyAttachedRenderObjectByTypeAndMatch(RenderObjectGetType getType, RenderObjectMatchers matcher) {
+  bool everyAttachedRenderObjectByTypeAndMatch(
+      RenderObjectGetType getType, RenderObjectMatchers matcher) {
     return everyAttachedWidgetRenderBox((_, renderBoxModel) {
       return _renderObjectMatchFn(renderBoxModel, getType, matcher);
     });
@@ -1595,7 +1687,8 @@ abstract class RenderStyle extends DiagnosticableTree with Diagnosticable {
     return true;
   }
 
-  bool everyAttachedWidgetRenderBox(EveryRenderBoxModelHandlerCallback callback) {
+  bool everyAttachedWidgetRenderBox(
+      EveryRenderBoxModelHandlerCallback callback) {
     for (final entry in _widgetRenderObjects.entries) {
       final ro = entry.value;
       if (ro.attached && !callback(entry.key, ro)) {
@@ -1623,7 +1716,8 @@ abstract class RenderStyle extends DiagnosticableTree with Diagnosticable {
   }
 
   void addOrUpdateWidgetRenderObjects(
-      flutter.RenderObjectElement ownerRenderObjectElement, RenderBoxModel targetRenderBoxModel) {
+      flutter.RenderObjectElement ownerRenderObjectElement,
+      RenderBoxModel targetRenderBoxModel) {
     _widgetRenderObjects[ownerRenderObjectElement] = targetRenderBoxModel;
   }
 
@@ -1631,23 +1725,30 @@ abstract class RenderStyle extends DiagnosticableTree with Diagnosticable {
     _widgetRenderObjects.remove(ownerRenderObjectElement);
   }
 
-  RenderBoxModel? getWidgetPairedRenderBoxModel(flutter.Element targetRenderObjectElement) {
+  RenderBoxModel? getWidgetPairedRenderBoxModel(
+      flutter.Element targetRenderObjectElement) {
     return _widgetRenderObjects[targetRenderObjectElement];
   }
 
   RenderBoxModel? get attachedRenderBoxModel {
-    return _widgetRenderObjects.values.firstWhereOrNull((renderBox) => renderBox.attached);
+    return _widgetRenderObjects.values
+        .firstWhereOrNull((renderBox) => renderBox.attached);
   }
 
   flutter.RenderObjectElement? get attachedRenderObjectElement {
-    return _widgetRenderObjects.entries.firstWhereOrNull((entry) => entry.value.attached)?.key;
+    return _widgetRenderObjects.entries
+        .firstWhereOrNull((entry) => entry.value.attached)
+        ?.key;
   }
 
-  Size get viewportSize => target.ownerDocument.viewport?.viewportSize ?? Size.zero;
+  Size get viewportSize =>
+      target.ownerDocument.viewport?.viewportSize ?? Size.zero;
 
-  FlutterView get currentFlutterView => target.ownerDocument.controller.ownerFlutterView!;
+  FlutterView get currentFlutterView =>
+      target.ownerDocument.controller.ownerFlutterView!;
 
-  double get rootFontSize => target.ownerDocument.documentElement!.renderStyle.fontSize.computedValue;
+  double get rootFontSize =>
+      target.ownerDocument.documentElement!.renderStyle.fontSize.computedValue;
 
   void visitChildren(RenderObjectVisitor visitor) {
     // The renderObjects rendered by RouterLinkElement is not as an child in RenderWidget
@@ -1704,6 +1805,7 @@ class CSSRenderStyle extends RenderStyle
         CSSOverflowMixin,
         CSSFilterEffectsMixin,
         CSSOpacityMixin,
+        CSSCursorMixin,
         CSSTransitionMixin,
         CSSVariableMixin,
         CSSAnimationMixin {
@@ -1721,15 +1823,19 @@ class CSSRenderStyle extends RenderStyle
   void debugFillProperties(DiagnosticPropertiesBuilder properties) {
     super.debugFillProperties(properties);
     properties.add(DiagnosticsProperty('position', position));
-    properties.add(DiagnosticsProperty('backgroundColor', backgroundColor?.value));
+    properties
+        .add(DiagnosticsProperty('backgroundColor', backgroundColor?.value));
     properties.add(DiagnosticsProperty('effectiveDisplay', effectiveDisplay));
     properties.add(DiagnosticsProperty('width', width.value));
     properties.add(DiagnosticsProperty('height', height.value));
-    properties.add(DiagnosticsProperty('contentBoxLogicalWidth', contentBoxLogicalWidth));
-    properties.add(DiagnosticsProperty('contentBoxLogicalHeight', contentBoxLogicalHeight));
+    properties.add(
+        DiagnosticsProperty('contentBoxLogicalWidth', contentBoxLogicalWidth));
+    properties.add(DiagnosticsProperty(
+        'contentBoxLogicalHeight', contentBoxLogicalHeight));
     properties.add(DiagnosticsProperty('intrinsicWidth', intrinsicWidth));
     properties.add(DiagnosticsProperty('intrinsicHeight', intrinsicHeight));
-    if (aspectRatio != null) properties.add(DiagnosticsProperty('intrinsicRatio', aspectRatio));
+    if (aspectRatio != null)
+      properties.add(DiagnosticsProperty('intrinsicRatio', aspectRatio));
 
     debugBoxDecorationProperties(properties);
     debugVisibilityProperties(properties);
@@ -1738,11 +1844,14 @@ class CSSRenderStyle extends RenderStyle
 
   void debugBoxDecorationProperties(DiagnosticPropertiesBuilder properties) {
     properties.add(DiagnosticsProperty('borderEdge', border));
-    if (backgroundClip != null) properties.add(DiagnosticsProperty('backgroundClip', backgroundClip));
-    if (backgroundOrigin != null) properties.add(DiagnosticsProperty('backgroundOrigin', backgroundOrigin));
+    if (backgroundClip != null)
+      properties.add(DiagnosticsProperty('backgroundClip', backgroundClip));
+    if (backgroundOrigin != null)
+      properties.add(DiagnosticsProperty('backgroundOrigin', backgroundOrigin));
     CSSBoxDecoration? decoration = this.decoration;
     if (decoration != null && decoration.hasBorderRadius) {
-      properties.add(DiagnosticsProperty('borderRadius', decoration.borderRadius));
+      properties
+          .add(DiagnosticsProperty('borderRadius', decoration.borderRadius));
     }
     if (decoration != null && decoration.image != null) {
       properties.add(DiagnosticsProperty('backgroundImage', decoration.image));
@@ -1756,7 +1865,8 @@ class CSSRenderStyle extends RenderStyle
   }
 
   void debugVisibilityProperties(DiagnosticPropertiesBuilder properties) {
-    properties.add(DiagnosticsProperty<ContentVisibility>('contentVisibility', contentVisibility));
+    properties.add(DiagnosticsProperty<ContentVisibility>(
+        'contentVisibility', contentVisibility));
   }
 
   void debugTransformProperties(DiagnosticPropertiesBuilder properties) {
@@ -1764,7 +1874,8 @@ class CSSRenderStyle extends RenderStyle
     Alignment transformAlignment = this.transformAlignment;
     properties.add(DiagnosticsProperty('transformMatrix', transformMatrix));
     properties.add(DiagnosticsProperty('transformOffset', transformOffset));
-    properties.add(DiagnosticsProperty('transformAlignment', transformAlignment));
+    properties
+        .add(DiagnosticsProperty('transformAlignment', transformAlignment));
   }
 
   @override
@@ -1783,6 +1894,8 @@ class CSSRenderStyle extends RenderStyle
         return overflowY;
       case OPACITY:
         return opacity;
+      case CURSOR:
+        return cursor;
       case VISIBILITY:
         return visibility;
       case CONTENT_VISIBILITY:
@@ -1944,9 +2057,9 @@ class CSSRenderStyle extends RenderStyle
         return marginRight;
       case MARGIN_BOTTOM:
         return marginBottom;
-  // Text
-  case COLOR:
-    return color;
+      // Text
+      case COLOR:
+        return color;
       case TEXT_DECORATION_LINE:
         return textDecorationLine;
       case TEXT_DECORATION_STYLE:
@@ -1973,10 +2086,10 @@ class CSSRenderStyle extends RenderStyle
         return textShadow;
       case WHITE_SPACE:
         return whiteSpace;
-  case TEXT_OVERFLOW:
-    return textOverflow;
-  case WORD_BREAK:
-    return wordBreak;
+      case TEXT_OVERFLOW:
+        return textOverflow;
+      case WORD_BREAK:
+        return wordBreak;
       case LINE_CLAMP:
         return lineClamp;
       case TAB_SIZE:
@@ -1986,8 +2099,8 @@ class CSSRenderStyle extends RenderStyle
         return textIndent;
       case VERTICAL_ALIGN:
         return verticalAlign;
-  case TEXT_ALIGN:
-    return textAlign;
+      case TEXT_ALIGN:
+        return textAlign;
       case DIRECTION:
         return direction;
       // Transform
@@ -2007,7 +2120,6 @@ class CSSRenderStyle extends RenderStyle
   }
 
   setProperty(String name, value) {
-
     // Memorize the variable value to renderStyle object.
     if (CSSVariable.isCSSSVariableProperty(name)) {
       // Custom properties can legally be set to an empty token stream:
@@ -2115,6 +2227,9 @@ class CSSRenderStyle extends RenderStyle
         break;
       case OPACITY:
         opacity = value;
+        break;
+      case CURSOR:
+        cursor = value;
         break;
       case VISIBILITY:
         visibility = value;
@@ -2268,7 +2383,8 @@ class CSSRenderStyle extends RenderStyle
         if (DebugFlags.enableBackgroundLogs) {
           try {
             final CSSBackgroundPosition p = value as CSSBackgroundPosition;
-            renderingLogger.finer('[Background] set BACKGROUND_POSITION_X -> ${p.cssText()} '
+            renderingLogger.finer(
+                '[Background] set BACKGROUND_POSITION_X -> ${p.cssText()} '
                 '(len=${p.length != null} pct=${p.percentage != null} calc=${p.calcValue != null})');
           } catch (_) {}
         }
@@ -2278,7 +2394,8 @@ class CSSRenderStyle extends RenderStyle
         if (DebugFlags.enableBackgroundLogs) {
           try {
             final CSSBackgroundPosition p = value as CSSBackgroundPosition;
-            renderingLogger.finer('[Background] set BACKGROUND_POSITION_Y -> ${p.cssText()} '
+            renderingLogger.finer(
+                '[Background] set BACKGROUND_POSITION_Y -> ${p.cssText()} '
                 '(len=${p.length != null} pct=${p.percentage != null} calc=${p.calcValue != null})');
           } catch (_) {}
         }
@@ -2457,7 +2574,8 @@ class CSSRenderStyle extends RenderStyle
         if (value is CSSLengthValue) {
           textIndent = value;
         } else if (value is String) {
-          final parsed = CSSLength.parseLength(value, this, TEXT_INDENT, Axis.horizontal);
+          final parsed =
+              CSSLength.parseLength(value, this, TEXT_INDENT, Axis.horizontal);
           if (parsed != CSSLengthValue.unknown) {
             textIndent = parsed;
           }
@@ -2540,7 +2658,8 @@ class CSSRenderStyle extends RenderStyle
   }
 
   @override
-  dynamic resolveValue(String propertyName, String propertyValue, {String? baseHref}) {
+  dynamic resolveValue(String propertyName, String propertyValue,
+      {String? baseHref}) {
     RenderStyle renderStyle = this;
 
     // For CSS custom properties (variables), do not attempt to interpret
@@ -2623,7 +2742,6 @@ class CSSRenderStyle extends RenderStyle
     if (CSSWritingModeMixin._isEntireVarFunction(propertyValue)) {
       dynamic value = CSSVariable.tryParse(renderStyle, propertyValue);
       if (value != null) {
-
         return value;
       }
     }
@@ -2634,7 +2752,8 @@ class CSSRenderStyle extends RenderStyle
     // var(...) is left intact so the property parser fails and the property
     // becomes invalid at computed-value time per spec (inherited or initial).
     if (propertyValue.contains('var(')) {
-      propertyValue = CSSWritingModeMixin.expandInlineVars(propertyValue, renderStyle, propertyName);
+      propertyValue = CSSWritingModeMixin.expandInlineVars(
+          propertyValue, renderStyle, propertyName);
     }
 
     final _ParsedStyleValue? parsedStyleValue =
@@ -2646,7 +2765,8 @@ class CSSRenderStyle extends RenderStyle
     dynamic value;
     switch (propertyName) {
       case DISPLAY:
-        value = CSSDisplayMixin.resolveDisplay(propertyValue, renderStyle: renderStyle);
+        value = CSSDisplayMixin.resolveDisplay(propertyValue,
+            renderStyle: renderStyle);
         break;
       case OVERFLOW_X:
       case OVERFLOW_Y:
@@ -2683,7 +2803,8 @@ class CSSRenderStyle extends RenderStyle
       case Y1:
       case Y2:
       case STROKE_WIDTH:
-        value = CSSLength.resolveLength(propertyValue, renderStyle, propertyName);
+        value =
+            CSSLength.resolveLength(propertyValue, renderStyle, propertyName);
         break;
       case ASPECT_RATIO:
         value = CSSSizingMixin.resolveAspectRatio(propertyValue);
@@ -2691,49 +2812,59 @@ class CSSRenderStyle extends RenderStyle
       case GAP:
       case ROW_GAP:
       case COLUMN_GAP:
-        value = CSSGapMixin.resolveGap(propertyValue, renderStyle: renderStyle, propertyName: propertyName);
+        value = CSSGapMixin.resolveGap(propertyValue,
+            renderStyle: renderStyle, propertyName: propertyName);
         break;
       case PADDING_TOP:
       case MARGIN_TOP:
         List<String?>? values = CSSStyleProperty.getEdgeValues(propertyValue);
         if (values != null && values[0] != null) {
-          value = CSSLength.resolveLength(values[0]!, renderStyle, propertyName);
+          value =
+              CSSLength.resolveLength(values[0]!, renderStyle, propertyName);
         } else {
-          value = CSSLength.resolveLength(propertyValue, renderStyle, propertyName);
+          value =
+              CSSLength.resolveLength(propertyValue, renderStyle, propertyName);
         }
         break;
       case MARGIN_RIGHT:
       case PADDING_RIGHT:
         List<String?>? values = CSSStyleProperty.getEdgeValues(propertyValue);
         if (values != null && values[1] != null) {
-          value = CSSLength.resolveLength(values[1]!, renderStyle, propertyName);
+          value =
+              CSSLength.resolveLength(values[1]!, renderStyle, propertyName);
         } else {
-          value = CSSLength.resolveLength(propertyValue, renderStyle, propertyName);
+          value =
+              CSSLength.resolveLength(propertyValue, renderStyle, propertyName);
         }
         break;
       case PADDING_BOTTOM:
       case MARGIN_BOTTOM:
         List<String?>? values = CSSStyleProperty.getEdgeValues(propertyValue);
         if (values != null && values[2] != null) {
-          value = CSSLength.resolveLength(values[2]!, renderStyle, propertyName);
+          value =
+              CSSLength.resolveLength(values[2]!, renderStyle, propertyName);
         } else {
-          value = CSSLength.resolveLength(propertyValue, renderStyle, propertyName);
+          value =
+              CSSLength.resolveLength(propertyValue, renderStyle, propertyName);
         }
         break;
       case PADDING_LEFT:
       case MARGIN_LEFT:
         List<String?>? values = CSSStyleProperty.getEdgeValues(propertyValue);
         if (values != null && values[3] != null) {
-          value = CSSLength.resolveLength(values[3]!, renderStyle, propertyName);
+          value =
+              CSSLength.resolveLength(values[3]!, renderStyle, propertyName);
         } else {
-          value = CSSLength.resolveLength(propertyValue, renderStyle, propertyName);
+          value =
+              CSSLength.resolveLength(propertyValue, renderStyle, propertyName);
         }
         break;
       case PADDING_INLINE_START:
       case PADDING_INLINE_END:
       case MARGIN_INLINE_START:
       case MARGIN_INLINE_END:
-        value = CSSLength.resolveLength(propertyValue, renderStyle, propertyName);
+        value =
+            CSSLength.resolveLength(propertyValue, renderStyle, propertyName);
         break;
       case FLEX_DIRECTION:
         value = CSSFlexboxMixin.resolveFlexDirection(propertyValue);
@@ -2751,10 +2882,12 @@ class CSSRenderStyle extends RenderStyle
         value = CSSFlexboxMixin.resolveJustifyContent(propertyValue);
         break;
       case JUSTIFY_ITEMS:
-        value = CSSGridParser.parseAxisAlignment(propertyValue, allowAuto: false);
+        value =
+            CSSGridParser.parseAxisAlignment(propertyValue, allowAuto: false);
         break;
       case JUSTIFY_SELF:
-        value = CSSGridParser.parseAxisAlignment(propertyValue, allowAuto: true);
+        value =
+            CSSGridParser.parseAxisAlignment(propertyValue, allowAuto: true);
         break;
       case ALIGN_SELF:
         value = CSSFlexboxMixin.resolveAlignSelf(propertyValue);
@@ -2775,7 +2908,8 @@ class CSSRenderStyle extends RenderStyle
         value = CSSTextMixin.resolveTextAlign(propertyValue);
         break;
       case TEXT_INDENT:
-        value = CSSLength.resolveLength(propertyValue, renderStyle, TEXT_INDENT);
+        value =
+            CSSLength.resolveLength(propertyValue, renderStyle, TEXT_INDENT);
         break;
       case DIRECTION:
         value = CSSTextMixin.resolveDirection(propertyValue);
@@ -2788,19 +2922,26 @@ class CSSRenderStyle extends RenderStyle
         break;
       case BACKGROUND_IMAGE:
         value = CSSBackground.resolveBackgroundImage(
-            propertyValue, renderStyle, propertyName, renderStyle.target.ownerDocument.controller, baseHref);
+            propertyValue,
+            renderStyle,
+            propertyName,
+            renderStyle.target.ownerDocument.controller,
+            baseHref);
         break;
       case BACKGROUND_REPEAT:
         value = CSSBackground.resolveBackgroundRepeat(propertyValue);
         break;
       case BACKGROUND_POSITION_X:
-        value = CSSPosition.resolveBackgroundPosition(propertyValue, renderStyle, propertyName, true);
+        value = CSSPosition.resolveBackgroundPosition(
+            propertyValue, renderStyle, propertyName, true);
         break;
       case BACKGROUND_POSITION_Y:
-        value = CSSPosition.resolveBackgroundPosition(propertyValue, renderStyle, propertyName, false);
+        value = CSSPosition.resolveBackgroundPosition(
+            propertyValue, renderStyle, propertyName, false);
         break;
       case BACKGROUND_SIZE:
-        value = CSSBackground.resolveBackgroundSize(propertyValue, renderStyle, propertyName);
+        value = CSSBackground.resolveBackgroundSize(
+            propertyValue, renderStyle, propertyName);
         break;
       case BACKGROUND_CLIP:
         value = CSSBackground.resolveBackgroundClip(propertyValue);
@@ -2818,10 +2959,13 @@ class CSSRenderStyle extends RenderStyle
           final triple = CSSStyleProperty.parseBorderTriple(propertyValue);
           final widthToken = triple != null ? triple[0] : null;
           value = widthToken != null
-              ? CSSBorderSide.resolveBorderWidth(widthToken, renderStyle, propertyName)
-              : CSSBorderSide.resolveBorderWidth(propertyValue, renderStyle, propertyName);
+              ? CSSBorderSide.resolveBorderWidth(
+                  widthToken, renderStyle, propertyName)
+              : CSSBorderSide.resolveBorderWidth(
+                  propertyValue, renderStyle, propertyName);
         } else {
-          value = CSSBorderSide.resolveBorderWidth(propertyValue, renderStyle, propertyName);
+          value = CSSBorderSide.resolveBorderWidth(
+              propertyValue, renderStyle, propertyName);
         }
         break;
       case BORDER_LEFT_STYLE:
@@ -2847,9 +2991,11 @@ class CSSRenderStyle extends RenderStyle
         if (propertyValue.contains(' ')) {
           final triple = CSSStyleProperty.parseBorderTriple(propertyValue);
           final colorToken = triple != null ? triple[2] : null;
-          value = CSSColor.resolveColor(colorToken ?? propertyValue, renderStyle, propertyName);
+          value = CSSColor.resolveColor(
+              colorToken ?? propertyValue, renderStyle, propertyName);
         } else {
-          value = CSSColor.resolveColor(propertyValue, renderStyle, propertyName);
+          value =
+              CSSColor.resolveColor(propertyValue, renderStyle, propertyName);
         }
         break;
       case STROKE:
@@ -2857,7 +3003,8 @@ class CSSRenderStyle extends RenderStyle
         value = CSSPaint.parsePaint(propertyValue, renderStyle: renderStyle);
         break;
       case BOX_SHADOW:
-        value = CSSBoxShadow.parseBoxShadow(propertyValue, renderStyle, propertyName);
+        value = CSSBoxShadow.parseBoxShadow(
+            propertyValue, renderStyle, propertyName);
         break;
       case BORDER_TOP_LEFT_RADIUS:
       case BORDER_TOP_RIGHT_RADIUS:
@@ -2867,16 +3014,21 @@ class CSSRenderStyle extends RenderStyle
       case BORDER_START_END_RADIUS:
       case BORDER_END_START_RADIUS:
       case BORDER_END_END_RADIUS:
-        value = CSSBorderRadius.parseBorderRadius(propertyValue, renderStyle, propertyName);
+        value = CSSBorderRadius.parseBorderRadius(
+            propertyValue, renderStyle, propertyName);
         break;
       case OPACITY:
         value = CSSOpacityMixin.resolveOpacity(propertyValue);
+        break;
+      case CURSOR:
+        value = CSSCursorMixin.resolveCursor(propertyValue);
         break;
       case VISIBILITY:
         value = CSSVisibilityMixin.resolveVisibility(propertyValue);
         break;
       case CONTENT_VISIBILITY:
-        value = CSSContentVisibilityMixin.resolveContentVisibility(propertyValue);
+        value =
+            CSSContentVisibilityMixin.resolveContentVisibility(propertyValue);
         break;
       case TRANSFORM:
         value = CSSTransformMixin.resolveTransform(propertyValue);
@@ -2909,7 +3061,8 @@ class CSSRenderStyle extends RenderStyle
         }
         break;
       case FONT_SIZE:
-        value = CSSText.resolveFontSize(propertyValue, renderStyle, propertyName);
+        value =
+            CSSText.resolveFontSize(propertyValue, renderStyle, propertyName);
         break;
       case FONT_STYLE:
         value = CSSText.resolveFontStyle(propertyValue);
@@ -2921,16 +3074,20 @@ class CSSRenderStyle extends RenderStyle
         value = CSSText.resolveFontFamilyFallback(propertyValue);
         break;
       case LINE_HEIGHT:
-        value = CSSText.resolveLineHeight(propertyValue, renderStyle, propertyName);
+        value =
+            CSSText.resolveLineHeight(propertyValue, renderStyle, propertyName);
         break;
       case LETTER_SPACING:
-        value = CSSText.resolveSpacing(propertyValue, renderStyle, propertyName);
+        value =
+            CSSText.resolveSpacing(propertyValue, renderStyle, propertyName);
         break;
       case WORD_SPACING:
-        value = CSSText.resolveSpacing(propertyValue, renderStyle, propertyName);
+        value =
+            CSSText.resolveSpacing(propertyValue, renderStyle, propertyName);
         break;
       case TEXT_SHADOW:
-        value = CSSText.resolveTextShadow(propertyValue, renderStyle, propertyName);
+        value =
+            CSSText.resolveTextShadow(propertyValue, renderStyle, propertyName);
         break;
       case WHITE_SPACE:
         value = CSSText.resolveWhiteSpace(propertyValue);
@@ -2943,19 +3100,23 @@ class CSSRenderStyle extends RenderStyle
         value = CSSText.resolveWordBreak(propertyValue);
         break;
       case GRID_TEMPLATE_COLUMNS:
-        value = CSSGridParser.parseTrackList(propertyValue, this, propertyName, Axis.horizontal);
+        value = CSSGridParser.parseTrackList(
+            propertyValue, this, propertyName, Axis.horizontal);
         break;
       case GRID_TEMPLATE_ROWS:
-        value = CSSGridParser.parseTrackList(propertyValue, this, propertyName, Axis.vertical);
+        value = CSSGridParser.parseTrackList(
+            propertyValue, this, propertyName, Axis.vertical);
         break;
       case GRID_TEMPLATE_AREAS:
         value = CSSGridParser.parseTemplateAreas(propertyValue);
         break;
       case GRID_AUTO_ROWS:
-        value = CSSGridParser.parseTrackList(propertyValue, this, propertyName, Axis.vertical);
+        value = CSSGridParser.parseTrackList(
+            propertyValue, this, propertyName, Axis.vertical);
         break;
       case GRID_AUTO_COLUMNS:
-        value = CSSGridParser.parseTrackList(propertyValue, this, propertyName, Axis.horizontal);
+        value = CSSGridParser.parseTrackList(
+            propertyValue, this, propertyName, Axis.horizontal);
         break;
       case GRID_AUTO_FLOW:
         value = CSSGridParser.parseAutoFlow(propertyValue);
@@ -3020,14 +3181,16 @@ class CSSRenderStyle extends RenderStyle
     // Follow CSS abs-non-replaced width algorithm:
     // - If width is auto and both left and right are auto: keep width as auto (shrink-to-fit in layout).
     // - If width is auto and both left and right are not auto: solve width from containing block padding box.
-    if ((renderStyle.position == CSSPositionType.absolute || renderStyle.position == CSSPositionType.fixed) &&
+    if ((renderStyle.position == CSSPositionType.absolute ||
+            renderStyle.position == CSSPositionType.fixed) &&
         !renderStyle.isSelfRenderReplaced()) {
       if (renderStyle.width.isNotAuto) {
         logicalWidth = renderStyle.width.computedValue;
       } else if (renderStyle.left.isNotAuto && renderStyle.right.isNotAuto) {
         // https://www.w3.org/TR/css-position-3/#abs-non-replaced-width
         if (renderStyle.isParentRenderBoxModel()) {
-          RenderStyle parentRenderStyle = renderStyle.getAttachedRenderParentRenderStyle()!;
+          RenderStyle parentRenderStyle =
+              renderStyle.getAttachedRenderParentRenderStyle()!;
           if (parentRenderStyle.paddingBoxLogicalWidth != null) {
             // Width of positioned element should subtract its horizontal margin.
             logicalWidth = (parentRenderStyle.paddingBoxLogicalWidth!) -
@@ -3044,14 +3207,16 @@ class CSSRenderStyle extends RenderStyle
 
     // Width applies to all elements except non-replaced inline elements.
     // https://drafts.csswg.org/css-sizing-3/#propdef-width
-    if (effectiveDisplay == CSSDisplay.inline && !renderStyle.isSelfRenderReplaced()) {
+    if (effectiveDisplay == CSSDisplay.inline &&
+        !renderStyle.isSelfRenderReplaced()) {
       _contentBoxLogicalWidth = null;
       return;
     } else if (effectiveDisplay == CSSDisplay.block ||
         effectiveDisplay == CSSDisplay.flex ||
         effectiveDisplay == CSSDisplay.grid) {
       RenderViewportBox? root = getCurrentViewportBox();
-      CSSRenderStyle? parentStyle = renderStyle.getAttachedRenderParentRenderStyle();
+      CSSRenderStyle? parentStyle =
+          renderStyle.getAttachedRenderParentRenderStyle();
       // Intrinsic sizing keywords (min-content/max-content/fit-content) depend on layout and
       // do not establish a definite used width here. Treat them like auto and let layout
       // (e.g., RenderBoxModel.getConstraints) resolve the used size.
@@ -3059,12 +3224,18 @@ class CSSRenderStyle extends RenderStyle
         logicalWidth = null;
       } else if (logicalWidth == null && renderStyle.width.isNotAuto) {
         logicalWidth = renderStyle.width.computedValue;
-      } else if (logicalWidth == null && aspectRatio != null && renderStyle.height.isNotAuto) {
+      } else if (logicalWidth == null &&
+          aspectRatio != null &&
+          renderStyle.height.isNotAuto) {
         // Prefer aspect-ratio when height is definite and width is auto.
-        double contentH = renderStyle.height.computedValue - renderStyle.border.vertical - renderStyle.padding.vertical;
+        double contentH = renderStyle.height.computedValue -
+            renderStyle.border.vertical -
+            renderStyle.padding.vertical;
         contentH = math.max(0, contentH);
         final double contentW = contentH * aspectRatio!;
-        logicalWidth = contentW + renderStyle.border.horizontal + renderStyle.padding.horizontal;
+        logicalWidth = contentW +
+            renderStyle.border.horizontal +
+            renderStyle.padding.horizontal;
       } else if (logicalWidth == null && renderStyle.isSelfHTMLElement()) {
         // Avoid defaulting to the viewport width when this element participates
         // in an inline-block shrink-to-fit context. Children of an inline-block
@@ -3073,17 +3244,24 @@ class CSSRenderStyle extends RenderStyle
         // and force the inline-block to expand to the full line width. Instead, keep
         // width auto here so the child can measure intrinsically and the parent can
         // shrink-wrap to its contents.
-        final CSSRenderStyle? p = renderStyle.getAttachedRenderParentRenderStyle();
+        final CSSRenderStyle? p =
+            renderStyle.getAttachedRenderParentRenderStyle();
         final bool parentInlineBlockAuto = p != null &&
-            p.effectiveDisplay == CSSDisplay.inlineBlock && p.width.isAuto;
-        RenderViewportBox? viewport = getCurrentViewportBox() ?? renderStyle.target.getRootViewport();
-        if (!parentInlineBlockAuto && viewport != null && viewport.boxSize != null) {
+            p.effectiveDisplay == CSSDisplay.inlineBlock &&
+            p.width.isAuto;
+        RenderViewportBox? viewport =
+            getCurrentViewportBox() ?? renderStyle.target.getRootViewport();
+        if (!parentInlineBlockAuto &&
+            viewport != null &&
+            viewport.boxSize != null) {
           logicalWidth = viewport.boxSize!.width;
         }
-      } else if (logicalWidth == null && (renderStyle.isSelfRouterLinkElement() && root != null)) {
+      } else if (logicalWidth == null &&
+          (renderStyle.isSelfRouterLinkElement() && root != null)) {
         logicalWidth = root.boxSize!.width;
       } else if (logicalWidth == null && parentStyle != null) {
-        bool isRenderSubtreeAncestor(flutter.RenderObject? ancestor, flutter.RenderObject? node) {
+        bool isRenderSubtreeAncestor(
+            flutter.RenderObject? ancestor, flutter.RenderObject? node) {
           if (ancestor == null || node == null) return false;
           flutter.RenderObject? current = node.parent;
           while (current != null) {
@@ -3105,24 +3283,31 @@ class CSSRenderStyle extends RenderStyle
         // For WebF widget elements (custom elements backed by Flutter widgets), only use the
         // direct constraints exposed via `WebFWidgetElementChild` instead of inferring from
         // the RenderWidget's own content constraints, which can vary by adapter implementation.
-        if (parentIsFlexItem && !thisIsFlexItem &&
+        if (parentIsFlexItem &&
+            !thisIsFlexItem &&
             !renderStyle.isSelfRenderReplaced() &&
             renderStyle.position != CSSPositionType.absolute &&
             renderStyle.position != CSSPositionType.fixed) {
           if (parentStyle.isSelfRenderWidget()) {
             RenderWidgetElementChild? childWrapper;
             final RenderBoxModel? currentLayoutBox =
-                renderBoxModelInLayoutStack.isNotEmpty ? renderBoxModelInLayoutStack.last : null;
-            if (currentLayoutBox != null && identical(currentLayoutBox.renderStyle, renderStyle)) {
+                renderBoxModelInLayoutStack.isNotEmpty
+                    ? renderBoxModelInLayoutStack.last
+                    : null;
+            if (currentLayoutBox != null &&
+                identical(currentLayoutBox.renderStyle, renderStyle)) {
               childWrapper = currentLayoutBox.findWidgetElementChild();
             }
             childWrapper ??= target.attachedRenderer?.findWidgetElementChild();
             double? maxConstraintWidth;
             try {
-              maxConstraintWidth = childWrapper?.effectiveChildConstraints.maxWidth;
+              maxConstraintWidth =
+                  childWrapper?.effectiveChildConstraints.maxWidth;
             } catch (_) {}
 
-            if (childWrapper != null && maxConstraintWidth != null && maxConstraintWidth.isFinite) {
+            if (childWrapper != null &&
+                maxConstraintWidth != null &&
+                maxConstraintWidth.isFinite) {
               // Prefer the smaller (more restrictive) containing block width:
               // - Widget subtree constraints can differ from CSS logical width when an element
               //   is mounted into multiple Flutter subtrees simultaneously.
@@ -3134,18 +3319,24 @@ class CSSRenderStyle extends RenderStyle
               // parentContentLogicalWidth does NOT represent the real containing block for
               // this layout pass and must not clamp the widget constraints.
               final RenderBoxModel? currentLayoutBoxForAncestor =
-                  renderBoxModelInLayoutStack.isNotEmpty ? renderBoxModelInLayoutStack.last : null;
-              final bool parentIsAncestorInCurrentTree = currentLayoutBoxForAncestor == null
-                  ? true
-                  : isRenderSubtreeAncestor(
-                      parentStyle.attachedRenderBoxModel,
-                      currentLayoutBoxForAncestor,
-                    );
+                  renderBoxModelInLayoutStack.isNotEmpty
+                      ? renderBoxModelInLayoutStack.last
+                      : null;
+              final bool parentIsAncestorInCurrentTree =
+                  currentLayoutBoxForAncestor == null
+                      ? true
+                      : isRenderSubtreeAncestor(
+                          parentStyle.attachedRenderBoxModel,
+                          currentLayoutBoxForAncestor,
+                        );
 
               if (parentIsAncestorInCurrentTree) {
-                final double? parentContentLogicalWidth = parentStyle.contentBoxLogicalWidth;
-                if (parentContentLogicalWidth != null && parentContentLogicalWidth.isFinite) {
-                  logicalWidth = math.min(maxConstraintWidth, parentContentLogicalWidth);
+                final double? parentContentLogicalWidth =
+                    parentStyle.contentBoxLogicalWidth;
+                if (parentContentLogicalWidth != null &&
+                    parentContentLogicalWidth.isFinite) {
+                  logicalWidth =
+                      math.min(maxConstraintWidth, parentContentLogicalWidth);
                 } else {
                   logicalWidth = maxConstraintWidth;
                 }
@@ -3156,15 +3347,16 @@ class CSSRenderStyle extends RenderStyle
             // If there is no WebFWidgetElementChild (or no constraints yet),
             // fall through and let the parent (flex) constraints logic handle it.
           } else {
-            final RenderBoxModel? parentBox = parentStyle.attachedRenderBoxModel;
+            final RenderBoxModel? parentBox =
+                parentStyle.attachedRenderBoxModel;
             final BoxConstraints? pcc = parentBox?.contentConstraints;
             if (pcc != null && pcc.hasBoundedWidth && pcc.maxWidth.isFinite) {
               logicalWidth = pcc.maxWidth - renderStyle.margin.horizontal;
             }
           }
 
-        // Case B: normal flow (not inside a flex item) — find the nearest non-inline ancestor
-        // and adopt its content box logical width or bounded content constraints.
+          // Case B: normal flow (not inside a flex item) — find the nearest non-inline ancestor
+          // and adopt its content box logical width or bounded content constraints.
         } else if (!parentIsFlexItem &&
             !renderStyle.isSelfRenderReplaced() &&
             renderStyle.position != CSSPositionType.absolute &&
@@ -3175,14 +3367,18 @@ class CSSRenderStyle extends RenderStyle
           if (ancestorRenderStyle != null) {
             RenderWidgetElementChild? childWrapper;
             final RenderBoxModel? currentLayoutBox =
-                renderBoxModelInLayoutStack.isNotEmpty ? renderBoxModelInLayoutStack.last : null;
-            if (currentLayoutBox != null && identical(currentLayoutBox.renderStyle, renderStyle)) {
+                renderBoxModelInLayoutStack.isNotEmpty
+                    ? renderBoxModelInLayoutStack.last
+                    : null;
+            if (currentLayoutBox != null &&
+                identical(currentLayoutBox.renderStyle, renderStyle)) {
               childWrapper = currentLayoutBox.findWidgetElementChild();
             }
             childWrapper ??= target.attachedRenderer?.findWidgetElementChild();
             double? maxConstraintWidth;
             try {
-              maxConstraintWidth = childWrapper?.effectiveChildConstraints.maxWidth;
+              maxConstraintWidth =
+                  childWrapper?.effectiveChildConstraints.maxWidth;
             } catch (_) {}
 
             if (ancestorRenderStyle.isSelfRenderWidget() &&
@@ -3190,18 +3386,24 @@ class CSSRenderStyle extends RenderStyle
                 maxConstraintWidth != null &&
                 maxConstraintWidth.isFinite) {
               final RenderBoxModel? currentLayoutBoxForAncestor =
-                  renderBoxModelInLayoutStack.isNotEmpty ? renderBoxModelInLayoutStack.last : null;
-              final bool ancestorIsAncestorInCurrentTree = currentLayoutBoxForAncestor == null
-                  ? true
-                  : isRenderSubtreeAncestor(
-                      ancestorRenderStyle.attachedRenderBoxModel,
-                      currentLayoutBoxForAncestor,
-                    );
+                  renderBoxModelInLayoutStack.isNotEmpty
+                      ? renderBoxModelInLayoutStack.last
+                      : null;
+              final bool ancestorIsAncestorInCurrentTree =
+                  currentLayoutBoxForAncestor == null
+                      ? true
+                      : isRenderSubtreeAncestor(
+                          ancestorRenderStyle.attachedRenderBoxModel,
+                          currentLayoutBoxForAncestor,
+                        );
 
               if (ancestorIsAncestorInCurrentTree) {
-                final double? ancestorContentLogicalWidth = ancestorRenderStyle.contentBoxLogicalWidth;
-                if (ancestorContentLogicalWidth != null && ancestorContentLogicalWidth.isFinite) {
-                  logicalWidth = math.min(maxConstraintWidth, ancestorContentLogicalWidth);
+                final double? ancestorContentLogicalWidth =
+                    ancestorRenderStyle.contentBoxLogicalWidth;
+                if (ancestorContentLogicalWidth != null &&
+                    ancestorContentLogicalWidth.isFinite) {
+                  logicalWidth =
+                      math.min(maxConstraintWidth, ancestorContentLogicalWidth);
                 } else {
                   logicalWidth = maxConstraintWidth;
                 }
@@ -3226,7 +3428,9 @@ class CSSRenderStyle extends RenderStyle
         effectiveDisplay == CSSDisplay.inlineFlex ||
         effectiveDisplay == CSSDisplay.inlineGrid ||
         effectiveDisplay == CSSDisplay.inline) {
-      if (logicalWidth == null && !renderStyle.width.isIntrinsic && renderStyle.width.isNotAuto) {
+      if (logicalWidth == null &&
+          !renderStyle.width.isIntrinsic &&
+          renderStyle.width.isNotAuto) {
         logicalWidth = renderStyle.width.computedValue;
       }
     }
@@ -3235,10 +3439,14 @@ class CSSRenderStyle extends RenderStyle
     if (logicalWidth == null && aspectRatio != null) {
       // If a definite height is specified, prefer converting via the preferred aspect-ratio.
       if (renderStyle.height.isNotAuto) {
-        double contentH = renderStyle.height.computedValue - renderStyle.border.vertical - renderStyle.padding.vertical;
+        double contentH = renderStyle.height.computedValue -
+            renderStyle.border.vertical -
+            renderStyle.padding.vertical;
         contentH = math.max(0, contentH);
         final double contentW = contentH * aspectRatio!;
-        logicalWidth = contentW + renderStyle.border.horizontal + renderStyle.padding.horizontal;
+        logicalWidth = contentW +
+            renderStyle.border.horizontal +
+            renderStyle.padding.horizontal;
       }
       // Fallback for replaced/intrinsic scenarios.
       logicalWidth ??= renderStyle.getWidthByAspectRatio();
@@ -3261,7 +3469,9 @@ class CSSRenderStyle extends RenderStyle
     double? logicalContentWidth;
     // Subtract padding and border width to get content width.
     if (logicalWidth != null) {
-      logicalContentWidth = logicalWidth - renderStyle.border.horizontal - renderStyle.padding.horizontal;
+      logicalContentWidth = logicalWidth -
+          renderStyle.border.horizontal -
+          renderStyle.padding.horizontal;
       // Logical width may be smaller than its border and padding width,
       // in this case, content width will be negative which is illegal.
       logicalContentWidth = math.max(0, logicalContentWidth);
@@ -3279,7 +3489,8 @@ class CSSRenderStyle extends RenderStyle
 
     // Height applies to all elements except non-replaced inline elements.
     // https://drafts.csswg.org/css-sizing-3/#propdef-height
-    if (effectiveDisplay == CSSDisplay.inline && !renderStyle.isSelfRenderReplaced()) {
+    if (effectiveDisplay == CSSDisplay.inline &&
+        !renderStyle.isSelfRenderReplaced()) {
       _contentBoxLogicalHeight = null;
       return;
     } else {
@@ -3292,13 +3503,19 @@ class CSSRenderStyle extends RenderStyle
         logicalHeight = renderStyle.height.computedValue;
       } else if (aspectRatio != null && renderStyle.width.isNotAuto) {
         // Prefer aspect-ratio when width is definite and height is auto.
-        double contentW = renderStyle.width.computedValue - renderStyle.border.horizontal - renderStyle.padding.horizontal;
+        double contentW = renderStyle.width.computedValue -
+            renderStyle.border.horizontal -
+            renderStyle.padding.horizontal;
         contentW = math.max(0, contentW);
         final double contentH = contentW / aspectRatio!;
-        logicalHeight = contentH + renderStyle.border.vertical + renderStyle.padding.vertical;
+        logicalHeight = contentH +
+            renderStyle.border.vertical +
+            renderStyle.padding.vertical;
       } else if (renderStyle.isSelfHTMLElement()) {
-        logicalHeight = renderStyle.target.ownerView.currentViewport!.boxSize!.height;
-      } else if ((renderStyle.position == CSSPositionType.absolute || renderStyle.position == CSSPositionType.fixed) &&
+        logicalHeight =
+            renderStyle.target.ownerView.currentViewport!.boxSize!.height;
+      } else if ((renderStyle.position == CSSPositionType.absolute ||
+              renderStyle.position == CSSPositionType.fixed) &&
           !renderStyle.isSelfRenderReplaced() &&
           renderStyle.height.isAuto &&
           renderStyle.top.isNotAuto &&
@@ -3313,7 +3530,8 @@ class CSSRenderStyle extends RenderStyle
         // RenderBoxModel parent = current.parent as RenderBoxModel;
         // Get the renderStyle of outer scrolling box cause the renderStyle of scrolling
         // content box is only a fraction of the complete renderStyle.
-        RenderStyle parentRenderStyle = renderStyle.getAttachedRenderParentRenderStyle()!;
+        RenderStyle parentRenderStyle =
+            renderStyle.getAttachedRenderParentRenderStyle()!;
         // Height of positioned element should subtract its vertical margin.
         logicalHeight = (parentRenderStyle.paddingBoxLogicalHeight ?? 0) -
             renderStyle.top.computedValue -
@@ -3321,13 +3539,17 @@ class CSSRenderStyle extends RenderStyle
             renderStyle.marginTop.computedValue -
             renderStyle.marginBottom.computedValue;
       } else {
-        CSSRenderStyle? parentRenderStyle = renderStyle.getAttachedRenderParentRenderStyle();
+        CSSRenderStyle? parentRenderStyle =
+            renderStyle.getAttachedRenderParentRenderStyle();
 
         if (parentRenderStyle != null) {
           RenderWidgetElementChild? childWrapper;
           final RenderBoxModel? currentLayoutBox =
-              renderBoxModelInLayoutStack.isNotEmpty ? renderBoxModelInLayoutStack.last : null;
-          if (currentLayoutBox != null && identical(currentLayoutBox.renderStyle, renderStyle)) {
+              renderBoxModelInLayoutStack.isNotEmpty
+                  ? renderBoxModelInLayoutStack.last
+                  : null;
+          if (currentLayoutBox != null &&
+              identical(currentLayoutBox.renderStyle, renderStyle)) {
             childWrapper = currentLayoutBox.findWidgetElementChild();
           }
           childWrapper ??= target.attachedRenderer?.findWidgetElementChild();
@@ -3335,8 +3557,10 @@ class CSSRenderStyle extends RenderStyle
           try {
             childWrapperConstraints = childWrapper?.effectiveChildConstraints;
           } catch (_) {}
-          RenderViewportBox? viewportBox = getCurrentViewportBox() ?? renderStyle.target.getRootViewport();
-          final bool parentIsScrollingWidget = parentRenderStyle.isSelfRenderWidget() &&
+          RenderViewportBox? viewportBox =
+              getCurrentViewportBox() ?? renderStyle.target.getRootViewport();
+          final bool parentIsScrollingWidget = parentRenderStyle
+                  .isSelfRenderWidget() &&
               parentRenderStyle.target is WidgetElement &&
               (parentRenderStyle.target as WidgetElement).isScrollingElement;
 
@@ -3353,7 +3577,8 @@ class CSSRenderStyle extends RenderStyle
               (childWrapperConstraints.hasTightHeight &&
                   childWrapperConstraints.maxHeight.isFinite &&
                   viewportBox != null &&
-                  childWrapperConstraints.maxHeight != viewportBox.boxSize!.height)) {
+                  childWrapperConstraints.maxHeight !=
+                      viewportBox.boxSize!.height)) {
             logicalHeight = childWrapperConstraints.maxHeight;
           } else if (renderStyle.isHeightStretch) {
             logicalHeight = parentRenderStyle.contentBoxLogicalHeight;
@@ -3371,10 +3596,14 @@ class CSSRenderStyle extends RenderStyle
     if (logicalHeight == null && aspectRatio != null) {
       // If a definite width is specified, prefer converting via the preferred aspect-ratio.
       if (renderStyle.width.isNotAuto) {
-        double contentW = renderStyle.width.computedValue - renderStyle.border.horizontal - renderStyle.padding.horizontal;
+        double contentW = renderStyle.width.computedValue -
+            renderStyle.border.horizontal -
+            renderStyle.padding.horizontal;
         contentW = math.max(0, contentW);
         final double contentH = contentW / aspectRatio!;
-        logicalHeight = contentH + renderStyle.border.vertical + renderStyle.padding.vertical;
+        logicalHeight = contentH +
+            renderStyle.border.vertical +
+            renderStyle.padding.vertical;
       }
       // Fallback for replaced/intrinsic scenarios.
       logicalHeight ??= renderStyle.getHeightByAspectRatio();
@@ -3397,7 +3626,9 @@ class CSSRenderStyle extends RenderStyle
     double? logicalContentHeight;
     // Subtract padding and border width to get content width.
     if (logicalHeight != null) {
-      logicalContentHeight = logicalHeight - renderStyle.border.vertical - renderStyle.padding.vertical;
+      logicalContentHeight = logicalHeight -
+          renderStyle.border.vertical -
+          renderStyle.padding.vertical;
       // Logical height may be smaller than its border and padding width,
       // in this case, content height will be negative which is illegal.
       logicalContentHeight = math.max(0, logicalContentHeight);
@@ -3410,7 +3641,8 @@ class CSSRenderStyle extends RenderStyle
   @override
   bool get isHeightStretch {
     RenderStyle renderStyle = this;
-    CSSRenderStyle? parentRenderStyle = renderStyle.getAttachedRenderParentRenderStyle();
+    CSSRenderStyle? parentRenderStyle =
+        renderStyle.getAttachedRenderParentRenderStyle();
     if (parentRenderStyle == null) {
       return false;
     }
@@ -3419,17 +3651,18 @@ class CSSRenderStyle extends RenderStyle
     // only applies when the flex container’s cross size is definite. A merely
     // bounded (non-tight) maxHeight is not definite and must not force
     // height:auto items to expand to the available extent (e.g., in Sliver/ListView).
-    final BoxConstraints? parentContentConstraints = parentRenderStyle.contentConstraints();
+    final BoxConstraints? parentContentConstraints =
+        parentRenderStyle.contentConstraints();
     // Note: avoid calling parentRenderStyle.constraints() here. When computing
     // styles for detached nodes (or before first layout), the parent may not
     // have an attached render box and constraints() can be null/throw.
-    final bool parentHasDefiniteHeight =
-        parentRenderStyle.height.isNotAuto || (parentContentConstraints?.hasTightHeight ?? false);
+    final bool parentHasDefiniteHeight = parentRenderStyle.height.isNotAuto ||
+        (parentContentConstraints?.hasTightHeight ?? false);
 
     bool isStretch = false;
 
-    bool isParentFlex =
-        parentRenderStyle.display == CSSDisplay.flex || parentRenderStyle.display == CSSDisplay.inlineFlex;
+    bool isParentFlex = parentRenderStyle.display == CSSDisplay.flex ||
+        parentRenderStyle.display == CSSDisplay.inlineFlex;
     bool isHorizontalDirection = false;
     bool isFlexNoWrap = false;
     bool isChildStretchSelf = false;
@@ -3437,14 +3670,16 @@ class CSSRenderStyle extends RenderStyle
       // The absolutely-positioned box is considered to be “fixed-size”, a value of stretch
       // is treated the same as flex-start.
       // https://www.w3.org/TR/css-flexbox-1/#abspos-items
-      bool isPositioned =
-          renderStyle.position == CSSPositionType.absolute || renderStyle.position == CSSPositionType.fixed;
+      bool isPositioned = renderStyle.position == CSSPositionType.absolute ||
+          renderStyle.position == CSSPositionType.fixed;
       if (isPositioned) {
         return false;
       }
 
-      isHorizontalDirection = CSSFlex.isHorizontalFlexDirection(parentRenderStyle.flexDirection);
-      isFlexNoWrap = parentRenderStyle.flexWrap != FlexWrap.wrap && parentRenderStyle.flexWrap != FlexWrap.wrapReverse;
+      isHorizontalDirection =
+          CSSFlex.isHorizontalFlexDirection(parentRenderStyle.flexDirection);
+      isFlexNoWrap = parentRenderStyle.flexWrap != FlexWrap.wrap &&
+          parentRenderStyle.flexWrap != FlexWrap.wrapReverse;
       isChildStretchSelf = renderStyle.alignSelf != AlignSelf.auto
           ? renderStyle.alignSelf == AlignSelf.stretch
           : parentRenderStyle.alignItems == AlignItems.stretch;
@@ -3472,14 +3707,16 @@ class CSSRenderStyle extends RenderStyle
   double get contentMaxConstraintsWidth {
     // If renderBoxModel definite content constraints, use it as max constrains width of content.
     BoxConstraints? contentConstraints = this.contentConstraints();
-    if (contentConstraints != null && contentConstraints.maxWidth != double.infinity) {
+    if (contentConstraints != null &&
+        contentConstraints.maxWidth != double.infinity) {
       return contentConstraints.maxWidth;
     }
 
     double contentMaxConstraintsWidth = double.infinity;
     RenderStyle renderStyle = this;
     double? borderBoxLogicalWidth;
-    RenderStyle? ancestorRenderStyle = _findAncestorWithContentBoxLogicalWidth();
+    RenderStyle? ancestorRenderStyle =
+        _findAncestorWithContentBoxLogicalWidth();
 
     // If renderBoxModel has no logical width (eg. display is inline-block/inline-flex and
     // has no width), the child width is constrained by its closest ancestor who has definite logical content box width.
@@ -3488,8 +3725,9 @@ class CSSRenderStyle extends RenderStyle
     }
 
     if (borderBoxLogicalWidth != null) {
-      contentMaxConstraintsWidth =
-          borderBoxLogicalWidth - renderStyle.border.horizontal - renderStyle.padding.horizontal;
+      contentMaxConstraintsWidth = borderBoxLogicalWidth -
+          renderStyle.border.horizontal -
+          renderStyle.padding.horizontal;
       // Logical width may be smaller than its border and padding width,
       // in this case, content width will be negative which is illegal.
       // <div style="width: 300px;">
@@ -3525,7 +3763,8 @@ class CSSRenderStyle extends RenderStyle
     if (_contentBoxLogicalWidth == double.infinity) {
       // Ensure parent layout is complete before resolving child percentages
       CSSRenderStyle? parentStyle = getAttachedRenderParentRenderStyle();
-      if (parentStyle != null && parentStyle._contentBoxLogicalWidth == double.infinity) {
+      if (parentStyle != null &&
+          parentStyle._contentBoxLogicalWidth == double.infinity) {
         parentStyle.computeContentBoxLogicalWidth();
       }
       computeContentBoxLogicalWidth();
@@ -3565,7 +3804,9 @@ class CSSRenderStyle extends RenderStyle
     if (contentBoxLogicalWidth == null) {
       return null;
     }
-    return contentBoxLogicalWidth! + paddingLeft.computedValue + paddingRight.computedValue;
+    return contentBoxLogicalWidth! +
+        paddingLeft.computedValue +
+        paddingRight.computedValue;
   }
 
   // Padding box height calculated from renderStyle tree.
@@ -3575,7 +3816,9 @@ class CSSRenderStyle extends RenderStyle
     if (contentBoxLogicalHeight == null) {
       return null;
     }
-    return contentBoxLogicalHeight! + paddingTop.computedValue + paddingBottom.computedValue;
+    return contentBoxLogicalHeight! +
+        paddingTop.computedValue +
+        paddingBottom.computedValue;
   }
 
   // Border box width calculated from renderStyle tree.
@@ -3585,7 +3828,9 @@ class CSSRenderStyle extends RenderStyle
     if (paddingBoxLogicalWidth == null) {
       return null;
     }
-    return paddingBoxLogicalWidth! + effectiveBorderLeftWidth.computedValue + effectiveBorderRightWidth.computedValue;
+    return paddingBoxLogicalWidth! +
+        effectiveBorderLeftWidth.computedValue +
+        effectiveBorderRightWidth.computedValue;
   }
 
   // Border box height calculated from renderStyle tree.
@@ -3595,21 +3840,25 @@ class CSSRenderStyle extends RenderStyle
     if (paddingBoxLogicalHeight == null) {
       return null;
     }
-    return paddingBoxLogicalHeight! + effectiveBorderTopWidth.computedValue + effectiveBorderBottomWidth.computedValue;
+    return paddingBoxLogicalHeight! +
+        effectiveBorderTopWidth.computedValue +
+        effectiveBorderBottomWidth.computedValue;
   }
 
   // Border box width of renderBoxModel after it was rendered.
   // https://www.w3.org/TR/css-box-3/#valdef-box-border-box
   @override
   double? get borderBoxWidth {
-    return getSelfRenderBoxValue((renderBoxModel, _) => renderBoxModel.hasSize ? renderBoxModel.boxSize!.width : null);
+    return getSelfRenderBoxValue((renderBoxModel, _) =>
+        renderBoxModel.hasSize ? renderBoxModel.boxSize!.width : null);
   }
 
   // Border box height of renderBoxModel after it was rendered.
   // https://www.w3.org/TR/css-box-3/#valdef-box-border-box
   @override
   double? get borderBoxHeight {
-    return getSelfRenderBoxValue((renderBoxModel, _) => renderBoxModel.hasSize ? renderBoxModel.boxSize!.height : null);
+    return getSelfRenderBoxValue((renderBoxModel, _) =>
+        renderBoxModel.hasSize ? renderBoxModel.boxSize!.height : null);
   }
 
   // Padding box width of renderBoxModel after it was rendered.
@@ -3619,7 +3868,9 @@ class CSSRenderStyle extends RenderStyle
     if (borderBoxWidth == null) {
       return null;
     }
-    return borderBoxWidth! - effectiveBorderLeftWidth.computedValue - effectiveBorderRightWidth.computedValue;
+    return borderBoxWidth! -
+        effectiveBorderLeftWidth.computedValue -
+        effectiveBorderRightWidth.computedValue;
   }
 
   // Padding box height of renderBoxModel after it was rendered.
@@ -3629,7 +3880,9 @@ class CSSRenderStyle extends RenderStyle
     if (borderBoxHeight == null) {
       return null;
     }
-    return borderBoxHeight! - effectiveBorderTopWidth.computedValue - effectiveBorderBottomWidth.computedValue;
+    return borderBoxHeight! -
+        effectiveBorderTopWidth.computedValue -
+        effectiveBorderBottomWidth.computedValue;
   }
 
   // Content box width of renderBoxModel after it was rendered.
@@ -3639,7 +3892,9 @@ class CSSRenderStyle extends RenderStyle
     if (paddingBoxWidth == null) {
       return null;
     }
-    return paddingBoxWidth! - paddingLeft.computedValue - paddingRight.computedValue;
+    return paddingBoxWidth! -
+        paddingLeft.computedValue -
+        paddingRight.computedValue;
   }
 
   // Content box height of renderBoxModel after it was rendered.
@@ -3649,10 +3904,13 @@ class CSSRenderStyle extends RenderStyle
     if (paddingBoxHeight == null) {
       return null;
     }
-    return paddingBoxHeight! - paddingTop.computedValue - paddingBottom.computedValue;
+    return paddingBoxHeight! -
+        paddingTop.computedValue -
+        paddingBottom.computedValue;
   }
 
-  RenderWidget _createRenderWidget({RenderWidget? previousRenderWidget, bool isRepaintBoundary = false}) {
+  RenderWidget _createRenderWidget(
+      {RenderWidget? previousRenderWidget, bool isRepaintBoundary = false}) {
     RenderWidget nextReplaced;
 
     if (previousRenderWidget == null) {
@@ -3690,9 +3948,7 @@ class CSSRenderStyle extends RenderStyle
       // Grid containers: create the grid render layout. For MVP, RenderGridLayout
       // inherits flow behavior and will be extended in subsequent steps.
       if (isRepaintBoundary) {
-        nextRenderLayoutBox = RepaintBoundaryGridLayout(
-          renderStyle: this
-        );
+        nextRenderLayoutBox = RepaintBoundaryGridLayout(renderStyle: this);
       } else {
         nextRenderLayoutBox = RenderGridLayout(
           renderStyle: this,
@@ -3766,12 +4022,14 @@ class CSSRenderStyle extends RenderStyle
         final childPosition = child.renderStyle.position;
 
         // Skip positioned elements (they're out of flow)
-        if (childPosition == CSSPositionType.absolute || childPosition == CSSPositionType.fixed) {
+        if (childPosition == CSSPositionType.absolute ||
+            childPosition == CSSPositionType.fixed) {
           continue;
         }
 
         // Check if child is block-level
-        if (childDisplay == CSSDisplay.block || childDisplay == CSSDisplay.flex) {
+        if (childDisplay == CSSDisplay.block ||
+            childDisplay == CSSDisplay.flex) {
           hasBlockLevelChild = true;
           break;
         }
@@ -3787,7 +4045,8 @@ class CSSRenderStyle extends RenderStyle
   /// anonymous blocks that may wrap inline elements.
   bool shouldEstablishInlineFormattingContext() {
     // Block and inline-block containers can establish inline formatting contexts
-    if (effectiveDisplay != CSSDisplay.block && effectiveDisplay != CSSDisplay.inlineBlock) {
+    if (effectiveDisplay != CSSDisplay.block &&
+        effectiveDisplay != CSSDisplay.inlineBlock) {
       return false;
     }
 
@@ -3856,10 +4115,12 @@ class CSSRenderStyle extends RenderStyle
             final childDisplay = childRenderStyle.display;
             final childPosition = childRenderStyle.position;
 
-            if (childPosition != CSSPositionType.absolute && childPosition != CSSPositionType.fixed) {
+            if (childPosition != CSSPositionType.absolute &&
+                childPosition != CSSPositionType.fixed) {
               if (wrapped.renderStyle.isSelfAnonymousFlowLayout()) {
                 hasInlineContent = true;
-              } else if (childDisplay == CSSDisplay.block || childDisplay == CSSDisplay.flex) {
+              } else if (childDisplay == CSSDisplay.block ||
+                  childDisplay == CSSDisplay.flex) {
                 hasBlockContent = true;
               } else if (childDisplay == CSSDisplay.inline ||
                   childDisplay == CSSDisplay.inlineBlock ||
@@ -3876,7 +4137,8 @@ class CSSRenderStyle extends RenderStyle
         final childPosition = childRenderStyle.position;
 
         // Skip positioned elements (out of flow)
-        if (childPosition == CSSPositionType.absolute || childPosition == CSSPositionType.fixed) {
+        if (childPosition == CSSPositionType.absolute ||
+            childPosition == CSSPositionType.fixed) {
           child = renderBoxModel.childAfter(child);
           continue;
         }
@@ -3885,7 +4147,8 @@ class CSSRenderStyle extends RenderStyle
         if (child.renderStyle.isSelfAnonymousFlowLayout()) {
           // Anonymous blocks contain inline content
           hasInlineContent = true;
-        } else if (childDisplay == CSSDisplay.block || childDisplay == CSSDisplay.flex) {
+        } else if (childDisplay == CSSDisplay.block ||
+            childDisplay == CSSDisplay.flex) {
           // Regular block-level content
           hasBlockContent = true;
         } else if (childDisplay == CSSDisplay.inline ||
@@ -3918,13 +4181,17 @@ class CSSRenderStyle extends RenderStyle
   RenderBoxModel createRenderBoxModel() {
     RenderBoxModel nextRenderBoxModel;
     if (target.isWidgetElement) {
-      nextRenderBoxModel = _createRenderWidget(isRepaintBoundary: target.isRepaintBoundary);
+      nextRenderBoxModel =
+          _createRenderWidget(isRepaintBoundary: target.isRepaintBoundary);
     } else if (target.isReplacedElement) {
-      nextRenderBoxModel = _createRenderReplaced(isRepaintBoundary: target.isRepaintBoundary);
+      nextRenderBoxModel =
+          _createRenderReplaced(isRepaintBoundary: target.isRepaintBoundary);
     } else if (target.isSVGElement) {
-      nextRenderBoxModel = target.createRenderSVG(isRepaintBoundary: target.isRepaintBoundary);
+      nextRenderBoxModel =
+          target.createRenderSVG(isRepaintBoundary: target.isRepaintBoundary);
     } else {
-      nextRenderBoxModel = createRenderLayout(isRepaintBoundary: target.isRepaintBoundary);
+      nextRenderBoxModel =
+          createRenderLayout(isRepaintBoundary: target.isRepaintBoundary);
     }
 
     return nextRenderBoxModel;
@@ -3934,7 +4201,9 @@ class CSSRenderStyle extends RenderStyle
   @override
   double getHeightByAspectRatio() {
     double contentBoxHeight;
-    double borderBoxWidth = width.isAuto ? wrapPaddingBorderWidth(intrinsicWidth) : width.computedValue;
+    double borderBoxWidth = width.isAuto
+        ? wrapPaddingBorderWidth(intrinsicWidth)
+        : width.computedValue;
     if (minWidth.isNotAuto && borderBoxWidth < minWidth.computedValue) {
       borderBoxWidth = minWidth.computedValue;
     }
@@ -3965,7 +4234,9 @@ class CSSRenderStyle extends RenderStyle
   double getWidthByAspectRatio() {
     double contentBoxWidth;
 
-    double borderBoxHeight = height.isAuto ? wrapPaddingBorderHeight(intrinsicHeight) : height.computedValue;
+    double borderBoxHeight = height.isAuto
+        ? wrapPaddingBorderHeight(intrinsicHeight)
+        : height.computedValue;
     if (!minHeight.isAuto && borderBoxHeight < minHeight.computedValue) {
       borderBoxHeight = minHeight.computedValue;
     }
@@ -4000,14 +4271,17 @@ class CSSRenderStyle extends RenderStyle
   // Find ancestor render style with display of not inline.
   RenderStyle? _findAncestorWithNoDisplayInline() {
     RenderStyle renderStyle = this;
-    CSSRenderStyle? parentRenderStyle = renderStyle.getAttachedRenderParentRenderStyle();
+    CSSRenderStyle? parentRenderStyle =
+        renderStyle.getAttachedRenderParentRenderStyle();
     while (parentRenderStyle != null) {
       // If ancestor element is WidgetElement, should return it because should get maxWidth of constraints for logicalWidth.
       if (parentRenderStyle.effectiveDisplay != CSSDisplay.inline ||
-          parentRenderStyle.target.renderObjectManagerType == RenderObjectManagerType.FLUTTER_ELEMENT) {
+          parentRenderStyle.target.renderObjectManagerType ==
+              RenderObjectManagerType.FLUTTER_ELEMENT) {
         break;
       }
-      parentRenderStyle = parentRenderStyle.getAttachedRenderParentRenderStyle<CSSRenderStyle>();
+      parentRenderStyle = parentRenderStyle
+          .getAttachedRenderParentRenderStyle<CSSRenderStyle>();
     }
     return parentRenderStyle;
   }
@@ -4015,16 +4289,20 @@ class CSSRenderStyle extends RenderStyle
   // Find ancestor render style with definite content box logical width.
   RenderStyle? _findAncestorWithContentBoxLogicalWidth() {
     RenderStyle renderStyle = this;
-    RenderStyle? parentRenderStyle = renderStyle.getAttachedRenderParentRenderStyle();
+    RenderStyle? parentRenderStyle =
+        renderStyle.getAttachedRenderParentRenderStyle();
 
     while (parentRenderStyle != null) {
-      RenderStyle? grandParentRenderStyle = parentRenderStyle.getAttachedRenderParentRenderStyle();
+      RenderStyle? grandParentRenderStyle =
+          parentRenderStyle.getAttachedRenderParentRenderStyle();
       // Flex item with flex-shrink 0 and no width/max-width will have infinity constraints
       // even if parents have width when flex direction is row.
       if (grandParentRenderStyle != null) {
-        bool isGrandParentFlex = grandParentRenderStyle.display == CSSDisplay.flex ||
-            grandParentRenderStyle.display == CSSDisplay.inlineFlex;
-        bool isHorizontalDirection = CSSFlex.isHorizontalFlexDirection(grandParentRenderStyle.flexDirection);
+        bool isGrandParentFlex =
+            grandParentRenderStyle.display == CSSDisplay.flex ||
+                grandParentRenderStyle.display == CSSDisplay.inlineFlex;
+        bool isHorizontalDirection = CSSFlex.isHorizontalFlexDirection(
+            grandParentRenderStyle.flexDirection);
         if (isGrandParentFlex &&
             isHorizontalDirection &&
             parentRenderStyle.flexShrink == 0 &&
@@ -4058,22 +4336,38 @@ class CSSRenderStyle extends RenderStyle
 
   // Add padding and border to content-box height to get border-box height.
   double wrapPaddingBorderHeight(double contentBoxHeight) {
-    return contentBoxHeight + paddingTop.computedValue + paddingBottom.computedValue + border.top + border.bottom;
+    return contentBoxHeight +
+        paddingTop.computedValue +
+        paddingBottom.computedValue +
+        border.top +
+        border.bottom;
   }
 
   // Add padding and border to content-box width to get border-box width.
   double wrapPaddingBorderWidth(double contentBoxWidth) {
-    return contentBoxWidth + paddingLeft.computedValue + paddingRight.computedValue + border.left + border.right;
+    return contentBoxWidth +
+        paddingLeft.computedValue +
+        paddingRight.computedValue +
+        border.left +
+        border.right;
   }
 
   // Subtract padding and border to border-box height to get content-box height.
   double deflatePaddingBorderHeight(double borderBoxHeight) {
-    return borderBoxHeight - paddingTop.computedValue - paddingBottom.computedValue - border.top - border.bottom;
+    return borderBoxHeight -
+        paddingTop.computedValue -
+        paddingBottom.computedValue -
+        border.top -
+        border.bottom;
   }
 
   // Subtract padding and border to border-box width to get content-box width.
   double deflatePaddingBorderWidth(double borderBoxWidth) {
-    return borderBoxWidth - paddingLeft.computedValue - paddingRight.computedValue - border.left - border.right;
+    return borderBoxWidth -
+        paddingLeft.computedValue -
+        paddingRight.computedValue -
+        border.left -
+        border.right;
   }
 }
 
@@ -4113,18 +4407,22 @@ mixin CSSWritingModeMixin on RenderStyle {
     return false;
   }
 
-  static String expandInlineVars(String input, RenderStyle renderStyle, String propertyName) {
+  static String expandInlineVars(
+      String input, RenderStyle renderStyle, String propertyName) {
     if (!input.contains('var(')) return input;
     String result = input;
     int guard = 0;
     while (result.contains('var(') && guard++ < 8) {
       final before = result;
-      result = replaceCssVarFunctionsIndexed(result, (String varString, int start, int end) {
-        final CSSVariable? variable = CSSVariable.tryParse(renderStyle, varString);
+      result = replaceCssVarFunctionsIndexed(result,
+          (String varString, int start, int end) {
+        final CSSVariable? variable =
+            CSSVariable.tryParse(renderStyle, varString);
         if (variable == null) return varString; // keep as-is
 
         final depKey = '${propertyName}_$input';
-        final dynamic raw = renderStyle.getCSSVariable(variable.identifier, depKey);
+        final dynamic raw =
+            renderStyle.getCSSVariable(variable.identifier, depKey);
 
         if (raw == null || raw == INITIAL) {
           // Use fallback if provided; otherwise preserve var(...) so the
@@ -4143,14 +4441,23 @@ mixin CSSWritingModeMixin on RenderStyle {
               c == 45 || // '-'
               c == 95; // '_'
         }
+
         final int? leftChar = start > 0 ? before.codeUnitAt(start - 1) : null;
-        final int? rightChar = end < before.length ? before.codeUnitAt(end) : null;
+        final int? rightChar =
+            end < before.length ? before.codeUnitAt(end) : null;
         String rep = raw.toString();
         String trimmed = rep.trim();
         final int? repFirst = trimmed.isNotEmpty ? trimmed.codeUnitAt(0) : null;
-        final int? repLast = trimmed.isNotEmpty ? trimmed.codeUnitAt(trimmed.length - 1) : null;
-        final bool addLeftSpace = leftChar != null && repFirst != null && isIdentCode(leftChar) && isIdentCode(repFirst);
-        final bool addRightSpace = rightChar != null && repLast != null && isIdentCode(repLast) && isIdentCode(rightChar);
+        final int? repLast =
+            trimmed.isNotEmpty ? trimmed.codeUnitAt(trimmed.length - 1) : null;
+        final bool addLeftSpace = leftChar != null &&
+            repFirst != null &&
+            isIdentCode(leftChar) &&
+            isIdentCode(repFirst);
+        final bool addRightSpace = rightChar != null &&
+            repLast != null &&
+            isIdentCode(repLast) &&
+            isIdentCode(rightChar);
         if (addLeftSpace) rep = ' $rep';
         if (addRightSpace) rep = '$rep ';
         return rep;

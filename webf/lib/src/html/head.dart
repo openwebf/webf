@@ -63,10 +63,12 @@ class HeadElement extends Element {
       final Node? node = change.siblingChanged;
       final bool isStyleNode = node is StyleElementMixin || node is LinkElement;
       final bool isStyleText = change.type == ChildrenChangeType.TEXT_CHANGE &&
-          node != null && node.parentNode is StyleElementMixin;
+          node != null &&
+          node.parentNode is StyleElementMixin;
       if (isStyleNode || isStyleText || change.isChildElementChange()) {
         if (DebugFlags.enableCssMultiStyleTrace) {
-          cssLogger.info('[trace][multi-style][head] childrenChanged type=${change.type} scheduling style update');
+          cssLogger.info(
+              '[trace][multi-style][head] childrenChanged type=${change.type} scheduling style update');
         }
         ownerDocument.scheduleStyleUpdate();
         return;
@@ -79,8 +81,12 @@ class HeadElement extends Element {
 // Resolve @import rules within a stylesheet by fetching and inlining imported rules.
 Future<void> _resolveCSSImports(Document document, CSSStyleSheet sheet) async {
   // Determine environment for parsing imported sheets
-  double windowWidth = document.viewport?.viewportSize.width ?? document.preloadViewportSize?.width ?? -1;
-  double windowHeight = document.viewport?.viewportSize.height ?? document.preloadViewportSize?.height ?? -1;
+  double windowWidth = document.viewport?.viewportSize.width ??
+      document.preloadViewportSize?.width ??
+      -1;
+  double windowHeight = document.viewport?.viewportSize.height ??
+      document.preloadViewportSize?.height ??
+      -1;
   bool isDarkMode = document.controller.view.rootController.isDarkMode ?? false;
 
   // Base URL to resolve relative imports
@@ -99,21 +105,29 @@ Future<void> _resolveCSSImports(Document document, CSSStyleSheet sheet) async {
       }
 
       // Resolve URL relative to stylesheet/document
-      Uri resolved = document.controller.uriParser!.resolve(Uri.parse(base), Uri.parse(href));
+      Uri resolved = document.controller.uriParser!
+          .resolve(Uri.parse(base), Uri.parse(href));
 
       // Load CSS text
-      WebFBundle bundle = document.controller.getPreloadBundleFromUrl(resolved.toString()) ?? WebFBundle.fromUrl(resolved.toString());
+      WebFBundle bundle =
+          document.controller.getPreloadBundleFromUrl(resolved.toString()) ??
+              WebFBundle.fromUrl(resolved.toString());
       try {
         // Track network activity
         document.incrementRequestCount();
-        await bundle.resolve(baseUrl: document.controller.url, uriParser: document.controller.uriParser);
+        await bundle.resolve(
+            baseUrl: document.controller.url,
+            uriParser: document.controller.uriParser);
         await bundle.obtainData(document.ownerView.contextId);
 
         final String cssText = await resolveStringFromData(bundle.data!);
 
         // Parse imported sheet with its own href so url() inside resolves correctly
         CSSStyleSheet imported = CSSParser(cssText, href: resolved.toString())
-            .parse(windowWidth: windowWidth, windowHeight: windowHeight, isDarkMode: isDarkMode);
+            .parse(
+                windowWidth: windowWidth,
+                windowHeight: windowHeight,
+                isDarkMode: isDarkMode);
         imported.href = resolved.toString();
 
         // Recursively resolve nested imports
@@ -184,41 +198,53 @@ class LinkElement extends Element {
   void initializeAttributes(Map<String, ElementAttributeProperty> attributes) {
     super.initializeAttributes(attributes);
 
-    attributes['disabled'] = ElementAttributeProperty(setter: (value) => disabled = attributeToProperty<bool>(value));
-    attributes['rel'] = ElementAttributeProperty(setter: (value) => rel = attributeToProperty<String>(value));
-    attributes['href'] = ElementAttributeProperty(setter: (value) => href = attributeToProperty<String>(value));
-    attributes['type'] = ElementAttributeProperty(setter: (value) => type = attributeToProperty<String>(value));
-    attributes['media'] = ElementAttributeProperty(setter: (value) => media = attributeToProperty<String>(value));
-    attributes['as'] = ElementAttributeProperty(setter: (value) => as = attributeToProperty<String>(value));
+    attributes['disabled'] = ElementAttributeProperty(
+        setter: (value) => disabled = attributeToProperty<bool>(value));
+    attributes['rel'] = ElementAttributeProperty(
+        setter: (value) => rel = attributeToProperty<String>(value));
+    attributes['href'] = ElementAttributeProperty(
+        setter: (value) => href = attributeToProperty<String>(value));
+    attributes['type'] = ElementAttributeProperty(
+        setter: (value) => type = attributeToProperty<String>(value));
+    attributes['media'] = ElementAttributeProperty(
+        setter: (value) => media = attributeToProperty<String>(value));
+    attributes['as'] = ElementAttributeProperty(
+        setter: (value) => as = attributeToProperty<String>(value));
   }
 
   static final StaticDefinedBindingPropertyMap _linkElementProperties = {
     'disabled': StaticDefinedBindingProperty(
         getter: (element) => castToType<LinkElement>(element).disabled,
-        setter: (element, value) => castToType<LinkElement>(element).disabled = castToType<bool>(value)),
+        setter: (element, value) => castToType<LinkElement>(element).disabled =
+            castToType<bool>(value)),
     'rel': StaticDefinedBindingProperty(
         getter: (element) => castToType<LinkElement>(element).rel,
-        setter: (element, value) => castToType<LinkElement>(element).rel = castToType<String>(value)),
+        setter: (element, value) =>
+            castToType<LinkElement>(element).rel = castToType<String>(value)),
     'href': StaticDefinedBindingProperty(
         getter: (element) => castToType<LinkElement>(element).href,
-        setter: (element, value) => castToType<LinkElement>(element).href = castToType<String>(value)),
+        setter: (element, value) =>
+            castToType<LinkElement>(element).href = castToType<String>(value)),
     'type': StaticDefinedBindingProperty(
         getter: (element) => castToType<LinkElement>(element).type,
-        setter: (element, value) => castToType<LinkElement>(element).type = castToType<String>(value)),
+        setter: (element, value) =>
+            castToType<LinkElement>(element).type = castToType<String>(value)),
     'media': StaticDefinedBindingProperty(
         getter: (element) => castToType<LinkElement>(element).media,
-        setter: (element, value) => castToType<LinkElement>(element).media = castToType<String>(value)),
+        setter: (element, value) =>
+            castToType<LinkElement>(element).media = castToType<String>(value)),
     'as': StaticDefinedBindingProperty(
         getter: (element) => castToType<LinkElement>(element).as,
-        setter: (element, value) => castToType<LinkElement>(element).as = castToType<String>(value)),
+        setter: (element, value) =>
+            castToType<LinkElement>(element).as = castToType<String>(value)),
     'sheet': StaticDefinedBindingProperty(
       getter: (element) => castToType<LinkElement>(element).sheet,
     ),
   };
 
   @override
-  List<StaticDefinedBindingPropertyMap> get properties => [...super.properties, _linkElementProperties];
-
+  List<StaticDefinedBindingPropertyMap> get properties =>
+      [...super.properties, _linkElementProperties];
 
   bool get disabled => getAttribute('disabled') != null;
 
@@ -299,32 +325,36 @@ class LinkElement extends Element {
       }
 
       _styleSheet!.replaceSync(_cachedStyleSheetText!,
-          windowWidth: windowWidth, windowHeight: windowHeight, isDarkMode: ownerView.rootController.isDarkMode);
+          windowWidth: windowWidth,
+          windowHeight: windowHeight,
+          isDarkMode: ownerView.rootController.isDarkMode);
     } else {
       final String sheetHref = _resolvedHyperlink?.toString() ?? href;
-      _styleSheet = CSSParser(_cachedStyleSheetText!, href: sheetHref)
-          .parse(windowWidth: windowWidth, windowHeight: windowHeight, isDarkMode: ownerView.rootController.isDarkMode);
+      _styleSheet = CSSParser(_cachedStyleSheetText!, href: sheetHref).parse(
+          windowWidth: windowWidth,
+          windowHeight: windowHeight,
+          isDarkMode: ownerView.rootController.isDarkMode);
       _styleSheet?.href = sheetHref;
     }
-      if (_styleSheet != null) {
-        ownerDocument.styleNodeManager.appendPendingStyleSheet(_styleSheet!);
-        if (DebugFlags.enableCssBatchStyleUpdates) {
-          ownerDocument.scheduleStyleUpdate();
-        } else {
-          ownerDocument.updateStyleIfNeeded();
-        }
-        // Re-resolve @import for reloaded stylesheet
-        () async {
-          if (_styleSheet != null) {
-            await _resolveCSSImports(ownerDocument, _styleSheet!);
+    if (_styleSheet != null) {
+      ownerDocument.styleNodeManager.appendPendingStyleSheet(_styleSheet!);
+      if (DebugFlags.enableCssBatchStyleUpdates) {
+        ownerDocument.scheduleStyleUpdate();
+      } else {
+        ownerDocument.updateStyleIfNeeded();
+      }
+      // Re-resolve @import for reloaded stylesheet
+      () async {
+        if (_styleSheet != null) {
+          await _resolveCSSImports(ownerDocument, _styleSheet!);
           if (DebugFlags.enableCssBatchStyleUpdates) {
             ownerDocument.scheduleStyleUpdate();
           } else {
             ownerDocument.updateStyleIfNeeded();
           }
-          }
-        }();
-      }
+        }
+      }();
+    }
   }
 
   Future<void> _resolveHyperlink() async {
@@ -338,7 +368,8 @@ class LinkElement extends Element {
           await InternetAddress.lookup(hrefUri.host);
         }
 
-        _resolvedHyperlink = ownerDocument.controller.uriParser!.resolve(Uri.parse(base), hrefUri);
+        _resolvedHyperlink = ownerDocument.controller.uriParser!
+            .resolve(Uri.parse(base), hrefUri);
       } catch (_) {
         // Ignoring the failure of resolving, but to remove the resolved hyperlink.
         _resolvedHyperlink = null;
@@ -347,7 +378,8 @@ class LinkElement extends Element {
   }
 
   void _process() {
-    if (_resolvedHyperlink != null && _stylesheetLoaded.containsKey(_resolvedHyperlink.toString())) {
+    if (_resolvedHyperlink != null &&
+        _stylesheetLoaded.containsKey(_resolvedHyperlink.toString())) {
       return;
     }
     if (_resolvedHyperlink != null) {
@@ -386,13 +418,16 @@ class LinkElement extends Element {
       // Create a WebFBundle for the resource
       WebFBundle bundle = WebFBundle.fromUrl(url);
 
-      await bundle.resolve(baseUrl: ownerDocument.controller.url, uriParser: ownerDocument.controller.uriParser);
+      await bundle.resolve(
+          baseUrl: ownerDocument.controller.url,
+          uriParser: ownerDocument.controller.uriParser);
       await bundle.obtainData(ownerView.contextId);
 
       // Add the preloaded bundle to the controller
       _addBundleToPreloadedBundles(bundle);
     } catch (e, st) {
-      domLogger.warning('[HeadElement] Failed to preload bundle url=$url', e, st);
+      domLogger.warning(
+          '[HeadElement] Failed to preload bundle url=$url', e, st);
     } finally {
       // Decrement count when response/error
       ownerDocument.decrementRequestCount();
@@ -406,7 +441,8 @@ class LinkElement extends Element {
   void _fetchAndApplyCSSStyle() async {
     if (_resolvedHyperlink != null &&
         rel == REL_STYLESHEET &&
-        isConnected && !_stylesheetLoaded.containsKey(_resolvedHyperlink.toString())) {
+        isConnected &&
+        !_stylesheetLoaded.containsKey(_resolvedHyperlink.toString())) {
       if (!isValidMedia(media)) {
         return;
       }
@@ -417,27 +453,32 @@ class LinkElement extends Element {
       }
 
       String url = _resolvedHyperlink.toString();
-      WebFBundle bundle = ownerDocument.controller.getPreloadBundleFromUrl(url) ?? WebFBundle.fromUrl(url);
+      WebFBundle bundle =
+          ownerDocument.controller.getPreloadBundleFromUrl(url) ??
+              WebFBundle.fromUrl(url);
       _stylesheetLoaded[url] = true;
       try {
         _loading = true;
         // Increment count when request.
         ownerDocument.incrementRequestCount();
 
-        await bundle.resolve(baseUrl: ownerDocument.controller.url, uriParser: ownerDocument.controller.uriParser);
+        await bundle.resolve(
+            baseUrl: ownerDocument.controller.url,
+            uriParser: ownerDocument.controller.uriParser);
         await bundle.obtainData(ownerView.contextId);
         assert(bundle.isResolved, 'Failed to obtain $url');
         _loading = false;
         // Decrement count when response.
         ownerDocument.decrementRequestCount();
 
-        final String cssString = _cachedStyleSheetText = await resolveStringFromData(bundle.data!);
-
-
+        final String cssString =
+            _cachedStyleSheetText = await resolveStringFromData(bundle.data!);
 
         final String sheetHref = _resolvedHyperlink?.toString() ?? href;
         _styleSheet = CSSParser(cssString, href: sheetHref).parse(
-            windowWidth: windowWidth, windowHeight: windowHeight, isDarkMode: ownerView.rootController.isDarkMode);
+            windowWidth: windowWidth,
+            windowHeight: windowHeight,
+            isDarkMode: ownerView.rootController.isDarkMode);
         _styleSheet?.href = sheetHref;
         // If Blink CSS stack is enabled, forward stylesheet to native; otherwise parse in Dart.
         if (ownerView.enableBlink) {
@@ -445,7 +486,9 @@ class LinkElement extends Element {
         } else {
           final String? sheetHref = _resolvedHyperlink?.toString() ?? href;
           _styleSheet = CSSParser(cssString, href: sheetHref).parse(
-              windowWidth: windowWidth, windowHeight: windowHeight, isDarkMode: ownerView.rootController.isDarkMode);
+              windowWidth: windowWidth,
+              windowHeight: windowHeight,
+              isDarkMode: ownerView.rootController.isDarkMode);
           _styleSheet?.href = sheetHref;
 
           // Resolve and inline any @import rules before applying
@@ -491,11 +534,15 @@ class LinkElement extends Element {
   }
 
   double get windowWidth {
-    return ownerDocument.viewport?.viewportSize.width ?? ownerDocument.preloadViewportSize?.width ?? -1;
+    return ownerDocument.viewport?.viewportSize.width ??
+        ownerDocument.preloadViewportSize?.width ??
+        -1;
   }
 
   double get windowHeight {
-    return ownerDocument.viewport?.viewportSize.height ?? ownerDocument.preloadViewportSize?.height ?? -1;
+    return ownerDocument.viewport?.viewportSize.height ??
+        ownerDocument.preloadViewportSize?.height ??
+        -1;
   }
 
   @override
@@ -509,7 +556,6 @@ class LinkElement extends Element {
       if (rel == REL_PRELOAD) {
         _handlePreload();
       } else if (rel == REL_STYLESHEET) {
-
         _fetchAndApplyCSSStyle();
       }
     }
@@ -529,7 +575,9 @@ class LinkElement extends Element {
   Future<void> _sendStyleSheetToNative(String cssText, {String? href}) async {
     // Ensure we have a native binding object to call.
     final pointer = this.pointer;
-    if (pointer == null || isBindingObjectDisposed(pointer) || pointer.ref.invokeBindingMethodFromDart == nullptr) {
+    if (pointer == null ||
+        isBindingObjectDisposed(pointer) ||
+        pointer.ref.invokeBindingMethodFromDart == nullptr) {
       return;
     }
 
@@ -539,13 +587,16 @@ class LinkElement extends Element {
     // Prepare method name and arguments
     final Pointer<NativeValue> method = malloc.allocate(sizeOf<NativeValue>());
     toNativeValue(method, 'parseAuthorStyleSheet');
-    final Pointer<NativeValue> argv = makeNativeValueArguments(bindingObject, <dynamic>[cssText, href ?? '']);
+    final Pointer<NativeValue> argv =
+        makeNativeValueArguments(bindingObject, <dynamic>[cssText, href ?? '']);
 
     final ctx = _ParseStyleSheetContext(completer, method, argv);
-    final callback = Pointer.fromFunction<NativeInvokeResultCallback>(_handleParseStyleSheetResult);
+    final callback = Pointer.fromFunction<NativeInvokeResultCallback>(
+        _handleParseStyleSheetResult);
 
     // Invoke native method asynchronously
-    final f = pointer.ref.invokeBindingMethodFromDart.asFunction<DartInvokeBindingMethodsFromDart>();
+    final f = pointer.ref.invokeBindingMethodFromDart
+        .asFunction<DartInvokeBindingMethodsFromDart>();
     Future.microtask(() {
       f(pointer, ownerView.contextId, method, 2, argv, ctx, callback);
     });
@@ -579,7 +630,9 @@ class LinkElement extends Element {
         conditionStartIndex = index;
       } else if (conditionStartIndex > 0) {
         if (code == TokenChar.RPAREN) {
-          String condition = media.substring(conditionStartIndex + 1, index).replaceAll(' ', '');
+          String condition = media
+              .substring(conditionStartIndex + 1, index)
+              .replaceAll(' ', '');
           List<String> cp = condition.split(':');
           if (lastOperator == MediaOperator.AND) {
             andMap[cp[0]] = cp[1];
@@ -596,15 +649,19 @@ class LinkElement extends Element {
         startIndex = index;
         if (key == MediaType.ALL || key == MediaType.SCREEN) {
           mediaType = key;
-        } else if (key == MediaOperator.AND || key == MediaOperator.NOT || key == MediaOperator.ONLY) {
+        } else if (key == MediaOperator.AND ||
+            key == MediaOperator.NOT ||
+            key == MediaOperator.ONLY) {
           lastOperator = key;
         }
       }
     }
     // mediaType:screen, lastOperator:and, andMap {max-width: 300px}, onlyMap {}, notMap {}
     if (mediaType == MediaType.ALL || mediaType == MediaType.SCREEN) {
-      double maxWidthValue = CSSLength.parseLength(andMap['max-width'] ?? '0px', null).value ?? -1;
-      double minWidthValue = CSSLength.parseLength(andMap['min-width'] ?? '0px', null).value ?? -1;
+      double maxWidthValue =
+          CSSLength.parseLength(andMap['max-width'] ?? '0px', null).value ?? -1;
+      double minWidthValue =
+          CSSLength.parseLength(andMap['min-width'] ?? '0px', null).value ?? -1;
       if (maxWidthValue < windowWidth || minWidthValue > windowWidth) {
         isValid = false;
       }
@@ -653,11 +710,44 @@ mixin StyleElementMixin on Element {
   Map<String, dynamic> get defaultStyle => _defaultStyle;
 
   String _type = _CSS_MIME;
+  String _media = '';
 
   String get type => _type;
 
   set type(String value) {
+    if (_type == value) return;
     _type = value;
+    if (value.isEmpty) {
+      removeAttribute('type');
+    } else {
+      internalSetAttribute('type', value);
+    }
+    _syncStyleSheetState();
+  }
+
+  String get media => _media;
+
+  set media(String value) {
+    if (_media == value) return;
+    _media = value;
+    if (value.isEmpty) {
+      removeAttribute('media');
+    } else {
+      internalSetAttribute('media', value);
+    }
+    _syncStyleSheetState();
+  }
+
+  bool get disabled => getAttribute('disabled') != null;
+
+  set disabled(bool value) {
+    if (disabled == value) return;
+    if (value) {
+      internalSetAttribute('disabled', '');
+    } else {
+      removeAttribute('disabled');
+    }
+    _syncStyleSheetState();
   }
 
   CSSStyleSheet? _styleSheet;
@@ -676,13 +766,29 @@ mixin StyleElementMixin on Element {
   }
 
   static final StaticDefinedBindingPropertyMap _styleElementProperties = {
+    'disabled': StaticDefinedBindingProperty(
+      getter: (element) => castToType<StyleElementMixin>(element).disabled,
+      setter: (element, value) => castToType<StyleElementMixin>(element)
+          .disabled = castToType<bool>(value),
+    ),
+    'type': StaticDefinedBindingProperty(
+      getter: (element) => castToType<StyleElementMixin>(element).type,
+      setter: (element, value) => castToType<StyleElementMixin>(element).type =
+          castToType<String>(value),
+    ),
+    'media': StaticDefinedBindingProperty(
+      getter: (element) => castToType<StyleElementMixin>(element).media,
+      setter: (element, value) => castToType<StyleElementMixin>(element).media =
+          castToType<String>(value),
+    ),
     'sheet': StaticDefinedBindingProperty(
       getter: (element) => castToType<StyleElementMixin>(element).sheet,
     ),
   };
 
   @override
-  List<StaticDefinedBindingPropertyMap> get properties => [...super.properties, _styleElementProperties];
+  List<StaticDefinedBindingPropertyMap> get properties =>
+      [...super.properties, _styleElementProperties];
 
   // Cache signature of the last parsed stylesheet so we can skip redundant
   // replaceSync()/appendPendingStyleSheet cycles when neither the inline CSS
@@ -690,19 +796,54 @@ mixin StyleElementMixin on Element {
   int? _lastStyleSheetSignature;
 
   @override
-  void initializeDynamicProperties(Map<String, BindingObjectProperty> properties) {
+  void initializeDynamicProperties(
+      Map<String, BindingObjectProperty> properties) {
     super.initializeDynamicProperties(properties);
-    properties['type'] = BindingObjectProperty(getter: () => type, setter: (value) => type = castToType<String>(value));
+    properties['type'] = BindingObjectProperty(
+        getter: () => type,
+        setter: (value) => type = castToType<String>(value));
+    properties['media'] = BindingObjectProperty(
+        getter: () => media,
+        setter: (value) => media = castToType<String>(value));
+    properties['disabled'] = BindingObjectProperty(
+        getter: () => disabled,
+        setter: (value) => disabled = castToType<bool>(value));
   }
 
   @override
   void initializeAttributes(Map<String, ElementAttributeProperty> attributes) {
     super.initializeAttributes(attributes);
-    attributes['type'] = ElementAttributeProperty(setter: (value) => type = attributeToProperty<String>(value));
+    attributes['disabled'] = ElementAttributeProperty(
+        setter: (value) => disabled = attributeToProperty<bool>(value));
+    attributes['type'] = ElementAttributeProperty(
+        setter: (value) => type = attributeToProperty<String>(value));
+    attributes['media'] = ElementAttributeProperty(
+        setter: (value) => media = attributeToProperty<String>(value));
   }
 
   void reloadStyle() {
     _recalculateStyle();
+  }
+
+  void _syncStyleSheetState() {
+    if (ownerView.enableBlink) return;
+
+    final CSSStyleSheet? sheet = _styleSheet;
+    if (sheet == null) {
+      if (_type == _CSS_MIME && isConnected) {
+        _recalculateStyle();
+      }
+      return;
+    }
+
+    sheet.type = _type;
+    sheet.disabled = disabled || _type != _CSS_MIME;
+    ownerDocument.styleNodeManager.appendPendingStyleSheet(sheet);
+    if (DebugFlags.enableCssBatchStyleUpdates) {
+      ownerDocument.scheduleStyleUpdate();
+    } else {
+      ownerDocument.updateStyleIfNeeded();
+    }
   }
 
   @override
@@ -711,7 +852,8 @@ mixin StyleElementMixin on Element {
     // When batching is enabled, defer style updates to the scheduler.
     if (DebugFlags.enableCssBatchStyleUpdates) {
       if (DebugFlags.enableCssMultiStyleTrace) {
-        cssLogger.info('[trace][multi-style][style] childrenChanged type=${change.type} scheduling style update');
+        cssLogger.info(
+            '[trace][multi-style][style] childrenChanged type=${change.type} scheduling style update');
       }
       ownerDocument.scheduleStyleUpdate();
       return;
@@ -746,12 +888,18 @@ mixin StyleElementMixin on Element {
         windowHeight: windowHeight,
         isDarkMode: ownerView.rootController.isDarkMode,
       );
+      _styleSheet!
+        ..type = _type
+        ..disabled = disabled || _type != _CSS_MIME;
     } else {
       _styleSheet = CSSParser(text).parse(
         windowWidth: windowWidth,
         windowHeight: windowHeight,
         isDarkMode: ownerView.rootController.isDarkMode,
       );
+      _styleSheet!
+        ..type = _type
+        ..disabled = disabled || _type != _CSS_MIME;
       // Resolve @import in the parsed inline stylesheet asynchronously.
       () async {
         if (_styleSheet != null) {
@@ -771,7 +919,8 @@ mixin StyleElementMixin on Element {
     if (_styleSheet != null) {
       if (DebugFlags.enableCssMultiStyleTrace) {
         final parentTag = parentElement?.tagName ?? 'UNKNOWN';
-        cssLogger.info('[trace][multi-style][style] apply sheet (parent=$parentTag)');
+        cssLogger.info(
+            '[trace][multi-style][style] apply sheet (parent=$parentTag)');
       }
       ownerDocument.styleNodeManager.appendPendingStyleSheet(_styleSheet!);
       if (DebugFlags.enableCssBatchStyleUpdates) {
@@ -783,11 +932,15 @@ mixin StyleElementMixin on Element {
   }
 
   double get windowWidth {
-    return ownerDocument.preloadViewportSize?.width ?? ownerDocument.viewport?.viewportSize.width ?? -1;
+    return ownerDocument.preloadViewportSize?.width ??
+        ownerDocument.viewport?.viewportSize.width ??
+        -1;
   }
 
   double get windowHeight {
-    return ownerDocument.preloadViewportSize?.height ?? ownerDocument.viewport?.viewportSize.height ?? -1;
+    return ownerDocument.preloadViewportSize?.height ??
+        ownerDocument.viewport?.viewportSize.height ??
+        -1;
   }
 
   @override

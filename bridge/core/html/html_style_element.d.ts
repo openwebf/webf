@@ -6,7 +6,8 @@ import {HTMLElement} from "./html_element";
 import {CSSStyleSheet} from "../css/css_style_sheet";
 
 interface HTMLStyleElement extends HTMLElement {
-    readonly type: string;
+    disabled: SupportAsync<DartImpl<boolean>>;
+    type: SupportAsync<DartImpl<string>>;
     readonly sheet: CSSStyleSheet | null;
     new(): void;
 }
