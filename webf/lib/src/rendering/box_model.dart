@@ -507,43 +507,43 @@ abstract class RenderBoxModel extends RenderBox
   // Calculate constraints of renderBoxModel on layout stage and
   // only needed to be executed once on every layout.
   BoxConstraints getConstraints() {
-    CSSDisplay? effectiveDisplay = renderStyle.effectiveDisplay;
+    final CSSRenderStyle style = renderStyle;
+    final CSSRenderStyle? attachedParentStyle =
+        style.getAttachedRenderParentRenderStyle();
+    final RenderBoxModel? attachedParentRenderBoxModel =
+        attachedParentStyle?.attachedRenderBoxModel;
+
+    CSSDisplay? effectiveDisplay = style.effectiveDisplay;
     bool isDisplayInline = effectiveDisplay == CSSDisplay.inline;
 
     double? minWidth =
-        renderStyle.minWidth.isAuto ? null : renderStyle.minWidth.computedValue;
+        style.minWidth.isAuto ? null : style.minWidth.computedValue;
     double? maxWidth =
-        renderStyle.maxWidth.isNone ? null : renderStyle.maxWidth.computedValue;
-    double? minHeight = renderStyle.minHeight.isAuto
+        style.maxWidth.isNone ? null : style.maxWidth.computedValue;
+    double? minHeight = style.minHeight.isAuto
         ? null
-        : renderStyle.minHeight.computedValue;
-    double? maxHeight = renderStyle.maxHeight.isNone
+        : style.minHeight.computedValue;
+    double? maxHeight = style.maxHeight.isNone
         ? null
-        : renderStyle.maxHeight.computedValue;
+        : style.maxHeight.computedValue;
 
     // Need to calculated logic content size on every layout.
-    renderStyle.computeContentBoxLogicalWidth();
-    renderStyle.computeContentBoxLogicalHeight();
+    style.computeContentBoxLogicalWidth();
+    style.computeContentBoxLogicalHeight();
 
     // Width should be not smaller than border and padding in horizontal direction
     // when box-sizing is border-box which is only supported.
     double minConstraintWidth =
-        renderStyle.effectiveBorderLeftWidth.computedValue +
-            renderStyle.effectiveBorderRightWidth.computedValue +
-            renderStyle.paddingLeft.computedValue +
-            renderStyle.paddingRight.computedValue;
+        style.effectiveBorderLeftWidth.computedValue +
+            style.effectiveBorderRightWidth.computedValue +
+            style.paddingLeft.computedValue +
+            style.paddingRight.computedValue;
 
     double? parentBoxContentConstraintsWidth;
-    if (renderStyle.isParentRenderBoxModel() &&
-        renderStyle
-                .getAttachedRenderParentRenderStyle()
-                ?.attachedRenderBoxModel !=
-            null &&
-        (renderStyle.isSelfRenderLayoutBox() ||
-            renderStyle.isSelfRenderWidget())) {
-      RenderBoxModel parentRenderBoxModel = (renderStyle
-          .getAttachedRenderParentRenderStyle()!
-          .attachedRenderBoxModel!);
+    if (style.isParentRenderBoxModel() &&
+        attachedParentRenderBoxModel != null &&
+        (style.isSelfRenderLayoutBox() || style.isSelfRenderWidget())) {
+      RenderBoxModel parentRenderBoxModel = attachedParentRenderBoxModel;
 
       // Inline-block shrink-to-fit: when the parent is inline-block with auto width,
       // do not bound block children by the parent's finite content width. This allows
@@ -584,10 +584,9 @@ abstract class RenderBoxModel extends RenderBox
       }
 
       // Flex context adjustments
-      if (renderStyle.isParentRenderFlexLayout()) {
-        final RenderFlexLayout flexParent = renderStyle
-            .getAttachedRenderParentRenderStyle()!
-            .attachedRenderBoxModel! as RenderFlexLayout;
+      if (style.isParentRenderFlexLayout()) {
+        final RenderFlexLayout flexParent =
+            attachedParentStyle!.attachedRenderBoxModel! as RenderFlexLayout;
         // FlexItems with flex:none won't inherit parent box's constraints
         if (flexParent.isFlexNone(this)) {
           parentBoxContentConstraintsWidth = null;
@@ -622,11 +621,11 @@ abstract class RenderBoxModel extends RenderBox
       // In such cases, the containing block still exists, but the abspos box should size
       // from its own content rather than the flex item's zero content width.
       final bool isAbsOrFixed =
-          renderStyle.position == CSSPositionType.absolute ||
-              renderStyle.position == CSSPositionType.fixed;
+          style.position == CSSPositionType.absolute ||
+              style.position == CSSPositionType.fixed;
       if (isAbsOrFixed &&
-          renderStyle.width.isAuto &&
-          renderStyle.isParentRenderFlexLayout() &&
+          style.width.isAuto &&
+          style.isParentRenderFlexLayout() &&
           parentBoxContentConstraintsWidth != null &&
           parentBoxContentConstraintsWidth == 0) {
         parentBoxContentConstraintsWidth = null;
@@ -634,10 +633,11 @@ abstract class RenderBoxModel extends RenderBox
     } else if (isDisplayInline && parent is RenderFlowLayout) {
       // For inline elements inside a flow layout, check if we should inherit parent's constraints
       RenderFlowLayout parentFlow = parent as RenderFlowLayout;
+      final CSSRenderStyle parentFlowStyle = parentFlow.renderStyle;
 
       // Skip constraint inheritance if parent is a flex item with flex: none (flex-grow: 0, flex-shrink: 0)
-      if (parentFlow.renderStyle.isParentRenderFlexLayout()) {
-        RenderFlexLayout flexParent = parentFlow.renderStyle
+      if (parentFlowStyle.isParentRenderFlexLayout()) {
+        RenderFlexLayout flexParent = parentFlowStyle
             .getAttachedRenderParentRenderStyle()!
             .attachedRenderBoxModel as RenderFlexLayout;
         if (flexParent.isFlexNone(parentFlow)) {
@@ -645,7 +645,7 @@ abstract class RenderBoxModel extends RenderBox
           parentBoxContentConstraintsWidth = null;
         } else {
           double parentContentWidth =
-              parentFlow.renderStyle.contentMaxConstraintsWidth;
+              parentFlowStyle.contentMaxConstraintsWidth;
           if (parentContentWidth != double.infinity) {
             parentBoxContentConstraintsWidth = parentContentWidth;
           }
@@ -653,7 +653,7 @@ abstract class RenderBoxModel extends RenderBox
       } else {
         // Not in a flex context, inherit parent's content width constraint normally
         double parentContentWidth =
-            parentFlow.renderStyle.contentMaxConstraintsWidth;
+            parentFlowStyle.contentMaxConstraintsWidth;
         if (parentContentWidth != double.infinity) {
           parentBoxContentConstraintsWidth = parentContentWidth;
         }
@@ -671,21 +671,20 @@ abstract class RenderBoxModel extends RenderBox
     // explicit min/max-width), which matches shrink-to-fit in the common
     // case where content width <= available width.
     final bool absOrFixedForWidth =
-        renderStyle.position == CSSPositionType.absolute ||
-            renderStyle.position == CSSPositionType.fixed;
-    final bool widthAutoForAbs = renderStyle.width.isAuto;
-    final bool bothLRNonAuto =
-        renderStyle.left.isNotAuto && renderStyle.right.isNotAuto;
+        style.position == CSSPositionType.absolute ||
+            style.position == CSSPositionType.fixed;
+    final bool widthAutoForAbs = style.width.isAuto;
+    final bool bothLRNonAuto = style.left.isNotAuto && style.right.isNotAuto;
     if (absOrFixedForWidth &&
         !bothLRNonAuto &&
         widthAutoForAbs &&
-        !renderStyle.isSelfRenderReplaced() &&
-        renderStyle.borderBoxLogicalWidth == null &&
+        !style.isSelfRenderReplaced() &&
+        style.borderBoxLogicalWidth == null &&
         parentBoxContentConstraintsWidth != null) {
       parentBoxContentConstraintsWidth = null;
     }
 
-    double maxConstraintWidth = renderStyle.borderBoxLogicalWidth ??
+    double maxConstraintWidth = style.borderBoxLogicalWidth ??
         parentBoxContentConstraintsWidth ??
         double.infinity;
 
@@ -695,14 +694,14 @@ abstract class RenderBoxModel extends RenderBox
     // with auto width) but the containing block has been measured. See:
     // https://www.w3.org/TR/css-position-3/#abs-non-replaced-width
     final bool isAbsOrFixed =
-        renderStyle.position == CSSPositionType.absolute ||
-            renderStyle.position == CSSPositionType.fixed;
+        style.position == CSSPositionType.absolute ||
+            style.position == CSSPositionType.fixed;
     if (maxConstraintWidth == double.infinity &&
         isAbsOrFixed &&
-        !renderStyle.isSelfRenderReplaced() &&
-        renderStyle.width.isAuto &&
-        renderStyle.left.isNotAuto &&
-        renderStyle.right.isNotAuto &&
+        !style.isSelfRenderReplaced() &&
+        style.width.isAuto &&
+        style.left.isNotAuto &&
+        style.right.isNotAuto &&
         parent is RenderBoxModel) {
       final RenderBoxModel cb = parent as RenderBoxModel;
       double? parentPaddingBoxWidth;
@@ -718,10 +717,10 @@ abstract class RenderBoxModel extends RenderBox
       if (parentPaddingBoxWidth != null && parentPaddingBoxWidth.isFinite) {
         // Solve the horizontal insets equation for the child border-box width.
         double solvedBorderBoxWidth = parentPaddingBoxWidth -
-            renderStyle.left.computedValue -
-            renderStyle.right.computedValue -
-            renderStyle.marginLeft.computedValue -
-            renderStyle.marginRight.computedValue;
+            style.left.computedValue -
+            style.right.computedValue -
+            style.marginLeft.computedValue -
+            style.marginRight.computedValue;
         // Guard against negative sizes.
         solvedBorderBoxWidth = math.max(0, solvedBorderBoxWidth);
         // Use a tight width so empty positioned boxes still fill the available space.
@@ -736,15 +735,15 @@ abstract class RenderBoxModel extends RenderBox
     // CSSLengthValue.computedValue returns 0 for intrinsic keywords, so treating them as
     // definite lengths during style computation collapses boxes to padding/border only.
     // Here we compute the used border-box width and tighten constraints to that value.
-    if (renderStyle.width.isIntrinsic &&
+    if (style.width.isIntrinsic &&
         !isDisplayInline &&
         // For non-replaced boxes, intrinsic widths come from layout content.
-        !renderStyle.isSelfRenderReplaced() &&
+        !style.isSelfRenderReplaced() &&
         // Absolutely positioned boxes with both insets specified should be solved by insets.
         !(isAbsOrFixed &&
-            renderStyle.left.isNotAuto &&
-            renderStyle.right.isNotAuto &&
-            renderStyle.width.isAuto)) {
+            style.left.isNotAuto &&
+            style.right.isNotAuto &&
+            style.width.isAuto)) {
       // Use the parent's available inline size if it's definite; otherwise fall back to infinity.
       final double available = (parentBoxContentConstraintsWidth != null &&
               parentBoxContentConstraintsWidth.isFinite)
@@ -757,8 +756,8 @@ abstract class RenderBoxModel extends RenderBox
       double maxIntrinsic = getMaxIntrinsicWidth(double.infinity);
 
       // Respect nowrap/pre: min-content equals max-content for unbreakable inline content.
-      if (renderStyle.whiteSpace == WhiteSpace.nowrap ||
-          renderStyle.whiteSpace == WhiteSpace.pre) {
+      if (style.whiteSpace == WhiteSpace.nowrap ||
+          style.whiteSpace == WhiteSpace.pre) {
         minIntrinsic = maxIntrinsic;
       }
 
@@ -767,7 +766,7 @@ abstract class RenderBoxModel extends RenderBox
         maxIntrinsic = minIntrinsic;
 
       double used;
-      switch (renderStyle.width.type) {
+      switch (style.width.type) {
         case CSSLengthType.MIN_CONTENT:
           used = minIntrinsic;
           break;
@@ -790,12 +789,12 @@ abstract class RenderBoxModel extends RenderBox
     // Height should be not smaller than border and padding in vertical direction
     // when box-sizing is border-box which is only supported.
     double minConstraintHeight =
-        renderStyle.effectiveBorderTopWidth.computedValue +
-            renderStyle.effectiveBorderBottomWidth.computedValue +
-            renderStyle.paddingTop.computedValue +
-            renderStyle.paddingBottom.computedValue;
+        style.effectiveBorderTopWidth.computedValue +
+            style.effectiveBorderBottomWidth.computedValue +
+            style.paddingTop.computedValue +
+            style.paddingBottom.computedValue;
     double maxConstraintHeight =
-        renderStyle.borderBoxLogicalHeight ?? double.infinity;
+        style.borderBoxLogicalHeight ?? double.infinity;
 
     // // Apply maxHeight constraint if specified
     // if (maxHeight != null && maxHeight < maxConstraintHeight) {
@@ -803,9 +802,9 @@ abstract class RenderBoxModel extends RenderBox
     // }
 
     if (parent is RenderFlexLayout) {
-      double? flexBasis = renderStyle.flexBasis == CSSLengthValue.auto
+      double? flexBasis = style.flexBasis == CSSLengthValue.auto
           ? null
-          : renderStyle.flexBasis?.computedValue;
+          : style.flexBasis?.computedValue;
       RenderBoxModel? parentRenderBoxModel = parent as RenderBoxModel?;
       // In flex layout, flex basis takes priority over width/height if set.
       // Flex-basis cannot be smaller than its content size which happens can not be known
