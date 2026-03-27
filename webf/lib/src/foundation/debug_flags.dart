@@ -117,38 +117,20 @@ class DebugFlags {
   static int cssGridProfilingMinMs = 2;
 
   // Removed: Use FlexLog filters to enable flex logs.
-  static bool enableFlexFastPathProfiling = const bool.fromEnvironment(
-      'WEBF_DEBUG_FLEX_FAST_PATH',
-      defaultValue: false);
-  static int flexFastPathProfilingSummaryEvery = const int.fromEnvironment(
-      'WEBF_DEBUG_FLEX_FAST_PATH_SUMMARY_EVERY',
-      defaultValue: 50);
-  static int flexFastPathProfilingMaxDetailLogs = const int.fromEnvironment(
-      'WEBF_DEBUG_FLEX_FAST_PATH_MAX_DETAIL_LOGS',
-      defaultValue: 20);
-  static bool enableFlexAdjustFastPathProfiling = const bool.fromEnvironment(
-      'WEBF_DEBUG_FLEX_ADJUST_FAST_PATH',
-      defaultValue: false);
-  static int flexAdjustFastPathProfilingSummaryEvery =
-      const int.fromEnvironment(
-          'WEBF_DEBUG_FLEX_ADJUST_FAST_PATH_SUMMARY_EVERY',
-          defaultValue: 50);
-  static int flexAdjustFastPathProfilingMaxDetailLogs =
-      const int.fromEnvironment(
-          'WEBF_DEBUG_FLEX_ADJUST_FAST_PATH_MAX_DETAIL_LOGS',
-          defaultValue: 20);
-  static bool enableFlexAnonymousMetricsProfiling = const bool.fromEnvironment(
-      'WEBF_DEBUG_FLEX_ANON_METRICS',
-      defaultValue: false);
+  static bool enableFlexFastPathProfiling =
+      const bool.fromEnvironment('WEBF_DEBUG_FLEX_FAST_PATH', defaultValue: false);
+  static int flexFastPathProfilingSummaryEvery =
+      const int.fromEnvironment('WEBF_DEBUG_FLEX_FAST_PATH_SUMMARY_EVERY', defaultValue: 50);
+  static int flexFastPathProfilingMaxDetailLogs =
+      const int.fromEnvironment('WEBF_DEBUG_FLEX_FAST_PATH_MAX_DETAIL_LOGS', defaultValue: 20);
+  static bool enableFlexAnonymousMetricsProfiling =
+      const bool.fromEnvironment('WEBF_DEBUG_FLEX_ANON_METRICS', defaultValue: false);
   static int flexAnonymousMetricsProfilingSummaryEvery =
-      const int.fromEnvironment('WEBF_DEBUG_FLEX_ANON_METRICS_SUMMARY_EVERY',
-          defaultValue: 50);
+      const int.fromEnvironment('WEBF_DEBUG_FLEX_ANON_METRICS_SUMMARY_EVERY', defaultValue: 50);
   static int flexAnonymousMetricsProfilingMaxDetailLogs =
-      const int.fromEnvironment('WEBF_DEBUG_FLEX_ANON_METRICS_MAX_DETAIL_LOGS',
-          defaultValue: 20);
+      const int.fromEnvironment('WEBF_DEBUG_FLEX_ANON_METRICS_MAX_DETAIL_LOGS', defaultValue: 20);
   static String flexAnonymousMetricsProfilingWatchedPathContains =
-      const String.fromEnvironment('WEBF_DEBUG_FLEX_ANON_METRICS_WATCH_PATH',
-          defaultValue: '');
+      const String.fromEnvironment('WEBF_DEBUG_FLEX_ANON_METRICS_WATCH_PATH', defaultValue: '');
 
   /// Debug flag to enable inline layout visualization.
   /// When true, paints debug information for line boxes, margins, padding, etc.
