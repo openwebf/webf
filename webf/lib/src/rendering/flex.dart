@@ -129,6 +129,187 @@ typedef _FlexFastPathRejectCallback = void Function(
   Map<String, Object?>? details,
 });
 
+enum _FlexAdjustFastPathRejectReason {
+  wouldGrow,
+  wouldShrink,
+}
+
+String _flexAdjustFastPathRejectReasonLabel(
+    _FlexAdjustFastPathRejectReason reason) {
+  switch (reason) {
+    case _FlexAdjustFastPathRejectReason.wouldGrow:
+      return 'wouldGrow';
+    case _FlexAdjustFastPathRejectReason.wouldShrink:
+      return 'wouldShrink';
+  }
+}
+
+enum _FlexAdjustFastPathRelayoutReason {
+  effectiveChildNeedsRelayout,
+  postMeasureLayout,
+  pendingIntrinsicInvalidation,
+  preservedMainMismatch,
+  autoMainWithNonTightConstraint,
+  columnAutoCrossOverflow,
+}
+
+String _flexAdjustFastPathRelayoutReasonLabel(
+    _FlexAdjustFastPathRelayoutReason reason) {
+  switch (reason) {
+    case _FlexAdjustFastPathRelayoutReason.effectiveChildNeedsRelayout:
+      return 'effectiveChildNeedsRelayout';
+    case _FlexAdjustFastPathRelayoutReason.postMeasureLayout:
+      return 'postMeasureLayout';
+    case _FlexAdjustFastPathRelayoutReason.pendingIntrinsicInvalidation:
+      return 'pendingIntrinsicInvalidation';
+    case _FlexAdjustFastPathRelayoutReason.preservedMainMismatch:
+      return 'preservedMainMismatch';
+    case _FlexAdjustFastPathRelayoutReason.autoMainWithNonTightConstraint:
+      return 'autoMainWithNonTightConstraint';
+    case _FlexAdjustFastPathRelayoutReason.columnAutoCrossOverflow:
+      return 'columnAutoCrossOverflow';
+  }
+}
+
+class _FlexAdjustFastPathProfiler {
+  static int _attempts = 0;
+  static int _hits = 0;
+  static int _detailLogs = 0;
+  static int _relayoutRows = 0;
+  static int _relayoutChildren = 0;
+  static final Map<_FlexAdjustFastPathRejectReason, int> _rejectCounts =
+      <_FlexAdjustFastPathRejectReason, int>{};
+  static final Map<_FlexAdjustFastPathRelayoutReason, int> _relayoutCounts =
+      <_FlexAdjustFastPathRelayoutReason, int>{};
+
+  static bool get enabled => DebugFlags.enableFlexAdjustFastPathProfiling;
+
+  static int get _summaryEvery {
+    final int configured = DebugFlags.flexAdjustFastPathProfilingSummaryEvery;
+    return configured > 0 ? configured : 50;
+  }
+
+  static int get _maxDetailLogs {
+    final int configured = DebugFlags.flexAdjustFastPathProfilingMaxDetailLogs;
+    return configured >= 0 ? configured : 0;
+  }
+
+  static void recordReject(
+    String path,
+    _FlexAdjustFastPathRejectReason reason, {
+    Map<String, Object?>? details,
+  }) {
+    if (!enabled) return;
+    _attempts++;
+    _rejectCounts.update(reason, (int value) => value + 1, ifAbsent: () => 1);
+    if (_detailLogs < _maxDetailLogs) {
+      final StringBuffer message = StringBuffer()
+        ..write('[FlexAdjustFastPath][reject] path=')
+        ..write(path)
+        ..write(' reason=')
+        ..write(_flexAdjustFastPathRejectReasonLabel(reason));
+      if (details != null && details.isNotEmpty) {
+        message
+          ..write(' details=')
+          ..write(_formatDetails(details));
+      }
+      renderingLogger.info(message.toString());
+      _detailLogs++;
+    }
+    _maybeLogSummary();
+  }
+
+  static void recordRelayout(
+    String path,
+    String childLabel,
+    _FlexAdjustFastPathRelayoutReason reason, {
+    BoxConstraints? childConstraints,
+    Map<String, Object?>? details,
+  }) {
+    if (!enabled) return;
+    _relayoutChildren++;
+    _relayoutCounts.update(reason, (int value) => value + 1, ifAbsent: () => 1);
+    if (_detailLogs < _maxDetailLogs) {
+      final StringBuffer message = StringBuffer()
+        ..write('[FlexAdjustFastPath][relayout] path=')
+        ..write(path)
+        ..write(' child=')
+        ..write(childLabel)
+        ..write(' reason=')
+        ..write(_flexAdjustFastPathRelayoutReasonLabel(reason));
+      if (childConstraints != null) {
+        message
+          ..write(' constraints=')
+          ..write(childConstraints);
+      }
+      if (details != null && details.isNotEmpty) {
+        message
+          ..write(' details=')
+          ..write(_formatDetails(details));
+      }
+      renderingLogger.info(message.toString());
+      _detailLogs++;
+    }
+  }
+
+  static void recordHit(
+    String path, {
+    required int relayoutRowCount,
+    required int relayoutChildCount,
+  }) {
+    if (!enabled) return;
+    _attempts++;
+    _hits++;
+    _relayoutRows += relayoutRowCount;
+    _relayoutChildren += relayoutChildCount;
+    _maybeLogSummary();
+  }
+
+  static void _maybeLogSummary() {
+    if (!enabled) return;
+    if (_attempts == 0 || _attempts % _summaryEvery != 0) return;
+
+    final int rejects = _attempts - _hits;
+    final double hitRate = _attempts == 0 ? 0.0 : (_hits / _attempts) * 100.0;
+    final String rejectSummary = _formatCounts(
+      _rejectCounts,
+      _flexAdjustFastPathRejectReasonLabel,
+    );
+    final String relayoutSummary = _formatCounts(
+      _relayoutCounts,
+      _flexAdjustFastPathRelayoutReasonLabel,
+    );
+
+    renderingLogger.info(
+      '[FlexAdjustFastPath][summary] attempts=$_attempts hits=$_hits '
+      'hitRate=${hitRate.toStringAsFixed(1)}% rejects=$rejects '
+      'relayoutRows=$_relayoutRows relayoutChildren=$_relayoutChildren '
+      'rejectReasons=$rejectSummary relayoutReasons=$relayoutSummary',
+    );
+  }
+
+  static String _formatCounts<T>(
+    Map<T, int> counts,
+    String Function(T value) labelFor,
+  ) {
+    if (counts.isEmpty) {
+      return 'none';
+    }
+    final List<MapEntry<T, int>> entries = counts.entries.toList()
+      ..sort((MapEntry<T, int> a, MapEntry<T, int> b) =>
+          b.value.compareTo(a.value));
+    return entries
+        .map((MapEntry<T, int> entry) => '${labelFor(entry.key)}=${entry.value}')
+        .join(', ');
+  }
+
+  static String _formatDetails(Map<String, Object?> details) {
+    return details.entries
+        .map((MapEntry<String, Object?> entry) => '${entry.key}=${entry.value}')
+        .join(', ');
+  }
+}
+
 class _FlexFastPathProfiler {
   static int _attempts = 0;
   static int _hits = 0;
@@ -1501,6 +1682,25 @@ class RenderFlexLayout extends RenderLayoutBox {
         _setFlexRelayoutForTextParent(layoutBox);
       }
     }
+  }
+
+  bool _hasOnlyTextFlexRelayoutSubtree(RenderObject? node) {
+    if (node == null) {
+      return false;
+    }
+    if (node is RenderTextBox) {
+      return true;
+    }
+    if (node is RenderEventListener) {
+      return _hasOnlyTextFlexRelayoutSubtree(node.child);
+    }
+    if (node is RenderLayoutBox) {
+      if (node.childCount != 1) {
+        return false;
+      }
+      return _hasOnlyTextFlexRelayoutSubtree(node.firstChild);
+    }
+    return false;
   }
 
   void _setFlexRelayoutForTextParent(RenderBoxModel textParentBoxModel) {
@@ -4244,6 +4444,12 @@ class RenderFlexLayout extends RenderLayoutBox {
     final double containerStyleMin = isHorizontal
         ? (renderStyle.minWidth.isNotAuto ? renderStyle.minWidth.computedValue : 0.0)
         : (renderStyle.minHeight.isNotAuto ? renderStyle.minHeight.computedValue : 0.0);
+    final bool adjustProfilerEnabled =
+        _FlexAdjustFastPathProfiler.enabled;
+    final String? adjustProfilerPath =
+        adjustProfilerEnabled ? _describeFastPathContainer() : null;
+    int relayoutRowCount = 0;
+    int relayoutChildCount = 0;
 
     // First, verify no run will actually enter flexible length resolution.
     for (final _RunMetrics metrics in runMetrics) {
@@ -4285,6 +4491,18 @@ class RenderFlexLayout extends RenderLayoutBox {
       }
 
       if (willShrink) {
+        if (adjustProfilerEnabled && adjustProfilerPath != null) {
+          _FlexAdjustFastPathProfiler.recordReject(
+            adjustProfilerPath,
+            _FlexAdjustFastPathRejectReason.wouldShrink,
+            details: <String, Object?>{
+              'freeSpace': freeSpace.toStringAsFixed(2),
+              'totalSpace': totalSpace.toStringAsFixed(2),
+              'maxMainSize': maxMainSize?.toStringAsFixed(2),
+              'totalFlexShrink': metrics.totalFlexShrink.toStringAsFixed(2),
+            },
+          );
+        }
         onReject?.call(
           _FlexFastPathRejectReason.wouldShrink,
           details: <String, Object?>{
@@ -4297,6 +4515,21 @@ class RenderFlexLayout extends RenderLayoutBox {
         return false;
       }
       if (willGrow) {
+        if (adjustProfilerEnabled && adjustProfilerPath != null) {
+          _FlexAdjustFastPathProfiler.recordReject(
+            adjustProfilerPath,
+            _FlexAdjustFastPathRejectReason.wouldGrow,
+            details: <String, Object?>{
+              'freeSpace': freeSpace.toStringAsFixed(2),
+              'totalSpace': totalSpace.toStringAsFixed(2),
+              'maxMainSize': maxMainSize?.toStringAsFixed(2),
+              'totalFlexGrow': metrics.totalFlexGrow.toStringAsFixed(2),
+              'boundedOnly': boundedOnly,
+              'isMainSizeDefinite': isMainSizeDefinite,
+              'containerStyleMin': containerStyleMin.toStringAsFixed(2),
+            },
+          );
+        }
         onReject?.call(
           _FlexFastPathRejectReason.wouldGrow,
           details: <String, Object?>{
@@ -4327,11 +4560,29 @@ class RenderFlexLayout extends RenderLayoutBox {
 
         final double childOldMainSize = _getMainSize(child);
         final double? desiredPreservedMain = _childrenIntrinsicMainSizes[child];
+        _FlexAdjustFastPathRelayoutReason? relayoutReason;
+        BoxConstraints? relayoutConstraints;
+        Map<String, Object?>? relayoutDetails;
 
-        bool needsLayout = effectiveChild.needsRelayout ||
-            (_childrenRequirePostMeasureLayout[child] == true);
-        if (!needsLayout && desiredPreservedMain != null && desiredPreservedMain != childOldMainSize) {
+        bool needsLayout = false;
+        if (effectiveChild.needsRelayout) {
           needsLayout = true;
+          relayoutReason =
+              _FlexAdjustFastPathRelayoutReason.effectiveChildNeedsRelayout;
+        } else if (_childrenRequirePostMeasureLayout[child] == true) {
+          needsLayout = true;
+          relayoutReason = _FlexAdjustFastPathRelayoutReason.postMeasureLayout;
+        } else if (_subtreeHasPendingIntrinsicMeasureInvalidation(child)) {
+          needsLayout = true;
+          relayoutReason =
+              _FlexAdjustFastPathRelayoutReason.pendingIntrinsicInvalidation;
+          relayoutDetails =
+              _describeFirstPendingIntrinsicMeasureInvalidation(child);
+        } else if (desiredPreservedMain != null &&
+            desiredPreservedMain != childOldMainSize) {
+          needsLayout = true;
+          relayoutReason =
+              _FlexAdjustFastPathRelayoutReason.preservedMainMismatch;
         }
         if (!needsLayout && desiredPreservedMain != null) {
           final BoxConstraints applied = child.constraints;
@@ -4340,7 +4591,34 @@ class RenderFlexLayout extends RenderLayoutBox {
               : effectiveChild.renderStyle.height.isAuto;
           final bool wasNonTightMain = isHorizontal ? !applied.hasTightWidth : !applied.hasTightHeight;
           if (autoMain && wasNonTightMain) {
-            needsLayout = true;
+            final bool preservedMainMatches =
+                (desiredPreservedMain - childOldMainSize).abs() < 0.5;
+            final bool textOnlySubtree = _hasOnlyTextFlexRelayoutSubtree(child);
+            final BoxConstraints candidateConstraints = _getChildAdjustedConstraints(
+              effectiveChild,
+              null,
+              null,
+              runChildrenCount,
+              preserveMainAxisSize: desiredPreservedMain,
+            );
+            final double candidateMainMax = isHorizontal
+                ? candidateConstraints.maxWidth
+                : candidateConstraints.maxHeight;
+            final bool fitsCandidateMain =
+                !candidateMainMax.isFinite ||
+                    candidateMainMax + 0.5 >= childOldMainSize;
+            final bool reusesAppliedConstraints =
+                candidateConstraints == applied;
+            final bool canSkipRelayout =
+                preservedMainMatches &&
+                    (reusesAppliedConstraints ||
+                        (textOnlySubtree && fitsCandidateMain));
+            if (!canSkipRelayout) {
+              needsLayout = true;
+              relayoutReason =
+                  _FlexAdjustFastPathRelayoutReason.autoMainWithNonTightConstraint;
+              relayoutConstraints = candidateConstraints;
+            }
           }
         }
 
@@ -4351,15 +4629,52 @@ class RenderFlexLayout extends RenderLayoutBox {
             final double measuredBorderW = _getChildSize(effectiveChild)!.width;
             if (measuredBorderW > availCross + 0.5) {
               needsLayout = true;
+              relayoutReason =
+                  _FlexAdjustFastPathRelayoutReason.columnAutoCrossOverflow;
             }
           }
         }
 
         if (!needsLayout) continue;
+        relayoutReason ??=
+            _FlexAdjustFastPathRelayoutReason.effectiveChildNeedsRelayout;
+        if (adjustProfilerEnabled && adjustProfilerPath != null) {
+          final Map<String, Object?> details = <String, Object?>{
+            'oldMain': childOldMainSize.toStringAsFixed(2),
+            'desiredMain': desiredPreservedMain?.toStringAsFixed(2),
+            'autoMain': isHorizontal
+                ? effectiveChild.renderStyle.width.isAuto
+                : effectiveChild.renderStyle.height.isAuto,
+            'appliedMainTight': isHorizontal
+                ? child.constraints.hasTightWidth
+                : child.constraints.hasTightHeight,
+          };
+          if (relayoutConstraints != null) {
+            details['candidateMainMax'] = (isHorizontal
+                    ? relayoutConstraints.maxWidth
+                    : relayoutConstraints.maxHeight)
+                .toStringAsFixed(2);
+          }
+          if (!isHorizontal && availCross.isFinite) {
+            details['availCross'] = availCross.toStringAsFixed(2);
+          }
+          if (relayoutDetails != null && relayoutDetails.isNotEmpty) {
+            details.addAll(relayoutDetails);
+          }
+          _FlexAdjustFastPathProfiler.recordRelayout(
+            adjustProfilerPath,
+            _describeFastPathChild(child),
+            relayoutReason,
+            childConstraints: child.constraints,
+            details: details,
+          );
+        }
+        relayoutChildCount++;
 
         _markFlexRelayoutForTextOnly(effectiveChild);
 
-        final BoxConstraints childConstraints = _getChildAdjustedConstraints(
+        final BoxConstraints childConstraints = relayoutConstraints ??
+            _getChildAdjustedConstraints(
           effectiveChild,
           null, // no main-axis flexing
           null, // no cross-axis stretching
@@ -4367,10 +4682,12 @@ class RenderFlexLayout extends RenderLayoutBox {
           preserveMainAxisSize: desiredPreservedMain,
         );
         _layoutChildForFlex(child, childConstraints);
+        _clearSubtreeIntrinsicMeasurementInvalidationAfterMeasurement(child);
         didRelayout = true;
       }
 
       if (!didRelayout) continue;
+      relayoutRowCount++;
 
       // Recompute run extents from the final child sizes.
       double mainAxisExtent = 0;
@@ -4385,6 +4702,13 @@ class RenderFlexLayout extends RenderLayoutBox {
       metrics.crossAxisExtent = crossAxisExtent;
     }
 
+    if (adjustProfilerEnabled && adjustProfilerPath != null) {
+      _FlexAdjustFastPathProfiler.recordHit(
+        adjustProfilerPath,
+        relayoutRowCount: relayoutRowCount,
+        relayoutChildCount: relayoutChildCount,
+      );
+    }
     return true;
   }
 

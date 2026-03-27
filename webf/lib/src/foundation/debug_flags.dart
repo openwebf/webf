@@ -123,6 +123,12 @@ class DebugFlags {
       const int.fromEnvironment('WEBF_DEBUG_FLEX_FAST_PATH_SUMMARY_EVERY', defaultValue: 50);
   static int flexFastPathProfilingMaxDetailLogs =
       const int.fromEnvironment('WEBF_DEBUG_FLEX_FAST_PATH_MAX_DETAIL_LOGS', defaultValue: 20);
+  static bool enableFlexAdjustFastPathProfiling =
+      const bool.fromEnvironment('WEBF_DEBUG_FLEX_ADJUST_FAST_PATH', defaultValue: false);
+  static int flexAdjustFastPathProfilingSummaryEvery =
+      const int.fromEnvironment('WEBF_DEBUG_FLEX_ADJUST_FAST_PATH_SUMMARY_EVERY', defaultValue: 50);
+  static int flexAdjustFastPathProfilingMaxDetailLogs =
+      const int.fromEnvironment('WEBF_DEBUG_FLEX_ADJUST_FAST_PATH_MAX_DETAIL_LOGS', defaultValue: 20);
   static bool enableFlexAnonymousMetricsProfiling =
       const bool.fromEnvironment('WEBF_DEBUG_FLEX_ANON_METRICS', defaultValue: false);
   static int flexAnonymousMetricsProfilingSummaryEvery =
