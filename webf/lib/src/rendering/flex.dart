@@ -2493,6 +2493,42 @@ class RenderFlexLayout extends RenderLayoutBox {
     return true;
   }
 
+  bool _shouldSkipEarlyNoFlexNoStretchNoBaselineRunMetrics(
+    List<RenderBox> children,
+  ) {
+    if (!_isHorizontalFlexDirection || renderStyle.flexWrap != FlexWrap.nowrap) {
+      return true;
+    }
+
+    for (final RenderBox child in children) {
+      if (child is RenderPositionPlaceholder) {
+        continue;
+      }
+
+      final double flexGrow = _getFlexGrow(child);
+      final double flexShrink = _getFlexShrink(child);
+      if (flexGrow <= 0 && flexShrink <= 0) {
+        continue;
+      }
+
+      final RenderBoxModel? box = child is RenderBoxModel
+          ? child
+          : (child is RenderEventListener ? child.child as RenderBoxModel? : null);
+      if (box == null) {
+        return true;
+      }
+
+      final double? flexBasis = _getFlexBasis(child);
+      final CSSLengthValue explicitMainSize =
+          _isHorizontalFlexDirection ? box.renderStyle.width : box.renderStyle.height;
+      if (flexBasis == null && explicitMainSize.isAuto) {
+        return true;
+      }
+    }
+
+    return false;
+  }
+
   bool _canUseAnonymousMetricsOnlyCache(List<RenderBox> children) {
     int metricsOnlyChildCount = 0;
     int flexingMetricsOnlyChildCount = 0;
@@ -3544,7 +3580,10 @@ class RenderFlexLayout extends RenderLayoutBox {
       return;
     }
 
-    List<_RunMetrics>? runMetrics = _tryBuildEarlyNoFlexNoStretchNoBaselineRunMetrics(children);
+    List<_RunMetrics>? runMetrics;
+    if (!_shouldSkipEarlyNoFlexNoStretchNoBaselineRunMetrics(children)) {
+      runMetrics = _tryBuildEarlyNoFlexNoStretchNoBaselineRunMetrics(children);
+    }
     if (runMetrics != null) {
       final bool hasStretchedChildren = _hasStretchedChildrenInCrossAxis(runMetrics);
       if (!hasStretchedChildren && _canAttemptFullEarlyFastPath(runMetrics)) {
