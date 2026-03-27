@@ -329,6 +329,11 @@ class CSSLengthValue {
   // which can not be computed to a specific value, eg. percentage height is sometimes parsed
   // to be auto due to parent height not defined.
   double get computedValue {
+    if (calcValue == null && type == CSSLengthType.PX) {
+      _computedValue = value ?? 0;
+      return _computedValue!;
+    }
+
     if (calcValue != null) {
       _computedValue = calcValue!.computedValue(propertyName ?? '') ?? 0;
       return _computedValue!;
