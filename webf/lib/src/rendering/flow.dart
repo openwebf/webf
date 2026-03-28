@@ -10,7 +10,6 @@ import 'dart:math' as math;
 import 'dart:ui' as ui
     show Paragraph, ParagraphBuilder, ParagraphConstraints, ParagraphStyle, TextStyle, TextHeightBehavior, LineMetrics, TextLeadingDistribution, Rect;
 
-import 'package:collection/collection.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/rendering.dart';
 import 'package:webf/css.dart';
@@ -275,7 +274,6 @@ class RenderFlowLayout extends RenderLayoutBox {
   // https://www.w3.org/TR/css-inline-3/#line-boxes
   // Fow example <i>Hello<br>world.</i> will have two <i> line boxes
   final List<RunMetrics> _lineMetrics = <RunMetrics>[];
-
   @override
   void dispose() {
     super.dispose();
@@ -1142,7 +1140,8 @@ class RenderFlowLayout extends RenderLayoutBox {
   // and alignment properties.
   void _doRegularFlowLayout(List<RenderBox> children) {
     _lineMetrics.clear();
-    children.forEachIndexed((index, child) {
+    for (int index = 0; index < children.length; index++) {
+      final RenderBox child = children[index];
       BoxConstraints childConstraints;
       if (child is RenderBoxModel) {
         childConstraints = child.getConstraints();
@@ -1199,7 +1198,7 @@ class RenderFlowLayout extends RenderLayoutBox {
       }
 
       _lineMetrics.add(RunMetrics(childMainAxisExtent, childCrossAxisExtent, [child], baseline: childBaseline));
-    });
+    }
   }
 
   double _getRunsMaxMainSize(List<RunMetrics> runMetrics,) {
@@ -1326,9 +1325,10 @@ class RenderFlowLayout extends RenderLayoutBox {
 
   // Record the main size of all lines.
   void _recordRunsMainSize(RunMetrics runMetrics, List<double> runMainSize) {
-    List<RenderBox> runChildren = runMetrics.runChildren;
     double runMainExtent = 0;
-    void iterateRunChildren(RenderBox runChild) {
+    final List<RenderBox> runChildren = runMetrics.runChildren;
+    for (int i = 0; i < runChildren.length; i++) {
+      final RenderBox runChild = runChildren[i];
       double runChildMainSize = 0.0;
       // For automatic minimum size, use each child's min-content contribution
       // in border-box, plus horizontal margins, instead of the child's used size.
@@ -1345,8 +1345,6 @@ class RenderFlowLayout extends RenderLayoutBox {
       }
       runMainExtent += runChildMainSize;
     }
-
-    runChildren.forEach(iterateRunChildren);
     runMainSize.add(runMainExtent);
   }
 
@@ -1828,7 +1826,9 @@ class RenderFlowLayout extends RenderLayoutBox {
         runChildrenList.add(child);
       }
 
-      runChildren.forEach(iterateRunChildren);
+      for (int i = 0; i < runChildren.length; i++) {
+        iterateRunChildren(runChildren[i]);
+      }
 
       if (DebugFlags.debugLogScrollableEnabled) {
         for (int i = 0; i < runChildren.length; i++) {

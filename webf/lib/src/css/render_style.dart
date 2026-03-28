@@ -742,6 +742,7 @@ abstract class RenderStyle extends DiagnosticableTree with Diagnosticable {
   BoxFit get objectFit;
 
   bool get isHeightStretch;
+  bool get isWidthStretch;
 
   // Transition
   List<String> get transitionProperty;
@@ -804,6 +805,12 @@ abstract class RenderStyle extends DiagnosticableTree with Diagnosticable {
   RenderObject? _cachedParentLookupDirectParent;
   RenderObject? _cachedParentLookupRenderObject;
   RenderStyle? _cachedAttachedParentRenderStyle;
+  int _cachedViewportBoxLayoutPassId = -1;
+  RenderBoxModel? _cachedViewportBoxQueryStart;
+  RenderViewportBox? _cachedViewportBox;
+  int _cachedAttachedWidgetRenderBoxesLayoutPassId = -1;
+  List<MapEntry<flutter.RenderObjectElement, RenderBoxModel>>?
+      _cachedAttachedWidgetRenderBoxes;
 
   Map<flutter.RenderObjectElement, RenderBoxModel> get widgetRenderObjects => _widgetRenderObjects;
 
@@ -817,6 +824,11 @@ abstract class RenderStyle extends DiagnosticableTree with Diagnosticable {
     _cachedParentLookupDirectParent = null;
     _cachedParentLookupRenderObject = null;
     _cachedAttachedParentRenderStyle = null;
+    _cachedViewportBoxLayoutPassId = -1;
+    _cachedViewportBoxQueryStart = null;
+    _cachedViewportBox = null;
+    _cachedAttachedWidgetRenderBoxesLayoutPassId = -1;
+    _cachedAttachedWidgetRenderBoxes = null;
   }
 
   @pragma('vm:prefer-inline')
@@ -833,9 +845,21 @@ abstract class RenderStyle extends DiagnosticableTree with Diagnosticable {
       }
     }
 
-    RenderBoxModel? resolved =
-        _widgetRenderObjects.values.firstWhereOrNull((renderBox) => renderBox.attached && renderBox.hasSize);
-    resolved ??= _widgetRenderObjects.values.firstWhereOrNull((renderBox) => renderBox.attached);
+    RenderBoxModel? resolved;
+    for (final RenderBoxModel renderBox in _widgetRenderObjects.values) {
+      if (renderBox.attached && renderBox.hasSize) {
+        resolved = renderBox;
+        break;
+      }
+    }
+    if (resolved == null) {
+      for (final RenderBoxModel renderBox in _widgetRenderObjects.values) {
+        if (renderBox.attached) {
+          resolved = renderBox;
+          break;
+        }
+      }
+    }
 
     if (resolved != null) {
       _cachedAttachedRenderBoxModel = resolved;
@@ -1088,38 +1112,34 @@ abstract class RenderStyle extends DiagnosticableTree with Diagnosticable {
 
   @pragma('vm:prefer-inline')
   bool isSelfRenderGridLayout() {
-    return everyAttachedRenderObjectByTypeAndMatch(
-        RenderObjectGetType.self, (renderObject, _) => renderObject is RenderGridLayout);
+    return attachedRenderBoxModel is RenderGridLayout;
   }
 
   @pragma('vm:prefer-inline')
   bool isSelfRenderFlowLayout() {
-    return everyAttachedRenderObjectByTypeAndMatch(
-        RenderObjectGetType.self, (renderObject, _) => renderObject is RenderFlowLayout);
+    return attachedRenderBoxModel is RenderFlowLayout;
   }
 
   @pragma('vm:prefer-inline')
   bool isSelfAnonymousFlowLayout() {
-    return everyAttachedRenderObjectByTypeAndMatch(RenderObjectGetType.self,
-        (renderObject, _) => renderObject is RenderBoxModel && renderObject.renderStyle.target.tagName == 'Anonymous');
+    final RenderBoxModel? renderBoxModel = attachedRenderBoxModel;
+    return renderBoxModel is RenderFlowLayout &&
+        renderBoxModel.renderStyle.target.tagName == 'Anonymous';
   }
 
   @pragma('vm:prefer-inline')
   bool isSelfRenderReplaced() {
-    return everyAttachedRenderObjectByTypeAndMatch(
-        RenderObjectGetType.self, (renderObject, _) => renderObject is RenderReplaced);
+    return attachedRenderBoxModel is RenderReplaced;
   }
 
   @pragma('vm:prefer-inline')
   bool isSelfRenderWidget() {
-    return everyAttachedRenderObjectByTypeAndMatch(
-        RenderObjectGetType.self, (renderObject, _) => renderObject is RenderWidget);
+    return attachedRenderBoxModel is RenderWidget;
   }
 
   @pragma('vm:prefer-inline')
   bool isSelfRenderLayoutBox() {
-    return everyAttachedRenderObjectByTypeAndMatch(
-        RenderObjectGetType.self, (renderObject, _) => renderObject is RenderLayoutBox);
+    return attachedRenderBoxModel is RenderLayoutBox;
   }
 
   @pragma('vm:prefer-inline')
@@ -1193,13 +1213,33 @@ abstract class RenderStyle extends DiagnosticableTree with Diagnosticable {
   }
 
   RenderViewportBox? getCurrentViewportBox() {
-    flutter.RenderObject? current = attachedRenderBoxModel;
+    final RenderBoxModel? currentRenderBoxModel = attachedRenderBoxModel;
+    if (currentRenderBoxModel == null) return null;
+
+    if (renderBoxModelInLayoutStack.isNotEmpty &&
+        _cachedViewportBoxLayoutPassId == renderBoxModelLayoutPassId &&
+        identical(_cachedViewportBoxQueryStart, currentRenderBoxModel)) {
+      return _cachedViewportBox;
+    }
+
+    flutter.RenderObject? current = currentRenderBoxModel;
     while (current != null) {
       if (current is RenderViewportBox) {
+        if (renderBoxModelInLayoutStack.isNotEmpty) {
+          _cachedViewportBoxLayoutPassId = renderBoxModelLayoutPassId;
+          _cachedViewportBoxQueryStart = currentRenderBoxModel;
+          _cachedViewportBox = current;
+        }
         return current;
       }
 
       current = current.parent;
+    }
+
+    if (renderBoxModelInLayoutStack.isNotEmpty) {
+      _cachedViewportBoxLayoutPassId = renderBoxModelLayoutPassId;
+      _cachedViewportBoxQueryStart = currentRenderBoxModel;
+      _cachedViewportBox = null;
     }
     return null;
   }
@@ -1682,6 +1722,12 @@ abstract class RenderStyle extends DiagnosticableTree with Diagnosticable {
   bool everyWidgetRenderBox(EveryRenderBoxModelHandlerCallback callback) {
     if (_widgetRenderObjects.isEmpty) return false;
 
+    if (_widgetRenderObjects.length == 1) {
+      for (final entry in _widgetRenderObjects.entries) {
+        return callback(entry.key, entry.value);
+      }
+    }
+
     for (var entry in _widgetRenderObjects.entries) {
       bool result = callback(entry.key, entry.value);
       if (!result) return false;
@@ -1691,6 +1737,45 @@ abstract class RenderStyle extends DiagnosticableTree with Diagnosticable {
   }
 
   bool everyAttachedWidgetRenderBox(EveryRenderBoxModelHandlerCallback callback) {
+    if (_widgetRenderObjects.isEmpty) return false;
+
+    if (_widgetRenderObjects.length == 1) {
+      for (final entry in _widgetRenderObjects.entries) {
+        final RenderBoxModel ro = entry.value;
+        return ro.attached ? callback(entry.key, ro) : false;
+      }
+    }
+
+    final bool canUseLayoutPassCache = renderBoxModelInLayoutStack.isNotEmpty;
+    if (canUseLayoutPassCache) {
+      if (_cachedAttachedWidgetRenderBoxesLayoutPassId !=
+          renderBoxModelLayoutPassId) {
+        _cachedAttachedWidgetRenderBoxesLayoutPassId =
+            renderBoxModelLayoutPassId;
+        final List<MapEntry<flutter.RenderObjectElement, RenderBoxModel>>
+            attachedEntries =
+            <MapEntry<flutter.RenderObjectElement, RenderBoxModel>>[];
+        for (final entry in _widgetRenderObjects.entries) {
+          final RenderBoxModel ro = entry.value;
+          if (ro.attached) {
+            attachedEntries.add(MapEntry(entry.key, ro));
+          }
+        }
+        _cachedAttachedWidgetRenderBoxes = attachedEntries;
+      }
+
+      final List<MapEntry<flutter.RenderObjectElement, RenderBoxModel>>
+          attachedEntries =
+          _cachedAttachedWidgetRenderBoxes ??
+              const <MapEntry<flutter.RenderObjectElement, RenderBoxModel>>[];
+      for (final entry in attachedEntries) {
+        if (!callback(entry.key, entry.value)) {
+          return false;
+        }
+      }
+      return true;
+    }
+
     for (final entry in _widgetRenderObjects.entries) {
       final ro = entry.value;
       if (ro.attached && !callback(entry.key, ro)) {
@@ -3112,7 +3197,6 @@ class CSSRenderStyle extends RenderStyle
     // RenderBoxModel current = renderBoxModel!;
     RenderStyle renderStyle = this;
     double? logicalWidth;
-
     CSSDisplay? effectiveDisplay = renderStyle.effectiveDisplay;
 
     // Special handling for absolutely/fixed positioned non-replaced elements.
@@ -3182,6 +3266,16 @@ class CSSRenderStyle extends RenderStyle
       } else if (logicalWidth == null && (renderStyle.isSelfRouterLinkElement() && root != null)) {
         logicalWidth = root.boxSize!.width;
       } else if (logicalWidth == null && parentStyle != null) {
+        if (renderStyle.isWidthStretch) {
+          logicalWidth = parentStyle.contentBoxLogicalWidth;
+          if (logicalWidth != null) {
+            logicalWidth -= renderStyle.margin.horizontal;
+          }
+        }
+
+        if (logicalWidth != null) {
+          // already resolved by cross-axis stretch
+        } else {
         bool isRenderSubtreeAncestor(flutter.RenderObject? ancestor, flutter.RenderObject? node) {
           if (ancestor == null || node == null) return false;
           flutter.RenderObject? current = node.parent;
@@ -3319,6 +3413,7 @@ class CSSRenderStyle extends RenderStyle
               logicalWidth -= renderStyle.margin.horizontal;
             }
           }
+        }
         }
       }
     } else if (effectiveDisplay == CSSDisplay.inlineBlock ||
@@ -3560,6 +3655,63 @@ class CSSRenderStyle extends RenderStyle
         isFlexNoWrap &&
         isChildStretchSelf &&
         parentHasDefiniteHeight) {
+      isStretch = true;
+    }
+
+    return isStretch;
+  }
+
+  @override
+  bool get isWidthStretch {
+    RenderStyle renderStyle = this;
+    CSSRenderStyle? parentRenderStyle =
+        renderStyle.getAttachedRenderParentRenderStyle();
+    if (parentRenderStyle == null) {
+      return false;
+    }
+
+    final BoxConstraints? parentContentConstraints =
+        parentRenderStyle.contentConstraints();
+    final bool parentHasDefiniteWidth =
+        parentRenderStyle.width.isNotAuto ||
+        (parentContentConstraints?.hasTightWidth ?? false);
+
+    bool isStretch = false;
+
+    bool isParentFlex = parentRenderStyle.display == CSSDisplay.flex ||
+        parentRenderStyle.display == CSSDisplay.inlineFlex;
+    bool isHorizontalDirection = false;
+    bool isFlexNoWrap = false;
+    bool isChildStretchSelf = false;
+    final bool isHorizontalWritingMode =
+        parentRenderStyle.writingMode == CSSWritingMode.horizontalTb;
+    if (isParentFlex) {
+      final bool isPositioned = renderStyle.position == CSSPositionType.absolute ||
+          renderStyle.position == CSSPositionType.fixed;
+      if (isPositioned) {
+        return false;
+      }
+
+      isHorizontalDirection =
+          CSSFlex.isHorizontalFlexDirection(parentRenderStyle.flexDirection);
+      isFlexNoWrap = parentRenderStyle.flexWrap != FlexWrap.wrap &&
+          parentRenderStyle.flexWrap != FlexWrap.wrapReverse;
+      isChildStretchSelf = renderStyle.alignSelf != AlignSelf.auto
+          ? renderStyle.alignSelf == AlignSelf.stretch
+          : parentRenderStyle.alignItems == AlignItems.stretch;
+    }
+
+    CSSLengthValue marginLeft = renderStyle.marginLeft;
+    CSSLengthValue marginRight = renderStyle.marginRight;
+
+    if (marginLeft.isNotAuto &&
+        marginRight.isNotAuto &&
+        isParentFlex &&
+        isHorizontalWritingMode &&
+        !isHorizontalDirection &&
+        isFlexNoWrap &&
+        isChildStretchSelf &&
+        parentHasDefiniteWidth) {
       isStretch = true;
     }
 

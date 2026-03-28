@@ -247,6 +247,11 @@ class CSSLengthValue {
   RenderStyle? renderStyle;
   String? propertyName;
   double? _computedValue;
+  int _layoutPassComputedValuePassId = -1;
+  RenderStyle? _layoutPassComputedValueStyle;
+  double? _layoutPassComputedValue;
+  String? _layoutPassComputedValuePropertyName;
+  double? _layoutPassDependencyScalar;
 
   static bool _isPercentageRelativeContainerRenderStyle(RenderStyle renderStyle) {
     // Use effectiveDisplay so that blockification/inlinification is respected
@@ -305,10 +310,14 @@ class CSSLengthValue {
         final FlexDirection dir = flexParent.flexDirection;
         final bool parentIsColumn = dir == FlexDirection.column || dir == FlexDirection.columnReverse;
         if (parentIsColumn) {
+          if (flexParent.writingMode != CSSWritingMode.horizontalTb) {
+            return false;
+          }
           final AlignSelf self = rs.alignSelf;
           final bool stretched =
               self == AlignSelf.stretch || (self == AlignSelf.auto && flexParent.alignItems == AlignItems.stretch);
           if (!stretched) return false;
+          return true;
         } else {
           // Row-direction shrink-to-fit flex item: treat as indefinite for percentage resolution.
           return false;
@@ -325,22 +334,97 @@ class CSSLengthValue {
     return false;
   }
 
+  double? _getCalcLayoutPassDependency(
+      RenderStyle currentRenderStyle, String? realPropertyName) {
+    if (realPropertyName != WIDTH &&
+        realPropertyName != MIN_WIDTH &&
+        realPropertyName != MAX_WIDTH) {
+      return null;
+    }
+
+    final CSSPositionType positionType = currentRenderStyle.position;
+    final bool isPositioned =
+        positionType == CSSPositionType.absolute ||
+            positionType == CSSPositionType.fixed;
+
+    RenderStyle? parentRenderStyle = isPositioned
+        ? currentRenderStyle.target.getContainingBlockElement()?.renderStyle
+        : currentRenderStyle.getAttachedRenderParentRenderStyle();
+
+    while (parentRenderStyle != null) {
+      if (parentRenderStyle.isBoxModel() &&
+          _isPercentageRelativeContainerRenderStyle(parentRenderStyle)) {
+        break;
+      }
+      parentRenderStyle = parentRenderStyle.getAttachedRenderParentRenderStyle();
+    }
+
+    return isPositioned
+        ? (parentRenderStyle?.paddingBoxLogicalWidth ??
+            parentRenderStyle?.paddingBoxWidth)
+        : (parentRenderStyle?.contentBoxLogicalWidth ??
+            parentRenderStyle?.contentBoxWidth);
+  }
+
   // Note return value of double.infinity means the value is resolved as the initial value
   // which can not be computed to a specific value, eg. percentage height is sometimes parsed
   // to be auto due to parent height not defined.
   double get computedValue {
+    final RenderStyle? currentRenderStyle = renderStyle;
+    final String? currentPropertyName = propertyName;
+    final String? realPropertyName = _realPropertyName;
+    final bool canUseLayoutPassLocalCache =
+        calcValue == null &&
+        currentRenderStyle?.hasRenderBox() == true &&
+        currentPropertyName != null &&
+        type != CSSLengthType.PERCENTAGE &&
+        renderBoxModelInLayoutStack.isNotEmpty;
+    final double? calcDependencyScalar =
+        calcValue != null && currentRenderStyle != null
+            ? _getCalcLayoutPassDependency(currentRenderStyle, realPropertyName)
+            : null;
+    final bool canUseLayoutPassCalcCache =
+        calcValue != null &&
+        currentRenderStyle?.hasRenderBox() == true &&
+        currentPropertyName != null &&
+        calcDependencyScalar != null &&
+        renderBoxModelInLayoutStack.isNotEmpty;
+
+    if ((canUseLayoutPassLocalCache || canUseLayoutPassCalcCache) &&
+        _layoutPassComputedValuePassId == renderBoxModelLayoutPassId &&
+        identical(_layoutPassComputedValueStyle, currentRenderStyle) &&
+        _layoutPassComputedValuePropertyName == currentPropertyName &&
+        (!canUseLayoutPassCalcCache ||
+            _layoutPassDependencyScalar == calcDependencyScalar)) {
+      final double? cachedPassValue = _layoutPassComputedValue;
+      if (cachedPassValue != null) {
+        return cachedPassValue;
+      }
+    }
+
     if (calcValue == null && type == CSSLengthType.PX) {
       _computedValue = value ?? 0;
+      if (canUseLayoutPassLocalCache) {
+        _layoutPassComputedValuePassId = renderBoxModelLayoutPassId;
+        _layoutPassComputedValueStyle = currentRenderStyle;
+        _layoutPassComputedValue = _computedValue;
+        _layoutPassComputedValuePropertyName = currentPropertyName;
+        _layoutPassDependencyScalar = null;
+      }
       return _computedValue!;
     }
 
     if (calcValue != null) {
       _computedValue = calcValue!.computedValue(propertyName ?? '') ?? 0;
+      if (canUseLayoutPassCalcCache) {
+        _layoutPassComputedValuePassId = renderBoxModelLayoutPassId;
+        _layoutPassComputedValueStyle = currentRenderStyle;
+        _layoutPassComputedValue = _computedValue;
+        _layoutPassComputedValuePropertyName = currentPropertyName;
+        _layoutPassDependencyScalar = calcDependencyScalar;
+      }
       return _computedValue!;
     }
-
-    final RenderStyle? currentRenderStyle = renderStyle;
-    final String? currentPropertyName = propertyName;
 
     // Use cached value if type is not percentage which may needs 2 layout passes to resolve the
     // final computed value.
@@ -358,7 +442,6 @@ class CSSLengthValue {
       return attachedParentRenderStyle ??= currentRenderStyle?.getAttachedRenderParentRenderStyle();
     }
 
-    final String? realPropertyName = _realPropertyName;
     switch (type) {
       case CSSLengthType.PX:
         _computedValue = value;
@@ -1008,14 +1091,26 @@ class CSSLengthValue {
     if (currentRenderStyle?.hasRenderBox() == true && currentPropertyName != null && type != CSSLengthType.PERCENTAGE) {
       cacheComputedValue(currentRenderStyle!, currentPropertyName, _computedValue!);
     }
+    if (canUseLayoutPassLocalCache) {
+      _layoutPassComputedValuePassId = renderBoxModelLayoutPassId;
+      _layoutPassComputedValueStyle = currentRenderStyle;
+      _layoutPassComputedValue = _computedValue;
+      _layoutPassComputedValuePropertyName = currentPropertyName;
+      _layoutPassDependencyScalar = null;
+    }
     return _computedValue!;
   }
 
   bool get isAuto {
+    if (type == CSSLengthType.AUTO) {
+      return true;
+    }
     if (calcValue != null) {
       if (calcValue!.expression == null) {
         return true;
       }
+    } else if (type != CSSLengthType.PERCENTAGE) {
+      return false;
     }
     switch (propertyName) {
       // Length is considered as auto of following properties
@@ -1041,7 +1136,7 @@ class CSSLengthValue {
         }
         break;
     }
-    return type == CSSLengthType.AUTO;
+    return false;
   }
 
   bool get isNotAuto {

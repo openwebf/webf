@@ -13,18 +13,31 @@ import 'package:webf/css.dart';
 import 'package:webf/rendering.dart';
 
 mixin CSSMarginMixin on RenderStyle {
+  int _layoutPassMarginCachePassId = -1;
+  EdgeInsets? _layoutPassMargin;
+
   /// The amount to margin the child in each dimension.
   ///
   /// If this is set to an [EdgeInsetsDirectional] object, then [textDirection]
   /// must not be null.
   @override
   EdgeInsets get margin {
-    EdgeInsets insets = EdgeInsets.only(
-            left: marginLeft.computedValue,
-            right: marginRight.computedValue,
-            bottom: marginBottom.computedValue,
-            top: marginTop.computedValue)
-        .resolve(TextDirection.ltr);
+    if (renderBoxModelInLayoutStack.isNotEmpty &&
+        _layoutPassMarginCachePassId == renderBoxModelLayoutPassId &&
+        _layoutPassMargin != null) {
+      return _layoutPassMargin!;
+    }
+
+    final EdgeInsets insets = EdgeInsets.only(
+      left: marginLeft.computedValue,
+      right: marginRight.computedValue,
+      bottom: marginBottom.computedValue,
+      top: marginTop.computedValue,
+    ).resolve(TextDirection.ltr);
+    if (renderBoxModelInLayoutStack.isNotEmpty) {
+      _layoutPassMarginCachePassId = renderBoxModelLayoutPassId;
+      _layoutPassMargin = insets;
+    }
     return insets;
   }
 

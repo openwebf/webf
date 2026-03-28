@@ -71,6 +71,10 @@ const bool _enableInlineProfileSections =
 /// Manages the inline formatting context for a block container.
 /// Based on Blink's InlineNode.
 class InlineFormattingContext {
+  static int _ancestorHorizontalScrollCachePassId = -1;
+  static final Map<RenderObject, bool> _ancestorHorizontalScrollCache =
+      Map<RenderObject, bool>.identity();
+
   InlineFormattingContext({
     required this.container,
   });
@@ -78,12 +82,23 @@ class InlineFormattingContext {
   /// The block container that establishes this inline formatting context.
   final RenderLayoutBox container;
 
+  @pragma('vm:prefer-inline')
   T _profileSection<T>(String label, T Function() action,
       {Map<String, Object?>? arguments}) {
     if (kReleaseMode || !_enableInlineProfileSections) {
       return action();
     }
 
+    return _profileSectionEnabled(
+      label,
+      action,
+      arguments: arguments,
+    );
+  }
+
+  @pragma('vm:never-inline')
+  T _profileSectionEnabled<T>(String label, T Function() action,
+      {Map<String, Object?>? arguments}) {
     developer.Timeline.startSync(
       label,
       arguments: _sanitizeTimelineArguments(arguments),
@@ -229,6 +244,9 @@ class InlineFormattingContext {
   final Map<int, int> _cachedRectLineIndices = <int, int>{};
   List<ui.Paragraph>? _cachedTextRunParagraphsForReuse;
   bool? _cachedAncestorHasHorizontalScroll;
+  int _resolvedLayoutStyleSignaturePassId = -1;
+  final Map<CSSRenderStyle, int> _cachedResolvedLayoutStyleSignatures =
+      Map<CSSRenderStyle, int>.identity();
   static const int _resolvedLayoutPassCacheLimit = 8;
   final Map<int, _ResolvedLayoutPassCacheEntry> _resolvedLayoutPassCache =
       <int, _ResolvedLayoutPassCacheEntry>{};
@@ -497,6 +515,8 @@ class InlineFormattingContext {
     _resetParagraphGeometryCaches();
     _cachedTextRunParagraphsForReuse = null;
     _cachedAncestorHasHorizontalScroll = null;
+    _resolvedLayoutStyleSignaturePassId = -1;
+    _cachedResolvedLayoutStyleSignatures.clear();
   }
 
   @pragma('vm:prefer-inline')
@@ -523,6 +543,21 @@ class InlineFormattingContext {
   }
 
   int _resolvedLayoutStyleSignature(CSSRenderStyle style) {
+    final bool useLayoutPassCache = renderBoxModelInLayoutStack.isNotEmpty;
+    if (useLayoutPassCache) {
+      final int currentLayoutPassId = renderBoxModelLayoutPassId;
+      if (_resolvedLayoutStyleSignaturePassId != currentLayoutPassId) {
+        _resolvedLayoutStyleSignaturePassId = currentLayoutPassId;
+        _cachedResolvedLayoutStyleSignatures.clear();
+      } else {
+        final int? cachedSignature =
+            _cachedResolvedLayoutStyleSignatures[style];
+        if (cachedSignature != null) {
+          return cachedSignature;
+        }
+      }
+    }
+
     int hash = 0;
     hash = _hashCombineInt(hash, style.display.hashCode);
     hash = _hashCombineInt(hash, style.direction.hashCode);
@@ -556,7 +591,11 @@ class InlineFormattingContext {
     hash = _hashCombineInt(hash, _quantizeDouble(style.effectiveBorderRightWidth.computedValue));
     hash = _hashCombineInt(hash, _quantizeDouble(style.effectiveBorderTopWidth.computedValue));
     hash = _hashCombineInt(hash, _quantizeDouble(style.effectiveBorderBottomWidth.computedValue));
-    return _hashFinishInt(hash);
+    final int signature = _hashFinishInt(hash);
+    if (useLayoutPassCache) {
+      _cachedResolvedLayoutStyleSignatures[style] = signature;
+    }
+    return signature;
   }
 
   int _resolvedLayoutItemSignature(InlineItem item) {
@@ -752,8 +791,37 @@ class InlineFormattingContext {
     if (cached != null) {
       return cached;
     }
-    RenderObject? p = container.parent;
+
+    final bool useLayoutPassCache = renderBoxModelInLayoutStack.isNotEmpty;
+    final RenderObject? start = container.parent;
+    if (useLayoutPassCache) {
+      final int currentLayoutPassId = renderBoxModelLayoutPassId;
+      if (_ancestorHorizontalScrollCachePassId != currentLayoutPassId) {
+        _ancestorHorizontalScrollCachePassId = currentLayoutPassId;
+        _ancestorHorizontalScrollCache.clear();
+      } else if (start != null) {
+        final bool? sharedCached = _ancestorHorizontalScrollCache[start];
+        if (sharedCached != null) {
+          _cachedAncestorHasHorizontalScroll = sharedCached;
+          return sharedCached;
+        }
+      }
+    }
+
+    final List<RenderObject> visited =
+        useLayoutPassCache ? <RenderObject>[] : const <RenderObject>[];
+    RenderObject? p = start;
+    bool hasHorizontalScroll = false;
     while (p != null) {
+      if (useLayoutPassCache) {
+        final bool? sharedCached = _ancestorHorizontalScrollCache[p];
+        if (sharedCached != null) {
+          hasHorizontalScroll = sharedCached;
+          break;
+        }
+        visited.add(p);
+      }
+
       if (p is RenderBoxModel) {
         // Ignore the document root and body (page scroller); they should not
         // trigger wide shaping for general layout like flex items.
@@ -764,16 +832,22 @@ class InlineFormattingContext {
         }
         final o = p.renderStyle.effectiveOverflowX;
         if (o == CSSOverflowType.scroll || o == CSSOverflowType.auto) {
-          _cachedAncestorHasHorizontalScroll = true;
-          return true;
+          hasHorizontalScroll = true;
+          break;
         }
       }
       // Stop at widget boundary to avoid leaking outside this subtree.
       if (p is RenderWidget) break;
       p = p.parent;
     }
-    _cachedAncestorHasHorizontalScroll = false;
-    return false;
+
+    if (useLayoutPassCache) {
+      for (int i = 0; i < visited.length; i++) {
+        _ancestorHorizontalScrollCache[visited[i]] = hasHorizontalScroll;
+      }
+    }
+    _cachedAncestorHasHorizontalScroll = hasHorizontalScroll;
+    return hasHorizontalScroll;
   }
 
   bool _whiteSpaceEligibleForNoWordBreak(WhiteSpace ws) {
@@ -1473,6 +1547,49 @@ class InlineFormattingContext {
     return _resolvedLayoutPassSignature(constraints);
   }
 
+  bool get isPlainTextOnlyForSharedReuse {
+    prepareLayout();
+    for (final InlineItem item in _items) {
+      switch (item.type) {
+        case InlineItemType.text:
+        case InlineItemType.control:
+        case InlineItemType.bidiControl:
+        case InlineItemType.lineBreakOpportunity:
+          if (item.renderBox != null) {
+            return false;
+          }
+          break;
+        default:
+          return false;
+      }
+    }
+    return true;
+  }
+
+  int plainTextSharedReuseSignature() {
+    prepareLayout();
+    int hash = 0;
+    hash = _hashCombineInt(hash, _items.length);
+    hash = _hashCombineInt(hash, _textContent.hashCode);
+    hash = _hashCombineInt(
+      hash,
+      _resolvedLayoutStyleSignature((container as RenderBoxModel).renderStyle),
+    );
+    for (final InlineItem item in _items) {
+      hash = _hashCombineInt(hash, item.type.hashCode);
+      hash = _hashCombineInt(hash, item.startOffset);
+      hash = _hashCombineInt(hash, item.endOffset);
+      if (item.direction != null) {
+        hash = _hashCombineInt(hash, item.direction.hashCode);
+      }
+      final CSSRenderStyle? style = item.style;
+      if (style != null) {
+        hash = _hashCombineInt(hash, _resolvedLayoutStyleSignature(style));
+      }
+    }
+    return _hashFinishInt(hash);
+  }
+
   // Expose paragraph intrinsic widths when available.
   // CSS min-content width depends on white-space:
   //  - For normal/pre-wrap: roughly the longest unbreakable segment (“word”).
@@ -1842,7 +1959,7 @@ class InlineFormattingContext {
 
   /// Perform layout with given constraints.
   Size layout(BoxConstraints constraints) {
-    if (!kReleaseMode) {
+    if (!kReleaseMode && _enableInlineProfileSections) {
       developer.Timeline.startSync('InlineFormattingContext.layout');
     }
     try {
@@ -2132,7 +2249,7 @@ class InlineFormattingContext {
       _applyAtomicInlineParentDataOffsets();
       return Size(width, height);
     } finally {
-      if (!kReleaseMode) {
+      if (!kReleaseMode && _enableInlineProfileSections) {
         developer.Timeline.finishSync();
       }
     }

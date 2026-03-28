@@ -149,17 +149,49 @@ mixin CSSTextMixin on RenderStyle {
   }
 
   FontWeight? _fontWeight;
+  int _layoutPassInheritedTextCachePassId = -1;
+  FontWeight? _layoutPassInheritedFontWeight;
+  FontStyle? _layoutPassInheritedFontStyle;
+  CSSLengthValue? _layoutPassInheritedTextIndent;
+  WordBreak? _layoutPassInheritedWordBreak;
+  WhiteSpace? _layoutPassInheritedWhiteSpace;
+  TextDirection? _layoutPassInheritedDirection;
+
+  @pragma('vm:prefer-inline')
+  bool get _canUseLayoutPassInheritedTextCache =>
+      renderBoxModelInLayoutStack.isNotEmpty;
+
+  @pragma('vm:prefer-inline')
+  void _ensureLayoutPassInheritedTextCache() {
+    if (!_canUseLayoutPassInheritedTextCache) {
+      return;
+    }
+
+    if (_layoutPassInheritedTextCachePassId != renderBoxModelLayoutPassId) {
+      _layoutPassInheritedTextCachePassId = renderBoxModelLayoutPassId;
+      _layoutPassInheritedFontWeight = null;
+      _layoutPassInheritedFontStyle = null;
+      _layoutPassInheritedTextIndent = null;
+      _layoutPassInheritedWordBreak = null;
+      _layoutPassInheritedWhiteSpace = null;
+      _layoutPassInheritedDirection = null;
+    }
+  }
 
   @override
   FontWeight get fontWeight {
-    // Get style from self or closest parent if specified style property is not set
-    // due to style inheritance.
-    if (_fontWeight == null && parent != null) {
-      return parent!.fontWeight;
+    if (_fontWeight != null) return _fontWeight!;
+
+    _ensureLayoutPassInheritedTextCache();
+    if (_layoutPassInheritedFontWeight != null) {
+      return _layoutPassInheritedFontWeight!;
     }
 
-    // The root element has no fontWeight, and the fontWeight is initial.
-    return _fontWeight ?? FontWeight.w400;
+    final FontWeight resolved = parent?.fontWeight ?? FontWeight.w400;
+    if (_canUseLayoutPassInheritedTextCache) {
+      _layoutPassInheritedFontWeight = resolved;
+    }
+    return resolved;
   }
 
   set fontWeight(FontWeight? value) {
@@ -172,14 +204,18 @@ mixin CSSTextMixin on RenderStyle {
   FontStyle? _fontStyle;
   @override
   FontStyle get fontStyle {
-    // Get style from self or closest parent if specified style property is not set
-    // due to style inheritance.
-    if (_fontStyle == null && parent != null) {
-      return parent!.fontStyle;
+    if (_fontStyle != null) return _fontStyle!;
+
+    _ensureLayoutPassInheritedTextCache();
+    if (_layoutPassInheritedFontStyle != null) {
+      return _layoutPassInheritedFontStyle!;
     }
 
-    // The root element has no fontWeight, and the fontWeight is initial.
-    return _fontStyle ?? FontStyle.normal;
+    final FontStyle resolved = parent?.fontStyle ?? FontStyle.normal;
+    if (_canUseLayoutPassInheritedTextCache) {
+      _layoutPassInheritedFontStyle = resolved;
+    }
+    return resolved;
   }
 
   set fontStyle(FontStyle? value) {
@@ -355,10 +391,19 @@ mixin CSSTextMixin on RenderStyle {
   // text-indent (inherited)
   CSSLengthValue? _textIndent;
   CSSLengthValue get textIndent {
-    if (_textIndent == null && parent != null) {
-      return (parent as CSSRenderStyle).textIndent;
+    if (_textIndent != null) return _textIndent!;
+
+    _ensureLayoutPassInheritedTextCache();
+    if (_layoutPassInheritedTextIndent != null) {
+      return _layoutPassInheritedTextIndent!;
     }
-    return _textIndent ?? CSSLengthValue.zero;
+
+    final CSSLengthValue resolved =
+        (parent as CSSRenderStyle?)?.textIndent ?? CSSLengthValue.zero;
+    if (_canUseLayoutPassInheritedTextCache) {
+      _layoutPassInheritedTextIndent = resolved;
+    }
+    return resolved;
   }
 
   set textIndent(CSSLengthValue? value) {
@@ -408,10 +453,18 @@ mixin CSSTextMixin on RenderStyle {
   WordBreak? _wordBreak;
   @override
   WordBreak get wordBreak {
-    if (_wordBreak == null && parent != null) {
-      return parent!.wordBreak;
+    if (_wordBreak != null) return _wordBreak!;
+
+    _ensureLayoutPassInheritedTextCache();
+    if (_layoutPassInheritedWordBreak != null) {
+      return _layoutPassInheritedWordBreak!;
     }
-    return _wordBreak ?? WordBreak.normal;
+
+    final WordBreak resolved = parent?.wordBreak ?? WordBreak.normal;
+    if (_canUseLayoutPassInheritedTextCache) {
+      _layoutPassInheritedWordBreak = resolved;
+    }
+    return resolved;
   }
 
   set wordBreak(WordBreak? value) {
@@ -425,12 +478,18 @@ mixin CSSTextMixin on RenderStyle {
 
   @override
   WhiteSpace get whiteSpace {
-    // Get style from self or closest parent if specified style property is not set
-    // due to style inheritance.
-    if (_whiteSpace == null && parent != null) {
-      return parent!.whiteSpace;
+    if (_whiteSpace != null) return _whiteSpace!;
+
+    _ensureLayoutPassInheritedTextCache();
+    if (_layoutPassInheritedWhiteSpace != null) {
+      return _layoutPassInheritedWhiteSpace!;
     }
-    return _whiteSpace ?? WhiteSpace.normal;
+
+    final WhiteSpace resolved = parent?.whiteSpace ?? WhiteSpace.normal;
+    if (_canUseLayoutPassInheritedTextCache) {
+      _layoutPassInheritedWhiteSpace = resolved;
+    }
+    return resolved;
   }
 
   set whiteSpace(WhiteSpace? value) {
@@ -528,6 +587,13 @@ mixin CSSTextMixin on RenderStyle {
   dom.Element? _cachedInheritedDirectionParent;
 
   void resetInheritedTextCaches() {
+    _layoutPassInheritedTextCachePassId = -1;
+    _layoutPassInheritedFontWeight = null;
+    _layoutPassInheritedFontStyle = null;
+    _layoutPassInheritedTextIndent = null;
+    _layoutPassInheritedWordBreak = null;
+    _layoutPassInheritedWhiteSpace = null;
+    _layoutPassInheritedDirection = null;
     _cachedInheritedTextAlign = null;
     _cachedInheritedTextAlignParent = null;
     _cachedInheritedDirection = null;
@@ -564,9 +630,16 @@ mixin CSSTextMixin on RenderStyle {
     // render reparenting (e.g., positioned elements), prefer the DOM parent’s
     // renderStyle over the render tree parent to ensure correct inheritance.
     if (_direction != null) return _direction!;
+    _ensureLayoutPassInheritedTextCache();
+    if (_layoutPassInheritedDirection != null) {
+      return _layoutPassInheritedDirection!;
+    }
     final dom.Element? domParent = target.parentElement;
     if (_cachedInheritedDirection != null &&
         identical(_cachedInheritedDirectionParent, domParent)) {
+      if (_canUseLayoutPassInheritedTextCache) {
+        _layoutPassInheritedDirection = _cachedInheritedDirection;
+      }
       return _cachedInheritedDirection!;
     }
     final TextDirection resolved;
@@ -579,6 +652,9 @@ mixin CSSTextMixin on RenderStyle {
     }
     _cachedInheritedDirectionParent = domParent;
     _cachedInheritedDirection = resolved;
+    if (_canUseLayoutPassInheritedTextCache) {
+      _layoutPassInheritedDirection = resolved;
+    }
     return resolved;
   }
 

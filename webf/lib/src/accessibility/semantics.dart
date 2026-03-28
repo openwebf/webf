@@ -67,14 +67,28 @@ class WebFAccessibility {
     }
 
     final bool suppressSelfLabel = _shouldSuppressAutoLabel(element, role);
+    final String tag = element.tagName.toUpperCase();
+    final bool shouldComputeAccessibleName =
+        !suppressSelfLabel &&
+        _shouldComputeAccessibleName(
+          element,
+          tag: tag,
+          explicitRole: explicitRole,
+          role: role,
+          focusable: focusable,
+        );
+    final bool shouldComputeAccessibleDescription =
+        !suppressSelfLabel && element.hasAttribute('aria-describedby');
 
     // Compute accessible name and description.
-    if (!suppressSelfLabel) {
+    if (shouldComputeAccessibleName) {
       final String? name = computeAccessibleName(element)?.trim();
       if (name != null && name.isNotEmpty) {
         ensureTextDirection();
         config.label = name;
       }
+    }
+    if (shouldComputeAccessibleDescription) {
       final String? hint = computeAccessibleDescription(element)?.trim();
       if (hint != null && hint.isNotEmpty) {
         ensureTextDirection();
@@ -497,6 +511,30 @@ class WebFAccessibility {
     }
   }
 
+  static bool _shouldComputeAccessibleName(
+    dom.Element element, {
+    required String tag,
+    required String? explicitRole,
+    required _Role role,
+    required bool focusable,
+  }) {
+    if (element.hasAttribute('aria-label') ||
+        element.hasAttribute('aria-labelledby') ||
+        element.hasAttribute('title')) {
+      return true;
+    }
+    if (role != _Role.none || focusable) {
+      return true;
+    }
+    if (tag == html.IMAGE ||
+        tag == html.ANCHOR ||
+        tag == html.BUTTON ||
+        tag == html.INPUT) {
+      return true;
+    }
+    return _allowsNameFromContent(tag, explicitRole);
+  }
+
   static bool _hasNonWhitespaceDirectText(dom.Element element) {
     dom.Node? child = element.firstChild;
     while (child != null) {
@@ -528,6 +566,18 @@ class WebFAccessibility {
 
   /// Collect plain text recursively from descendant text nodes.
   static String _collectText(dom.Node node) {
+    if (node is dom.TextNode) {
+      return node.data.trim();
+    }
+
+    final dom.Node? first = node.firstChild;
+    if (first == null) {
+      return '';
+    }
+    if (first is dom.TextNode && first.nextSibling == null) {
+      return first.data.trim();
+    }
+
     final buffer = StringBuffer();
     void walk(dom.Node n) {
       if (n is dom.TextNode) {
@@ -535,8 +585,7 @@ class WebFAccessibility {
         if (data.isNotEmpty) buffer.write(data);
         return;
       }
-      final dom.Node? first = n.firstChild;
-      dom.Node? c = first;
+      dom.Node? c = n.firstChild;
       while (c != null) {
         walk(c);
         c = c.nextSibling;
