@@ -658,22 +658,24 @@ void main() {
         widths: const <String>['378px', '344px', '316px', '356px'],
       );
 
-      binding.reportData!['payment_method_otc_source_sheet_cpu_samples'] =
-          await _captureCpuSamples(
-        userTag: _paymentMethodOtcSourceSheetProfileTag,
-        action: () async {
-          await binding.traceAction(
-            () async {
+      late Map<String, dynamic> otcSourceSheetCpuSamples;
+      await binding.traceAction(
+        () async {
+          otcSourceSheetCpuSamples = await _captureCpuSamples(
+            userTag: _paymentMethodOtcSourceSheetProfileTag,
+            action: () async {
               await _runPaymentMethodOtcSourceSheetLoop(
                 prepared,
                 mutationIterations: 4,
                 widths: const <String>['378px', '344px', '316px', '356px'],
               );
             },
-            reportKey: 'payment_method_otc_source_sheet_timeline',
           );
         },
+        reportKey: 'payment_method_otc_source_sheet_timeline',
       );
+      binding.reportData!['payment_method_otc_source_sheet_cpu_samples'] =
+          otcSourceSheetCpuSamples;
 
       expect(host.getBoundingClientRect().width, greaterThan(0));
       expect(sheet.getBoundingClientRect().height, greaterThan(0));
@@ -1032,17 +1034,36 @@ Future<Map<String, dynamic>> _captureCpuSamples({
   required developer.UserTag userTag,
 }) async {
   if (_shouldCaptureCpuSamplesOnDriverSide()) {
-    final developer.UserTag previousTag = userTag.makeCurrent();
-    try {
-      await action();
-    } finally {
-      previousTag.makeCurrent();
+    final developer.ServiceProtocolInfo info = await developer.Service.getInfo();
+    final Uri? serviceUri = info.serverUri;
+    if (serviceUri == null) {
+      throw StateError('VM service URI is unavailable.');
     }
 
-    return <String, dynamic>{
-      'captureMode': 'driver',
-      'profileLabel': userTag.label,
-    };
+    final String vmServiceAddress =
+        'ws://localhost:${serviceUri.port}${serviceUri.path}ws';
+    final vm.VmService service = await vmServiceConnectUri(vmServiceAddress);
+    try {
+      final int startMicros = (await service.getVMTimelineMicros()).timestamp!;
+      final developer.UserTag previousTag = userTag.makeCurrent();
+      try {
+        await action();
+      } finally {
+        previousTag.makeCurrent();
+      }
+      final int endMicros = (await service.getVMTimelineMicros()).timestamp!;
+      final int timeExtentMicros =
+          endMicros > startMicros ? endMicros - startMicros : 1;
+
+      return <String, dynamic>{
+        'captureMode': 'driver',
+        'profileLabel': userTag.label,
+        'timeOriginMicros': startMicros,
+        'timeExtentMicros': timeExtentMicros,
+      };
+    } finally {
+      await service.dispose();
+    }
   }
 
   final developer.ServiceProtocolInfo info = await developer.Service.getInfo();
