@@ -81,16 +81,25 @@ Future<void> _materializeDriverCpuSamples(
     return;
   }
 
-  final int timeExtentMicros =
+  final int fallbackTimeExtentMicros =
       endMicros > startMicros ? endMicros - startMicros : 1;
-  final Map<String, dynamic> allSamples = (await driver.serviceClient
-          .getCpuSamples(driver.appIsolate.id!, startMicros, timeExtentMicros))
-      .toJson();
-  final List<dynamic> allSampleEntries =
-      (allSamples['samples'] as List<dynamic>? ?? <dynamic>[]);
 
   for (final MapEntry<String, Map<String, dynamic>> pendingCpuCapture
       in pendingCpuCaptures) {
+    final int captureStartMicros =
+        pendingCpuCapture.value['timeOriginMicros'] as int? ?? startMicros;
+    final int captureTimeExtentMicros =
+        pendingCpuCapture.value['timeExtentMicros'] as int? ??
+            fallbackTimeExtentMicros;
+    final Map<String, dynamic> allSamples = (await driver.serviceClient
+            .getCpuSamples(
+              driver.appIsolate.id!,
+              captureStartMicros,
+              captureTimeExtentMicros,
+            ))
+        .toJson();
+    final List<dynamic> allSampleEntries =
+        (allSamples['samples'] as List<dynamic>? ?? <dynamic>[]);
     final String profileLabel =
         pendingCpuCapture.value['profileLabel'] as String? ?? '';
     final List<dynamic> filteredSamples = allSampleEntries
@@ -102,15 +111,15 @@ Future<void> _materializeDriverCpuSamples(
     final Map<String, dynamic> filteredCpuSamples =
         Map<String, dynamic>.from(allSamples);
     filteredCpuSamples['sampleCount'] = filteredSamples.length;
-    filteredCpuSamples['timeOriginMicros'] = startMicros;
-    filteredCpuSamples['timeExtentMicros'] = timeExtentMicros;
+    filteredCpuSamples['timeOriginMicros'] = captureStartMicros;
+    filteredCpuSamples['timeExtentMicros'] = captureTimeExtentMicros;
     filteredCpuSamples['samples'] = filteredSamples;
 
     responseData[pendingCpuCapture.key] = <String, dynamic>{
       'profileLabel': profileLabel,
       'isolateId': driver.appIsolate.id,
-      'timeOriginMicros': startMicros,
-      'timeExtentMicros': timeExtentMicros,
+      'timeOriginMicros': captureStartMicros,
+      'timeExtentMicros': captureTimeExtentMicros,
       'samples': filteredCpuSamples,
     };
   }
