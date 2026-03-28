@@ -18,6 +18,28 @@ import 'package:webf/html.dart';
 import 'package:webf/foundation.dart';
 import 'package:webf/rendering.dart';
 
+bool _canReuseFlowChildLayout(RenderBox child, BoxConstraints constraints) {
+  if (!child.hasSize || child.constraints != constraints) {
+    return false;
+  }
+  if (child.debugNeedsLayout) {
+    return false;
+  }
+  if (child is RenderTextBox && child.hasPendingTextLayoutUpdate) {
+    return false;
+  }
+  if (child is RenderBoxModel &&
+      (child.needsRelayout ||
+          child.hasPendingSubtreeIntrinsicMeasurementInvalidation)) {
+    return false;
+  }
+  return true;
+}
+
+bool _shouldAvoidParentUsesSizeForFlowChild(RenderBox child) {
+  return child is RenderEventListener || child is RenderLayoutBoxWrapper;
+}
+
 // Position and size of each run (line box) in flow layout.
 // https://www.w3.org/TR/css-inline-3/#line-boxes
 class RunMetrics {
@@ -1175,8 +1197,20 @@ class RenderFlowLayout extends RenderLayoutBox {
         childConstraints = constraints;
       }
 
-      bool parentUseSize = !(child is RenderBoxModel && child.isSizeTight || child is RenderPositionPlaceholder);
-      child.layout(childConstraints, parentUsesSize: parentUseSize);
+      final bool avoidParentUsesSize =
+          _shouldAvoidParentUsesSizeForFlowChild(child);
+      if (child is RenderBoxModel) {
+        child.setRelayoutParentOnSizeChange(
+          avoidParentUsesSize ? this : null,
+        );
+      }
+      bool parentUseSize =
+          !((child is RenderBoxModel && child.isSizeTight) ||
+              child is RenderPositionPlaceholder ||
+              avoidParentUsesSize);
+      if (!_canReuseFlowChildLayout(child, childConstraints)) {
+        child.layout(childConstraints, parentUsesSize: parentUseSize);
+      }
 
       double childMainAxisExtent = RenderFlowLayout.getPureMainAxisExtent(child);
       double childCrossAxisExtent = _getCrossAxisExtent(child);
