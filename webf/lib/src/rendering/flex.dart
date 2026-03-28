@@ -660,6 +660,7 @@ class _FlexIntrinsicMeasurementLookupResult {
     this.missDetails,
     this.flowChild,
     this.reusableStateSignature,
+    this.sharedPlainTextSignature,
   });
 
   final _FlexIntrinsicMeasurementCacheEntry? entry;
@@ -667,6 +668,7 @@ class _FlexIntrinsicMeasurementLookupResult {
   final Map<String, Object?>? missDetails;
   final RenderFlowLayout? flowChild;
   final int? reusableStateSignature;
+  final int? sharedPlainTextSignature;
 }
 
 // Position and size info of each run (flex line) in flex layout.
@@ -1237,6 +1239,7 @@ class RenderFlexLayout extends RenderLayoutBox {
       Map<RenderBoxModel, _AdjustedConstraintsCacheEntry>.identity();
   Map<RenderBox, Size>? _transientChildSizeOverrides;
   Map<RenderBox, int>? _metricsOnlyIntrinsicMeasureChildEligibilityCache;
+  Map<RenderBox, RenderFlowLayout?>? _cacheableIntrinsicMeasureFlowChildCache;
   int _reusableIntrinsicStyleSignaturePassId = -1;
   final Map<CSSRenderStyle, int> _cachedReusableIntrinsicStyleSignatures =
       Map<CSSRenderStyle, int>.identity();
@@ -1258,6 +1261,7 @@ class RenderFlexLayout extends RenderLayoutBox {
     _adjustedConstraintsCache.clear();
     _transientChildSizeOverrides = null;
     _metricsOnlyIntrinsicMeasureChildEligibilityCache = null;
+    _cacheableIntrinsicMeasureFlowChildCache = null;
     _reusableIntrinsicStyleSignaturePassId = -1;
     _cachedReusableIntrinsicStyleSignatures.clear();
   }
@@ -2543,25 +2547,43 @@ class RenderFlexLayout extends RenderLayoutBox {
     RenderBox child, {
     bool allowAnonymous = false,
   }) {
-    if (child is RenderFlowLayout) {
-      if (child.renderStyle.isSelfAnonymousFlowLayout()) {
-        if (!allowAnonymous || !_canReuseAnonymousFlowMeasurement(child)) {
-          return null;
-        }
-      }
-      return child;
+    final Map<RenderBox, RenderFlowLayout?>? flowChildCache =
+        allowAnonymous ? _cacheableIntrinsicMeasureFlowChildCache : null;
+    if (flowChildCache != null && flowChildCache.containsKey(child)) {
+      return flowChildCache[child];
     }
-    if (child is RenderEventListener) {
-      final RenderBox? wrapped = child.child;
-      if (wrapped is RenderFlowLayout) {
-        if (wrapped.renderStyle.isSelfAnonymousFlowLayout() &&
-            (!allowAnonymous || !_canReuseAnonymousFlowMeasurement(wrapped))) {
-          return null;
+
+    RenderFlowLayout? resolvedFlowChild;
+    RenderBox? current = child;
+    int depth = 0;
+    while (current != null && depth < 3) {
+      if (current is RenderFlowLayout) {
+        if (current.renderStyle.isSelfAnonymousFlowLayout()) {
+          if (!allowAnonymous || !_canReuseAnonymousFlowMeasurement(current)) {
+            resolvedFlowChild = null;
+          } else {
+            resolvedFlowChild = current;
+          }
+        } else {
+          resolvedFlowChild = current;
         }
-        return wrapped;
+        break;
       }
+
+      if (current is RenderEventListener ||
+          current is RenderLayoutBoxWrapper) {
+        current = (current as dynamic).child as RenderBox?;
+        depth++;
+        continue;
+      }
+
+      break;
     }
-    return null;
+
+    if (flowChildCache != null) {
+      flowChildCache[child] = resolvedFlowChild;
+    }
+    return resolvedFlowChild;
   }
 
   bool _canReuseAnonymousFlowMeasurement(RenderFlowLayout flowChild) {
@@ -2644,7 +2666,8 @@ class RenderFlexLayout extends RenderLayoutBox {
       return false;
     }
     if (metricsOnlyChildCount != children.length &&
-        flexingMetricsOnlyChildCount > 0) {
+        flexingMetricsOnlyChildCount > 0 &&
+        !_canReuseMixedMetricsOnlyChildren(children)) {
       _recordAnonymousMetricsReject(
         _FlexAnonymousMetricsRejectReason.mixedMetricsOnlyChildren,
         details: <String, Object?>{
@@ -2661,6 +2684,24 @@ class RenderFlexLayout extends RenderLayoutBox {
       candidateChildCount: metricsOnlyChildCount,
     );
     return true;
+  }
+
+  bool _canReuseMixedMetricsOnlyChildren(List<RenderBox> children) {
+    if (_isHorizontalFlexDirection) {
+      return false;
+    }
+
+    bool sawCandidate = false;
+    for (final RenderBox child in children) {
+      if (!_isMetricsOnlyIntrinsicMeasureChild(child)) {
+        continue;
+      }
+      sawCandidate = true;
+      if (_getFlexGrow(child) > 0) {
+        return false;
+      }
+    }
+    return sawCandidate;
   }
 
   bool _hasBaselineAlignmentForChild(RenderBox child) {
@@ -2949,6 +2990,10 @@ class RenderFlexLayout extends RenderLayoutBox {
     BoxConstraints childConstraints, {
     RenderFlowLayout? flowChild,
   }) {
+    if (child is! RenderFlowLayout && child is! RenderEventListener) {
+      return null;
+    }
+
     final RenderFlowLayout? effectiveFlowChild =
         flowChild ??
         _getCacheableIntrinsicMeasureFlowChild(
@@ -2998,14 +3043,14 @@ class RenderFlexLayout extends RenderLayoutBox {
     if (!allowAnonymous) {
       return const _FlexIntrinsicMeasurementLookupResult();
     }
-    if (_getMainAxisGap() > 0) {
+    if (_hasWrappingFlexAncestor()) {
       return const _FlexIntrinsicMeasurementLookupResult();
     }
     final RenderFlowLayout? flowChild = _getCacheableIntrinsicMeasureFlowChild(
       child,
       allowAnonymous: allowAnonymous,
     );
-    if (!_isHorizontalFlexDirection || renderStyle.flexWrap != FlexWrap.nowrap) {
+    if (renderStyle.flexWrap != FlexWrap.nowrap) {
       return const _FlexIntrinsicMeasurementLookupResult();
     }
     if (_hasBaselineAlignmentForChild(child)) {
@@ -3014,17 +3059,25 @@ class RenderFlexLayout extends RenderLayoutBox {
     if (flowChild == null) {
       return const _FlexIntrinsicMeasurementLookupResult();
     }
-    final int? sharedPlainTextSignature =
-        _computePlainTextSharedIntrinsicMeasurementSignature(
-      child,
-      childConstraints,
-      flowChild: flowChild,
-    );
+    int? sharedPlainTextSignature;
+    bool didComputeSharedPlainTextSignature = false;
+    int? getSharedPlainTextSignature() {
+      if (!didComputeSharedPlainTextSignature) {
+        didComputeSharedPlainTextSignature = true;
+        sharedPlainTextSignature =
+            _computePlainTextSharedIntrinsicMeasurementSignature(
+          child,
+          childConstraints,
+          flowChild: flowChild,
+        );
+      }
+      return sharedPlainTextSignature;
+    }
     final _FlexIntrinsicMeasurementCacheBucket? cacheBucket =
         _childrenIntrinsicMeasureCache[child];
     if (cacheBucket == null || cacheBucket.entries.isEmpty) {
       final _FlexIntrinsicMeasurementCacheEntry? sharedEntry =
-          sharedPlainTextSignature == null
+          getSharedPlainTextSignature() == null
               ? null
               : _sharedPlainTextFlexIntrinsicMeasurementCache[
                   sharedPlainTextSignature
@@ -3038,18 +3091,20 @@ class RenderFlexLayout extends RenderLayoutBox {
         return _FlexIntrinsicMeasurementLookupResult(
           entry: sharedEntry,
           flowChild: flowChild,
+          sharedPlainTextSignature: sharedPlainTextSignature,
         );
       }
       return _FlexIntrinsicMeasurementLookupResult(
         flowChild: flowChild,
         missReason: _FlexAnonymousMetricsMissReason.missingCacheEntry,
+        sharedPlainTextSignature: sharedPlainTextSignature,
       );
     }
     final _FlexIntrinsicMeasurementCacheEntry? cacheEntry =
         cacheBucket.lookupLatest(childConstraints);
     if (cacheEntry == null) {
       final _FlexIntrinsicMeasurementCacheEntry? sharedEntry =
-          sharedPlainTextSignature == null
+          getSharedPlainTextSignature() == null
               ? null
               : _sharedPlainTextFlexIntrinsicMeasurementCache[
                   sharedPlainTextSignature
@@ -3059,11 +3114,13 @@ class RenderFlexLayout extends RenderLayoutBox {
         return _FlexIntrinsicMeasurementLookupResult(
           entry: sharedEntry,
           flowChild: flowChild,
+          sharedPlainTextSignature: sharedPlainTextSignature,
         );
       }
       return _FlexIntrinsicMeasurementLookupResult(
         flowChild: flowChild,
         missReason: _FlexAnonymousMetricsMissReason.constraintsMismatch,
+        sharedPlainTextSignature: sharedPlainTextSignature,
       );
     }
     final bool flowNeedsRelayout = flowChild.needsRelayout;
@@ -3085,6 +3142,7 @@ class RenderFlexLayout extends RenderLayoutBox {
           entry: reusableEntry,
           flowChild: flowChild,
           reusableStateSignature: reusableStateSignature,
+          sharedPlainTextSignature: sharedPlainTextSignature,
         );
       }
       if (flowNeedsRelayout) {
@@ -3092,6 +3150,7 @@ class RenderFlexLayout extends RenderLayoutBox {
           flowChild: flowChild,
           reusableStateSignature: reusableStateSignature,
           missReason: _FlexAnonymousMetricsMissReason.flowNeedsRelayout,
+          sharedPlainTextSignature: sharedPlainTextSignature,
         );
       }
       if (childNeedsRelayout) {
@@ -3099,6 +3158,7 @@ class RenderFlexLayout extends RenderLayoutBox {
           flowChild: flowChild,
           reusableStateSignature: reusableStateSignature,
           missReason: _FlexAnonymousMetricsMissReason.childNeedsRelayout,
+          sharedPlainTextSignature: sharedPlainTextSignature,
         );
       }
       return _FlexIntrinsicMeasurementLookupResult(
@@ -3110,11 +3170,13 @@ class RenderFlexLayout extends RenderLayoutBox {
         missDetails: _FlexAnonymousMetricsProfiler.enabled
             ? _describeFirstPendingIntrinsicMeasureInvalidation(child)
             : null,
+        sharedPlainTextSignature: sharedPlainTextSignature,
       );
     }
     return _FlexIntrinsicMeasurementLookupResult(
       entry: cacheEntry,
       flowChild: flowChild,
+      sharedPlainTextSignature: sharedPlainTextSignature,
     );
   }
 
@@ -3126,7 +3188,11 @@ class RenderFlexLayout extends RenderLayoutBox {
     {
     RenderFlowLayout? flowChild,
     int? reusableStateSignature,
+    int? sharedPlainTextSignature,
   }) {
+    if (_hasWrappingFlexAncestor()) {
+      return;
+    }
     flowChild ??=
         _getCacheableIntrinsicMeasureFlowChild(child, allowAnonymous: true);
     if (flowChild == null) {
@@ -3150,7 +3216,7 @@ class RenderFlexLayout extends RenderLayoutBox {
     );
     bucket.store(entry);
     _childrenIntrinsicMeasureCache[child] = bucket;
-    final int? sharedPlainTextSignature =
+    sharedPlainTextSignature ??=
         _computePlainTextSharedIntrinsicMeasurementSignature(
       child,
       childConstraints,
@@ -3186,7 +3252,7 @@ class RenderFlexLayout extends RenderLayoutBox {
     // needs the wrapper's cached boxSize, not RenderBox.size dependency wiring.
     // RenderEventListener falls back to legacy bubbling only when its parent
     // did not establish a size dependency.
-    return child is RenderEventListener;
+    return child is RenderEventListener || child is RenderLayoutBoxWrapper;
   }
 
   void _layoutChildForFlex(RenderBox child, BoxConstraints childConstraints) {
@@ -3200,6 +3266,28 @@ class RenderFlexLayout extends RenderLayoutBox {
       parentUsesSize: !_shouldAvoidParentUsesSizeForFlexChild(child),
     );
     _childrenRequirePostMeasureLayout[child] = false;
+  }
+
+  @pragma('vm:prefer-inline')
+  bool _canReuseCurrentFlexMeasurement(
+    RenderBox child,
+    BoxConstraints childConstraints, {
+    RenderBoxModel? effectiveChild,
+  }) {
+    if (!child.hasSize || child.constraints != childConstraints) {
+      return false;
+    }
+    if (child.debugNeedsLayout) {
+      return false;
+    }
+    if (effectiveChild != null && effectiveChild.needsRelayout) {
+      return false;
+    }
+    if ((_childrenRequirePostMeasureLayout[child] == true) ||
+        _subtreeHasPendingIntrinsicMeasureInvalidation(child)) {
+      return false;
+    }
+    return true;
   }
 
   @pragma('vm:prefer-inline')
@@ -3298,7 +3386,10 @@ class RenderFlexLayout extends RenderLayoutBox {
       return true;
     }
     if (flowChild.renderStyle.target is SpanElement) {
-      return false;
+      final InlineFormattingContext? ifc = flowChild.inlineFormattingContext;
+      return ifc != null &&
+          ifc.isPlainTextOnlyForSharedReuse &&
+          flowChild.renderStyle.whiteSpace == WhiteSpace.nowrap;
     }
     return _flowSubtreeContainsReusableTextHeavyContent(flowChild);
   }
@@ -3630,7 +3721,15 @@ class RenderFlexLayout extends RenderLayoutBox {
         return null;
       }
 
-      _layoutChildForFlex(child, childConstraints);
+      final RenderBoxModel? effectiveChild =
+          child is RenderBoxModel ? child : null;
+      if (!_canReuseCurrentFlexMeasurement(
+        child,
+        childConstraints,
+        effectiveChild: effectiveChild,
+      )) {
+        _layoutChildForFlex(child, childConstraints);
+      }
       _cacheOriginalConstraintsIfNeeded(child, childConstraints);
 
       final RenderLayoutParentData? childParentData = child.parentData as RenderLayoutParentData?;
@@ -3639,7 +3738,6 @@ class RenderFlexLayout extends RenderLayoutBox {
       final double childMainSize = _getMainSize(child);
       _childrenIntrinsicMainSizes[child] = childMainSize;
 
-      final RenderBoxModel? effectiveChild = child is RenderBoxModel ? child : null;
       final _RunChild runChild = _createRunChildMetadata(
         child,
         childMainSize,
@@ -4200,6 +4298,8 @@ class RenderFlexLayout extends RenderLayoutBox {
     // PASS 1+2: Intrinsic layout + compute run metrics in one pass.
     _metricsOnlyIntrinsicMeasureChildEligibilityCache =
         Map<RenderBox, int>.identity();
+    _cacheableIntrinsicMeasureFlowChildCache =
+        Map<RenderBox, RenderFlowLayout?>.identity();
     final bool allowAnonymousMetricsOnlyCache =
         _canUseAnonymousMetricsOnlyCache(children);
     _transientChildSizeOverrides = Map<RenderBox, Size>.identity();
@@ -4207,6 +4307,8 @@ class RenderFlexLayout extends RenderLayoutBox {
       for (int childIndex = 0; childIndex < children.length; childIndex++) {
         final RenderBox child = children[childIndex];
         final BoxConstraints childConstraints = _getIntrinsicConstraints(child);
+        final RenderBoxModel? effectiveChild =
+            child is RenderBoxModel ? child : null;
         final bool isMetricsOnlyMeasureChild =
             allowAnonymousMetricsOnlyCache &&
                 _isMetricsOnlyIntrinsicMeasureChild(child);
@@ -4242,7 +4344,13 @@ class RenderFlexLayout extends RenderLayoutBox {
             _childrenRequirePostMeasureLayout[child] = true;
           }
         } else {
-          _layoutChildForFlex(child, childConstraints);
+          if (!_canReuseCurrentFlexMeasurement(
+            child,
+            childConstraints,
+            effectiveChild: effectiveChild,
+          )) {
+            _layoutChildForFlex(child, childConstraints);
+          }
           if (isMetricsOnlyMeasureChild &&
               renderStyle.flexWrap == FlexWrap.nowrap &&
               !_hasWrappingFlexAncestor()) {
@@ -4251,8 +4359,8 @@ class RenderFlexLayout extends RenderLayoutBox {
             );
           }
 
-          if (child is RenderBoxModel) {
-            child.clearOverrideContentSize();
+          if (effectiveChild != null) {
+            effectiveChild.clearOverrideContentSize();
           }
 
           childSize = Size.copy(_getChildSize(child)!);
@@ -4370,6 +4478,7 @@ class RenderFlexLayout extends RenderLayoutBox {
             intrinsicMain,
             flowChild: cacheLookup.flowChild,
             reusableStateSignature: cacheLookup.reusableStateSignature,
+            sharedPlainTextSignature: cacheLookup.sharedPlainTextSignature,
           );
         }
 
@@ -4378,8 +4487,6 @@ class RenderFlexLayout extends RenderLayoutBox {
         _childrenIntrinsicMainSizes[child] = intrinsicMain;
 
         Size? intrinsicChildSize = _getChildSize(child, shouldUseIntrinsicMainSize: true);
-        final RenderBoxModel? effectiveChild =
-            child is RenderBoxModel ? child : null;
         final double? usedFlexBasis =
             effectiveChild != null ? _getUsedFlexBasis(child) : null;
         final _RunChild runChild = _createRunChildMetadata(
@@ -4511,6 +4618,7 @@ class RenderFlexLayout extends RenderLayoutBox {
     } finally {
       _transientChildSizeOverrides = null;
       _metricsOnlyIntrinsicMeasureChildEligibilityCache = null;
+      _cacheableIntrinsicMeasureFlowChildCache = null;
     }
 
     if (runChildren.isNotEmpty) {

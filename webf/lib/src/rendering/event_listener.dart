@@ -14,6 +14,24 @@ import 'package:webf/launcher.dart';
 import 'package:webf/gesture.dart';
 import 'package:webf/rendering.dart' hide RenderBoxContainerDefaultsMixin;
 
+bool _canReuseProxyChildLayout(RenderBox? child, BoxConstraints constraints) {
+  if (child == null || !child.hasSize || child.constraints != constraints) {
+    return false;
+  }
+  if (child.debugNeedsLayout) {
+    return false;
+  }
+  if (child is RenderTextBox && child.hasPendingTextLayoutUpdate) {
+    return false;
+  }
+  if (child is RenderBoxModel &&
+      (child.needsRelayout ||
+          child.hasPendingSubtreeIntrinsicMeasurementInvalidation)) {
+    return false;
+  }
+  return true;
+}
+
 class RenderPortalsParentData extends RenderLayoutParentData {}
 
 class RenderEventListener extends RenderBoxModel
@@ -48,6 +66,8 @@ class RenderEventListener extends RenderBoxModel
   GestureDispatcher? _gestureDispatcher;
 
   GestureDispatcher? get gestureDispatcher => _gestureDispatcher;
+
+  BoxConstraints? _lastLayoutConstraints;
 
   @override
   void applyPaintTransform(RenderObject child, Matrix4 transform) {
@@ -170,16 +190,31 @@ class RenderEventListener extends RenderBoxModel
   @override
   void performLayout() {
     updateIntrinsicMeasurementInvalidationForCurrentLayoutPass();
-    size = (child?..layout(constraints, parentUsesSize: true))?.size ??
-        computeSizeForNoChild(constraints);
+    final RenderBox? currentChild = child;
+    if (hasSize &&
+        !needsRelayout &&
+        _lastLayoutConstraints == constraints &&
+        _canReuseProxyChildLayout(currentChild, constraints)) {
+      if (currentChild is RenderBoxModel) {
+        scrollableSize = currentChild.scrollableSize;
+      }
+      return;
+    }
+    if (_canReuseProxyChildLayout(currentChild, constraints)) {
+      size = currentChild!.size;
+    } else {
+      size = (currentChild?..layout(constraints, parentUsesSize: true))?.size ??
+          computeSizeForNoChild(constraints);
+    }
+    _lastLayoutConstraints = constraints;
 
     calculateBaseline();
     initOverflowLayout(Rect.fromLTRB(0, 0, size.width, size.height),
         Rect.fromLTRB(0, 0, size.width, size.height));
 
     // Set the size of scrollable overflow area for Portal.
-    if (child is RenderBoxModel) {
-      scrollableSize = (child as RenderBoxModel).scrollableSize;
+    if (currentChild is RenderBoxModel) {
+      scrollableSize = currentChild.scrollableSize;
     }
   }
 

@@ -13,11 +13,46 @@ import 'package:webf/css.dart';
 import 'package:webf/rendering.dart';
 import 'package:webf/dom.dart' as dom;
 
+bool _canReuseWrappedChildLayout(RenderBox? child, BoxConstraints constraints) {
+  if (child == null || !child.hasSize || child.constraints != constraints) {
+    return false;
+  }
+  if (child.debugNeedsLayout) {
+    return false;
+  }
+  if (child is RenderTextBox && child.hasPendingTextLayoutUpdate) {
+    return false;
+  }
+  if (child is RenderBoxModel &&
+      (child.needsRelayout ||
+          child.hasPendingSubtreeIntrinsicMeasurementInvalidation)) {
+    return false;
+  }
+  return true;
+}
+
 class RenderLayoutBoxWrapper extends RenderBoxModel
     with RenderObjectWithChildMixin<RenderBox>, RenderProxyBoxMixin<RenderBox> {
   RenderLayoutBoxWrapper({
     required super.renderStyle,
   });
+
+  BoxConstraints? _lastWrapperConstraints;
+  BoxConstraints? _lastResolvedChildConstraints;
+
+  bool _canReuseOwnLayout(RenderBox? child) {
+    final BoxConstraints? lastWrapperConstraints = _lastWrapperConstraints;
+    final BoxConstraints? lastChildConstraints = _lastResolvedChildConstraints;
+    if (!hasSize ||
+        child == null ||
+        lastWrapperConstraints == null ||
+        lastChildConstraints == null ||
+        constraints != lastWrapperConstraints ||
+        needsRelayout) {
+      return false;
+    }
+    return _canReuseWrappedChildLayout(child, lastChildConstraints);
+  }
 
   @override
   void describeSemanticsConfiguration(SemanticsConfiguration config) {
@@ -86,6 +121,15 @@ class RenderLayoutBoxWrapper extends RenderBoxModel
     if (c == null) {
       size = constraints.constrain(Size.zero);
       initOverflowLayout(Rect.fromLTRB(0, 0, size.width, size.height), Rect.fromLTRB(0, 0, size.width, size.height));
+      _lastWrapperConstraints = constraints;
+      _lastResolvedChildConstraints = null;
+      return;
+    }
+
+    if (_canReuseOwnLayout(c)) {
+      if (c is RenderBoxModel) {
+        scrollableSize = c.scrollableSize;
+      }
       return;
     }
 
@@ -132,8 +176,12 @@ class RenderLayoutBoxWrapper extends RenderBoxModel
     }
 
     childConstraints = intersect(childConstraints, constraints);
+    _lastWrapperConstraints = constraints;
+    _lastResolvedChildConstraints = childConstraints;
 
-    c.layout(childConstraints, parentUsesSize: true);
+    if (!_canReuseWrappedChildLayout(c, childConstraints)) {
+      c.layout(childConstraints, parentUsesSize: true);
+    }
 
     if (c is RenderBoxModel) {
       // For list-like widget containers (ListView children), sibling margin
