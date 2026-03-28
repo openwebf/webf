@@ -8,8 +8,12 @@
  */
 import 'package:flutter/rendering.dart';
 import 'package:webf/css.dart';
+import 'package:webf/rendering.dart';
 
 mixin CSSPaddingMixin on RenderStyle {
+  int _layoutPassPaddingCachePassId = -1;
+  EdgeInsets? _layoutPassPadding;
+
   CSSLengthValue? _normalizePaddingLength(CSSLengthValue? value) {
     if (value == null) return null;
     final double? raw = value.value;
@@ -29,13 +33,23 @@ mixin CSSPaddingMixin on RenderStyle {
   /// must not be null.
   @override
   EdgeInsets get padding {
-    EdgeInsets insets = EdgeInsets.only(
+    if (renderBoxModelInLayoutStack.isNotEmpty &&
+        _layoutPassPaddingCachePassId == renderBoxModelLayoutPassId &&
+        _layoutPassPadding != null) {
+      return _layoutPassPadding!;
+    }
+
+    final EdgeInsets insets = EdgeInsets.only(
       left: _nonNegativePaddingComputedValue(paddingLeft),
       right: _nonNegativePaddingComputedValue(paddingRight),
       bottom: _nonNegativePaddingComputedValue(paddingBottom),
       top: _nonNegativePaddingComputedValue(paddingTop),
     );
     assert(insets.isNonNegative);
+    if (renderBoxModelInLayoutStack.isNotEmpty) {
+      _layoutPassPaddingCachePassId = renderBoxModelLayoutPassId;
+      _layoutPassPadding = insets;
+    }
     return insets;
   }
 

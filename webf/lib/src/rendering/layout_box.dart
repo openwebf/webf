@@ -746,6 +746,7 @@ abstract class RenderLayoutBox extends RenderBoxModel
     required double contentWidth,
     required double contentHeight,
   }) {
+    final EdgeInsets margin = renderStyle.margin;
     double finalContentWidth = contentWidth;
     double finalContentHeight = contentHeight;
 
@@ -754,8 +755,8 @@ abstract class RenderLayoutBox extends RenderBoxModel
     double? specifiedContentHeight = renderStyle.contentBoxLogicalHeight;
 
     // Margin negative will set element which is static && not set width, size bigger
-    double? marginLeft = renderStyle.marginLeft.computedValue;
-    double? marginRight = renderStyle.marginRight.computedValue;
+    double? marginLeft = margin.left;
+    double? marginRight = margin.right;
     double? marginAddSizeLeft = 0;
     double? marginAddSizeRight = 0;
     if (isNegativeMarginChangeHSize) {
@@ -882,35 +883,19 @@ abstract class RenderLayoutBox extends RenderBoxModel
     }
 
     Size finalContentSize = Size(finalContentWidth, finalContentHeight);
-
-    try {
-      // Keep for future diagnostic hooks (no-op by default).
-      final tag = renderStyle.target.tagName.toLowerCase();
-      final paddL = renderStyle.paddingLeft.computedValue;
-      final paddR = renderStyle.paddingRight.computedValue;
-      final bordL = renderStyle.effectiveBorderLeftWidth.computedValue;
-      final bordR = renderStyle.effectiveBorderRightWidth.computedValue;
-      final _ = '[BoxSize] <$tag> getContentSize out='
-          '${finalContentSize.width.toStringAsFixed(2)}×${finalContentSize.height.toStringAsFixed(2)} '
-          'padH=${(paddL + paddR).toStringAsFixed(2)} borderH=${(bordL + bordR).toStringAsFixed(2)}';
-    } catch (_) {}
     return finalContentSize;
   }
 
   double _getContentWidth(double width) {
-    return width -
-        (renderStyle.borderLeftWidth?.computedValue ?? 0) -
-        (renderStyle.borderRightWidth?.computedValue ?? 0) -
-        renderStyle.paddingLeft.computedValue -
-        renderStyle.paddingRight.computedValue;
+    final EdgeInsets padding = renderStyle.padding;
+    final EdgeInsets border = renderStyle.border;
+    return width - border.horizontal - padding.horizontal;
   }
 
   double _getContentHeight(double height) {
-    return height -
-        (renderStyle.borderTopWidth?.computedValue ?? 0) -
-        (renderStyle.borderBottomWidth?.computedValue ?? 0) -
-        renderStyle.paddingTop.computedValue -
-        renderStyle.paddingBottom.computedValue;
+    final EdgeInsets padding = renderStyle.padding;
+    final EdgeInsets border = renderStyle.border;
+    return height - border.vertical - padding.vertical;
   }
 
   @override

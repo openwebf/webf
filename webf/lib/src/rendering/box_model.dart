@@ -148,6 +148,9 @@ abstract class RenderBoxModel extends RenderBox
 
   double? computeCssLastBaselineOf(TextBaseline baseline) => _cssLastBaseline;
 
+  int _cachedWidgetElementChildLayoutPassId = -1;
+  RenderWidgetElementChild? _cachedWidgetElementChild;
+
   // Utilities for children to update baseline caches during their own layout.
   @protected
   void setCssBaselines({double? first, double? last}) {
@@ -512,20 +515,11 @@ abstract class RenderBoxModel extends RenderBox
         style.getAttachedRenderParentRenderStyle();
     final RenderBoxModel? attachedParentRenderBoxModel =
         attachedParentStyle?.attachedRenderBoxModel;
+    final EdgeInsets stylePadding = style.padding;
+    final EdgeInsets styleBorder = style.border;
 
     CSSDisplay? effectiveDisplay = style.effectiveDisplay;
     bool isDisplayInline = effectiveDisplay == CSSDisplay.inline;
-
-    double? minWidth =
-        style.minWidth.isAuto ? null : style.minWidth.computedValue;
-    double? maxWidth =
-        style.maxWidth.isNone ? null : style.maxWidth.computedValue;
-    double? minHeight = style.minHeight.isAuto
-        ? null
-        : style.minHeight.computedValue;
-    double? maxHeight = style.maxHeight.isNone
-        ? null
-        : style.maxHeight.computedValue;
 
     // Need to calculated logic content size on every layout.
     style.computeContentBoxLogicalWidth();
@@ -534,10 +528,7 @@ abstract class RenderBoxModel extends RenderBox
     // Width should be not smaller than border and padding in horizontal direction
     // when box-sizing is border-box which is only supported.
     double minConstraintWidth =
-        style.effectiveBorderLeftWidth.computedValue +
-            style.effectiveBorderRightWidth.computedValue +
-            style.paddingLeft.computedValue +
-            style.paddingRight.computedValue;
+        styleBorder.horizontal + stylePadding.horizontal;
 
     double? parentBoxContentConstraintsWidth;
     if (style.isParentRenderBoxModel() &&
@@ -681,8 +672,33 @@ abstract class RenderBoxModel extends RenderBox
         !style.isSelfRenderReplaced() &&
         style.borderBoxLogicalWidth == null &&
         parentBoxContentConstraintsWidth != null) {
-      parentBoxContentConstraintsWidth = null;
+        parentBoxContentConstraintsWidth = null;
     }
+
+    double? containingBlockPaddingBoxWidth;
+    if (absOrFixedForWidth &&
+        widthAutoForAbs &&
+        style.left.isNotAuto &&
+        style.right.isNotAuto &&
+        parent is RenderBoxModel) {
+      final RenderBoxModel cb = parent as RenderBoxModel;
+      final BoxConstraints? pcc = cb.contentConstraints;
+      if (pcc != null && pcc.maxWidth.isFinite) {
+        containingBlockPaddingBoxWidth =
+            pcc.maxWidth + cb.renderStyle.padding.horizontal;
+      }
+    }
+
+    double? minWidth =
+        style.minWidth.isAuto ? null : style.minWidth.computedValue;
+    double? maxWidth =
+        style.maxWidth.isNone ? null : style.maxWidth.computedValue;
+    double? minHeight = style.minHeight.isAuto
+        ? null
+        : style.minHeight.computedValue;
+    double? maxHeight = style.maxHeight.isNone
+        ? null
+        : style.maxHeight.computedValue;
 
     double maxConstraintWidth = style.borderBoxLogicalWidth ??
         parentBoxContentConstraintsWidth ??
@@ -703,17 +719,7 @@ abstract class RenderBoxModel extends RenderBox
         style.left.isNotAuto &&
         style.right.isNotAuto &&
         parent is RenderBoxModel) {
-      final RenderBoxModel cb = parent as RenderBoxModel;
-      double? parentPaddingBoxWidth;
-      // Use the parent's content constraints (plus padding) as the containing block width.
-      // Avoid using parent.size or style-tree logical widths here to prevent feedback loops
-      // in flex/inline-block shrink-to-fit scenarios.
-      final BoxConstraints? pcc = cb.contentConstraints;
-      if (pcc != null && pcc.maxWidth.isFinite) {
-        parentPaddingBoxWidth = pcc.maxWidth +
-            cb.renderStyle.paddingLeft.computedValue +
-            cb.renderStyle.paddingRight.computedValue;
-      }
+      final double? parentPaddingBoxWidth = containingBlockPaddingBoxWidth;
       if (parentPaddingBoxWidth != null && parentPaddingBoxWidth.isFinite) {
         // Solve the horizontal insets equation for the child border-box width.
         double solvedBorderBoxWidth = parentPaddingBoxWidth -
@@ -789,10 +795,7 @@ abstract class RenderBoxModel extends RenderBox
     // Height should be not smaller than border and padding in vertical direction
     // when box-sizing is border-box which is only supported.
     double minConstraintHeight =
-        style.effectiveBorderTopWidth.computedValue +
-            style.effectiveBorderBottomWidth.computedValue +
-            style.paddingTop.computedValue +
-            style.paddingBottom.computedValue;
+        styleBorder.vertical + stylePadding.vertical;
     double maxConstraintHeight =
         style.borderBoxLogicalHeight ?? double.infinity;
 
@@ -836,10 +839,7 @@ abstract class RenderBoxModel extends RenderBox
           maxConstraintWidth > maxWidth ? maxWidth : maxConstraintWidth;
       // Only reduce minConstraintWidth if maxWidth is larger than border+padding requirements
       double borderPadding =
-          renderStyle.effectiveBorderLeftWidth.computedValue +
-              renderStyle.effectiveBorderRightWidth.computedValue +
-              renderStyle.paddingLeft.computedValue +
-              renderStyle.paddingRight.computedValue;
+          styleBorder.horizontal + stylePadding.horizontal;
       if (maxWidth >= borderPadding) {
         minConstraintWidth =
             minConstraintWidth > maxWidth ? maxWidth : minConstraintWidth;
@@ -1126,10 +1126,26 @@ abstract class RenderBoxModel extends RenderBox
   /// This is used to access parent constraints for layout calculations, allowing HTML elements
   /// to be aware of their Flutter widget container constraints for proper sizing and layout.
   RenderWidgetElementChild? findWidgetElementChild() {
+    if (renderBoxModelInLayoutStack.isNotEmpty &&
+        _cachedWidgetElementChildLayoutPassId == renderBoxModelLayoutPassId) {
+      return _cachedWidgetElementChild;
+    }
+
     RenderObject? ancestor = parent;
     while (ancestor != null) {
-      if (ancestor is RenderWidgetElementChild) return ancestor;
+      if (ancestor is RenderWidgetElementChild) {
+        if (renderBoxModelInLayoutStack.isNotEmpty) {
+          _cachedWidgetElementChildLayoutPassId = renderBoxModelLayoutPassId;
+          _cachedWidgetElementChild = ancestor;
+        }
+        return ancestor;
+      }
       ancestor = ancestor.parent;
+    }
+
+    if (renderBoxModelInLayoutStack.isNotEmpty) {
+      _cachedWidgetElementChildLayoutPassId = renderBoxModelLayoutPassId;
+      _cachedWidgetElementChild = null;
     }
     return null;
   }

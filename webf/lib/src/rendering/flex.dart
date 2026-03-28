@@ -20,6 +20,10 @@ import 'package:webf/src/html/semantics_text.dart' show SpanElement;
 import 'package:webf/src/html/text.dart';
 import 'package:webf/widget.dart';
 
+const bool _enableFlexProfileSections =
+    !kReleaseMode &&
+    bool.fromEnvironment('WEBF_ENABLE_LAYOUT_PROFILE_SECTIONS');
+
 enum _FlexFastPathRejectReason {
   verticalDirection,
   wrappedContainer,
@@ -32,6 +36,10 @@ enum _FlexFastPathRejectReason {
   wouldGrow,
   wouldShrink,
 }
+
+final Map<int, _FlexIntrinsicMeasurementCacheEntry>
+    _sharedPlainTextFlexIntrinsicMeasurementCache =
+    <int, _FlexIntrinsicMeasurementCacheEntry>{};
 
 String _flexFastPathRejectReasonLabel(_FlexFastPathRejectReason reason) {
   switch (reason) {
@@ -650,11 +658,15 @@ class _FlexIntrinsicMeasurementLookupResult {
     this.entry,
     this.missReason,
     this.missDetails,
+    this.flowChild,
+    this.reusableStateSignature,
   });
 
   final _FlexIntrinsicMeasurementCacheEntry? entry;
   final _FlexAnonymousMetricsMissReason? missReason;
   final Map<String, Object?>? missDetails;
+  final RenderFlowLayout? flowChild;
+  final int? reusableStateSignature;
 }
 
 // Position and size info of each run (flex line) in flex layout.
@@ -738,6 +750,8 @@ class _RunChild {
         required this.marginBottomAuto,
         required this.isReplaced,
         required this.aspectRatio,
+        required this.mainAxisExtentAdjustment,
+        required this.crossAxisExtentAdjustment,
       })
       : _child = child,
         _originalMainSize = originalMainSize,
@@ -819,6 +833,10 @@ class _RunChild {
   final bool marginBottomAuto;
   final bool isReplaced;
   final double? aspectRatio;
+  final double mainAxisExtentAdjustment;
+  final double crossAxisExtentAdjustment;
+  double? cachedMinMainAxisSize;
+  double? cachedMaxMainAxisSize;
 }
 
 class _OrderedFlexItem {
@@ -855,6 +873,32 @@ class _FlexResolutionInputs {
   final double? contentBoxLogicalHeight;
   final double? maxMainSize;
   final bool isMainSizeDefinite;
+}
+
+class _AdjustedConstraintsCacheEntry {
+  const _AdjustedConstraintsCacheEntry({
+    required this.oldConstraints,
+    required this.childFlexedMainSize,
+    required this.childStretchedCrossSize,
+    required this.lineChildrenCount,
+    required this.preserveMainAxisSize,
+    required this.hasOverrideContentLogicalWidth,
+    required this.hasOverrideContentLogicalHeight,
+    required this.contentBoxLogicalWidth,
+    required this.contentBoxLogicalHeight,
+    required this.constraints,
+  });
+
+  final BoxConstraints oldConstraints;
+  final double? childFlexedMainSize;
+  final double? childStretchedCrossSize;
+  final int lineChildrenCount;
+  final double? preserveMainAxisSize;
+  final bool hasOverrideContentLogicalWidth;
+  final bool hasOverrideContentLogicalHeight;
+  final double? contentBoxLogicalWidth;
+  final double? contentBoxLogicalHeight;
+  final BoxConstraints constraints;
 }
 
 class _FlexContainerInvariants {
@@ -1178,16 +1222,24 @@ class RenderFlexLayout extends RenderLayoutBox {
 
   // Cache the intrinsic size of children before flex-grow/flex-shrink
   // to avoid relayout when style of flex items changes.
-  Expando<double> _childrenIntrinsicMainSizes = Expando<double>('childrenIntrinsicMainSizes');
+  final Map<RenderBox, double> _childrenIntrinsicMainSizes =
+      Map<RenderBox, double>.identity();
 
   // Cache original constraints of children on the first layout.
   Expando<BoxConstraints> _childrenOldConstraints = Expando<BoxConstraints>('childrenOldConstraints');
   Expando<_FlexIntrinsicMeasurementCacheBucket> _childrenIntrinsicMeasureCache =
       Expando<_FlexIntrinsicMeasurementCacheBucket>('childrenIntrinsicMeasureCache');
-  Expando<bool> _childrenRequirePostMeasureLayout =
-      Expando<bool>('childrenRequirePostMeasureLayout');
-  Expando<Size>? _transientChildSizeOverrides;
-  Expando<int>? _metricsOnlyIntrinsicMeasureChildEligibilityCache;
+  final Map<RenderBox, bool> _childrenRequirePostMeasureLayout =
+      Map<RenderBox, bool>.identity();
+  int _adjustedConstraintsCachePassId = -1;
+  final Map<RenderBoxModel, _AdjustedConstraintsCacheEntry>
+      _adjustedConstraintsCache =
+      Map<RenderBoxModel, _AdjustedConstraintsCacheEntry>.identity();
+  Map<RenderBox, Size>? _transientChildSizeOverrides;
+  Map<RenderBox, int>? _metricsOnlyIntrinsicMeasureChildEligibilityCache;
+  int _reusableIntrinsicStyleSignaturePassId = -1;
+  final Map<CSSRenderStyle, int> _cachedReusableIntrinsicStyleSignatures =
+      Map<CSSRenderStyle, int>.identity();
 
   _FlexContainerInvariants? _layoutInvariants;
 
@@ -1197,14 +1249,17 @@ class RenderFlexLayout extends RenderLayoutBox {
 
     // Do not forget to clear reference variables, or it will cause memory leaks!
     _flexLineBoxMetrics.clear();
-    _childrenIntrinsicMainSizes = Expando<double>('childrenIntrinsicMainSizes');
+    _childrenIntrinsicMainSizes.clear();
     _childrenOldConstraints = Expando<BoxConstraints>('childrenOldConstraints');
     _childrenIntrinsicMeasureCache =
         Expando<_FlexIntrinsicMeasurementCacheBucket>('childrenIntrinsicMeasureCache');
-    _childrenRequirePostMeasureLayout =
-        Expando<bool>('childrenRequirePostMeasureLayout');
+    _childrenRequirePostMeasureLayout.clear();
+    _adjustedConstraintsCachePassId = -1;
+    _adjustedConstraintsCache.clear();
     _transientChildSizeOverrides = null;
     _metricsOnlyIntrinsicMeasureChildEligibilityCache = null;
+    _reusableIntrinsicStyleSignaturePassId = -1;
+    _cachedReusableIntrinsicStyleSignatures.clear();
   }
 
   @override
@@ -1643,6 +1698,42 @@ class RenderFlexLayout extends RenderLayoutBox {
     }
 
     return minMainSize ?? 0;
+  }
+
+  @pragma('vm:prefer-inline')
+  double _getRunChildMinMainAxisSize(_RunChild runChild) {
+    final double? cached = runChild.cachedMinMainAxisSize;
+    if (cached != null) {
+      return cached;
+    }
+
+    final RenderBoxModel? effectiveChild = runChild.effectiveChild;
+    if (effectiveChild == null) {
+      runChild.cachedMinMainAxisSize = 0;
+      return 0;
+    }
+
+    final double resolved = _getMinMainAxisSize(effectiveChild);
+    runChild.cachedMinMainAxisSize = resolved;
+    return resolved;
+  }
+
+  @pragma('vm:prefer-inline')
+  double _getRunChildMaxMainAxisSize(_RunChild runChild) {
+    final double? cached = runChild.cachedMaxMainAxisSize;
+    if (cached != null) {
+      return cached;
+    }
+
+    final RenderBoxModel? effectiveChild = runChild.effectiveChild;
+    if (effectiveChild == null) {
+      runChild.cachedMaxMainAxisSize = double.infinity;
+      return double.infinity;
+    }
+
+    final double resolved = _getMaxMainAxisSize(effectiveChild);
+    runChild.cachedMaxMainAxisSize = resolved;
+    return resolved;
   }
 
   // Find and mark elements that only contain text boxes for flex relayout optimization.
@@ -2174,38 +2265,6 @@ class RenderFlexLayout extends RenderLayoutBox {
     }
   }
 
-  double _getCrossAxisExtent(RenderBox? child) {
-    double marginHorizontal = 0;
-    double marginVertical = 0;
-
-    RenderBoxModel? childRenderBoxModel;
-    if (child is RenderBoxModel) {
-      childRenderBoxModel = child;
-    } else if (child is RenderPositionPlaceholder) {
-      // Position placeholder of flex item need to layout as its original renderBox
-      // so it needs to add margin to its extent.
-      childRenderBoxModel = child.positioned;
-    }
-
-    if (childRenderBoxModel != null) {
-      marginHorizontal = childRenderBoxModel.renderStyle.marginLeft.computedValue +
-          childRenderBoxModel.renderStyle.marginRight.computedValue;
-      marginVertical = childRenderBoxModel.renderStyle.marginTop.computedValue +
-          childRenderBoxModel.renderStyle.marginBottom.computedValue;
-    }
-
-    Size? childSize = _getChildSize(child);
-
-    if (_isHorizontalFlexDirection) {
-      return childSize!.height + marginVertical;
-    } else {
-      if (child is RenderLayoutBox && child.isNegativeMarginChangeHSize) {
-        return _horizontalMarginNegativeSet(childSize!.width, child);
-      }
-      return childSize!.width + marginHorizontal;
-    }
-  }
-
   double _horizontalMarginNegativeSet(double baseSize, RenderBoxModel box, {bool isHorizontal = false}) {
     CSSRenderStyle boxStyle = box.renderStyle;
     double? marginLeft = boxStyle.marginLeft.computedValue;
@@ -2226,37 +2285,6 @@ class RenderFlexLayout extends RenderLayoutBox {
       return baseSize;
     }
     return baseSize + box.renderStyle.margin.vertical;
-  }
-
-  double _getMainAxisExtent(RenderBox child, {bool shouldUseIntrinsicMainSize = false}) {
-    double marginHorizontal = 0;
-    double marginVertical = 0;
-
-    RenderBoxModel? childRenderBoxModel;
-    if (child is RenderBoxModel) {
-      childRenderBoxModel = child;
-    } else if (child is RenderPositionPlaceholder) {
-      // Position placeholder of flex item need to layout as its original renderBox
-      // so it needs to add margin to its extent.
-      childRenderBoxModel = child.positioned;
-    }
-
-    if (childRenderBoxModel != null) {
-      marginHorizontal = childRenderBoxModel.renderStyle.marginLeft.computedValue +
-          childRenderBoxModel.renderStyle.marginRight.computedValue;
-      marginVertical = childRenderBoxModel.renderStyle.marginTop.computedValue +
-          childRenderBoxModel.renderStyle.marginBottom.computedValue;
-    }
-
-    double baseSize = _getMainSize(child, shouldUseIntrinsicMainSize: shouldUseIntrinsicMainSize);
-    if (_isHorizontalFlexDirection) {
-      if (child is RenderLayoutBox && child.isNegativeMarginChangeHSize) {
-        return _horizontalMarginNegativeSet(baseSize, child);
-      }
-      return baseSize + marginHorizontal;
-    } else {
-      return baseSize + marginVertical;
-    }
   }
 
   double _getMainSize(RenderBox child, {bool shouldUseIntrinsicMainSize = false}) {
@@ -2390,16 +2418,20 @@ class RenderFlexLayout extends RenderLayoutBox {
 
   _RunChild _createRunChildMetadata(RenderBox child, double originalMainSize,
       {required RenderBoxModel? effectiveChild, required double? usedFlexBasis}) {
+    final RenderBoxModel? marginBoxModel =
+        child is RenderBoxModel ? child : (child is RenderPositionPlaceholder ? child.positioned : null);
+    double marginHorizontal = 0.0;
+    double marginVertical = 0.0;
     double mainAxisMargin = 0.0;
-    if (effectiveChild != null) {
-      final RenderStyle s = effectiveChild.renderStyle;
-      final double marginHorizontal = s.marginLeft.computedValue + s.marginRight.computedValue;
-      final double marginVertical = s.marginTop.computedValue + s.marginBottom.computedValue;
+    final RenderStyle? marginBoxStyle = marginBoxModel?.renderStyle;
+    if (marginBoxStyle != null) {
+      final RenderStyle s = marginBoxStyle;
+      marginHorizontal =
+          s.marginLeft.computedValue + s.marginRight.computedValue;
+      marginVertical = s.marginTop.computedValue + s.marginBottom.computedValue;
       mainAxisMargin = _isHorizontalFlexDirection ? marginHorizontal : marginVertical;
     }
 
-    final RenderBoxModel? marginBoxModel =
-        child is RenderBoxModel ? child : (child is RenderPositionPlaceholder ? child.positioned : null);
     final RenderStyle? marginStyle = marginBoxModel?.renderStyle;
     final bool marginLeftAuto = marginStyle?.marginLeft.isAuto ?? false;
     final bool marginRightAuto = marginStyle?.marginRight.isAuto ?? false;
@@ -2414,6 +2446,31 @@ class RenderFlexLayout extends RenderLayoutBox {
 
     final double flexGrow = _getFlexGrow(child);
     final double flexShrink = _getFlexShrink(child);
+    final double mainAxisExtentAdjustment;
+    final double crossAxisExtentAdjustment;
+    if (_isHorizontalFlexDirection) {
+      if (marginBoxModel is RenderLayoutBox &&
+          marginBoxModel.isNegativeMarginChangeHSize) {
+        mainAxisExtentAdjustment = _horizontalMarginNegativeSet(
+          0,
+          marginBoxModel,
+        );
+      } else {
+        mainAxisExtentAdjustment = marginHorizontal;
+      }
+      crossAxisExtentAdjustment = marginVertical;
+    } else {
+      mainAxisExtentAdjustment = marginVertical;
+      if (marginBoxModel is RenderLayoutBox &&
+          marginBoxModel.isNegativeMarginChangeHSize) {
+        crossAxisExtentAdjustment = _horizontalMarginNegativeSet(
+          0,
+          marginBoxModel,
+        );
+      } else {
+        crossAxisExtentAdjustment = marginHorizontal;
+      }
+    }
 
     return _RunChild(
       child,
@@ -2438,7 +2495,34 @@ class RenderFlexLayout extends RenderLayoutBox {
       marginBottomAuto: marginBottomAuto,
       isReplaced: effectiveChild?.renderStyle.isSelfRenderReplaced() ?? false,
       aspectRatio: effectiveChild?.renderStyle.aspectRatio,
+      mainAxisExtentAdjustment: mainAxisExtentAdjustment,
+      crossAxisExtentAdjustment: crossAxisExtentAdjustment,
     );
+  }
+
+  double _getRunChildMainSize(_RunChild runChild,
+      {bool shouldUseIntrinsicMainSize = false}) {
+    final Size childSize = _getChildSize(
+      runChild.child,
+      shouldUseIntrinsicMainSize: shouldUseIntrinsicMainSize,
+    )!;
+    return _isHorizontalFlexDirection ? childSize.width : childSize.height;
+  }
+
+  double _getRunChildMainAxisExtent(_RunChild runChild,
+      {bool shouldUseIntrinsicMainSize = false}) {
+    return _getRunChildMainSize(
+          runChild,
+          shouldUseIntrinsicMainSize: shouldUseIntrinsicMainSize,
+        ) +
+        runChild.mainAxisExtentAdjustment;
+  }
+
+  double _getRunChildCrossAxisExtent(_RunChild runChild) {
+    final Size childSize = _getChildSize(runChild.child)!;
+    final double crossSize =
+        _isHorizontalFlexDirection ? childSize.height : childSize.width;
+    return crossSize + runChild.crossAxisExtentAdjustment;
   }
 
   void _cacheOriginalConstraintsIfNeeded(RenderBox child, BoxConstraints appliedConstraints) {
@@ -2721,40 +2805,23 @@ class RenderFlexLayout extends RenderLayoutBox {
     return (value * 100).round();
   }
 
-  int? _computeReusableIntrinsicMeasurementStateSignature(
-    RenderBox child,
-    BoxConstraints childConstraints, {
-    RenderFlowLayout? flowChild,
-  }) {
-    final RenderFlowLayout? effectiveFlowChild =
-        flowChild ??
-        _getCacheableIntrinsicMeasureFlowChild(
-          child,
-          allowAnonymous: true,
-        );
-    if (effectiveFlowChild == null) {
-      return null;
+  int _computeReusableIntrinsicMeasurementStyleSignature(
+      CSSRenderStyle style) {
+    if (renderBoxModelInLayoutStack.isNotEmpty) {
+      final int currentLayoutPassId = renderBoxModelLayoutPassId;
+      if (_reusableIntrinsicStyleSignaturePassId != currentLayoutPassId) {
+        _reusableIntrinsicStyleSignaturePassId = currentLayoutPassId;
+        _cachedReusableIntrinsicStyleSignatures.clear();
+      } else {
+        final int? cachedSignature =
+            _cachedReusableIntrinsicStyleSignatures[style];
+        if (cachedSignature != null) {
+          return cachedSignature;
+        }
+      }
     }
 
     int hash = 0;
-    final CSSRenderStyle style = effectiveFlowChild.renderStyle;
-    hash = _hashReusableIntrinsicMeasurementState(hash, effectiveFlowChild.hashCode);
-    hash = _hashReusableIntrinsicMeasurementState(
-      hash,
-      _quantizeReusableIntrinsicMeasurementDouble(childConstraints.minWidth),
-    );
-    hash = _hashReusableIntrinsicMeasurementState(
-      hash,
-      _quantizeReusableIntrinsicMeasurementDouble(childConstraints.maxWidth),
-    );
-    hash = _hashReusableIntrinsicMeasurementState(
-      hash,
-      _quantizeReusableIntrinsicMeasurementDouble(childConstraints.minHeight),
-    );
-    hash = _hashReusableIntrinsicMeasurementState(
-      hash,
-      _quantizeReusableIntrinsicMeasurementDouble(childConstraints.maxHeight),
-    );
     hash = _hashReusableIntrinsicMeasurementState(hash, style.display.hashCode);
     hash = _hashReusableIntrinsicMeasurementState(hash, style.position.hashCode);
     hash = _hashReusableIntrinsicMeasurementState(hash, style.whiteSpace.hashCode);
@@ -2822,6 +2889,51 @@ class RenderFlexLayout extends RenderLayoutBox {
         style.flexBasis!.type.hashCode,
       );
     }
+    final int signature = _finishReusableIntrinsicMeasurementState(hash);
+    if (renderBoxModelInLayoutStack.isNotEmpty) {
+      _cachedReusableIntrinsicStyleSignatures[style] = signature;
+    }
+    return signature;
+  }
+
+  int? _computeReusableIntrinsicMeasurementStateSignature(
+    RenderBox child,
+    BoxConstraints childConstraints, {
+    RenderFlowLayout? flowChild,
+  }) {
+    final RenderFlowLayout? effectiveFlowChild =
+        flowChild ??
+        _getCacheableIntrinsicMeasureFlowChild(
+          child,
+          allowAnonymous: true,
+        );
+    if (effectiveFlowChild == null) {
+      return null;
+    }
+
+    int hash = 0;
+    final CSSRenderStyle style = effectiveFlowChild.renderStyle;
+    hash = _hashReusableIntrinsicMeasurementState(hash, effectiveFlowChild.hashCode);
+    hash = _hashReusableIntrinsicMeasurementState(
+      hash,
+      _quantizeReusableIntrinsicMeasurementDouble(childConstraints.minWidth),
+    );
+    hash = _hashReusableIntrinsicMeasurementState(
+      hash,
+      _quantizeReusableIntrinsicMeasurementDouble(childConstraints.maxWidth),
+    );
+    hash = _hashReusableIntrinsicMeasurementState(
+      hash,
+      _quantizeReusableIntrinsicMeasurementDouble(childConstraints.minHeight),
+    );
+    hash = _hashReusableIntrinsicMeasurementState(
+      hash,
+      _quantizeReusableIntrinsicMeasurementDouble(childConstraints.maxHeight),
+    );
+    hash = _hashReusableIntrinsicMeasurementState(
+      hash,
+      _computeReusableIntrinsicMeasurementStyleSignature(style),
+    );
     final InlineFormattingContext? ifc = effectiveFlowChild.inlineFormattingContext;
     if (ifc != null) {
       hash = _hashReusableIntrinsicMeasurementState(
@@ -2829,6 +2941,50 @@ class RenderFlexLayout extends RenderLayoutBox {
         ifc.layoutReuseSignature(childConstraints),
       );
     }
+    return _finishReusableIntrinsicMeasurementState(hash);
+  }
+
+  int? _computePlainTextSharedIntrinsicMeasurementSignature(
+    RenderBox child,
+    BoxConstraints childConstraints, {
+    RenderFlowLayout? flowChild,
+  }) {
+    final RenderFlowLayout? effectiveFlowChild =
+        flowChild ??
+        _getCacheableIntrinsicMeasureFlowChild(
+          child,
+          allowAnonymous: true,
+        );
+    if (effectiveFlowChild == null) {
+      return null;
+    }
+
+    final InlineFormattingContext? ifc = effectiveFlowChild.inlineFormattingContext;
+    if (ifc == null || !ifc.isPlainTextOnlyForSharedReuse) {
+      return null;
+    }
+
+    int hash = 0;
+    hash = _hashReusableIntrinsicMeasurementState(
+      hash,
+      _quantizeReusableIntrinsicMeasurementDouble(childConstraints.minWidth),
+    );
+    hash = _hashReusableIntrinsicMeasurementState(
+      hash,
+      _quantizeReusableIntrinsicMeasurementDouble(childConstraints.maxWidth),
+    );
+    hash = _hashReusableIntrinsicMeasurementState(
+      hash,
+      _quantizeReusableIntrinsicMeasurementDouble(childConstraints.minHeight),
+    );
+    hash = _hashReusableIntrinsicMeasurementState(
+      hash,
+      _quantizeReusableIntrinsicMeasurementDouble(childConstraints.maxHeight),
+    );
+    hash = _hashReusableIntrinsicMeasurementState(
+      hash,
+      ifc.plainTextSharedReuseSignature(),
+    );
     return _finishReusableIntrinsicMeasurementState(hash);
   }
 
@@ -2858,17 +3014,55 @@ class RenderFlexLayout extends RenderLayoutBox {
     if (flowChild == null) {
       return const _FlexIntrinsicMeasurementLookupResult();
     }
+    final int? sharedPlainTextSignature =
+        _computePlainTextSharedIntrinsicMeasurementSignature(
+      child,
+      childConstraints,
+      flowChild: flowChild,
+    );
     final _FlexIntrinsicMeasurementCacheBucket? cacheBucket =
         _childrenIntrinsicMeasureCache[child];
     if (cacheBucket == null || cacheBucket.entries.isEmpty) {
-      return const _FlexIntrinsicMeasurementLookupResult(
+      final _FlexIntrinsicMeasurementCacheEntry? sharedEntry =
+          sharedPlainTextSignature == null
+              ? null
+              : _sharedPlainTextFlexIntrinsicMeasurementCache[
+                  sharedPlainTextSignature
+                ];
+      if (sharedEntry != null) {
+        final _FlexIntrinsicMeasurementCacheBucket bucket =
+            _childrenIntrinsicMeasureCache[child] ??
+                _FlexIntrinsicMeasurementCacheBucket();
+        bucket.store(sharedEntry);
+        _childrenIntrinsicMeasureCache[child] = bucket;
+        return _FlexIntrinsicMeasurementLookupResult(
+          entry: sharedEntry,
+          flowChild: flowChild,
+        );
+      }
+      return _FlexIntrinsicMeasurementLookupResult(
+        flowChild: flowChild,
         missReason: _FlexAnonymousMetricsMissReason.missingCacheEntry,
       );
     }
     final _FlexIntrinsicMeasurementCacheEntry? cacheEntry =
         cacheBucket.lookupLatest(childConstraints);
     if (cacheEntry == null) {
-      return const _FlexIntrinsicMeasurementLookupResult(
+      final _FlexIntrinsicMeasurementCacheEntry? sharedEntry =
+          sharedPlainTextSignature == null
+              ? null
+              : _sharedPlainTextFlexIntrinsicMeasurementCache[
+                  sharedPlainTextSignature
+                ];
+      if (sharedEntry != null) {
+        cacheBucket.store(sharedEntry);
+        return _FlexIntrinsicMeasurementLookupResult(
+          entry: sharedEntry,
+          flowChild: flowChild,
+        );
+      }
+      return _FlexIntrinsicMeasurementLookupResult(
+        flowChild: flowChild,
         missReason: _FlexAnonymousMetricsMissReason.constraintsMismatch,
       );
     }
@@ -2887,19 +3081,29 @@ class RenderFlexLayout extends RenderLayoutBox {
       final _FlexIntrinsicMeasurementCacheEntry? reusableEntry =
           cacheBucket.lookupReusable(childConstraints, reusableStateSignature);
       if (reusableEntry != null) {
-        return _FlexIntrinsicMeasurementLookupResult(entry: reusableEntry);
+        return _FlexIntrinsicMeasurementLookupResult(
+          entry: reusableEntry,
+          flowChild: flowChild,
+          reusableStateSignature: reusableStateSignature,
+        );
       }
       if (flowNeedsRelayout) {
-        return const _FlexIntrinsicMeasurementLookupResult(
+        return _FlexIntrinsicMeasurementLookupResult(
+          flowChild: flowChild,
+          reusableStateSignature: reusableStateSignature,
           missReason: _FlexAnonymousMetricsMissReason.flowNeedsRelayout,
         );
       }
       if (childNeedsRelayout) {
-        return const _FlexIntrinsicMeasurementLookupResult(
+        return _FlexIntrinsicMeasurementLookupResult(
+          flowChild: flowChild,
+          reusableStateSignature: reusableStateSignature,
           missReason: _FlexAnonymousMetricsMissReason.childNeedsRelayout,
         );
       }
       return _FlexIntrinsicMeasurementLookupResult(
+        flowChild: flowChild,
+        reusableStateSignature: reusableStateSignature,
         missReason: reusableStateSignature == null
             ? _FlexAnonymousMetricsMissReason.subtreeIntrinsicDirty
             : _FlexAnonymousMetricsMissReason.reusableStateMismatch,
@@ -2908,7 +3112,10 @@ class RenderFlexLayout extends RenderLayoutBox {
             : null,
       );
     }
-    return _FlexIntrinsicMeasurementLookupResult(entry: cacheEntry);
+    return _FlexIntrinsicMeasurementLookupResult(
+      entry: cacheEntry,
+      flowChild: flowChild,
+    );
   }
 
   void _storeIntrinsicMeasurementCache(
@@ -2916,8 +3123,11 @@ class RenderFlexLayout extends RenderLayoutBox {
     BoxConstraints childConstraints,
     Size childSize,
     double intrinsicMainSize,
-  ) {
-    final RenderFlowLayout? flowChild =
+    {
+    RenderFlowLayout? flowChild,
+    int? reusableStateSignature,
+  }) {
+    flowChild ??=
         _getCacheableIntrinsicMeasureFlowChild(child, allowAnonymous: true);
     if (flowChild == null) {
       return;
@@ -2925,17 +3135,39 @@ class RenderFlexLayout extends RenderLayoutBox {
     final _FlexIntrinsicMeasurementCacheBucket bucket =
         _childrenIntrinsicMeasureCache[child] ??
         _FlexIntrinsicMeasurementCacheBucket();
-    bucket.store(_FlexIntrinsicMeasurementCacheEntry(
+    reusableStateSignature ??=
+        _computeReusableIntrinsicMeasurementStateSignature(
+      child,
+      childConstraints,
+      flowChild: flowChild,
+    );
+    final _FlexIntrinsicMeasurementCacheEntry entry =
+        _FlexIntrinsicMeasurementCacheEntry(
       constraints: childConstraints,
       size: Size.copy(childSize),
       intrinsicMainSize: intrinsicMainSize,
-      reusableStateSignature: _computeReusableIntrinsicMeasurementStateSignature(
-        child,
-        childConstraints,
-        flowChild: flowChild,
-      ),
-    ));
+      reusableStateSignature: reusableStateSignature,
+    );
+    bucket.store(entry);
     _childrenIntrinsicMeasureCache[child] = bucket;
+    final int? sharedPlainTextSignature =
+        _computePlainTextSharedIntrinsicMeasurementSignature(
+      child,
+      childConstraints,
+      flowChild: flowChild,
+    );
+    if (sharedPlainTextSignature != null) {
+      if (_sharedPlainTextFlexIntrinsicMeasurementCache.length >= 512 &&
+          !_sharedPlainTextFlexIntrinsicMeasurementCache.containsKey(
+            sharedPlainTextSignature,
+          )) {
+        _sharedPlainTextFlexIntrinsicMeasurementCache.remove(
+          _sharedPlainTextFlexIntrinsicMeasurementCache.keys.first,
+        );
+      }
+      _sharedPlainTextFlexIntrinsicMeasurementCache[
+          sharedPlainTextSignature] = entry;
+    }
   }
 
   bool _shouldRequirePostMeasureLayout(RenderBox child) {
@@ -2968,6 +3200,23 @@ class RenderFlexLayout extends RenderLayoutBox {
       parentUsesSize: !_shouldAvoidParentUsesSizeForFlexChild(child),
     );
     _childrenRequirePostMeasureLayout[child] = false;
+  }
+
+  @pragma('vm:prefer-inline')
+  bool _canSkipAdjustedFlexChildLayout(
+    RenderBox child,
+    RenderBoxModel effectiveChild,
+    BoxConstraints childConstraints,
+  ) {
+    if (child.constraints != childConstraints ||
+        effectiveChild.needsRelayout ||
+        (_childrenRequirePostMeasureLayout[child] == true) ||
+        _subtreeHasPendingIntrinsicMeasureInvalidation(child)) {
+      return false;
+    }
+
+    _childrenRequirePostMeasureLayout[child] = false;
+    return true;
   }
 
   _FlexFastPathRejectReason? _getEarlyNoFlexNoStretchNoBaselineRejectReason(
@@ -3025,7 +3274,7 @@ class RenderFlexLayout extends RenderLayoutBox {
   }
 
   bool _isMetricsOnlyIntrinsicMeasureChild(RenderBox child) {
-    final Expando<int>? eligibilityCache =
+    final Map<RenderBox, int>? eligibilityCache =
         _metricsOnlyIntrinsicMeasureChildEligibilityCache;
     final int? cachedValue = eligibilityCache?[child];
     if (cachedValue != null) {
@@ -3390,12 +3639,6 @@ class RenderFlexLayout extends RenderLayoutBox {
       final double childMainSize = _getMainSize(child);
       _childrenIntrinsicMainSizes[child] = childMainSize;
 
-      if (runChildren.isNotEmpty) {
-        runMainAxisExtent += mainAxisGap;
-      }
-      runMainAxisExtent += _getMainAxisExtent(child);
-      runCrossAxisExtent = math.max(runCrossAxisExtent, _getCrossAxisExtent(child));
-
       final RenderBoxModel? effectiveChild = child is RenderBoxModel ? child : null;
       final _RunChild runChild = _createRunChildMetadata(
         child,
@@ -3403,6 +3646,12 @@ class RenderFlexLayout extends RenderLayoutBox {
         effectiveChild: effectiveChild,
         usedFlexBasis: effectiveChild != null ? _getUsedFlexBasis(child) : null,
       );
+      if (runChildren.isNotEmpty) {
+        runMainAxisExtent += mainAxisGap;
+      }
+      runMainAxisExtent += _getRunChildMainAxisExtent(runChild);
+      runCrossAxisExtent =
+          math.max(runCrossAxisExtent, _getRunChildCrossAxisExtent(runChild));
       runChildren.add(runChild);
 
       if (runChild.flexGrow > 0) {
@@ -3441,13 +3690,13 @@ class RenderFlexLayout extends RenderLayoutBox {
   }
 
   void _doPerformLayout() {
-    if (!kReleaseMode) {
+    if (_enableFlexProfileSections) {
       developer.Timeline.startSync('RenderFlex.beforeLayout');
     }
 
     beforeLayout();
 
-    if (!kReleaseMode) {
+    if (_enableFlexProfileSections) {
       developer.Timeline.finishSync();
     }
 
@@ -3472,7 +3721,7 @@ class RenderFlexLayout extends RenderLayoutBox {
         child = childParentData.nextSibling;
       }
 
-      if (!kReleaseMode) {
+      if (_enableFlexProfileSections) {
         developer.Timeline.startSync('RenderFlex.layoutPositionedChild');
       }
 
@@ -3483,11 +3732,11 @@ class RenderFlexLayout extends RenderLayoutBox {
         CSSPositionedLayout.layoutPositionedChild(this, child);
       }
 
-      if (!kReleaseMode) {
+      if (_enableFlexProfileSections) {
         developer.Timeline.finishSync();
       }
 
-      if (!kReleaseMode) {
+      if (_enableFlexProfileSections) {
         developer.Timeline.startSync('RenderFlex._layoutFlexItems');
       }
 
@@ -3497,7 +3746,7 @@ class RenderFlexLayout extends RenderLayoutBox {
       List<RenderBox> orderedChildren = _getSortedFlexItems(flexItemChildren);
       _layoutFlexItems(orderedChildren);
 
-      if (!kReleaseMode) {
+      if (_enableFlexProfileSections) {
         developer.Timeline.finishSync();
       }
 
@@ -3523,7 +3772,7 @@ class RenderFlexLayout extends RenderLayoutBox {
         }
       }
 
-      if (!kReleaseMode) {
+      if (_enableFlexProfileSections) {
         developer.Timeline.startSync('RenderFlex.adjustPositionChildren');
       }
 
@@ -3552,7 +3801,7 @@ class RenderFlexLayout extends RenderLayoutBox {
         }
       }
 
-      if (!kReleaseMode) {
+      if (_enableFlexProfileSections) {
         developer.Timeline.finishSync();
       }
 
@@ -3568,8 +3817,12 @@ class RenderFlexLayout extends RenderLayoutBox {
   // 3. Set flex container size according to children size and its own size styles.
   // 4. Align children according to alignment properties.
   void _layoutFlexItems(List<RenderBox> children) {
-    _childrenRequirePostMeasureLayout =
-        Expando<bool>('childrenRequirePostMeasureLayout');
+    _childrenRequirePostMeasureLayout.clear();
+    _childrenIntrinsicMainSizes.clear();
+    if (_adjustedConstraintsCachePassId != renderBoxModelLayoutPassId) {
+      _adjustedConstraintsCachePassId = renderBoxModelLayoutPassId;
+      _adjustedConstraintsCache.clear();
+    }
 
     // If no child exists, stop layout.
     if (children.isEmpty) {
@@ -3619,13 +3872,13 @@ class RenderFlexLayout extends RenderLayoutBox {
 
     if (runMetrics == null) {
       // Layout children to compute metrics of flex lines.
-      if (!kReleaseMode) {
+      if (_enableFlexProfileSections) {
         developer.Timeline.startSync('RenderFlex.layoutFlexItems.computeRunMetrics',
             arguments: {'renderObject': describeIdentity(this)});
       }
 
       runMetrics = _computeRunMetrics(children);
-      if (!kReleaseMode) {
+      if (_enableFlexProfileSections) {
         developer.Timeline.finishSync();
       }
     }
@@ -3633,7 +3886,7 @@ class RenderFlexLayout extends RenderLayoutBox {
     // Set flex container size.
     _setContainerSize(runMetrics);
 
-    if (!kReleaseMode) {
+    if (_enableFlexProfileSections) {
       developer.Timeline.startSync('RenderFlex.layoutFlexItems.adjustChildrenSize');
     }
 
@@ -3643,22 +3896,22 @@ class RenderFlexLayout extends RenderLayoutBox {
     // _runMetrics maybe update after adjust, set flex containerSize again
     _setContainerSize(runMetrics);
 
-    if (!kReleaseMode) {
+    if (_enableFlexProfileSections) {
       developer.Timeline.finishSync();
     }
 
-    if (!kReleaseMode) {
+    if (_enableFlexProfileSections) {
       developer.Timeline.startSync('RenderFlex.layoutFlexItems.setChildrenOffset');
     }
 
     // Set children offset based on flex alignment properties.
     _setChildrenOffset(runMetrics);
 
-    if (!kReleaseMode) {
+    if (_enableFlexProfileSections) {
       developer.Timeline.finishSync();
     }
 
-    if (!kReleaseMode) {
+    if (_enableFlexProfileSections) {
       developer.Timeline.startSync('RenderFlex.layoutFlexItems.setMaxScrollableSize');
     }
 
@@ -3668,7 +3921,7 @@ class RenderFlexLayout extends RenderLayoutBox {
     // Set the baseline values for flex items
     calculateBaseline();
 
-    if (!kReleaseMode) {
+    if (_enableFlexProfileSections) {
       developer.Timeline.finishSync();
     }
   }
@@ -3946,10 +4199,10 @@ class RenderFlexLayout extends RenderLayoutBox {
 
     // PASS 1+2: Intrinsic layout + compute run metrics in one pass.
     _metricsOnlyIntrinsicMeasureChildEligibilityCache =
-        Expando<int>('metricsOnlyIntrinsicMeasureChildEligibilityCache');
+        Map<RenderBox, int>.identity();
     final bool allowAnonymousMetricsOnlyCache =
         _canUseAnonymousMetricsOnlyCache(children);
-    _transientChildSizeOverrides = Expando<Size>('transientChildSizeOverrides');
+    _transientChildSizeOverrides = Map<RenderBox, Size>.identity();
     try {
       for (int childIndex = 0; childIndex < children.length; childIndex++) {
         final RenderBox child = children[childIndex];
@@ -3981,8 +4234,11 @@ class RenderFlexLayout extends RenderLayoutBox {
           childSize = cacheEntry.size;
           intrinsicMain = cacheEntry.intrinsicMainSize;
           _transientChildSizeOverrides![child] = childSize;
-          if (_shouldRequirePostMeasureLayout(child) ||
-              isMetricsOnlyMeasureChild) {
+          final bool requiresPostMeasureLayout =
+              cacheLookup.reusableStateSignature != null &&
+                  (_shouldRequirePostMeasureLayout(child) ||
+                      isMetricsOnlyMeasureChild);
+          if (requiresPostMeasureLayout) {
             _childrenRequirePostMeasureLayout[child] = true;
           }
         } else {
@@ -4107,7 +4363,14 @@ class RenderFlexLayout extends RenderLayoutBox {
             }
           }
 
-          _storeIntrinsicMeasurementCache(child, childConstraints, childSize, intrinsicMain);
+          _storeIntrinsicMeasurementCache(
+            child,
+            childConstraints,
+            childSize,
+            intrinsicMain,
+            flowChild: cacheLookup.flowChild,
+            reusableStateSignature: cacheLookup.reusableStateSignature,
+          );
         }
 
         final RenderLayoutParentData? childParentData = child.parentData as RenderLayoutParentData?;
@@ -4115,9 +4378,22 @@ class RenderFlexLayout extends RenderLayoutBox {
         _childrenIntrinsicMainSizes[child] = intrinsicMain;
 
         Size? intrinsicChildSize = _getChildSize(child, shouldUseIntrinsicMainSize: true);
+        final RenderBoxModel? effectiveChild =
+            child is RenderBoxModel ? child : null;
+        final double? usedFlexBasis =
+            effectiveChild != null ? _getUsedFlexBasis(child) : null;
+        final _RunChild runChild = _createRunChildMetadata(
+          child,
+          intrinsicMain,
+          effectiveChild: effectiveChild,
+          usedFlexBasis: usedFlexBasis,
+        );
 
-        double childMainAxisExtent = _getMainAxisExtent(child, shouldUseIntrinsicMainSize: true);
-        double childCrossAxisExtent = _getCrossAxisExtent(child);
+        double childMainAxisExtent = _getRunChildMainAxisExtent(
+          runChild,
+          shouldUseIntrinsicMainSize: true,
+        );
+        double childCrossAxisExtent = _getRunChildCrossAxisExtent(runChild);
         // Include gap spacing in flex line limit check
         double gapSpacing = runChildren.isNotEmpty ? mainAxisGap : 0;
         bool isExceedFlexLineLimit = runMainAxisExtent + gapSpacing + childMainAxisExtent > flexLineLimit;
@@ -4151,7 +4427,7 @@ class RenderFlexLayout extends RenderLayoutBox {
 
         // Vertical align is only valid for inline box.
         // Baseline alignment in column direction behave the same as flex-start.
-        AlignSelf alignSelf = _getAlignSelf(child);
+        AlignSelf alignSelf = runChild.alignSelf;
         bool isBaselineAlign =
             alignSelf == AlignSelf.baseline ||
             alignSelf == AlignSelf.lastBaseline ||
@@ -4200,9 +4476,6 @@ class RenderFlexLayout extends RenderLayoutBox {
         // We store the base size in runChild.originalMainSize so remaining free
         // space and shrink/grow weighting use the correct base, and keep the
         // clamped value in _childrenIntrinsicMainSizes for line metrics.
-        final RenderBoxModel? effectiveChild = child is RenderBoxModel ? child : null;
-        final double? usedFlexBasis = effectiveChild != null ? _getUsedFlexBasis(child) : null;
-
         double baseMainSize;
         if (usedFlexBasis != null) {
           // Used basis is already border-box (>= padding+border) for non-zero bases.
@@ -4221,12 +4494,7 @@ class RenderFlexLayout extends RenderLayoutBox {
         }
 
         // Use clamped intrinsic main size as the hypothetical size for line metrics.
-        final _RunChild runChild = _createRunChildMetadata(
-          child,
-          baseMainSize,
-          effectiveChild: effectiveChild,
-          usedFlexBasis: usedFlexBasis,
-        );
+        runChild.originalMainSize = baseMainSize;
         runChildren.add(runChild);
 
         childParentData!.runIndex = runMetrics.length;
@@ -4460,15 +4728,17 @@ class RenderFlexLayout extends RenderLayoutBox {
       // Always enforce min/max constraints on the flex item, regardless of overflow clipping.
       // Overflow does not disable max-width/height.
       {
-        // Apply min/max against the flex item itself (the element). RenderEventListener
-        // is a RenderBoxModel; do not unwrap to its child.
-        RenderBoxModel? clampTarget = runChild.effectiveChild;
+        final RenderBoxModel? clampTarget = runChild.effectiveChild;
         if (clampTarget != null) {
-          double minMainAxisSize = _getMinMainAxisSize(clampTarget);
-          double maxMainAxisSize = _getMaxMainAxisSize(clampTarget);
-          if (computedSize < minMainAxisSize && (computedSize - minMainAxisSize).abs() >= minFlexPrecision) {
+          final double minMainAxisSize =
+              _getRunChildMinMainAxisSize(runChild);
+          final double maxMainAxisSize =
+              _getRunChildMaxMainAxisSize(runChild);
+          if (computedSize < minMainAxisSize &&
+              (computedSize - minMainAxisSize).abs() >= minFlexPrecision) {
             flexedMainSize = minMainAxisSize;
-          } else if (computedSize > maxMainAxisSize && (computedSize - maxMainAxisSize).abs() >= minFlexPrecision) {
+          } else if (computedSize > maxMainAxisSize &&
+              (computedSize - maxMainAxisSize).abs() >= minFlexPrecision) {
             flexedMainSize = maxMainAxisSize;
           }
         }
@@ -4674,7 +4944,7 @@ class RenderFlexLayout extends RenderLayoutBox {
         final RenderBoxModel? effectiveChild = runChild.effectiveChild;
         if (effectiveChild == null) continue;
 
-        final double childOldMainSize = _getMainSize(child);
+        final double childOldMainSize = _getRunChildMainSize(runChild);
         final double? desiredPreservedMain = _childrenIntrinsicMainSizes[child];
         _FlexAdjustFastPathRelayoutReason? relayoutReason;
         BoxConstraints? relayoutConstraints;
@@ -4817,9 +5087,10 @@ class RenderFlexLayout extends RenderLayoutBox {
       double crossAxisExtent = 0;
       for (int i = 0; i < runChildrenList.length; i++) {
         if (i > 0) mainAxisExtent += mainAxisGap;
-        final RenderBox child = runChildrenList[i].child;
-        mainAxisExtent += _getMainAxisExtent(child);
-        crossAxisExtent = math.max(crossAxisExtent, _getCrossAxisExtent(child));
+        final _RunChild runChild = runChildrenList[i];
+        mainAxisExtent += _getRunChildMainAxisExtent(runChild);
+        crossAxisExtent =
+            math.max(crossAxisExtent, _getRunChildCrossAxisExtent(runChild));
       }
       metrics.mainAxisExtent = mainAxisExtent;
       metrics.crossAxisExtent = crossAxisExtent;
@@ -4844,8 +5115,16 @@ class RenderFlexLayout extends RenderLayoutBox {
     final double mainAxisGap = _getMainAxisGap();
     final bool hasBaselineAlignment = _hasBaselineAlignedChildren(runMetrics);
     final bool canAttemptFastPath = isHorizontal && !hasBaselineAlignment;
-    final bool hasStretchedChildren =
-        canAttemptFastPath ? _hasStretchedChildrenInCrossAxis(runMetrics) : true;
+    final bool hasStretchedChildren = _hasStretchedChildrenInCrossAxis(runMetrics);
+
+    if (_canSkipAdjustChildrenSize(
+      runMetrics,
+      hasBaselineAlignment: hasBaselineAlignment,
+      hasStretchedChildren: hasStretchedChildren,
+    )) {
+      return;
+    }
+
     final _FlexResolutionInputs inputs = _computeFlexResolutionInputs();
     final double? contentBoxLogicalWidth = inputs.contentBoxLogicalWidth;
     final double? contentBoxLogicalHeight = inputs.contentBoxLogicalHeight;
@@ -5023,7 +5302,7 @@ class RenderFlexLayout extends RenderLayoutBox {
           // Non-RenderBoxModel child: nothing to tighten in phase 1.
           continue;
         }
-        double childOldMainSize = _getMainSize(child);
+        double childOldMainSize = _getRunChildMainSize(runChild);
 
         // Determine used main size from the flexible lengths result, if any.
         double? childFlexedMainSize;
@@ -5085,6 +5364,13 @@ class RenderFlexLayout extends RenderLayoutBox {
           runChildrenList.length,
           preserveMainAxisSize: desiredPreservedMain,
         );
+        if (_canSkipAdjustedFlexChildLayout(
+          child,
+          effectiveChild,
+          childConstraints,
+        )) {
+          continue;
+        }
         _layoutChildForFlex(child, childConstraints);
       }
 
@@ -5114,9 +5400,9 @@ class RenderFlexLayout extends RenderLayoutBox {
         if (childStretchedCrossSize == null) continue;
 
         // If the current cross size already matches the stretched result, skip.
-        final double currentCross = _isHorizontalFlexDirection
-            ? _getChildSize(child)!.height
-            : _getChildSize(child)!.width;
+        final double currentCross =
+            _getRunChildCrossAxisExtent(runChild) -
+                runChild.crossAxisExtentAdjustment;
         if ((childStretchedCrossSize - currentCross).abs() < 0.5) continue;
 
         // Apply stretch by relayout with tightened cross-axis constraint.
@@ -5126,6 +5412,13 @@ class RenderFlexLayout extends RenderLayoutBox {
           childStretchedCrossSize,
           runChildrenList.length,
         );
+        if (_canSkipAdjustedFlexChildLayout(
+          child,
+          effectiveChild,
+          childConstraints,
+        )) {
+          continue;
+        }
         _layoutChildForFlex(child, childConstraints);
       }
 
@@ -5133,7 +5426,7 @@ class RenderFlexLayout extends RenderLayoutBox {
       double mainAxisExtent = 0;
       for (int i = 0; i < runChildrenList.length; i++) {
         if (i > 0) mainAxisExtent += mainAxisGap;
-        mainAxisExtent += _getMainAxisExtent(runChildrenList[i].child);
+        mainAxisExtent += _getRunChildMainAxisExtent(runChildrenList[i]);
       }
       metrics.mainAxisExtent = mainAxisExtent;
       metrics.crossAxisExtent = _recomputeRunCrossExtent(metrics);
@@ -5156,12 +5449,7 @@ class RenderFlexLayout extends RenderLayoutBox {
       final Size childSize = _getChildSize(child)!;
       double childMainSize = isHorizontal ? childSize.width : childSize.height;
       double childCrossSize = isHorizontal ? childSize.height : childSize.width;
-      double childCrossMargin = 0;
-      if (child is RenderBoxModel) {
-        childCrossMargin = isHorizontal
-            ? child.renderStyle.marginTop.computedValue + child.renderStyle.marginBottom.computedValue
-            : child.renderStyle.marginLeft.computedValue + child.renderStyle.marginRight.computedValue;
-      }
+      double childCrossMargin = runChild.crossAxisExtentAdjustment;
       double childCrossExtent = childCrossSize + childCrossMargin;
 
       if (runChild.flexedMainSize != childMainSize &&
@@ -5179,7 +5467,7 @@ class RenderFlexLayout extends RenderLayoutBox {
 
       // Vertical align is only valid for inline box.
       // Baseline alignment in column direction behave the same as flex-start.
-      AlignSelf alignSelf = _getAlignSelf(child);
+      AlignSelf alignSelf = runChild.alignSelf;
       bool isBaselineAlign =
           alignSelf == AlignSelf.baseline ||
           alignSelf == AlignSelf.lastBaseline ||
@@ -5244,6 +5532,51 @@ class RenderFlexLayout extends RenderLayoutBox {
 
     // Use stored percentage constraints if available, otherwise use current constraints
     BoxConstraints oldConstraints = _childrenOldConstraints[child] ?? child.constraints;
+    final bool canUseAdjustedConstraintsCache =
+        _adjustedConstraintsCachePassId == renderBoxModelLayoutPassId;
+    final bool hasOverrideContentLogicalWidth =
+        child.hasOverrideContentLogicalWidth;
+    final bool hasOverrideContentLogicalHeight =
+        child.hasOverrideContentLogicalHeight;
+    final double? contentBoxLogicalWidth =
+        child.renderStyle.contentBoxLogicalWidth;
+    final double? contentBoxLogicalHeight =
+        child.renderStyle.contentBoxLogicalHeight;
+
+    if (canUseAdjustedConstraintsCache) {
+      final _AdjustedConstraintsCacheEntry? cachedEntry =
+          _adjustedConstraintsCache[child];
+      if (cachedEntry != null &&
+          cachedEntry.oldConstraints == oldConstraints &&
+          cachedEntry.childFlexedMainSize == childFlexedMainSize &&
+          cachedEntry.childStretchedCrossSize == childStretchedCrossSize &&
+          cachedEntry.lineChildrenCount == lineChildrenCount &&
+          cachedEntry.preserveMainAxisSize == preserveMainAxisSize &&
+          cachedEntry.hasOverrideContentLogicalWidth ==
+              hasOverrideContentLogicalWidth &&
+          cachedEntry.hasOverrideContentLogicalHeight ==
+              hasOverrideContentLogicalHeight &&
+          cachedEntry.contentBoxLogicalWidth == contentBoxLogicalWidth &&
+          cachedEntry.contentBoxLogicalHeight == contentBoxLogicalHeight) {
+        return cachedEntry.constraints;
+      }
+    }
+
+    void cacheAdjustedConstraints(BoxConstraints constraints) {
+      if (!canUseAdjustedConstraintsCache) return;
+      _adjustedConstraintsCache[child] = _AdjustedConstraintsCacheEntry(
+        oldConstraints: oldConstraints,
+        childFlexedMainSize: childFlexedMainSize,
+        childStretchedCrossSize: childStretchedCrossSize,
+        lineChildrenCount: lineChildrenCount,
+        preserveMainAxisSize: preserveMainAxisSize,
+        hasOverrideContentLogicalWidth: hasOverrideContentLogicalWidth,
+        hasOverrideContentLogicalHeight: hasOverrideContentLogicalHeight,
+        contentBoxLogicalWidth: contentBoxLogicalWidth,
+        contentBoxLogicalHeight: contentBoxLogicalHeight,
+        constraints: constraints,
+      );
+    }
 
     // Row flex container + pure cross-axis stretch:
     // Preserve the flex-resolved main size (oldConstraints.min/maxWidth) and
@@ -5266,6 +5599,7 @@ class RenderFlexLayout extends RenderLayoutBox {
         minHeight: h,
         maxHeight: h,
       );
+      cacheAdjustedConstraints(res);
       return res;
     }
 
@@ -5763,6 +6097,7 @@ class RenderFlexLayout extends RenderLayoutBox {
       maxHeight: adjustedMaxHeight,
     );
 
+    cacheAdjustedConstraints(childConstraints);
     return childConstraints;
   }
 
@@ -5917,18 +6252,7 @@ class RenderFlexLayout extends RenderLayoutBox {
     final List<_RunChild> runChildren = runMetrics.runChildren;
     double runMainExtent = 0;
     for (final _RunChild runChild in runChildren) {
-      final RenderBox child = runChild.child;
-      double runChildMainSize = _getMainSize(child);
-      // Should add main axis margin of child to the main axis auto size of parent.
-      if (child is RenderBoxModel) {
-        double childMarginTop = child.renderStyle.marginTop.computedValue;
-        double childMarginBottom = child.renderStyle.marginBottom.computedValue;
-        double childMarginLeft = child.renderStyle.marginLeft.computedValue;
-        double childMarginRight = child.renderStyle.marginRight.computedValue;
-        runChildMainSize +=
-        _isHorizontalFlexDirection ? childMarginLeft + childMarginRight : childMarginTop + childMarginBottom;
-      }
-      runMainExtent += runChildMainSize;
+      runMainExtent += _getRunChildMainAxisExtent(runChild);
     }
     runMainSize.add(runMainExtent);
   }
@@ -6095,15 +6419,7 @@ class RenderFlexLayout extends RenderLayoutBox {
         maxScrollableCrossSizeInLine = math.max(maxScrollableCrossSizeInLine, childScrollableCross);
 
         // Update running main size for subsequent siblings (border-box size + main-axis margins).
-        double childMainSize = _getMainSize(child);
-        if (child is RenderBoxModel) {
-          if (_isHorizontalFlexDirection) {
-            childMainSize += child.renderStyle.marginLeft.computedValue + child.renderStyle.marginRight.computedValue;
-          } else {
-            childMainSize += child.renderStyle.marginTop.computedValue + child.renderStyle.marginBottom.computedValue;
-          }
-        }
-        preSiblingsMainSize += childMainSize;
+        preSiblingsMainSize += _getRunChildMainAxisExtent(runChild);
         // Add main-axis gap between items (not after the last item).
         if (runChild != runChildren.last) {
           preSiblingsMainSize += _getMainAxisGap();
@@ -6260,6 +6576,14 @@ class RenderFlexLayout extends RenderLayoutBox {
           if (contentConstraints != null && contentConstraints!.hasBoundedWidth &&
               contentConstraints!.maxWidth.isFinite) {
             resolvedContainerCross = contentConstraints!.maxWidth;
+          } else if (constraints.hasBoundedWidth && constraints.maxWidth.isFinite) {
+            final double borderH = renderStyle.effectiveBorderLeftWidth.computedValue +
+                renderStyle.effectiveBorderRightWidth.computedValue;
+            final double paddingH =
+                renderStyle.paddingLeft.computedValue +
+                    renderStyle.paddingRight.computedValue;
+            resolvedContainerCross =
+                math.max(0, constraints.maxWidth - borderH - paddingH);
           }
         }
         // For column-direction containers with width:auto, do not treat the measured
@@ -6528,7 +6852,7 @@ class RenderFlexLayout extends RenderLayoutBox {
         final double childStartMargin = runChild.mainAxisStartMargin;
         final double childEndMargin = runChild.mainAxisEndMargin;
         // Border-box main-size of the child (no margins).
-        final double childMainSizeOnly = _getMainSize(child);
+        final double childMainSizeOnly = _getRunChildMainSize(runChild);
 
         // Position the child along the main axis respecting direction.
         final bool mainAxisStartAuto = isHorizontal
@@ -6619,7 +6943,7 @@ class RenderFlexLayout extends RenderLayoutBox {
           }
         }
 
-        final double childCrossAxisExtent = _getCrossAxisExtent(child);
+        final double childCrossAxisExtent = _getRunChildCrossAxisExtent(runChild);
         childCrossPosition = _getChildCrossAxisOffset(
           alignment,
           child,
@@ -6784,6 +7108,15 @@ class RenderFlexLayout extends RenderLayoutBox {
       if (renderStyle.contentBoxLogicalWidth != null) return true;
       if (contentConstraints != null && contentConstraints!.hasTightWidth) return true;
       if (constraints.hasTightWidth) return true;
+      final bool canResolveAutoWidthFromBounds =
+          renderStyle.writingMode == CSSWritingMode.horizontalTb &&
+              renderStyle.effectiveDisplay != CSSDisplay.inlineFlex &&
+              renderStyle.width.isAuto &&
+              ((contentConstraints?.hasBoundedWidth ?? false) ||
+                  constraints.hasBoundedWidth);
+      if (canResolveAutoWidthFromBounds) {
+        return true;
+      }
       return false;
     }
   }
@@ -7054,11 +7387,72 @@ class RenderFlexLayout extends RenderLayoutBox {
   bool _areAllRunChildrenAtMaxCrossExtent(List<_RunChild> runChildren, double runCrossAxisExtent) {
     const double kEpsilon = 0.0001;
     for (final _RunChild runChild in runChildren) {
-      final double childCrossAxisExtent = _getCrossAxisExtent(runChild.child);
+      final double childCrossAxisExtent = _getRunChildCrossAxisExtent(runChild);
       if ((childCrossAxisExtent - runCrossAxisExtent).abs() > kEpsilon) {
         return false;
       }
     }
+    return true;
+  }
+
+  bool _canSkipAdjustChildrenSize(
+    List<_RunMetrics> runMetrics, {
+    required bool hasBaselineAlignment,
+    required bool hasStretchedChildren,
+  }) {
+    if (runMetrics.isEmpty || hasBaselineAlignment) {
+      return false;
+    }
+
+    final bool isHorizontal = _isHorizontalFlexDirection;
+    final double availCross = contentConstraints?.maxWidth ?? double.infinity;
+
+    for (final _RunMetrics metrics in runMetrics) {
+      if (metrics.totalFlexGrow > 0 || metrics.totalFlexShrink > 0) {
+        return false;
+      }
+
+      if (hasStretchedChildren &&
+          !_areAllRunChildrenAtMaxCrossExtent(
+            metrics.runChildren,
+            metrics.crossAxisExtent,
+          )) {
+        return false;
+      }
+
+      for (final _RunChild runChild in metrics.runChildren) {
+        final RenderBox child = runChild.child;
+        final RenderBoxModel? effectiveChild = runChild.effectiveChild;
+        if (effectiveChild == null) {
+          return false;
+        }
+
+        if (effectiveChild.needsRelayout ||
+            _childrenRequirePostMeasureLayout[child] == true ||
+            _subtreeHasPendingIntrinsicMeasureInvalidation(child)) {
+          return false;
+        }
+
+        final double? desiredPreservedMain = _childrenIntrinsicMainSizes[child];
+        if (desiredPreservedMain != null &&
+            (desiredPreservedMain - _getRunChildMainSize(runChild)).abs() >=
+                0.5) {
+          return false;
+        }
+
+        if (!isHorizontal) {
+          final bool childCrossAuto = effectiveChild.renderStyle.width.isAuto;
+          if (childCrossAuto && availCross.isFinite) {
+            final double measuredBorderWidth =
+                _getChildSize(effectiveChild)!.width;
+            if (measuredBorderWidth > availCross + 0.5) {
+              return false;
+            }
+          }
+        }
+      }
+    }
+
     return true;
   }
 

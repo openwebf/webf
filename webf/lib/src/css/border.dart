@@ -14,6 +14,7 @@ import 'package:webf/css.dart';
 import 'package:webf/src/foundation/logger.dart';
 import 'package:webf/src/foundation/debug_flags.dart';
 import 'package:webf/src/foundation/string_parsers.dart';
+import 'package:webf/rendering.dart';
 
 // Initial border value: medium
 final CSSLengthValue _mediumWidth = CSSLengthValue(3, CSSLengthType.PX);
@@ -93,17 +94,31 @@ extension CSSBorderStyleTypeText on CSSBorderStyleType {
 }
 
 mixin CSSBorderMixin on RenderStyle {
+  int _layoutPassBorderCachePassId = -1;
+  EdgeInsets? _layoutPassBorder;
+
   // Effective border widths. These are used to calculate the
   // dimensions of the border box.
   @override
   EdgeInsets get border {
+    if (renderBoxModelInLayoutStack.isNotEmpty &&
+        _layoutPassBorderCachePassId == renderBoxModelLayoutPassId &&
+        _layoutPassBorder != null) {
+      return _layoutPassBorder!;
+    }
+
     // If has border, render padding should subtracting the edge of the border
-    return EdgeInsets.fromLTRB(
+    final EdgeInsets edgeInsets = EdgeInsets.fromLTRB(
       effectiveBorderLeftWidth.computedValue,
       effectiveBorderTopWidth.computedValue,
       effectiveBorderRightWidth.computedValue,
       effectiveBorderBottomWidth.computedValue,
     );
+    if (renderBoxModelInLayoutStack.isNotEmpty) {
+      _layoutPassBorderCachePassId = renderBoxModelLayoutPassId;
+      _layoutPassBorder = edgeInsets;
+    }
+    return edgeInsets;
   }
 
   Size wrapBorderSize(Size innerSize) {
