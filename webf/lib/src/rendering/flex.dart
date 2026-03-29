@@ -7838,7 +7838,7 @@ class RenderFlexLayout extends RenderLayoutBox {
         Size childScrollableSize = _getChildSize(child)!;
         double childOffsetX = 0;
         double childOffsetY = 0;
-        double childTransformMainOverflow = 0;
+        double childTransformMainOffset = 0;
 
         if (child is RenderBoxModel) {
           final RenderStyle childRenderStyle = child.renderStyle;
@@ -7875,12 +7875,9 @@ class RenderFlexLayout extends RenderLayoutBox {
           if (transformOffset != null) {
             childOffsetX += transformOffset.dx;
             childOffsetY += transformOffset.dy;
-            childTransformMainOverflow = math.max(
-              0,
-              _isHorizontalFlexDirection
-                  ? transformOffset.dx
-                  : transformOffset.dy,
-            );
+            childTransformMainOffset = _isHorizontalFlexDirection
+                ? transformOffset.dx
+                : transformOffset.dy;
           }
         }
 
@@ -7892,8 +7889,8 @@ class RenderFlexLayout extends RenderLayoutBox {
         final double childCrossOffset =
             _isHorizontalFlexDirection ? childOffsetY : childOffsetX;
         final double childScrollableMainExtent = _isHorizontalFlexDirection
-            ? childScrollableSize.width + childTransformMainOverflow
-            : childScrollableSize.height + childTransformMainOverflow;
+            ? childScrollableSize.width
+            : childScrollableSize.height;
         final double childScrollableCrossExtent = _isHorizontalFlexDirection
             ? childScrollableSize.height + childOffsetY
             : childScrollableSize.width + childOffsetX;
@@ -7915,11 +7912,13 @@ class RenderFlexLayout extends RenderLayoutBox {
         // instead of the pre-alignment stacked size. This prevents blank trailing
         // scroll range after children are shifted by negative leading space.
         final double childScrollableMain = math.max(
-              0,
-              childMainPosition - physicalMainAxisStartBorder,
-            ) +
-            math.max(childBoxMainSize, childScrollableMainExtent) +
-            childPhysicalMainEndMargin;
+          0,
+          childMainPosition -
+              physicalMainAxisStartBorder +
+              childTransformMainOffset +
+              math.max(childBoxMainSize, childScrollableMainExtent) +
+              childPhysicalMainEndMargin,
+        );
         final double childScrollableCross = math.max(
             childBoxCrossSize + childCrossOffset, childScrollableCrossExtent);
 
