@@ -14,21 +14,7 @@ import 'package:webf/rendering.dart';
 import 'package:webf/dom.dart' as dom;
 
 bool _canReuseWrappedChildLayout(RenderBox? child, BoxConstraints constraints) {
-  if (child == null || !child.hasSize || child.constraints != constraints) {
-    return false;
-  }
-  if (child.debugNeedsLayout) {
-    return false;
-  }
-  if (child is RenderTextBox && child.hasPendingTextLayoutUpdate) {
-    return false;
-  }
-  if (child is RenderBoxModel &&
-      (child.needsRelayout ||
-          child.hasPendingSubtreeIntrinsicMeasurementInvalidation)) {
-    return false;
-  }
-  return true;
+  return canReuseStableProxyChildLayout(child, constraints);
 }
 
 class RenderLayoutBoxWrapper extends RenderBoxModel

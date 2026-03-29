@@ -178,6 +178,227 @@ String _flexAdjustFastPathRelayoutReasonLabel(
   }
 }
 
+enum _FlexLayoutChildReason {
+  computeRunMetrics,
+  singleFlexibleRun,
+  adjustPhase1,
+  adjustStretch,
+  positionPlaceholder,
+}
+
+String _flexLayoutChildReasonLabel(_FlexLayoutChildReason reason) {
+  switch (reason) {
+    case _FlexLayoutChildReason.computeRunMetrics:
+      return 'computeRunMetrics';
+    case _FlexLayoutChildReason.singleFlexibleRun:
+      return 'singleFlexibleRun';
+    case _FlexLayoutChildReason.adjustPhase1:
+      return 'adjustPhase1';
+    case _FlexLayoutChildReason.adjustStretch:
+      return 'adjustStretch';
+    case _FlexLayoutChildReason.positionPlaceholder:
+      return 'positionPlaceholder';
+  }
+}
+
+enum _FlexMeasurementReuseMissReason {
+  missingSize,
+  constraintsMismatch,
+  childNeedsLayout,
+  effectiveChildNeedsRelayout,
+  postMeasureLayout,
+  pendingIntrinsicInvalidation,
+  other,
+}
+
+String _flexMeasurementReuseMissReasonLabel(
+  _FlexMeasurementReuseMissReason reason,
+) {
+  switch (reason) {
+    case _FlexMeasurementReuseMissReason.missingSize:
+      return 'missingSize';
+    case _FlexMeasurementReuseMissReason.constraintsMismatch:
+      return 'constraintsMismatch';
+    case _FlexMeasurementReuseMissReason.childNeedsLayout:
+      return 'childNeedsLayout';
+    case _FlexMeasurementReuseMissReason.effectiveChildNeedsRelayout:
+      return 'effectiveChildNeedsRelayout';
+    case _FlexMeasurementReuseMissReason.postMeasureLayout:
+      return 'postMeasureLayout';
+    case _FlexMeasurementReuseMissReason.pendingIntrinsicInvalidation:
+      return 'pendingIntrinsicInvalidation';
+    case _FlexMeasurementReuseMissReason.other:
+      return 'other';
+  }
+}
+
+String _describeFlexLayoutChildKind(RenderBox child) {
+  final List<String> parts = <String>[];
+  RenderBox? current = child;
+  int depth = 0;
+  while (current != null && depth < 4) {
+    if (current is RenderEventListener) {
+      parts.add('event');
+      current = current.child;
+    } else if (current is RenderLayoutBoxWrapper) {
+      parts.add('wrapper');
+      current = current.child;
+    } else if (current is RenderFlexLayout) {
+      parts.add(
+        current._isHorizontalFlexDirection
+            ? (current.renderStyle.flexWrap == FlexWrap.nowrap
+                ? 'flex-row-nowrap'
+                : 'flex-row-wrap')
+            : (current.renderStyle.flexWrap == FlexWrap.nowrap
+                ? 'flex-col-nowrap'
+                : 'flex-col-wrap'),
+      );
+      break;
+    } else if (current is RenderFlowLayout) {
+      final CSSDisplay display = current.renderStyle.effectiveDisplay;
+      parts.add('flow:$display');
+      break;
+    } else if (current is RenderTextBox) {
+      parts.add('text');
+      break;
+    } else if (current is RenderBoxModel) {
+      parts.add(current.runtimeType.toString());
+      break;
+    } else {
+      parts.add(current.runtimeType.toString());
+      break;
+    }
+    depth++;
+  }
+  return parts.join('>');
+}
+
+String _formatProfilerTop<T>(
+  Map<T, int> counts,
+  String Function(T value) labelFor,
+) {
+  if (counts.isEmpty) return 'none';
+  final List<MapEntry<T, int>> entries = counts.entries.toList()
+    ..sort(
+        (MapEntry<T, int> a, MapEntry<T, int> b) => b.value.compareTo(a.value));
+  return entries
+      .take(5)
+      .map((MapEntry<T, int> entry) => '${labelFor(entry.key)}=${entry.value}')
+      .join(', ');
+}
+
+class _FlexLayoutChildProfiler {
+  static int _layouts = 0;
+  static int _detailLogs = 0;
+  static final Map<_FlexLayoutChildReason, int> _reasonCounts =
+      <_FlexLayoutChildReason, int>{};
+  static final Map<String, int> _childKindCounts = <String, int>{};
+  static final Map<String, int> _reasonChildCounts = <String, int>{};
+
+  static bool get enabled => DebugFlags.enableFlexLayoutChildProfiling;
+
+  static int get _summaryEvery {
+    final int configured = DebugFlags.flexLayoutChildProfilingSummaryEvery;
+    return configured > 0 ? configured : 200;
+  }
+
+  static int get _maxDetailLogs {
+    final int configured = DebugFlags.flexLayoutChildProfilingMaxDetailLogs;
+    return configured >= 0 ? configured : 0;
+  }
+
+  static void record(
+    _FlexLayoutChildReason reason,
+    RenderBox child,
+    BoxConstraints constraints,
+  ) {
+    if (!enabled) return;
+    _layouts++;
+    _reasonCounts.update(reason, (int value) => value + 1, ifAbsent: () => 1);
+    final String childKind = _describeFlexLayoutChildKind(child);
+    _childKindCounts.update(childKind, (int value) => value + 1,
+        ifAbsent: () => 1);
+    final String reasonChildKey =
+        '${_flexLayoutChildReasonLabel(reason)}:$childKind';
+    _reasonChildCounts.update(reasonChildKey, (int value) => value + 1,
+        ifAbsent: () => 1);
+
+    if (_detailLogs < _maxDetailLogs) {
+      renderingLogger.info(
+        '[FlexLayoutChild][layout] reason=${_flexLayoutChildReasonLabel(reason)} '
+        'child=$childKind constraints=$constraints',
+      );
+      _detailLogs++;
+    }
+
+    if (_layouts % _summaryEvery == 0) {
+      renderingLogger.info(
+        '[FlexLayoutChild][summary] layouts=$_layouts '
+        'reasons=${_formatProfilerTop(_reasonCounts, (v) => _flexLayoutChildReasonLabel(v))} '
+        'children=${_formatProfilerTop(_childKindCounts, (v) => v)} '
+        'reasonChildren=${_formatProfilerTop(_reasonChildCounts, (v) => v)}',
+      );
+    }
+  }
+}
+
+class _FlexMeasurementReuseProfiler {
+  static int _misses = 0;
+  static final Map<_FlexMeasurementReuseMissReason, int> _reasonCounts =
+      <_FlexMeasurementReuseMissReason, int>{};
+  static final Map<String, int> _reasonChildCounts = <String, int>{};
+
+  static bool get enabled => DebugFlags.enableFlexLayoutChildProfiling;
+
+  static int get _summaryEvery {
+    final int configured = DebugFlags.flexLayoutChildProfilingSummaryEvery;
+    return configured > 0 ? configured : 200;
+  }
+
+  static void recordMiss(
+    _FlexLayoutChildReason caller,
+    RenderBox child,
+    BoxConstraints constraints, {
+    RenderBoxModel? effectiveChild,
+    required bool requiresPostMeasureLayout,
+    required bool subtreeHasPendingIntrinsicInvalidation,
+  }) {
+    if (!enabled) return;
+    final _FlexMeasurementReuseMissReason reason;
+    if (!child.hasSize) {
+      reason = _FlexMeasurementReuseMissReason.missingSize;
+    } else if (child.constraints != constraints) {
+      reason = _FlexMeasurementReuseMissReason.constraintsMismatch;
+    } else if (debugRenderObjectNeedsLayout(child)) {
+      reason = _FlexMeasurementReuseMissReason.childNeedsLayout;
+    } else if (effectiveChild != null && effectiveChild.needsRelayout) {
+      reason = _FlexMeasurementReuseMissReason.effectiveChildNeedsRelayout;
+    } else if (requiresPostMeasureLayout) {
+      reason = _FlexMeasurementReuseMissReason.postMeasureLayout;
+    } else if (subtreeHasPendingIntrinsicInvalidation) {
+      reason = _FlexMeasurementReuseMissReason.pendingIntrinsicInvalidation;
+    } else {
+      reason = _FlexMeasurementReuseMissReason.other;
+    }
+
+    _misses++;
+    _reasonCounts.update(reason, (int value) => value + 1, ifAbsent: () => 1);
+    final String childKind = _describeFlexLayoutChildKind(child);
+    final String reasonChildKey =
+        '${_flexLayoutChildReasonLabel(caller)}:${_flexMeasurementReuseMissReasonLabel(reason)}:$childKind';
+    _reasonChildCounts.update(reasonChildKey, (int value) => value + 1,
+        ifAbsent: () => 1);
+
+    if (_misses % _summaryEvery == 0) {
+      renderingLogger.info(
+        '[FlexMeasurementReuse][summary] misses=$_misses '
+        'reasons=${_formatProfilerTop(_reasonCounts, (v) => _flexMeasurementReuseMissReasonLabel(v))} '
+        'reasonChildren=${_formatProfilerTop(_reasonChildCounts, (v) => v)}',
+      );
+    }
+  }
+}
+
 class _FlexAdjustFastPathProfiler {
   static int _attempts = 0;
   static int _hits = 0;
@@ -670,6 +891,16 @@ class _FlexIntrinsicMeasurementLookupResult {
   final RenderFlowLayout? flowChild;
   final int? reusableStateSignature;
   final int? sharedPlainTextSignature;
+}
+
+class _FlexMeasuredLayoutSlotEntry {
+  const _FlexMeasuredLayoutSlotEntry({
+    required this.measuredConstraints,
+    required this.measuredSize,
+  });
+
+  final BoxConstraints measuredConstraints;
+  final Size measuredSize;
 }
 
 // Position and size info of each run (flex line) in flex layout.
@@ -1255,6 +1486,9 @@ class RenderFlexLayout extends RenderLayoutBox {
           'childrenIntrinsicMeasureCache');
   final Map<RenderBox, bool> _childrenRequirePostMeasureLayout =
       Map<RenderBox, bool>.identity();
+  final Map<RenderBox, _FlexMeasuredLayoutSlotEntry>
+      _childrenMeasuredLayoutSlots =
+      Map<RenderBox, _FlexMeasuredLayoutSlotEntry>.identity();
   int _adjustedConstraintsCachePassId = -1;
   final Map<RenderBoxModel, _AdjustedConstraintsCacheEntry>
       _adjustedConstraintsCache =
@@ -1262,6 +1496,8 @@ class RenderFlexLayout extends RenderLayoutBox {
   Map<RenderBox, Size>? _transientChildSizeOverrides;
   Map<RenderBox, int>? _metricsOnlyIntrinsicMeasureChildEligibilityCache;
   Map<RenderBox, RenderFlowLayout?>? _cacheableIntrinsicMeasureFlowChildCache;
+  Map<RenderBox, RenderFlexLayout?>? _cacheableMeasuredLayoutFlexChildCache;
+  Map<RenderBox, int>? _measuredLayoutSlotEligibilityCache;
   int _wrappingFlexAncestorCachePassId = -1;
   bool? _hasWrappingFlexAncestorCached;
   int _reusableIntrinsicStyleSignaturePassId = -1;
@@ -1282,11 +1518,14 @@ class RenderFlexLayout extends RenderLayoutBox {
         Expando<_FlexIntrinsicMeasurementCacheBucket>(
             'childrenIntrinsicMeasureCache');
     _childrenRequirePostMeasureLayout.clear();
+    _childrenMeasuredLayoutSlots.clear();
     _adjustedConstraintsCachePassId = -1;
     _adjustedConstraintsCache.clear();
     _transientChildSizeOverrides = null;
     _metricsOnlyIntrinsicMeasureChildEligibilityCache = null;
     _cacheableIntrinsicMeasureFlowChildCache = null;
+    _cacheableMeasuredLayoutFlexChildCache = null;
+    _measuredLayoutSlotEligibilityCache = null;
     _wrappingFlexAncestorCachePassId = -1;
     _hasWrappingFlexAncestorCached = null;
     _reusableIntrinsicStyleSignaturePassId = -1;
@@ -1870,6 +2109,36 @@ class RenderFlexLayout extends RenderLayoutBox {
   bool _constraintValueClose(double a, double b) {
     if (a.isInfinite || b.isInfinite) return a == b;
     return (a - b).abs() < 0.5;
+  }
+
+  bool _shouldClearIntrinsicInvalidationAfterFlexMeasurement(
+    RenderBox child, {
+    RenderBoxModel? effectiveChild,
+  }) {
+    if (!_isHorizontalFlexDirection ||
+        renderStyle.flexWrap != FlexWrap.nowrap) {
+      return false;
+    }
+    if (_hasWrappingFlexAncestor()) {
+      return false;
+    }
+
+    effectiveChild ??= child is RenderBoxModel
+        ? child
+        : (child is RenderEventListener
+            ? child.child as RenderBoxModel?
+            : null);
+    if (effectiveChild == null) {
+      return false;
+    }
+
+    if (effectiveChild.renderStyle.isSelfRenderWidget() ||
+        effectiveChild.renderStyle.isSelfRenderReplaced() ||
+        effectiveChild.renderStyle.position == CSSPositionType.sticky) {
+      return false;
+    }
+
+    return true;
   }
 
   bool _tightensMainAxisToCurrentSizeWithoutCrossChange(
@@ -2710,6 +2979,37 @@ class RenderFlexLayout extends RenderLayoutBox {
     return resolvedFlowChild;
   }
 
+  RenderFlexLayout? _getMeasuredLayoutSlotFlexChild(RenderBox child) {
+    final Map<RenderBox, RenderFlexLayout?>? flexChildCache =
+        _cacheableMeasuredLayoutFlexChildCache;
+    if (flexChildCache != null && flexChildCache.containsKey(child)) {
+      return flexChildCache[child];
+    }
+
+    RenderFlexLayout? resolvedFlexChild;
+    RenderBox? current = child;
+    int depth = 0;
+    while (current != null && depth < 3) {
+      if (current is RenderFlexLayout) {
+        resolvedFlexChild = identical(current, this) ? null : current;
+        break;
+      }
+
+      if (current is RenderEventListener || current is RenderLayoutBoxWrapper) {
+        current = (current as dynamic).child as RenderBox?;
+        depth++;
+        continue;
+      }
+
+      break;
+    }
+
+    if (flexChildCache != null) {
+      flexChildCache[child] = resolvedFlexChild;
+    }
+    return resolvedFlexChild;
+  }
+
   bool _canReuseAnonymousFlowMeasurement(RenderFlowLayout flowChild) {
     Element? parentElement = flowChild.renderStyle.target.parentElement;
     // Button-owned anonymous wrappers still regress :hover/:active snapshots
@@ -2886,6 +3186,70 @@ class RenderFlexLayout extends RenderLayoutBox {
       if (child != null) {
         return _subtreeHasPendingIntrinsicMeasureInvalidation(child);
       }
+    }
+
+    return false;
+  }
+
+  bool _hasPercentageSensitiveFlexPromotionSubtree(RenderObject? node) {
+    if (node == null || node is RenderPositionPlaceholder) {
+      return false;
+    }
+
+    if (node is RenderEventListener || node is RenderLayoutBoxWrapper) {
+      return _hasPercentageSensitiveFlexPromotionSubtree(
+        (node as dynamic).child as RenderObject?,
+      );
+    }
+
+    if (node is RenderTextBox) {
+      return false;
+    }
+
+    if (node is RenderBoxModel) {
+      final CSSRenderStyle style = node.renderStyle;
+      if (style.position == CSSPositionType.absolute ||
+          style.position == CSSPositionType.fixed ||
+          style.position == CSSPositionType.sticky ||
+          style.isSelfRenderWidget() ||
+          style.isSelfRenderReplaced()) {
+        return true;
+      }
+      if (style.width.type == CSSLengthType.PERCENTAGE ||
+          style.height.type == CSSLengthType.PERCENTAGE ||
+          style.minWidth.type == CSSLengthType.PERCENTAGE ||
+          style.minHeight.type == CSSLengthType.PERCENTAGE ||
+          style.maxWidth.type == CSSLengthType.PERCENTAGE ||
+          style.maxHeight.type == CSSLengthType.PERCENTAGE ||
+          style.marginLeft.type == CSSLengthType.PERCENTAGE ||
+          style.marginRight.type == CSSLengthType.PERCENTAGE ||
+          style.marginTop.type == CSSLengthType.PERCENTAGE ||
+          style.marginBottom.type == CSSLengthType.PERCENTAGE ||
+          style.paddingLeft.type == CSSLengthType.PERCENTAGE ||
+          style.paddingRight.type == CSSLengthType.PERCENTAGE ||
+          style.paddingTop.type == CSSLengthType.PERCENTAGE ||
+          style.paddingBottom.type == CSSLengthType.PERCENTAGE ||
+          style.flexBasis?.type == CSSLengthType.PERCENTAGE) {
+        return true;
+      }
+    }
+
+    if (node is ContainerRenderObjectMixin<RenderBox,
+        ContainerBoxParentData<RenderBox>>) {
+      RenderBox? child = (node as dynamic).firstChild as RenderBox?;
+      while (child != null) {
+        if (_hasPercentageSensitiveFlexPromotionSubtree(child)) {
+          return true;
+        }
+        child = (node as dynamic).childAfter(child) as RenderBox?;
+      }
+      return false;
+    }
+
+    if (node is RenderObjectWithChildMixin<RenderBox>) {
+      return _hasPercentageSensitiveFlexPromotionSubtree(
+        (node as dynamic).child as RenderBox?,
+      );
     }
 
     return false;
@@ -3434,7 +3798,86 @@ class RenderFlexLayout extends RenderLayoutBox {
     return child is RenderEventListener || child is RenderLayoutBoxWrapper;
   }
 
-  void _layoutChildForFlex(RenderBox child, BoxConstraints childConstraints) {
+  bool _isMeasuredLayoutSlotEligible(RenderBox child) {
+    final Map<RenderBox, int>? eligibilityCache =
+        _measuredLayoutSlotEligibilityCache;
+    final int? cachedValue = eligibilityCache?[child];
+    if (cachedValue != null) {
+      return cachedValue == 1;
+    }
+
+    final RenderFlexLayout? nestedFlex = _getMeasuredLayoutSlotFlexChild(child);
+    bool isEligible = false;
+    if (nestedFlex != null &&
+        nestedFlex._isHorizontalFlexDirection &&
+        nestedFlex.renderStyle.flexWrap == FlexWrap.nowrap &&
+        nestedFlex.renderStyle.alignItems != AlignItems.stretch &&
+        nestedFlex.renderStyle.alignItems != AlignItems.baseline &&
+        nestedFlex.renderStyle.alignItems != AlignItems.lastBaseline &&
+        !_hasPercentageSensitiveFlexPromotionSubtree(nestedFlex)) {
+      isEligible = true;
+    }
+
+    eligibilityCache?[child] = isEligible ? 1 : 0;
+    return isEligible;
+  }
+
+  void _storeMeasuredLayoutSlot(
+    RenderBox child,
+    BoxConstraints childConstraints,
+    Size childSize,
+  ) {
+    if (!_isMeasuredLayoutSlotEligible(child)) {
+      return;
+    }
+    _childrenMeasuredLayoutSlots[child] = _FlexMeasuredLayoutSlotEntry(
+      measuredConstraints: childConstraints,
+      measuredSize: Size.copy(childSize),
+    );
+  }
+
+  bool _canPromoteMeasuredLayoutSlot(
+    RenderBox child,
+    RenderBoxModel effectiveChild,
+    BoxConstraints childConstraints,
+  ) {
+    final _FlexMeasuredLayoutSlotEntry? slot =
+        _childrenMeasuredLayoutSlots[child];
+    if (slot == null) {
+      return false;
+    }
+    if (!_isMeasuredLayoutSlotEligible(child) ||
+        !canReuseStableProxyChildLayout(child, slot.measuredConstraints) ||
+        effectiveChild.needsRelayout ||
+        (_childrenRequirePostMeasureLayout[child] == true) ||
+        _subtreeHasPendingIntrinsicMeasureInvalidation(child)) {
+      return false;
+    }
+    if (child.constraints != slot.measuredConstraints) {
+      return false;
+    }
+
+    final double currentMainSize = _isHorizontalFlexDirection
+        ? slot.measuredSize.width
+        : slot.measuredSize.height;
+    if (!_tightensMainAxisToCurrentSizeWithoutCrossChange(
+      slot.measuredConstraints,
+      childConstraints,
+      currentMainSize,
+    )) {
+      return false;
+    }
+
+    _childrenRequirePostMeasureLayout[child] = false;
+    return true;
+  }
+
+  void _layoutChildForFlex(
+    RenderBox child,
+    BoxConstraints childConstraints, {
+    _FlexLayoutChildReason reason = _FlexLayoutChildReason.computeRunMetrics,
+  }) {
+    _FlexLayoutChildProfiler.record(reason, child, childConstraints);
     if (child is RenderBoxModel) {
       child.setRelayoutParentOnSizeChange(
         _shouldAvoidParentUsesSizeForFlexChild(child) ? this : null,
@@ -3445,6 +3888,7 @@ class RenderFlexLayout extends RenderLayoutBox {
       parentUsesSize: !_shouldAvoidParentUsesSizeForFlexChild(child),
     );
     _childrenRequirePostMeasureLayout[child] = false;
+    _childrenMeasuredLayoutSlots.remove(child);
   }
 
   @pragma('vm:prefer-inline')
@@ -3453,10 +3897,7 @@ class RenderFlexLayout extends RenderLayoutBox {
     BoxConstraints childConstraints, {
     RenderBoxModel? effectiveChild,
   }) {
-    if (!child.hasSize || child.constraints != childConstraints) {
-      return false;
-    }
-    if (child.debugNeedsLayout) {
+    if (!canReuseStableProxyChildLayout(child, childConstraints)) {
       return false;
     }
     if (effectiveChild != null && effectiveChild.needsRelayout) {
@@ -3909,7 +4350,27 @@ class RenderFlexLayout extends RenderLayoutBox {
         childConstraints,
         effectiveChild: effectiveChild,
       )) {
-        _layoutChildForFlex(child, childConstraints);
+        _FlexMeasurementReuseProfiler.recordMiss(
+          _FlexLayoutChildReason.computeRunMetrics,
+          child,
+          childConstraints,
+          effectiveChild: effectiveChild,
+          requiresPostMeasureLayout:
+              _childrenRequirePostMeasureLayout[child] == true,
+          subtreeHasPendingIntrinsicInvalidation:
+              _subtreeHasPendingIntrinsicMeasureInvalidation(child),
+        );
+        _layoutChildForFlex(
+          child,
+          childConstraints,
+          reason: _FlexLayoutChildReason.computeRunMetrics,
+        );
+        if (_shouldClearIntrinsicInvalidationAfterFlexMeasurement(
+          child,
+          effectiveChild: effectiveChild,
+        )) {
+          _clearSubtreeIntrinsicMeasurementInvalidationAfterMeasurement(child);
+        }
       }
       _cacheOriginalConstraintsIfNeeded(child, childConstraints);
 
@@ -3949,6 +4410,251 @@ class RenderFlexLayout extends RenderLayoutBox {
     final List<_RunMetrics> runMetrics = <_RunMetrics>[
       _RunMetrics(runMainAxisExtent, runCrossAxisExtent, totalFlexGrow,
           totalFlexShrink, 0, runChildren, 0)
+    ];
+
+    _flexLineBoxMetrics = runMetrics;
+    _storePercentageConstraintChildrenOldConstraints(children);
+    return runMetrics;
+  }
+
+  List<_RunMetrics>? _tryBuildEarlySingleFlexibleGrowRunMetrics(
+    List<RenderBox> children,
+  ) {
+    if (!_isHorizontalFlexDirection ||
+        renderStyle.flexWrap != FlexWrap.nowrap) {
+      return null;
+    }
+
+    final _FlexResolutionInputs inputs = _computeFlexResolutionInputs();
+    final double? maxMainSize = inputs.maxMainSize;
+    if (maxMainSize == null || !inputs.isMainSizeDefinite) {
+      return null;
+    }
+
+    final bool boundedOnly = !(inputs.contentBoxLogicalWidth != null ||
+        (contentConstraints?.hasTightWidth ?? false) ||
+        constraints.hasTightWidth);
+    if (boundedOnly) {
+      return null;
+    }
+
+    final double mainAxisGap = _getMainAxisGap();
+    final List<_RunChild> runChildren = <_RunChild>[];
+    int? growChildIndex;
+    RenderBox? growChild;
+    RenderBoxModel? growEffectiveChild;
+    _RunChild? growRunChild;
+    double runCrossAxisExtent = 0.0;
+    double occupiedMainAxisExtent = 0.0;
+
+    for (int childIndex = 0; childIndex < children.length; childIndex++) {
+      final RenderBox child = children[childIndex];
+      final RenderBoxModel? effectiveChild =
+          child is RenderBoxModel ? child : null;
+      final BoxConstraints baseConstraints = effectiveChild != null
+          ? effectiveChild.getConstraints()
+          : constraints;
+
+      final _FlexFastPathRejectReason? rejectReason =
+          _getEarlyNoFlexNoStretchNoBaselineRejectReason(
+        child,
+        baseConstraints,
+      );
+      if (rejectReason != null) {
+        return null;
+      }
+
+      final double flexGrow = _getFlexGrow(child);
+      if (flexGrow > 0) {
+        if (growChild != null || effectiveChild == null) {
+          return null;
+        }
+        if (child is RenderPositionPlaceholder ||
+            effectiveChild.renderStyle.position == CSSPositionType.sticky ||
+            effectiveChild.renderStyle.isSelfRenderWidget() ||
+            effectiveChild.renderStyle.isSelfRenderReplaced()) {
+          return null;
+        }
+        final AlignSelf alignSelf = _getAlignSelf(child);
+        if (alignSelf == AlignSelf.baseline ||
+            alignSelf == AlignSelf.lastBaseline ||
+            alignSelf == AlignSelf.stretch) {
+          return null;
+        }
+
+        final _RunChild candidateRunChild = _createRunChildMetadata(
+          child,
+          0,
+          effectiveChild: effectiveChild,
+          usedFlexBasis: _getUsedFlexBasis(child),
+        );
+        if (candidateRunChild.hasAutoMainAxisMargin ||
+            candidateRunChild.hasAutoCrossAxisMargin ||
+            _needToStretchChildCrossSize(effectiveChild)) {
+          return null;
+        }
+
+        growChildIndex = childIndex;
+        growChild = child;
+        growEffectiveChild = effectiveChild;
+        growRunChild = candidateRunChild;
+        continue;
+      }
+
+      final BoxConstraints childConstraints = _getIntrinsicConstraints(child);
+      if (!_canReuseCurrentFlexMeasurement(
+        child,
+        childConstraints,
+        effectiveChild: effectiveChild,
+      )) {
+        _FlexMeasurementReuseProfiler.recordMiss(
+          _FlexLayoutChildReason.computeRunMetrics,
+          child,
+          childConstraints,
+          effectiveChild: effectiveChild,
+          requiresPostMeasureLayout:
+              _childrenRequirePostMeasureLayout[child] == true,
+          subtreeHasPendingIntrinsicInvalidation:
+              _subtreeHasPendingIntrinsicMeasureInvalidation(child),
+        );
+        _layoutChildForFlex(
+          child,
+          childConstraints,
+          reason: _FlexLayoutChildReason.computeRunMetrics,
+        );
+      }
+      _cacheOriginalConstraintsIfNeeded(child, childConstraints);
+
+      final RenderLayoutParentData? childParentData =
+          child.parentData as RenderLayoutParentData?;
+      childParentData?.runIndex = 0;
+
+      final Size childSize = _getChildSize(child)!;
+      final double childMainSize = childSize.width;
+      final double childCrossSize = childSize.height;
+      _childrenIntrinsicMainSizes[child] = childMainSize;
+
+      final _RunChild runChild = _createRunChildMetadata(
+        child,
+        childMainSize,
+        effectiveChild: effectiveChild,
+        usedFlexBasis: effectiveChild != null ? _getUsedFlexBasis(child) : null,
+      );
+      occupiedMainAxisExtent +=
+          childMainSize + runChild.mainAxisExtentAdjustment;
+      runCrossAxisExtent = math.max(
+        runCrossAxisExtent,
+        childCrossSize + runChild.crossAxisExtentAdjustment,
+      );
+      runChildren.add(runChild);
+    }
+
+    if (growChild == null ||
+        growChildIndex == null ||
+        growEffectiveChild == null ||
+        growRunChild == null) {
+      return null;
+    }
+
+    final int itemCount = children.length;
+    final double totalGapSpacing =
+        itemCount > 1 ? (itemCount - 1) * mainAxisGap : 0.0;
+    final double growMainAxisExtentAdjustment =
+        growRunChild.mainAxisExtentAdjustment;
+    final double targetGrowMainSize = maxMainSize -
+        occupiedMainAxisExtent -
+        totalGapSpacing -
+        growMainAxisExtentAdjustment;
+    if (!targetGrowMainSize.isFinite || targetGrowMainSize <= 0) {
+      return null;
+    }
+
+    double growFinalMainSize = targetGrowMainSize;
+    final double minMainSize = _getRunChildMinMainAxisSize(growRunChild);
+    final double maxMainAxisSize = _getRunChildMaxMainAxisSize(growRunChild);
+    if (growFinalMainSize < minMainSize) {
+      growFinalMainSize = minMainSize;
+    }
+    if (maxMainAxisSize.isFinite && growFinalMainSize > maxMainAxisSize) {
+      growFinalMainSize = maxMainAxisSize;
+    }
+
+    _childrenOldConstraints[growEffectiveChild] =
+        growEffectiveChild.getConstraints();
+    final BoxConstraints growChildConstraints = _getChildAdjustedConstraints(
+      growEffectiveChild,
+      growFinalMainSize,
+      null,
+      itemCount,
+    );
+    if (!_canReuseCurrentFlexMeasurement(
+      growChild,
+      growChildConstraints,
+      effectiveChild: growEffectiveChild,
+    )) {
+      _FlexMeasurementReuseProfiler.recordMiss(
+        _FlexLayoutChildReason.singleFlexibleRun,
+        growChild,
+        growChildConstraints,
+        effectiveChild: growEffectiveChild,
+        requiresPostMeasureLayout:
+            _childrenRequirePostMeasureLayout[growChild] == true,
+        subtreeHasPendingIntrinsicInvalidation:
+            _subtreeHasPendingIntrinsicMeasureInvalidation(growChild),
+      );
+      _layoutChildForFlex(
+        growChild,
+        growChildConstraints,
+        reason: _FlexLayoutChildReason.singleFlexibleRun,
+      );
+      if (_shouldClearIntrinsicInvalidationAfterFlexMeasurement(
+        growChild,
+        effectiveChild: growEffectiveChild,
+      )) {
+        _clearSubtreeIntrinsicMeasurementInvalidationAfterMeasurement(
+            growChild);
+      }
+    }
+    _cacheOriginalConstraintsIfNeeded(growChild, growChildConstraints);
+
+    final RenderLayoutParentData? growChildParentData =
+        growChild.parentData as RenderLayoutParentData?;
+    growChildParentData?.runIndex = 0;
+
+    final Size growChildSize = _getChildSize(growChild)!;
+    final double growChildMainSize = growChildSize.width;
+    _childrenIntrinsicMainSizes[growChild] = growChildMainSize;
+
+    growRunChild.originalMainSize = growChildMainSize;
+    growRunChild.flexedMainSize = growChildMainSize;
+
+    runChildren.insert(growChildIndex, growRunChild);
+
+    double runMainAxisExtent = 0.0;
+    double finalCrossAxisExtent = 0.0;
+    for (int index = 0; index < runChildren.length; index++) {
+      if (index > 0) {
+        runMainAxisExtent += mainAxisGap;
+      }
+      final _RunChild runChild = runChildren[index];
+      final Size childSize = _getChildSize(runChild.child)!;
+      runMainAxisExtent += childSize.width + runChild.mainAxisExtentAdjustment;
+      finalCrossAxisExtent = math.max(
+        finalCrossAxisExtent,
+        childSize.height + runChild.crossAxisExtentAdjustment,
+      );
+    }
+
+    final List<_RunMetrics> runMetrics = <_RunMetrics>[
+      _RunMetrics(
+        runMainAxisExtent,
+        finalCrossAxisExtent,
+        0,
+        0,
+        0,
+        runChildren,
+        0,
+      )
     ];
 
     _flexLineBoxMetrics = runMetrics;
@@ -4109,6 +4815,7 @@ class RenderFlexLayout extends RenderLayoutBox {
   // 4. Align children according to alignment properties.
   void _layoutFlexItems(List<RenderBox> children) {
     _childrenRequirePostMeasureLayout.clear();
+    _childrenMeasuredLayoutSlots.clear();
     _childrenIntrinsicMainSizes.clear();
     if (_adjustedConstraintsCachePassId != renderBoxModelLayoutPassId) {
       _adjustedConstraintsCachePassId = renderBoxModelLayoutPassId;
@@ -4160,6 +4867,10 @@ class RenderFlexLayout extends RenderLayoutBox {
       )) {
         runMetrics = null;
       }
+    }
+
+    if (runMetrics == null) {
+      runMetrics = _tryBuildEarlySingleFlexibleGrowRunMetrics(children);
     }
 
     if (runMetrics == null) {
@@ -4517,6 +5228,9 @@ class RenderFlexLayout extends RenderLayoutBox {
         Map<RenderBox, int>.identity();
     _cacheableIntrinsicMeasureFlowChildCache =
         Map<RenderBox, RenderFlowLayout?>.identity();
+    _cacheableMeasuredLayoutFlexChildCache =
+        Map<RenderBox, RenderFlexLayout?>.identity();
+    _measuredLayoutSlotEligibilityCache = Map<RenderBox, int>.identity();
     final bool allowAnonymousMetricsOnlyCache =
         _canUseAnonymousMetricsOnlyCache(children);
     _transientChildSizeOverrides = Map<RenderBox, Size>.identity();
@@ -4565,7 +5279,29 @@ class RenderFlexLayout extends RenderLayoutBox {
             childConstraints,
             effectiveChild: effectiveChild,
           )) {
-            _layoutChildForFlex(child, childConstraints);
+            _FlexMeasurementReuseProfiler.recordMiss(
+              _FlexLayoutChildReason.computeRunMetrics,
+              child,
+              childConstraints,
+              effectiveChild: effectiveChild,
+              requiresPostMeasureLayout:
+                  _childrenRequirePostMeasureLayout[child] == true,
+              subtreeHasPendingIntrinsicInvalidation:
+                  _subtreeHasPendingIntrinsicMeasureInvalidation(child),
+            );
+            _layoutChildForFlex(
+              child,
+              childConstraints,
+              reason: _FlexLayoutChildReason.computeRunMetrics,
+            );
+            if (_shouldClearIntrinsicInvalidationAfterFlexMeasurement(
+              child,
+              effectiveChild: effectiveChild,
+            )) {
+              _clearSubtreeIntrinsicMeasurementInvalidationAfterMeasurement(
+                child,
+              );
+            }
           }
           if (isMetricsOnlyMeasureChild &&
               renderStyle.flexWrap == FlexWrap.nowrap &&
@@ -4582,6 +5318,7 @@ class RenderFlexLayout extends RenderLayoutBox {
           childSize = Size.copy(_getChildSize(child)!);
           _transientChildSizeOverrides![child] = childSize;
           intrinsicMain = isHorizontal ? childSize.width : childSize.height;
+          _storeMeasuredLayoutSlot(child, childConstraints, childSize);
 
           // CSS Flexbox §9.2: For flex-basis:auto with an auto main-size, the flex base size
           // should come from the item's max-content contribution in the main axis, not from
@@ -5330,7 +6067,7 @@ class RenderFlexLayout extends RenderLayoutBox {
           relayoutDetails =
               _describeFirstPendingIntrinsicMeasureInvalidation(child);
         } else if (desiredPreservedMain != null &&
-            desiredPreservedMain != childOldMainSize) {
+            (desiredPreservedMain - childOldMainSize).abs() >= 0.5) {
           needsLayout = true;
           relayoutReason =
               _FlexAdjustFastPathRelayoutReason.preservedMainMismatch;
@@ -5439,7 +6176,11 @@ class RenderFlexLayout extends RenderLayoutBox {
               runChildrenCount,
               preserveMainAxisSize: desiredPreservedMain,
             );
-        _layoutChildForFlex(child, childConstraints);
+        _layoutChildForFlex(
+          child,
+          childConstraints,
+          reason: _FlexLayoutChildReason.adjustPhase1,
+        );
         _clearSubtreeIntrinsicMeasurementInvalidationAfterMeasurement(child);
         didRelayout = true;
       }
@@ -5475,6 +6216,110 @@ class RenderFlexLayout extends RenderLayoutBox {
         relayoutChildCount: relayoutChildCount,
       );
     }
+    return true;
+  }
+
+  bool _trySingleFlexibleRunFastPath(
+    _RunMetrics metrics,
+    _RunChild flexibleRunChild,
+  ) {
+    final List<_RunChild> runChildrenList = metrics.runChildren;
+    if (runChildrenList.isEmpty) {
+      return false;
+    }
+
+    bool didRelayout = false;
+
+    for (final _RunChild runChild in runChildrenList) {
+      final RenderBox child = runChild.child;
+      final RenderBoxModel effectiveChild = runChild.effectiveChild!;
+      final bool isFlexibleChild = identical(runChild, flexibleRunChild);
+      final Size childSize = _getChildSize(child)!;
+      final double childOldMainSize = childSize.width;
+
+      final double? childFlexedMainSize =
+          isFlexibleChild ? runChild.flexedMainSize : null;
+      double? desiredPreservedMain;
+      if (!isFlexibleChild) {
+        desiredPreservedMain = _childrenIntrinsicMainSizes[child];
+      }
+
+      bool needsLayout = isFlexibleChild ||
+          effectiveChild.needsRelayout ||
+          (_childrenRequirePostMeasureLayout[child] == true) ||
+          _subtreeHasPendingIntrinsicMeasureInvalidation(child);
+
+      if (!needsLayout &&
+          desiredPreservedMain != null &&
+          (desiredPreservedMain - childOldMainSize).abs() >= 0.5) {
+        needsLayout = true;
+      }
+
+      if (!needsLayout && desiredPreservedMain != null) {
+        final BoxConstraints applied = child.constraints;
+        final bool autoMain = effectiveChild.renderStyle.width.isAuto;
+        final bool wasNonTightMain = !applied.hasTightWidth;
+        if (autoMain && wasNonTightMain) {
+          needsLayout = true;
+        }
+      }
+
+      if (!needsLayout) {
+        continue;
+      }
+
+      _markFlexRelayoutForTextOnly(effectiveChild);
+
+      final BoxConstraints childConstraints = _getChildAdjustedConstraints(
+        effectiveChild,
+        childFlexedMainSize,
+        null,
+        runChildrenList.length,
+        preserveMainAxisSize: desiredPreservedMain,
+      );
+      if (_canSkipAdjustedFlexChildLayout(
+            child,
+            effectiveChild,
+            childConstraints,
+          ) ||
+          _canPromoteMeasuredLayoutSlot(
+            child,
+            effectiveChild,
+            childConstraints,
+          )) {
+        continue;
+      }
+
+      _layoutChildForFlex(
+        child,
+        childConstraints,
+        reason: _FlexLayoutChildReason.singleFlexibleRun,
+      );
+      if (_shouldClearIntrinsicInvalidationAfterFlexMeasurement(
+        child,
+        effectiveChild: effectiveChild,
+      )) {
+        _clearSubtreeIntrinsicMeasurementInvalidationAfterMeasurement(child);
+      }
+      didRelayout = true;
+    }
+
+    if (!didRelayout) {
+      return true;
+    }
+
+    double mainAxisExtent = 0;
+    final double mainAxisGap = _getMainAxisGap();
+    for (int i = 0; i < runChildrenList.length; i++) {
+      if (i > 0) {
+        mainAxisExtent += mainAxisGap;
+      }
+      final _RunChild runChild = runChildrenList[i];
+      final Size childSize = _getChildSize(runChild.child)!;
+      mainAxisExtent += childSize.width + runChild.mainAxisExtentAdjustment;
+    }
+    metrics.mainAxisExtent = mainAxisExtent;
+    metrics.crossAxisExtent = _recomputeRunCrossExtent(metrics);
     return true;
   }
 
@@ -5527,6 +6372,11 @@ class RenderFlexLayout extends RenderLayoutBox {
       final double totalFlexGrow = metrics.totalFlexGrow;
       final double totalFlexShrink = metrics.totalFlexShrink;
       final List<_RunChild> runChildrenList = metrics.runChildren;
+      bool canUseSingleFlexibleRunFastPath = _isHorizontalFlexDirection;
+      _RunChild? singleGrowRunChild;
+      _RunChild? singleShrinkRunChild;
+      int growChildCount = 0;
+      int shrinkChildCount = 0;
 
       double totalSpace = 0;
       // Flex factor calculation depends on flex-basis if exists.
@@ -5534,6 +6384,47 @@ class RenderFlexLayout extends RenderLayoutBox {
         final double childSpace =
             runChild.usedFlexBasis ?? runChild.originalMainSize;
         totalSpace += childSpace + runChild.mainAxisMargin;
+
+        if (!canUseSingleFlexibleRunFastPath) {
+          continue;
+        }
+
+        final RenderBoxModel? effectiveChild = runChild.effectiveChild;
+        if (effectiveChild == null ||
+            runChild.hasAutoMainAxisMargin ||
+            runChild.hasAutoCrossAxisMargin ||
+            runChild.child is RenderPositionPlaceholder ||
+            runChild.isReplaced ||
+            effectiveChild.renderStyle.position == CSSPositionType.sticky ||
+            effectiveChild.renderStyle.isSelfRenderWidget() ||
+            _needToStretchChildCrossSize(effectiveChild)) {
+          canUseSingleFlexibleRunFastPath = false;
+          continue;
+        }
+
+        final AlignSelf alignSelf = runChild.alignSelf;
+        if (alignSelf == AlignSelf.baseline ||
+            alignSelf == AlignSelf.lastBaseline ||
+            alignSelf == AlignSelf.stretch) {
+          canUseSingleFlexibleRunFastPath = false;
+          continue;
+        }
+
+        if (runChild.flexGrow > 0) {
+          growChildCount++;
+          singleGrowRunChild = runChild;
+          if (growChildCount > 1) {
+            canUseSingleFlexibleRunFastPath = false;
+          }
+        }
+
+        if (runChild.flexShrink > 0) {
+          shrinkChildCount++;
+          singleShrinkRunChild = runChild;
+          if (shrinkChildCount > 1) {
+            canUseSingleFlexibleRunFastPath = false;
+          }
+        }
       }
 
       // Add gap spacing to total space calculation for flex-grow available space
@@ -5687,6 +6578,37 @@ class RenderFlexLayout extends RenderLayoutBox {
             _resolveFlexibleLengths(metrics, totalFlexFactor, usedFreeSpace)) {}
       }
 
+      final bool hasResolvedSingleGrowChild = singleGrowRunChild != null &&
+          (singleGrowRunChild.flexedMainSize -
+                      singleGrowRunChild.originalMainSize)
+                  .abs() >=
+              0.5;
+      if (isFlexGrow &&
+          !isFlexShrink &&
+          canUseSingleFlexibleRunFastPath &&
+          growChildCount == 1 &&
+          hasResolvedSingleGrowChild &&
+          _trySingleFlexibleRunFastPath(metrics, singleGrowRunChild!)) {
+        continue;
+      }
+
+      final bool hasResolvedSingleShrinkChild = singleShrinkRunChild != null &&
+          (singleShrinkRunChild.originalMainSize -
+                      singleShrinkRunChild.flexedMainSize)
+                  .abs() >=
+              0.5 &&
+          singleShrinkRunChild.flexedMainSize <
+              singleShrinkRunChild.originalMainSize;
+      if (!isFlexGrow &&
+          isFlexShrink &&
+          canUseSingleFlexibleRunFastPath &&
+          growChildCount == 0 &&
+          shrinkChildCount == 1 &&
+          hasResolvedSingleShrinkChild &&
+          _trySingleFlexibleRunFastPath(metrics, singleShrinkRunChild!)) {
+        continue;
+      }
+
       // Phase 1 — Relayout each item with its resolved main size only.
       // Do not apply align-items: stretch yet, so text/content can expand to
       // its natural height based on the final line width.
@@ -5719,7 +6641,7 @@ class RenderFlexLayout extends RenderLayoutBox {
             (_childrenRequirePostMeasureLayout[child] == true);
         if (!needsLayout &&
             desiredPreservedMain != null &&
-            (desiredPreservedMain != childOldMainSize)) {
+            (desiredPreservedMain - childOldMainSize).abs() >= 0.5) {
           needsLayout = true;
         }
         if (!needsLayout && desiredPreservedMain != null) {
@@ -5767,13 +6689,28 @@ class RenderFlexLayout extends RenderLayoutBox {
           preserveMainAxisSize: desiredPreservedMain,
         );
         if (_canSkipAdjustedFlexChildLayout(
-          child,
-          effectiveChild,
-          childConstraints,
-        )) {
+              child,
+              effectiveChild,
+              childConstraints,
+            ) ||
+            _canPromoteMeasuredLayoutSlot(
+              child,
+              effectiveChild,
+              childConstraints,
+            )) {
           continue;
         }
-        _layoutChildForFlex(child, childConstraints);
+        _layoutChildForFlex(
+          child,
+          childConstraints,
+          reason: _FlexLayoutChildReason.adjustPhase1,
+        );
+        if (_shouldClearIntrinsicInvalidationAfterFlexMeasurement(
+          child,
+          effectiveChild: effectiveChild,
+        )) {
+          _clearSubtreeIntrinsicMeasurementInvalidationAfterMeasurement(child);
+        }
       }
 
       // After Phase 1, recompute the run cross extent based on the items’ natural
@@ -5816,13 +6753,28 @@ class RenderFlexLayout extends RenderLayoutBox {
           runChildrenList.length,
         );
         if (_canSkipAdjustedFlexChildLayout(
-          child,
-          effectiveChild,
-          childConstraints,
-        )) {
+              child,
+              effectiveChild,
+              childConstraints,
+            ) ||
+            _canPromoteMeasuredLayoutSlot(
+              child,
+              effectiveChild,
+              childConstraints,
+            )) {
           continue;
         }
-        _layoutChildForFlex(child, childConstraints);
+        _layoutChildForFlex(
+          child,
+          childConstraints,
+          reason: _FlexLayoutChildReason.adjustStretch,
+        );
+        if (_shouldClearIntrinsicInvalidationAfterFlexMeasurement(
+          child,
+          effectiveChild: effectiveChild,
+        )) {
+          _clearSubtreeIntrinsicMeasurementInvalidationAfterMeasurement(child);
+        }
       }
 
       // Finally, recompute run main & cross extents using the final sizes.

@@ -111,6 +111,37 @@ Offset getLayoutTransformTo(RenderObject current, RenderObject ancestor,
   return stackOffsets.reduce((prev, next) => prev + next);
 }
 
+bool debugRenderObjectNeedsLayout(RenderObject renderObject) {
+  bool result = false;
+  assert(() {
+    result = renderObject.debugNeedsLayout;
+    return true;
+  }());
+  return result;
+}
+
+bool canReuseStableProxyChildLayout(RenderBox? child, BoxConstraints constraints) {
+  if (child == null || !child.hasSize || child.constraints != constraints) {
+    return false;
+  }
+  return _hasReusableStableLayoutChain(child);
+}
+
+bool _hasReusableStableLayoutChain(RenderBox child) {
+  if (child is RenderTextBox) {
+    return !child.hasPendingTextLayoutUpdate;
+  }
+  if (child is RenderBoxModel) {
+    return !child.needsRelayout &&
+        !child.hasPendingSubtreeIntrinsicMeasurementInvalidation;
+  }
+  if (child is RenderProxyBox) {
+    final RenderBox? proxyChild = child.child;
+    return proxyChild == null || _hasReusableStableLayoutChain(proxyChild);
+  }
+  return false;
+}
+
 mixin RenderBoxModelBase on RenderBox {
   CSSRenderStyle get renderStyle;
 }

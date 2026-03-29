@@ -15,21 +15,7 @@ import 'package:webf/gesture.dart';
 import 'package:webf/rendering.dart' hide RenderBoxContainerDefaultsMixin;
 
 bool _canReuseProxyChildLayout(RenderBox? child, BoxConstraints constraints) {
-  if (child == null || !child.hasSize || child.constraints != constraints) {
-    return false;
-  }
-  if (child.debugNeedsLayout) {
-    return false;
-  }
-  if (child is RenderTextBox && child.hasPendingTextLayoutUpdate) {
-    return false;
-  }
-  if (child is RenderBoxModel &&
-      (child.needsRelayout ||
-          child.hasPendingSubtreeIntrinsicMeasurementInvalidation)) {
-    return false;
-  }
-  return true;
+  return canReuseStableProxyChildLayout(child, constraints);
 }
 
 class RenderPortalsParentData extends RenderLayoutParentData {}
