@@ -154,7 +154,7 @@ export const HomePage: React.FC = () => {
         {
           title: 'Shadcn UI',
           desc: 'Docs-aligned showcase',
-          to: '/shadcn-showcase',
+          to: '/shadcn-showcase',  // '/shadcn-grid-probe'
           icon: LucideIcons.layoutGrid,
           gradient: 'linear-gradient(135deg, #18181b, #52525b)',
         },

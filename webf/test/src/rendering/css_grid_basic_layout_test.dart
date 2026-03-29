@@ -927,5 +927,45 @@ void main() {
       // The grid should not overflow horizontally (regression for flex min-size inflation).
       expect(gridRenderer.scrollableSize.width, closeTo(200.0, 2.0));
     });
+
+    testWidgets('1fr auto allows mixed CJK text to wrap without overflowing the grid', (WidgetTester tester) async {
+      final prepared = await WebFWidgetTestUtils.prepareWidgetTest(
+        tester: tester,
+        controllerName: 'grid-1fr-auto-text-wrap-${DateTime.now().millisecondsSinceEpoch}',
+        html: '''
+          <div id="grid" style="display: grid; width: 394px; grid-template-columns: 1fr auto; column-gap: 16px; padding: 24px; border: 1px solid #e4e4e7; box-sizing: border-box;">
+            <h3 id="title" style="grid-column-start: 1; margin: 0; font-size: 16px; line-height: 16px;">Button</h3>
+            <p id="desc" style="grid-column-start: 1; margin: 0; color: #71717a; font-size: 14px; line-height: 24px;">
+              对齐官网的 variant 和 size 组合，用本地组件层驱动 use case。
+            </p>
+            <div id="action" style="grid-column-start: 2; grid-row: span 2 / span 2;">
+              <span style="display: inline-flex; white-space: nowrap; border: 1px solid #e4e4e7; border-radius: 9999px; padding: 2px 10px; font-size: 12px; line-height: 16px;">official style</span>
+            </div>
+          </div>
+        ''',
+      );
+
+      await tester.pump();
+
+      final grid = prepared.getElementById('grid');
+      final desc = prepared.getElementById('desc');
+      final action = prepared.getElementById('action');
+
+      final RenderGridLayout gridRenderer = grid.attachedRenderer as RenderGridLayout;
+      final RenderBox descRenderer = desc.attachedRenderer as RenderBox;
+      final RenderBox actionRenderer = action.attachedRenderer as RenderBox;
+
+      final Offset descOffset = getLayoutTransformTo(descRenderer, gridRenderer, excludeScrollOffset: true);
+      final Offset actionOffset = getLayoutTransformTo(actionRenderer, gridRenderer, excludeScrollOffset: true);
+
+      final double descRight = descOffset.dx + descRenderer.size.width;
+      final double actionLeft = actionOffset.dx;
+
+      expect(gridRenderer.scrollableSize.width, closeTo(394.0, 2.0));
+      expect(descRenderer.size.height, greaterThan(30.0),
+          reason: 'Description should wrap to multiple lines instead of staying single-line.');
+      expect(descRight, lessThanOrEqualTo(actionLeft + 1.0),
+          reason: 'First column should shrink before the auto column rather than overlap it.');
+    });
   });
 }

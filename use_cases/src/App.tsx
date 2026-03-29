@@ -141,6 +141,7 @@ import { ShadcnContextMenuPage } from './pages/shadcn/ShadcnContextMenuPage';
 import { ShadcnPopoverPage } from './pages/shadcn/ShadcnPopoverPage';
 import { ShadcnFormPage } from './pages/shadcn/ShadcnFormPage';
 import { ShadcnIconButtonPage } from './pages/shadcn/ShadcnIconButtonPage';
+import { ShadcnGridProbePage } from './pages/ShadcnGridProbePage';
 // Lucide Icons imports
 import { LucideShowcasePage } from './pages/LucideShowcasePage';
 import { LucideIconsPage } from './pages/lucide/LucideIconsPage';
