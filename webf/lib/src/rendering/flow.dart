@@ -19,21 +19,7 @@ import 'package:webf/foundation.dart';
 import 'package:webf/rendering.dart';
 
 bool _canReuseFlowChildLayout(RenderBox child, BoxConstraints constraints) {
-  if (!child.hasSize || child.constraints != constraints) {
-    return false;
-  }
-  if (child.debugNeedsLayout) {
-    return false;
-  }
-  if (child is RenderTextBox && child.hasPendingTextLayoutUpdate) {
-    return false;
-  }
-  if (child is RenderBoxModel &&
-      (child.needsRelayout ||
-          child.hasPendingSubtreeIntrinsicMeasurementInvalidation)) {
-    return false;
-  }
-  return true;
+  return canReuseStableProxyChildLayout(child, constraints);
 }
 
 bool _shouldAvoidParentUsesSizeForFlowChild(RenderBox child) {
