@@ -4283,11 +4283,16 @@ class RenderFlexLayout extends RenderLayoutBox {
         continue;
       }
 
-      final bool hasPercentageMaxWidth =
-          box.renderStyle.maxWidth.type == CSSLengthType.PERCENTAGE;
-      final bool hasPercentageMaxHeight =
-          box.renderStyle.maxHeight.type == CSSLengthType.PERCENTAGE;
-      if (!hasPercentageMaxWidth && !hasPercentageMaxHeight) {
+      final CSSRenderStyle style = box.renderStyle;
+      final bool hasPercentageConstraint =
+          style.width.type == CSSLengthType.PERCENTAGE ||
+              style.height.type == CSSLengthType.PERCENTAGE ||
+              style.minWidth.type == CSSLengthType.PERCENTAGE ||
+              style.minHeight.type == CSSLengthType.PERCENTAGE ||
+              style.maxWidth.type == CSSLengthType.PERCENTAGE ||
+              style.maxHeight.type == CSSLengthType.PERCENTAGE ||
+              style.flexBasis?.type == CSSLengthType.PERCENTAGE;
+      if (!hasPercentageConstraint) {
         continue;
       }
 
@@ -7046,6 +7051,46 @@ class RenderFlexLayout extends RenderLayoutBox {
       }
     }
 
+    if (_isHorizontalFlexDirection &&
+        childFlexedMainSize == null &&
+        child.renderStyle.width.type == CSSLengthType.PERCENTAGE) {
+      double containerContentW;
+      if (contentConstraints != null &&
+          contentConstraints!.maxWidth.isFinite) {
+        containerContentW = contentConstraints!.maxWidth;
+      } else {
+        final double borderW =
+            renderStyle.effectiveBorderLeftWidth.computedValue +
+                renderStyle.effectiveBorderRightWidth.computedValue;
+        containerContentW = math.max(0, size.width - borderW);
+      }
+
+      final double percent = child.renderStyle.width.value ?? 0;
+      double childBorderBoxW =
+          containerContentW.isFinite ? (containerContentW * percent) : 0;
+      if (!childBorderBoxW.isFinite || childBorderBoxW < 0) {
+        childBorderBoxW = 0;
+      }
+
+      if (child.renderStyle.maxWidth.isNotNone &&
+          child.renderStyle.maxWidth.type != CSSLengthType.PERCENTAGE) {
+        childBorderBoxW = math.min(
+          childBorderBoxW,
+          child.renderStyle.maxWidth.computedValue,
+        );
+      }
+      if (child.renderStyle.minWidth.isNotAuto) {
+        childBorderBoxW = math.max(
+          childBorderBoxW,
+          child.renderStyle.minWidth.computedValue,
+        );
+      }
+
+      minConstraintWidth = childBorderBoxW;
+      maxConstraintWidth = childBorderBoxW;
+      _overrideChildContentBoxLogicalWidth(child, childBorderBoxW);
+    }
+
     // Enforce the automatic minimum size on the main axis when flex-direction is column
     // and the item did not flex in the main axis. This prevents a definite flex-basis: 0
     // from collapsing the item’s height below its content-based minimum (min-height: auto).
@@ -8359,7 +8404,6 @@ class RenderFlexLayout extends RenderLayoutBox {
               mainAxisContentSize -
               leadingSpace
           : leadingSpace + mainAxisStartPadding + mainAxisStartBorder;
-
       final bool runAllChildrenAtMaxCross = _areAllRunChildrenAtMaxCrossExtent(
           runChildrenList, runCrossAxisExtent);
 
@@ -9053,6 +9097,10 @@ class RenderFlexLayout extends RenderLayoutBox {
           return false;
         }
 
+        if (_hasPercentageSensitiveFlexPromotionSubtree(child)) {
+          return false;
+        }
+
         final double? desiredPreservedMain = _childrenIntrinsicMainSizes[child];
         final Size childSize = _getChildSize(child)!;
         final double childMainSize =
@@ -9181,7 +9229,6 @@ class RenderFlexLayout extends RenderLayoutBox {
       return Offset(mainAxisOffset, crossAxisOffset);
     }
   }
-
   double? _getLineHeight(RenderBox child) {
     CSSLengthValue? lineHeight;
     if (child is RenderTextBox) {

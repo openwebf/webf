@@ -33,9 +33,12 @@ class RenderTextBox extends RenderBox with RenderObjectWithChildMixin<RenderBox>
     _hasPendingTextLayoutUpdate = true;
     _markAncestorSubtreeIntrinsicMeasurementUpdate();
     _markAncestorInlineCollectionNeedsUpdate();
-    parent?.markNeedsLayout();
-    markNeedsLayout();
-    markNeedsPaint();
+    if (_paintsSelf) {
+      _markLayoutIfNeeded(this);
+      markNeedsPaint();
+    } else {
+      _markLayoutIfNeeded(parent);
+    }
     _cachedSpan = null;
     _textPainter = null;
   }
@@ -56,12 +59,19 @@ class RenderTextBox extends RenderBox with RenderObjectWithChildMixin<RenderBox>
     while (ancestor != null) {
       if (ancestor is RenderFlowLayout) {
         ancestor.markNeedsCollectInlines();
-        ancestor.markNeedsLayout();
         if (ancestor.establishIFC) {
           break;
         }
       }
       ancestor = ancestor.parent;
+    }
+  }
+
+  @pragma('vm:prefer-inline')
+  void _markLayoutIfNeeded(RenderObject? renderObject) {
+    if (renderObject == null) return;
+    if (!debugRenderObjectNeedsLayout(renderObject)) {
+      renderObject.markNeedsLayout();
     }
   }
 
@@ -71,13 +81,16 @@ class RenderTextBox extends RenderBox with RenderObjectWithChildMixin<RenderBox>
     _hasPendingTextLayoutUpdate = true;
     _markAncestorSubtreeIntrinsicMeasurementUpdate();
     _markAncestorInlineCollectionNeedsUpdate();
-    // Text content changed. Since text boxes are measured and painted by the
-    // parent's inline formatting context, notify the parent to relayout so the
-    // paragraph gets rebuilt with the new text content.
-    parent?.markNeedsLayout();
-    // When not in IFC (no RenderBoxModel parent), we layout/paint ourselves.
-    // Ensure we relayout to rebuild TextPainter metrics.
-    markNeedsLayout();
+    if (_paintsSelf) {
+      // Outside an ancestor IFC we own our own text metrics, so relayout the
+      // text box and let Flutter bubble size-dependent invalidation normally.
+      _markLayoutIfNeeded(this);
+    } else {
+      // IFC ancestors rebuild the paragraph from collected inline nodes. Only
+      // the owning render subtree needs layout dirtied once; direct ancestor
+      // markNeedsLayout on every flow ancestor violates relayout boundaries.
+      _markLayoutIfNeeded(parent);
+    }
     _cachedSpan = null;
     _textPainter = null;
   }
