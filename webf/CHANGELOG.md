@@ -1,3 +1,22 @@
+## 0.24.24
+
+### Performance Improvements
+
+- **Rendering/Flexbox/Layout**: further reduce profiled layout cost in flex-heavy and wrapped
+  layouts by trimming redundant fast-path relayouts, skipping futile early run-metric passes,
+  tightening mixed/wrapped measurement reuse, and cutting repeated constraint, inherited-text,
+  and CSS length-resolution work across repeated passes.
+
+### Bug Fixes
+
+- **Rendering/Flexbox**: restore stable flex layout behavior after recent fast-path
+  optimizations by validating cached child layouts consistently in release builds, correcting
+  reuse for widget-backed and percentage-sized children, and preventing phantom trailing scroll
+  range from transformed overflow calculations.
+- **Rendering/Widget**: narrow portal/modal popup width fallback so detached widget subtrees
+  prefer their active child constraints instead of unrelated ancestor widths, avoiding overly
+  wide overlays.
+
 ## 0.24.23
 
 ### Performance Improvements
