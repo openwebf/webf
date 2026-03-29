@@ -131,6 +131,13 @@ bool _hasReusableStableLayoutChain(RenderBox child) {
   if (child is RenderTextBox) {
     return !child.hasPendingTextLayoutUpdate;
   }
+  if (child is RenderWidget) {
+    if (child.renderStyle.width.isAuto || child.renderStyle.height.isAuto) {
+      return false;
+    }
+    return !child.needsRelayout &&
+        !child.hasPendingSubtreeIntrinsicMeasurementInvalidation;
+  }
   if (child is RenderBoxModel) {
     return !child.needsRelayout &&
         !child.hasPendingSubtreeIntrinsicMeasurementInvalidation;
