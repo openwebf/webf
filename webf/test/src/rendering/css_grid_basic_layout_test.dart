@@ -967,5 +967,67 @@ void main() {
       expect(descRight, lessThanOrEqualTo(actionLeft + 1.0),
           reason: 'First column should shrink before the auto column rather than overlap it.');
     });
+    testWidgets(
+        'single-column card content keeps shrinking when a wrapped flex row sits above wrapping text',
+        (WidgetTester tester) async {
+      final prepared = await WebFWidgetTestUtils.prepareWidgetTest(
+        tester: tester,
+        controllerName:
+            'grid-card-flex-wrap-shrink-${DateTime.now().millisecondsSinceEpoch}',
+        html: '''
+          <body style="margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;">
+          <div id="viewport" style="width: 320px;">
+            <section id="section" style="display: grid; gap: 24px;">
+              <div id="card" style="min-width: 0; border: 1px solid #e4e4e7; border-radius: 16px; background: #fff;">
+                <div id="content" style="min-width: 0; display: grid; grid-template-columns: minmax(0, 1fr); gap: 16px; padding: 24px;">
+                  <div id="buttons" style="min-width: 0; display: flex; flex-wrap: wrap; gap: 8px;">
+                    <button style="display: inline-flex; white-space: nowrap; border-radius: 8px; padding: 8px 16px; background: #18181b; color: #fff;">Continue</button>
+                    <button style="display: inline-flex; white-space: nowrap; border-radius: 8px; padding: 8px 16px; background: #f4f4f5; color: #18181b;">Secondary</button>
+                    <button style="display: inline-flex; white-space: nowrap; border: 1px solid #e4e4e7; border-radius: 8px; padding: 8px 16px; background: #fff; color: #18181b;">Outline</button>
+                    <button style="display: inline-flex; white-space: nowrap; border-radius: 8px; padding: 8px 16px; background: transparent; color: #3f3f46;">Ghost</button>
+                    <button style="display: inline-flex; white-space: nowrap; border-radius: 8px; padding: 8px 16px; background: #dc2626; color: #fff;">Delete</button>
+                    <button style="display: inline-flex; white-space: nowrap; width: 32px; height: 32px; align-items: center; justify-content: center; border-radius: 8px; background: #18181b; color: #fff;">+</button>
+                  </div>
+                  <div id="note" style="min-width: 0; width: 100%; border: 1px solid #e4e4e7; border-radius: 12px; padding: 12px; box-sizing: border-box; color: #52525b; font-size: 14px; line-height: 28px;">
+                    新示例不再依赖旧的 Flutter custom element 按钮包装，而是直接保持 shadcn 官方推荐的组件组合方式。
+                  </div>
+                </div>
+              </div>
+            </section>
+          </div>
+          </body>
+        ''',
+      );
+
+      await tester.pump();
+
+      final viewport = prepared.getElementById('viewport');
+      final card = prepared.getElementById('card');
+      final note = prepared.getElementById('note');
+
+      final RenderBox viewportRenderer = viewport.attachedRenderer as RenderBox;
+      final RenderBox cardRenderer = card.attachedRenderer as RenderBox;
+      final RenderBox noteRenderer = note.attachedRenderer as RenderBox;
+
+      final Offset cardOffset = getLayoutTransformTo(
+          cardRenderer, viewportRenderer,
+          excludeScrollOffset: true);
+      final Offset noteOffset = getLayoutTransformTo(
+          noteRenderer, viewportRenderer,
+          excludeScrollOffset: true);
+
+      final double viewportRight = viewportRenderer.size.width;
+      final double cardRight = cardOffset.dx + cardRenderer.size.width;
+      final double noteRight = noteOffset.dx + noteRenderer.size.width;
+
+      expect(viewportRenderer.size.width, closeTo(320.0, 2.0));
+      expect(cardRight, lessThanOrEqualTo(viewportRight + 1.0),
+          reason:
+              'The card should continue shrinking with the 320px viewport instead of overflowing horizontally.');
+      expect(noteRenderer.size.height, greaterThan(60.0),
+          reason:
+              'The note block should keep wrapping instead of being frozen at a wider intrinsic width.');
+      expect(noteRight, lessThanOrEqualTo(viewportRight + 1.0));
+    });
   });
 }

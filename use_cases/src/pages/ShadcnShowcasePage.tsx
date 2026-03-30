@@ -200,8 +200,8 @@ export const ShadcnShowcasePage: React.FC = () => {
                 <Badge variant="outline">official style</Badge>
               </CardAction>
             </CardHeader>
-            <CardContent className="grid gap-4">
-              <div className="flex flex-wrap gap-2">
+            <CardContent className="grid min-w-0 grid-cols-1 gap-4">
+              <div className="min-w-0 flex flex-wrap gap-2">
                 <Button>Continue</Button>
                 <Button variant="secondary">Secondary</Button>
                 <Button variant="outline">Outline</Button>
@@ -211,7 +211,7 @@ export const ShadcnShowcasePage: React.FC = () => {
                   +
                 </Button>
               </div>
-              <div className="rounded-lg border border-zinc-200 bg-zinc-50 p-3 text-sm text-zinc-600">
+              <div className="min-w-0 w-full rounded-lg border border-zinc-200 bg-zinc-50 p-3 text-sm leading-7 text-zinc-600">
                 新示例不再依赖旧的 Flutter custom element 按钮包装，而是直接保持 shadcn 官方推荐的组件组合方式。
               </div>
             </CardContent>
@@ -257,7 +257,7 @@ export const ShadcnShowcasePage: React.FC = () => {
                 </Button>
               </CardAction>
             </CardHeader>
-            <CardContent className="grid gap-3">
+            <CardContent className="grid grid-cols-1 gap-3">
               <div className="rounded-lg border border-zinc-200 bg-zinc-50 p-4">
                 <div className="mb-1 text-sm font-medium text-zinc-900">
                   Current rollout
@@ -418,7 +418,7 @@ export const ShadcnShowcasePage: React.FC = () => {
                 官网常见的账号菜单结构，保留 label、shortcut、separator 等层级。
               </CardDescription>
             </CardHeader>
-            <CardContent className="grid gap-4">
+            <CardContent className="grid grid-cols-1 gap-4">
               <DropdownMenu>
                 <DropdownMenuTrigger>
                   <Button variant="outline">Open account menu</Button>
@@ -518,7 +518,7 @@ export const ShadcnShowcasePage: React.FC = () => {
                 当前迁移以 `use_cases` 先落地为主，CSS 能力审计和更复杂组件在后续阶段推进。
               </CardDescription>
             </CardHeader>
-            <CardContent className="grid gap-3">
+            <CardContent className="grid grid-cols-1 gap-3">
               {capabilityRows.map((row) => (
                 <div
                   key={row.name}
@@ -569,7 +569,7 @@ export const ShadcnShowcasePage: React.FC = () => {
                     <Badge variant="destructive">deprecated</Badge>
                   </CardAction>
                 </CardHeader>
-                <CardContent className="grid gap-2">
+                <CardContent className="grid grid-cols-1 gap-2">
                   {section.items.map((item) => (
                     <button
                       key={item.to}

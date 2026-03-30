@@ -1317,6 +1317,8 @@ class RenderFlexLayout extends RenderLayoutBox {
     }
 
     final bool mainAxisIsHorizontal = _isHorizontalFlexDirection;
+    final bool isWrap = renderStyle.flexWrap == FlexWrap.wrap ||
+        renderStyle.flexWrap == FlexWrap.wrapReverse;
     final double gap =
         _intrinsicMainAxisGap(mainAxisIsHorizontal: mainAxisIsHorizontal);
 
@@ -1330,7 +1332,16 @@ class RenderFlexLayout extends RenderLayoutBox {
         final double w =
             child.getMinIntrinsicWidth(height) + _childMarginHorizontal(child);
         if (mainAxisIsHorizontal) {
-          if (w.isFinite) contentWidth += w;
+          if (w.isFinite) {
+            if (isWrap) {
+              // A wrapping row flex container can always move items onto separate lines.
+              // Its min-content width is therefore bounded by the widest item, not the
+              // sum of every item on one line.
+              contentWidth = math.max(contentWidth, w);
+            } else {
+              contentWidth += w;
+            }
+          }
         } else {
           if (w.isFinite) contentWidth = math.max(contentWidth, w);
         }
@@ -1339,7 +1350,7 @@ class RenderFlexLayout extends RenderLayoutBox {
       child = childParentData.nextSibling;
     }
 
-    if (mainAxisIsHorizontal && count > 1) {
+    if (mainAxisIsHorizontal && !isWrap && count > 1) {
       contentWidth += gap * (count - 1);
     }
     return contentWidth + _intrinsicPaddingBorderHorizontal();
@@ -1387,6 +1398,8 @@ class RenderFlexLayout extends RenderLayoutBox {
     }
 
     final bool mainAxisIsHorizontal = _isHorizontalFlexDirection;
+    final bool isWrap = renderStyle.flexWrap == FlexWrap.wrap ||
+        renderStyle.flexWrap == FlexWrap.wrapReverse;
     final double gap =
         _intrinsicMainAxisGap(mainAxisIsHorizontal: !mainAxisIsHorizontal);
 
@@ -1400,7 +1413,13 @@ class RenderFlexLayout extends RenderLayoutBox {
         final double h =
             child.getMinIntrinsicHeight(width) + _childMarginVertical(child);
         if (!mainAxisIsHorizontal) {
-          if (h.isFinite) contentHeight += h;
+          if (h.isFinite) {
+            if (isWrap) {
+              contentHeight = math.max(contentHeight, h);
+            } else {
+              contentHeight += h;
+            }
+          }
         } else {
           if (h.isFinite) contentHeight = math.max(contentHeight, h);
         }
@@ -1409,7 +1428,7 @@ class RenderFlexLayout extends RenderLayoutBox {
       child = childParentData.nextSibling;
     }
 
-    if (!mainAxisIsHorizontal && count > 1) {
+    if (!mainAxisIsHorizontal && !isWrap && count > 1) {
       contentHeight += gap * (count - 1);
     }
     return contentHeight + _intrinsicPaddingBorderVertical();
