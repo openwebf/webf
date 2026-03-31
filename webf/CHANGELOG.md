@@ -1,3 +1,11 @@
+## 0.24.25+1
+
+### Bug Fixes
+
+- **Rendering/Layout**: avoid relayout-boundary assertions when mirrored WebF box-model
+  children dirty layout by routing the special relayout-parent path through Flutter’s
+  parent-layout propagation instead of double-marking the boundary.
+
 ## 0.24.25
 
 ### Bug Fixes
