@@ -969,16 +969,16 @@ abstract class RenderBoxModel extends RenderBox
   @override
   void markNeedsLayout() {
     final RenderObject? relayoutParent = _relayoutParentOnSizeChange;
-    super.markNeedsLayout();
-
     // Some wrapper parents mirror child.boxSize while laying the child out
     // with parentUsesSize: false to keep a local relayout boundary.
     if (relayoutParent != null &&
         lastLaidOutAsRelayoutBoundary &&
         identical(parent, relayoutParent) &&
         relayoutParent.attached) {
-      relayoutParent.markNeedsLayout();
+      markParentNeedsLayout();
+      return;
     }
+    super.markNeedsLayout();
   }
 
   Size getBoxSize(Size contentSize) {
