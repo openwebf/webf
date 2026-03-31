@@ -31,14 +31,13 @@ import 'package:flutter/widgets.dart'
         RouteObserver,
         StatefulElement,
         View;
-import 'package:path_provider/path_provider.dart';
 import 'package:webf/css.dart';
 import 'package:dio/dio.dart' show Interceptor; // For custom Dio configuration
 import 'package:webf/dom.dart';
 import 'package:webf/rendering.dart';
 import 'package:webf/webf.dart';
 import 'package:webf/devtools.dart'; // Import for ChromeDevToolsService
-
+import 'package:webf/src/launcher/render_tree_dump_storage.dart';
 
 // Error handler when load bundle failed.
 typedef LoadErrorHandler = void Function(FlutterError error, StackTrace stack);
@@ -66,7 +65,8 @@ typedef RouteFCPHandler = void Function(double fcpTime, String routePath);
 typedef RouteFPHandler = void Function(double fpTime, String routePath);
 
 // Content verification handler
-typedef ContentVerificationHandler = void Function(ContentInfo contentInfo, String routePath);
+typedef ContentVerificationHandler = void Function(
+    ContentInfo contentInfo, String routePath);
 
 typedef TraverseElementCallback = void Function(Element element);
 
@@ -168,11 +168,13 @@ class WebFController with Diagnosticable {
   }
 
   void updateTextSettingsFromContext(BuildContext context) {
-    final MediaQueryData data = MediaQuery.maybeOf(context) ?? MediaQueryData.fromView(View.of(context));
+    final MediaQueryData data = MediaQuery.maybeOf(context) ??
+        MediaQueryData.fromView(View.of(context));
     updateTextSettings(textScaler: data.textScaler, boldText: data.boldText);
   }
 
-  void updateTextSettings({required TextScaler textScaler, required bool boldText}) {
+  void updateTextSettings(
+      {required TextScaler textScaler, required bool boldText}) {
     final bool changed = _textScaler != textScaler || _boldText != boldText;
     if (!changed) return;
 
@@ -207,9 +209,11 @@ class WebFController with Diagnosticable {
   }
 
   // Legacy single-route tracking for backward compatibility
-  DateTime? get _navigationStartTime => _currentRouteMetrics?.navigationStartTime;
+  DateTime? get _navigationStartTime =>
+      _currentRouteMetrics?.navigationStartTime;
   bool get _lcpReported => _currentRouteMetrics?.lcpReported ?? false;
-  double get _lastReportedLCPTime => _currentRouteMetrics?.lastReportedLCPTime ?? 0;
+  double get _lastReportedLCPTime =>
+      _currentRouteMetrics?.lastReportedLCPTime ?? 0;
 
   // FCP tracking
   bool get _fcpReported => _currentRouteMetrics?.fcpReported ?? false;
@@ -235,7 +239,8 @@ class WebFController with Diagnosticable {
 
   /// Gets the current LCP element if it's still connected to the DOM
   Element? get currentLCPElement {
-    final WeakReference<Element>? lcpRef = _currentRouteMetrics?.currentLCPElement;
+    final WeakReference<Element>? lcpRef =
+        _currentRouteMetrics?.currentLCPElement;
     if (lcpRef != null) {
       final element = lcpRef.target;
       if (element != null && element.isConnected) {
@@ -251,7 +256,8 @@ class WebFController with Diagnosticable {
   }
 
   /// Gets all route performance metrics
-  Map<String, RoutePerformanceMetrics> get allRouteMetrics => Map.unmodifiable(_routeMetrics);
+  Map<String, RoutePerformanceMetrics> get allRouteMetrics =>
+      Map.unmodifiable(_routeMetrics);
 
   /// The background color for viewport, default to transparent.
   /// This determines the background color of the WebF widget content area.
@@ -275,7 +281,8 @@ class WebFController with Diagnosticable {
   /// Can be set via the setup() callback when using WebFControllerManager or directly on the controller.
   WebFNavigationDelegate? _navigationDelegate;
 
-  WebFNavigationDelegate get navigationDelegate => _navigationDelegate ?? WebFNavigationDelegate();
+  WebFNavigationDelegate get navigationDelegate =>
+      _navigationDelegate ?? WebFNavigationDelegate();
 
   set navigationDelegate(WebFNavigationDelegate? delegate) {
     _navigationDelegate = delegate;
@@ -284,7 +291,6 @@ class WebFController with Diagnosticable {
       _view!.navigationDelegate = delegate;
     }
   }
-
 
   /// Specify the running thread for your JavaScript codes.
   /// Default value: DedicatedThread();
@@ -356,7 +362,6 @@ class WebFController with Diagnosticable {
   ///
   /// Use this to catch and handle JavaScript execution errors in the web content.
   JSErrorHandler? onJSError;
-
 
   // HttpClientInterceptor support removed; use Dio interceptors via `dioInterceptors` instead.
 
@@ -494,12 +499,21 @@ class WebFController with Diagnosticable {
     bool printToConsole = false,
   }) async {
     String? renderObjectTreeString;
+    final bool shouldUseRootRenderTree =
+        routePath == null || routePath == initialRoute;
 
-    if (routePath == null || routePath == initialRoute) {
+    if (shouldUseRootRenderTree) {
       renderObjectTreeString = view.getRootRenderObject()?.toStringDeep();
     } else {
-      final RouterLinkElement? routeLinkElement = view.getHybridRouterView(routePath);
+      final RouterLinkElement? routeLinkElement =
+          view.getHybridRouterView(routePath);
       renderObjectTreeString = routeLinkElement?.getRenderObjectTree();
+      if (renderObjectTreeString == null || renderObjectTreeString.isEmpty) {
+        debugPrint(
+          'No hybrid route render tree found for "$routePath"; falling back to the root render tree.',
+        );
+        renderObjectTreeString = view.getRootRenderObject()?.toStringDeep();
+      }
     }
 
     if (renderObjectTreeString == null || renderObjectTreeString.isEmpty) {
@@ -507,31 +521,12 @@ class WebFController with Diagnosticable {
     }
 
     String? savedFilePath;
-    if (writeToFile && (Platform.isMacOS || Platform.isWindows || Platform.isLinux)) {
+    if (writeToFile) {
       try {
-        Directory? documentsDir;
-        if (Platform.isMacOS || Platform.isLinux) {
-          final String? home = Platform.environment['HOME'];
-          if (home != null && home.isNotEmpty) {
-            documentsDir = Directory('$home/Documents');
-          }
-        } else if (Platform.isWindows) {
-          final String? userProfile = Platform.environment['USERPROFILE'];
-          if (userProfile != null && userProfile.isNotEmpty) {
-            documentsDir = Directory('$userProfile\\Documents');
-          }
-        }
-
-        documentsDir ??= await getApplicationDocumentsDirectory();
-        final webfDebugDir = Directory('${documentsDir.path}${Platform.pathSeparator}WebF_Debug');
-        await webfDebugDir.create(recursive: true);
-
-        final timestamp = DateTime.now().toIso8601String().replaceAll(':', '-').replaceAll('.', '-');
-        final sanitizedRoute = (routePath ?? 'root').replaceAll(RegExp(r'[^a-zA-Z0-9_-]+'), '_');
-        final filename = 'render_tree_${sanitizedRoute}_$timestamp.txt';
-        final file = File('${webfDebugDir.path}${Platform.pathSeparator}$filename');
-        await file.writeAsString(renderObjectTreeString);
-        savedFilePath = file.path;
+        savedFilePath = await writeRenderTreeDumpToFile(
+          renderObjectTreeString,
+          routePath: routePath,
+        );
       } catch (e) {
         debugPrint('Failed to write render object tree to file: $e');
       }
@@ -558,6 +553,12 @@ class WebFController with Diagnosticable {
     } else {
       RouterLinkElement? routeLinkElement = view.getHybridRouterView(routePath);
       String? domTree = routeLinkElement?.toStringDeep();
+      if (domTree == null || domTree.isEmpty) {
+        debugPrint(
+          'No hybrid route DOM tree found for "$routePath"; falling back to the root DOM tree.',
+        );
+        domTree = view.document.toStringDeep();
+      }
       debugPrint(domTree);
     }
   }
@@ -604,6 +605,7 @@ class WebFController with Diagnosticable {
   ContentVerificationHandler? onLCPContentVerification;
 
   WebFMethodChannel? _methodChannel;
+
   /// Gets the JavaScript channel for this controller.
   ///
   /// This property provides access to the JavaScript channel that enables
@@ -643,7 +645,10 @@ class WebFController with Diagnosticable {
   /// Especially useful to detect how many hybrid route pages attached to the Flutter tree.
   List<HybridRoutePageContext> get buildContextStack => _buildContextStack;
 
-  void pushNewBuildContext({required BuildContext context, required String routePath, required Object? state}) {
+  void pushNewBuildContext(
+      {required BuildContext context,
+      required String routePath,
+      required Object? state}) {
     _buildContextStack.add(HybridRoutePageContext(routePath, context, state));
 
     // Initialize performance metrics for this route if not already present
@@ -698,9 +703,11 @@ class WebFController with Diagnosticable {
 
   UniqueKey key = UniqueKey();
 
-  HybridRoutePageContext? get currentBuildContext => _buildContextStack.isNotEmpty ? _buildContextStack.last : null;
+  HybridRoutePageContext? get currentBuildContext =>
+      _buildContextStack.isNotEmpty ? _buildContextStack.last : null;
 
-  HybridRoutePageContext? get rootBuildContext => _buildContextStack.isNotEmpty ? _buildContextStack.first : null;
+  HybridRoutePageContext? get rootBuildContext =>
+      _buildContextStack.isNotEmpty ? _buildContextStack.first : null;
 
   bool? _darkModeOverride;
 
@@ -727,9 +734,7 @@ class WebFController with Diagnosticable {
         malloc.free(schemePtr);
       }
       view.document.recalculateStyleImmediately();
-    } else {
-
-    }
+    } else {}
   }
 
   get darkModeOverride => _darkModeOverride;
@@ -742,7 +747,8 @@ class WebFController with Diagnosticable {
     if (_darkModeOverride != null) {
       return _darkModeOverride;
     }
-    final ui.PlatformDispatcher dispatcher = ownerFlutterView?.platformDispatcher ?? ui.PlatformDispatcher.instance;
+    final ui.PlatformDispatcher dispatcher =
+        ownerFlutterView?.platformDispatcher ?? ui.PlatformDispatcher.instance;
     return dispatcher.platformBrightness == Brightness.dark;
   }
 
@@ -853,17 +859,18 @@ class WebFController with Diagnosticable {
       _module = WebFModuleController(this, contextId);
 
       if (bundle != null) {
-        HistoryModule historyModule = module.moduleManager.getModule<HistoryModule>('History')!;
+        HistoryModule historyModule =
+            module.moduleManager.getModule<HistoryModule>('History')!;
         historyModule.add(bundle);
       }
 
-      assert(!_controllerMap.containsKey(contextId), 'found exist contextId of WebFController, contextId: $contextId');
+      assert(!_controllerMap.containsKey(contextId),
+          'found exist contextId of WebFController, contextId: $contextId');
       _controllerMap[contextId] = this;
 
       // HttpClientInterceptor removed; HttpOverrides setup no longer required.
 
       uriParser ??= UriParser();
-
 
       flushUICommand(view, nullptr);
 
@@ -917,7 +924,8 @@ class WebFController with Diagnosticable {
   /// Access to WebF's hybrid history implementation that integrates with Flutter navigation.
   ///
   /// Enables synchronized navigation between WebF content and native Flutter routes.
-  HybridHistoryModule get hybridHistory => module.moduleManager.getModule('HybridHistory')!;
+  HybridHistoryModule get hybridHistory =>
+      module.moduleManager.getModule('HybridHistory')!;
 
   /// Creates a fallback URI for WebF bundle content.
   ///
@@ -931,7 +939,6 @@ class WebFController with Diagnosticable {
     // The fallback origin uri, like `vm://bundle/0`
     return Uri(scheme: 'vm', host: 'bundle', path: id != null ? '$id' : null);
   }
-
 
   /// Flag indicating whether fonts are currently being loaded.
   ///
@@ -951,12 +958,14 @@ class WebFController with Diagnosticable {
   }
 
   String? get _url {
-    HistoryModule historyModule = module.moduleManager.getModule<HistoryModule>('History')!;
+    HistoryModule historyModule =
+        module.moduleManager.getModule<HistoryModule>('History')!;
     return historyModule.stackTop?.url;
   }
 
   Uri? get _uri {
-    HistoryModule historyModule = module.moduleManager.getModule<HistoryModule>('History')!;
+    HistoryModule historyModule =
+        module.moduleManager.getModule<HistoryModule>('History')!;
     return historyModule.stackTop?.resolvedUri;
   }
 
@@ -972,7 +981,8 @@ class WebFController with Diagnosticable {
   Uri? get uri => _uri;
 
   void _replaceCurrentHistory(WebFBundle bundle) {
-    HistoryModule historyModule = module.moduleManager.getModule<HistoryModule>('History')!;
+    HistoryModule historyModule =
+        module.moduleManager.getModule<HistoryModule>('History')!;
     previousHistoryStack.clear();
     historyModule.add(bundle);
   }
@@ -984,7 +994,8 @@ class WebFController with Diagnosticable {
   Future<WebFController?> reload() async {
     assert(!_view!.disposed, 'WebF have already disposed');
 
-    String? currentPageId = WebFControllerManager.instance.getControllerName(this);
+    String? currentPageId =
+        WebFControllerManager.instance.getControllerName(this);
 
     if (currentPageId == null) return null;
 
@@ -992,8 +1003,11 @@ class WebFController with Diagnosticable {
     //   throw FlutterError('Could not reload a attached controller');
     // }
 
-    return WebFControllerManager.instance
-        .addOrUpdateControllerWithLoading(name: currentPageId, bundle: entrypoint!, forceReplace: true, mode: mode);
+    return WebFControllerManager.instance.addOrUpdateControllerWithLoading(
+        name: currentPageId,
+        bundle: entrypoint!,
+        forceReplace: true,
+        mode: mode);
   }
 
   /// Loads content from the provided WebFBundle.
@@ -1003,7 +1017,8 @@ class WebFController with Diagnosticable {
   Future<WebFController?> load(WebFBundle bundle) async {
     assert(!_view!.disposed, 'WebF have already disposed');
 
-    String? currentPageId = WebFControllerManager.instance.getControllerName(this);
+    String? currentPageId =
+        WebFControllerManager.instance.getControllerName(this);
 
     if (currentPageId == null) return null;
 
@@ -1040,15 +1055,16 @@ class WebFController with Diagnosticable {
 
     // Set up new auto-finalization timer
     if (_currentRouteMetrics != null) {
-      _currentRouteMetrics!.lcpAutoFinalizeTimer = Timer(Duration(seconds: 5), () {
+      _currentRouteMetrics!.lcpAutoFinalizeTimer =
+          Timer(Duration(seconds: 5), () {
         if (!_currentRouteMetrics!.lcpReported) {
           finalizeLCP();
         }
       });
     }
 
-    return WebFControllerManager.instance
-        .addOrUpdateControllerWithLoading(name: currentPageId, bundle: bundle, forceReplace: true, mode: mode);
+    return WebFControllerManager.instance.addOrUpdateControllerWithLoading(
+        name: currentPageId, bundle: bundle, forceReplace: true, mode: mode);
   }
 
   PreloadingStatus preloadStatus = PreloadingStatus.none;
@@ -1063,7 +1079,8 @@ class WebFController with Diagnosticable {
   /// If the entrypoint is a JavaScript file, WebF only do loading until the WebF widget is mounted into the Flutter tree.
   /// Using this mode can save up to 50% of loading time, while maintaining a high level of compatibility with the standard mode.
   /// It's safe and recommended to use this mode for all types of pages.
-  Future<void> preload(WebFBundle bundle, {ui.Size? viewportSize, Duration? timeout}) async {
+  Future<void> preload(WebFBundle bundle,
+      {ui.Size? viewportSize, Duration? timeout}) async {
     if (preloadStatus == PreloadingStatus.done) return;
     controllerPreloadingCompleter = Completer();
 
@@ -1095,7 +1112,8 @@ class WebFController with Diagnosticable {
 
     view.document.preloadViewportSize = _viewportSize;
     // Manually initialize the root element and create renderObjects for each elements.
-    view.document.documentElement!.applyStyle(view.document.documentElement!.style);
+    view.document.documentElement!
+        .applyStyle(view.document.documentElement!.style);
 
     run() async {
       bool isTimeout = false;
@@ -1104,7 +1122,8 @@ class WebFController with Diagnosticable {
           if (controllerPreloadingCompleter.isCompleted) return;
           isTimeout = true;
           preloadStatus = PreloadingStatus.fail;
-          controllerPreloadingCompleter.completeError(FlutterError('Preloading failed with exceed timeout limits'));
+          controllerPreloadingCompleter.completeError(
+              FlutterError('Preloading failed with exceed timeout limits'));
         });
 
         await Future.wait([_resolveEntrypoint(), module.initialize()]);
@@ -1127,7 +1146,8 @@ class WebFController with Diagnosticable {
           await view.installBindingObjectConstructorsIfNeeded();
 
           // Evaluate the HTML entry point, and loading the stylesheets and scripts.
-          final parseEndCallback = _loadingState.recordPhaseStart(LoadingState.phaseParseHTML, parameters: {
+          final parseEndCallback = _loadingState
+              .recordPhaseStart(LoadingState.phaseParseHTML, parameters: {
             'dataSize': _entrypoint!.data!.length,
             'preload': true,
           });
@@ -1237,7 +1257,8 @@ class WebFController with Diagnosticable {
     preRenderingStatus = PreRenderingStatus.preloading;
 
     // Manually initialize the root element and create renderObjects for each elements.
-    view.document.documentElement!.applyStyle(view.document.documentElement!.style);
+    view.document.documentElement!
+        .applyStyle(view.document.documentElement!.style);
 
     run() async {
       bool isTimeout = false;
@@ -1247,7 +1268,8 @@ class WebFController with Diagnosticable {
           if (controllerPreRenderingCompleter.isCompleted) return;
           isTimeout = true;
           preRenderingStatus = PreRenderingStatus.fail;
-          controllerPreRenderingCompleter.completeError(FlutterError('Prerendering failed with exceed timeout limits'));
+          controllerPreRenderingCompleter.completeError(
+              FlutterError('Prerendering failed with exceed timeout limits'));
         });
 
         // Preparing the entrypoint
@@ -1387,7 +1409,8 @@ class WebFController with Diagnosticable {
     if (isFlutterAttached) {
       BuildContext? rootBuildContext = this.rootBuildContext?.context;
       if (rootBuildContext != null) {
-        WebFState state = (rootBuildContext as StatefulElement).state as WebFState;
+        WebFState state =
+            (rootBuildContext as StatefulElement).state as WebFState;
         state.requestForUpdate(ControllerDisposeChangeReason());
       }
     }
@@ -1412,7 +1435,9 @@ class WebFController with Diagnosticable {
   }
 
   Future<void> executeEntrypoint(
-      {bool shouldResolve = true, bool shouldEvaluate = true, AnimationController? animationController}) async {
+      {bool shouldResolve = true,
+      bool shouldEvaluate = true,
+      AnimationController? animationController}) async {
     if (_entrypoint != null && shouldResolve) {
       await controlledInitCompleter.future;
       await Future.wait([_resolveEntrypoint(), _module!.initialize()]);
@@ -1438,7 +1463,8 @@ class WebFController with Diagnosticable {
     }
 
     // Record resolve entrypoint phase
-    final endResolve = _loadingState.recordPhaseStart(LoadingState.phaseResolveEntrypoint, parameters: {
+    final endResolve = _loadingState
+        .recordPhaseStart(LoadingState.phaseResolveEntrypoint, parameters: {
       'bundle': bundleToLoad.url,
       'baseUrl': url,
     });
@@ -1460,13 +1486,12 @@ class WebFController with Diagnosticable {
 
       // Record the error with context
       _loadingState.recordError(LoadingState.phaseResolveEntrypoint, e,
-        stackTrace: stack,
-        context: {
-          'bundle': bundleToLoad.url,
-          'baseUrl': url,
-          'errorType': e.runtimeType.toString(),
-        }
-      );
+          stackTrace: stack,
+          context: {
+            'bundle': bundleToLoad.url,
+            'baseUrl': url,
+            'errorType': e.runtimeType.toString(),
+          });
 
       endResolve();
       // Not to dismiss this error.
@@ -1494,7 +1519,8 @@ class WebFController with Diagnosticable {
     view.attachToFlutter(context);
     PaintingBinding.instance.systemFonts.addListener(_watchFontLoading);
     _isFlutterAttached = true;
-    pushNewBuildContext(context: context, routePath: initialRoute ?? '/', state: initialState);
+    pushNewBuildContext(
+        context: context, routePath: initialRoute ?? '/', state: initialState);
 
     // Notify DevTools service about controller attach
     try {
@@ -1541,7 +1567,8 @@ class WebFController with Diagnosticable {
   }
 
   // Execute the content from entrypoint bundle.
-  Future<void> evaluateEntrypoint({AnimationController? animationController}) async {
+  Future<void> evaluateEntrypoint(
+      {AnimationController? animationController}) async {
     // @HACK: Execute JavaScript scripts will block the Flutter UI Threads.
     // Listen for animationController listener to make sure to execute Javascript after route transition had completed.
     if (animationController != null) {
@@ -1555,16 +1582,17 @@ class WebFController with Diagnosticable {
 
     assert(!_view!.disposed, 'WebF have already disposed');
     if (_entrypoint != null) {
-
       WebFBundle entrypoint = _entrypoint!;
       double contextId = _view!.contextId;
-      assert(entrypoint.isResolved, 'The webf bundle $entrypoint is not resolved to evaluate.');
+      assert(entrypoint.isResolved,
+          'The webf bundle $entrypoint is not resolved to evaluate.');
 
       // Ensure custom binding object constructors are installed before any entrypoint scripts run.
       await _view!.installBindingObjectConstructorsIfNeeded();
 
       // Record evaluate start phase
-      final endEvaluate = _loadingState.recordPhaseStart(LoadingState.phaseEvaluateStart, parameters: {
+      final endEvaluate = _loadingState
+          .recordPhaseStart(LoadingState.phaseEvaluateStart, parameters: {
         'entrypoint': entrypoint.url,
         'contentType': entrypoint.contentType.toString(),
         'isJavascript': entrypoint.isJavascript,
@@ -1577,9 +1605,11 @@ class WebFController with Diagnosticable {
 
       Uint8List data = entrypoint.data!;
       if (entrypoint.isJavascript) {
-        assert(isValidUTF8String(data), 'The JavaScript codes should be in UTF-8 encoding format');
+        assert(isValidUTF8String(data),
+            'The JavaScript codes should be in UTF-8 encoding format');
         // Prefer sync decode in loading entrypoint.
-        final scriptEndCallback = _loadingState.recordPhaseStart(LoadingState.phaseEvaluateScripts, parameters: {
+        final scriptEndCallback = _loadingState
+            .recordPhaseStart(LoadingState.phaseEvaluateScripts, parameters: {
           'url': url,
           'loadedFromCache': entrypoint.loadedFromCache,
           'cacheKey': entrypoint.cacheKey ?? 'null',
@@ -1596,7 +1626,8 @@ class WebFController with Diagnosticable {
           rethrow;
         }
       } else if (entrypoint.isBytecode) {
-        final bytecodeEndCallback = _loadingState.recordPhaseStart(LoadingState.phaseEvaluateScripts, parameters: {
+        final bytecodeEndCallback = _loadingState
+            .recordPhaseStart(LoadingState.phaseEvaluateScripts, parameters: {
           'type': 'bytecode',
           'dataSize': data.length,
         });
@@ -1608,8 +1639,10 @@ class WebFController with Diagnosticable {
           rethrow;
         }
       } else if (entrypoint.isHTML) {
-        assert(isValidUTF8String(data), 'The HTML codes should be in UTF-8 encoding format');
-        final parseEndCallback = _loadingState.recordPhaseStart(LoadingState.phaseParseHTML, parameters: {
+        assert(isValidUTF8String(data),
+            'The HTML codes should be in UTF-8 encoding format');
+        final parseEndCallback = _loadingState
+            .recordPhaseStart(LoadingState.phaseParseHTML, parameters: {
           'dataSize': data.length,
         });
         try {
@@ -1622,13 +1655,15 @@ class WebFController with Diagnosticable {
       } else if (entrypoint.contentType.primaryType == 'text') {
         // Fallback treating text content as JavaScript.
         try {
-          assert(isValidUTF8String(data), 'The JavaScript codes should be in UTF-8 encoding format');
+          assert(isValidUTF8String(data),
+              'The JavaScript codes should be in UTF-8 encoding format');
           await evaluateScripts(contextId, data,
               loadedFromCache: entrypoint.loadedFromCache,
               cacheKey: entrypoint.cacheKey,
               url: url);
         } catch (error) {
-          widgetLogger.warning('Fallback to execute JavaScript content of $url', error);
+          widgetLogger.warning(
+              'Fallback to execute JavaScript content of $url', error);
           rethrow;
         }
       } else {
@@ -1641,7 +1676,8 @@ class WebFController with Diagnosticable {
 
       // Record evaluate complete
       endEvaluate();
-      _loadingState.recordPhase(LoadingState.phaseEvaluateComplete, parameters: {
+      _loadingState
+          .recordPhase(LoadingState.phaseEvaluateComplete, parameters: {
         'parsing': false,
       });
 
@@ -1823,7 +1859,9 @@ class WebFController with Diagnosticable {
 
   @override
   String toStringShort() {
-    String status = mode == WebFLoadingMode.preloading ? preloadStatus.toString() : preRenderingStatus.toString();
+    String status = mode == WebFLoadingMode.preloading
+        ? preloadStatus.toString()
+        : preRenderingStatus.toString();
     return '${describeIdentity(this)} (disposed: $disposed, evaluated: $evaluated, status: $status)';
   }
 
@@ -1838,7 +1876,9 @@ class WebFController with Diagnosticable {
       }
     }
 
-    if (_currentRouteMetrics == null || _currentRouteMetrics!.lcpReported) return;
+    if (_currentRouteMetrics == null || _currentRouteMetrics!.lcpReported) {
+      return;
+    }
 
     final metrics = _currentRouteMetrics!;
     metrics.navigationStartTime = startTime;
@@ -1876,7 +1916,8 @@ class WebFController with Diagnosticable {
     if (_currentRouteMetrics == null) return;
 
     final metrics = _currentRouteMetrics!;
-    if (metrics.currentLCPElement != null && metrics.currentLCPElement!.target == element) {
+    if (metrics.currentLCPElement != null &&
+        metrics.currentLCPElement!.target == element) {
       // The current LCP element was removed, reset tracking
       metrics.largestContentfulPaintSize = 0;
       metrics.currentLCPElement = null;
@@ -1907,7 +1948,10 @@ class WebFController with Diagnosticable {
     if (contentSize > metrics.largestContentfulPaintSize) {
       metrics.largestContentfulPaintSize = contentSize;
       metrics.currentLCPElement = WeakReference(element);
-      final lcpTime = DateTime.now().difference(metrics.navigationStartTime!).inMilliseconds.toDouble();
+      final lcpTime = DateTime.now()
+          .difference(metrics.navigationStartTime!)
+          .inMilliseconds
+          .toDouble();
       metrics.lastReportedLCPTime = lcpTime;
 
       // Fire the progressive onLCP callback
@@ -1921,12 +1965,13 @@ class WebFController with Diagnosticable {
       }
 
       // Record LCP candidate as a phase
-      _loadingState.recordPhase(LoadingState.phaseLargestContentfulPaint, parameters: {
+      _loadingState
+          .recordPhase(LoadingState.phaseLargestContentfulPaint, parameters: {
         'timeSinceNavigationStart': lcpTime,
         'largestContentSize': contentSize,
         'elementTag': element.tagName,
         'routePath': metrics.routePath,
-        'isCandidate': true,  // Mark this as a candidate, not final
+        'isCandidate': true, // Mark this as a candidate, not final
       });
     }
   }
@@ -1949,7 +1994,8 @@ class WebFController with Diagnosticable {
         // Use the last reported LCP time instead of calculating a new time
         // This ensures onLCPFinal reports the actual LCP candidate time, not the finalization time
         if (onLCPFinal != null) {
-          onLCPFinal!(metrics.lastReportedLCPTime, metrics.initialEvaluatedState);
+          onLCPFinal!(
+              metrics.lastReportedLCPTime, metrics.initialEvaluatedState);
         }
 
         // Fire the route-aware callback
@@ -1967,7 +2013,7 @@ class WebFController with Diagnosticable {
         }
       }
       metrics.lcpReported = true;
-    } catch(_) {}
+    } catch (_) {}
   }
 
   /// Reports First Contentful Paint (FCP) when the first content is rendered.
@@ -1980,12 +2026,18 @@ class WebFController with Diagnosticable {
     if (metrics.fcpReported || metrics.navigationStartTime == null) return;
 
     // Record first contentful paint phase
-    _loadingState.recordPhase(LoadingState.phaseFirstContentfulPaint, parameters: {
-      'timeSinceNavigationStart': DateTime.now().difference(metrics.navigationStartTime!).inMilliseconds,
+    _loadingState
+        .recordPhase(LoadingState.phaseFirstContentfulPaint, parameters: {
+      'timeSinceNavigationStart': DateTime.now()
+          .difference(metrics.navigationStartTime!)
+          .inMilliseconds,
     });
 
     metrics.fcpReported = true;
-    metrics.fcpTime = DateTime.now().difference(metrics.navigationStartTime!).inMilliseconds.toDouble();
+    metrics.fcpTime = DateTime.now()
+        .difference(metrics.navigationStartTime!)
+        .inMilliseconds
+        .toDouble();
 
     // Fire the FCP callback
     if (onFCP != null) {
@@ -2010,11 +2062,16 @@ class WebFController with Diagnosticable {
 
     // Record first paint phase
     _loadingState.recordPhase(LoadingState.phaseFirstPaint, parameters: {
-      'timeSinceNavigationStart': DateTime.now().difference(metrics.navigationStartTime!).inMilliseconds,
+      'timeSinceNavigationStart': DateTime.now()
+          .difference(metrics.navigationStartTime!)
+          .inMilliseconds,
     });
 
     metrics.fpReported = true;
-    metrics.fpTime = DateTime.now().difference(metrics.navigationStartTime!).inMilliseconds.toDouble();
+    metrics.fpTime = DateTime.now()
+        .difference(metrics.navigationStartTime!)
+        .inMilliseconds
+        .toDouble();
 
     // Fire the FP callback
     if (onFP != null) {

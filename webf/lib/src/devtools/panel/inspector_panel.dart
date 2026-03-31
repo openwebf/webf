@@ -11,7 +11,8 @@ import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter/rendering.dart' show RendererBinding, debugPaintSizeEnabled;
+import 'package:flutter/rendering.dart'
+    show RendererBinding, debugPaintSizeEnabled;
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:webf/foundation.dart';
 import 'package:webf/launcher.dart';
@@ -19,6 +20,7 @@ import 'package:webf/widget.dart';
 import 'package:webf/src/devtools/panel/console_store.dart';
 import 'package:webf/src/devtools/panel/network_store.dart';
 import 'package:webf/src/devtools/panel/remote_object_service.dart';
+import 'package:webf/src/launcher/render_tree_dump_storage.dart';
 import 'package:webf/dom.dart' as dom;
 import 'package:webf/src/launcher/loading_state.dart';
 
@@ -41,7 +43,8 @@ class WebFInspectorFloatingPanel extends StatefulWidget {
   });
 
   @override
-  State<WebFInspectorFloatingPanel> createState() => _WebFInspectorFloatingPanelState();
+  State<WebFInspectorFloatingPanel> createState() =>
+      _WebFInspectorFloatingPanelState();
 }
 
 class _LoadingStateTimelineDialog extends StatefulWidget {
@@ -54,10 +57,12 @@ class _LoadingStateTimelineDialog extends StatefulWidget {
   });
 
   @override
-  State<_LoadingStateTimelineDialog> createState() => _LoadingStateTimelineDialogState();
+  State<_LoadingStateTimelineDialog> createState() =>
+      _LoadingStateTimelineDialogState();
 }
 
-class _LoadingStateTimelineDialogState extends State<_LoadingStateTimelineDialog> {
+class _LoadingStateTimelineDialogState
+    extends State<_LoadingStateTimelineDialog> {
   LoadingPhase? _selectedPhase;
   LoadingError? _selectedError;
   LoadingNetworkRequest? _selectedNetworkRequest;
@@ -109,7 +114,8 @@ class _LoadingStateTimelineDialogState extends State<_LoadingStateTimelineDialog
                   ),
                   if (_showDetails)
                     IconButton(
-                      icon: Icon(Icons.arrow_back, color: Colors.white70, size: 18),
+                      icon: Icon(Icons.arrow_back,
+                          color: Colors.white70, size: 18),
                       padding: EdgeInsets.zero,
                       constraints: BoxConstraints(minWidth: 32, minHeight: 32),
                       onPressed: () {
@@ -125,11 +131,14 @@ class _LoadingStateTimelineDialogState extends State<_LoadingStateTimelineDialog
                     padding: EdgeInsets.zero,
                     constraints: BoxConstraints(minWidth: 32, minHeight: 32),
                     onPressed: () {
-                      final loadingDump = widget.controller.dumpLoadingState(options: LoadingStateDumpOptions.full);
-                      Clipboard.setData(ClipboardData(text: loadingDump.toString()));
+                      final loadingDump = widget.controller.dumpLoadingState(
+                          options: LoadingStateDumpOptions.full);
+                      Clipboard.setData(
+                          ClipboardData(text: loadingDump.toString()));
                       ScaffoldMessenger.of(context).showSnackBar(
                         SnackBar(
-                          content: Text('Copied text to clipboard', style: TextStyle(fontSize: 12)),
+                          content: Text('Copied text to clipboard',
+                              style: TextStyle(fontSize: 12)),
                           duration: Duration(seconds: 1),
                           backgroundColor: Colors.green,
                         ),
@@ -143,12 +152,15 @@ class _LoadingStateTimelineDialogState extends State<_LoadingStateTimelineDialog
                     padding: EdgeInsets.zero,
                     constraints: BoxConstraints(minWidth: 32, minHeight: 32),
                     onPressed: () {
-                      final loadingDump = widget.controller.dumpLoadingState(options: LoadingStateDumpOptions.full);
-                      final jsonString = JsonEncoder.withIndent('  ').convert(loadingDump.toJson());
+                      final loadingDump = widget.controller.dumpLoadingState(
+                          options: LoadingStateDumpOptions.full);
+                      final jsonString = JsonEncoder.withIndent('  ')
+                          .convert(loadingDump.toJson());
                       Clipboard.setData(ClipboardData(text: jsonString));
                       ScaffoldMessenger.of(context).showSnackBar(
                         SnackBar(
-                          content: Text('Copied JSON to clipboard', style: TextStyle(fontSize: 12)),
+                          content: Text('Copied JSON to clipboard',
+                              style: TextStyle(fontSize: 12)),
                           duration: Duration(seconds: 1),
                           backgroundColor: Colors.green,
                         ),
@@ -192,8 +204,9 @@ class _LoadingStateTimelineDialogState extends State<_LoadingStateTimelineDialog
             // Main content area
             Expanded(
               child: _showDetails
-                ? _buildDetailsView()
-                : _buildTimelineView(phases, errors, networkRequests, totalDuration),
+                  ? _buildDetailsView()
+                  : _buildTimelineView(
+                      phases, errors, networkRequests, totalDuration),
             ),
 
             // Statistics bar
@@ -206,7 +219,11 @@ class _LoadingStateTimelineDialogState extends State<_LoadingStateTimelineDialog
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceAround,
                 children: [
-                  _buildStatItem('Time', totalDuration != null ? '${totalDuration.inMilliseconds}ms' : '-'),
+                  _buildStatItem(
+                      'Time',
+                      totalDuration != null
+                          ? '${totalDuration.inMilliseconds}ms'
+                          : '-'),
                   _buildStatItem('Phases', phases.length.toString()),
                   _buildStatItem('Network', networkRequests.length.toString()),
                   _buildStatItem('Errors', errors.length.toString()),
@@ -219,8 +236,11 @@ class _LoadingStateTimelineDialogState extends State<_LoadingStateTimelineDialog
     );
   }
 
-  Widget _buildTimelineView(List<LoadingPhase> phases, List<LoadingError> errors,
-                           List<LoadingNetworkRequest> networkRequests, Duration? totalDuration) {
+  Widget _buildTimelineView(
+      List<LoadingPhase> phases,
+      List<LoadingError> errors,
+      List<LoadingNetworkRequest> networkRequests,
+      Duration? totalDuration) {
     if (phases.isEmpty) {
       return Center(
         child: Text(
@@ -232,7 +252,8 @@ class _LoadingStateTimelineDialogState extends State<_LoadingStateTimelineDialog
 
     final keyPhases = _getKeyPhases(phases);
     final keyPhaseNames = keyPhases.map((p) => p.name).toSet();
-    final additionalPhases = phases.where((p) => !keyPhaseNames.contains(p.name)).toList();
+    final additionalPhases =
+        phases.where((p) => !keyPhaseNames.contains(p.name)).toList();
 
     return Container(
       padding: EdgeInsets.all(8),
@@ -279,7 +300,8 @@ class _LoadingStateTimelineDialogState extends State<_LoadingStateTimelineDialog
 
             if (additionalPhases.isNotEmpty) ...[
               SizedBox(height: 16),
-              _buildPhasesTable('Additional Phases', additionalPhases, Colors.orange),
+              _buildPhasesTable(
+                  'Additional Phases', additionalPhases, Colors.orange),
             ],
 
             if (errors.isNotEmpty) ...[
@@ -328,7 +350,8 @@ class _LoadingStateTimelineDialogState extends State<_LoadingStateTimelineDialog
             decoration: BoxDecoration(
               color: _getPhaseColor(phase.name).withOpacity(0.1),
               borderRadius: BorderRadius.circular(4),
-              border: Border.all(color: _getPhaseColor(phase.name).withOpacity(0.3)),
+              border: Border.all(
+                  color: _getPhaseColor(phase.name).withOpacity(0.3)),
             ),
             child: Row(
               children: [
@@ -355,7 +378,8 @@ class _LoadingStateTimelineDialogState extends State<_LoadingStateTimelineDialog
           _buildCompactDetailRow('Name', phase.name),
           _buildCompactDetailRow('Time', _formatTimestamp(phase.timestamp)),
           if (phase.duration != null)
-            _buildCompactDetailRow('Duration', '${phase.duration!.inMilliseconds}ms'),
+            _buildCompactDetailRow(
+                'Duration', '${phase.duration!.inMilliseconds}ms'),
 
           // Show substeps if any
           if (phase.substeps.isNotEmpty) ...[
@@ -379,31 +403,32 @@ class _LoadingStateTimelineDialogState extends State<_LoadingStateTimelineDialog
                   ),
                   SizedBox(height: 6),
                   ...phase.substeps.map((substep) => Padding(
-                    padding: EdgeInsets.only(left: 12, top: 4, bottom: 4),
-                    child: Row(
-                      children: [
-                        Icon(Icons.subdirectory_arrow_right, color: Colors.blue.shade300, size: 12),
-                        SizedBox(width: 6),
-                        Expanded(
-                          child: Text(
-                            substep.name,
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 11,
+                        padding: EdgeInsets.only(left: 12, top: 4, bottom: 4),
+                        child: Row(
+                          children: [
+                            Icon(Icons.subdirectory_arrow_right,
+                                color: Colors.blue.shade300, size: 12),
+                            SizedBox(width: 6),
+                            Expanded(
+                              child: Text(
+                                substep.name,
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 11,
+                                ),
+                              ),
                             ),
-                          ),
+                            if (substep.duration != null)
+                              Text(
+                                '${substep.duration!.inMilliseconds}ms',
+                                style: TextStyle(
+                                  color: Colors.white54,
+                                  fontSize: 10,
+                                ),
+                              ),
+                          ],
                         ),
-                        if (substep.duration != null)
-                          Text(
-                            '${substep.duration!.inMilliseconds}ms',
-                            style: TextStyle(
-                              color: Colors.white54,
-                              fontSize: 10,
-                            ),
-                          ),
-                      ],
-                    ),
-                  )),
+                      )),
                 ],
               ),
             ),
@@ -428,8 +453,9 @@ class _LoadingStateTimelineDialogState extends State<_LoadingStateTimelineDialog
                     ),
                   ),
                   SizedBox(height: 6),
-                  ...phase.parameters.entries.map((entry) =>
-                    _buildCompactDetailRow(entry.key, entry.value.toString()),
+                  ...phase.parameters.entries.map(
+                    (entry) => _buildCompactDetailRow(
+                        entry.key, entry.value.toString()),
                   ),
                 ],
               ),
@@ -505,7 +531,6 @@ class _LoadingStateTimelineDialogState extends State<_LoadingStateTimelineDialog
               ],
             ),
           ),
-
           if (error.context != null && error.context!.isNotEmpty) ...[
             SizedBox(height: 8),
             Container(
@@ -526,14 +551,14 @@ class _LoadingStateTimelineDialogState extends State<_LoadingStateTimelineDialog
                     ),
                   ),
                   SizedBox(height: 6),
-                  ...error.context!.entries.map((entry) =>
-                    _buildCompactDetailRow(entry.key, entry.value.toString()),
+                  ...error.context!.entries.map(
+                    (entry) => _buildCompactDetailRow(
+                        entry.key, entry.value.toString()),
                   ),
                 ],
               ),
             ),
           ],
-
           if (error.stackTrace != null) ...[
             SizedBox(height: 12),
             Container(
@@ -577,8 +602,11 @@ class _LoadingStateTimelineDialogState extends State<_LoadingStateTimelineDialog
   }
 
   Widget _buildNetworkDetails(LoadingNetworkRequest request) {
-    final statusColor = request.error != null ? Colors.red :
-                       request.isSuccessful ? Colors.green : Colors.orange;
+    final statusColor = request.error != null
+        ? Colors.red
+        : request.isSuccessful
+            ? Colors.green
+            : Colors.orange;
 
     return SingleChildScrollView(
       child: Column(
@@ -594,8 +622,11 @@ class _LoadingStateTimelineDialogState extends State<_LoadingStateTimelineDialog
             child: Row(
               children: [
                 Icon(
-                  request.error != null ? Icons.error :
-                  request.isSuccessful ? Icons.check_circle : Icons.pending,
+                  request.error != null
+                      ? Icons.error
+                      : request.isSuccessful
+                          ? Icons.check_circle
+                          : Icons.pending,
                   color: statusColor,
                   size: 16,
                 ),
@@ -655,7 +686,8 @@ class _LoadingStateTimelineDialogState extends State<_LoadingStateTimelineDialog
           if (request.contentType != null)
             _buildCompactDetailRow('Type', request.contentType!),
           if (request.duration != null)
-            _buildCompactDetailRow('Duration', '${request.duration!.inMilliseconds}ms'),
+            _buildCompactDetailRow(
+                'Duration', '${request.duration!.inMilliseconds}ms'),
           if (request.error != null)
             Container(
               margin: EdgeInsets.only(top: 8),
@@ -709,30 +741,31 @@ class _LoadingStateTimelineDialogState extends State<_LoadingStateTimelineDialog
                   ),
                   SizedBox(height: 6),
                   ...request.stages.map((stage) => Padding(
-                    padding: EdgeInsets.only(left: 12, top: 4, bottom: 4),
-                    child: Row(
-                      children: [
-                        Icon(Icons.circle, color: Colors.orange.shade300, size: 8),
-                        SizedBox(width: 8),
-                        Expanded(
-                          child: Text(
-                            stage.name,
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 11,
+                        padding: EdgeInsets.only(left: 12, top: 4, bottom: 4),
+                        child: Row(
+                          children: [
+                            Icon(Icons.circle,
+                                color: Colors.orange.shade300, size: 8),
+                            SizedBox(width: 8),
+                            Expanded(
+                              child: Text(
+                                stage.name,
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 11,
+                                ),
+                              ),
                             ),
-                          ),
+                            Text(
+                              _formatTimestamp(stage.timestamp),
+                              style: TextStyle(
+                                color: Colors.white54,
+                                fontSize: 10,
+                              ),
+                            ),
+                          ],
                         ),
-                        Text(
-                          _formatTimestamp(stage.timestamp),
-                          style: TextStyle(
-                            color: Colors.white54,
-                            fontSize: 10,
-                          ),
-                        ),
-                      ],
-                    ),
-                  )),
+                      )),
                 ],
               ),
             ),
@@ -760,11 +793,14 @@ class _LoadingStateTimelineDialogState extends State<_LoadingStateTimelineDialog
                   ),
                   SizedBox(height: 6),
                   if (request.cacheInfo!.cacheType != null)
-                    _buildCompactDetailRow('Cache Type', request.cacheInfo!.cacheType!),
+                    _buildCompactDetailRow(
+                        'Cache Type', request.cacheInfo!.cacheType!),
                   if (request.cacheInfo!.cacheAge != null)
-                    _buildCompactDetailRow('Cache Age', _formatDuration(request.cacheInfo!.cacheAge!)),
+                    _buildCompactDetailRow('Cache Age',
+                        _formatDuration(request.cacheInfo!.cacheAge!)),
                   if (request.cacheInfo!.cacheSize != null)
-                    _buildCompactDetailRow('Cache Size', _formatBytes(request.cacheInfo!.cacheSize!)),
+                    _buildCompactDetailRow('Cache Size',
+                        _formatBytes(request.cacheInfo!.cacheSize!)),
                 ],
               ),
             ),
@@ -790,8 +826,8 @@ class _LoadingStateTimelineDialogState extends State<_LoadingStateTimelineDialog
                     ),
                   ),
                   SizedBox(height: 6),
-                  ...request.headers!.entries.map((entry) =>
-                    _buildCompactDetailRow(entry.key, entry.value),
+                  ...request.headers!.entries.map(
+                    (entry) => _buildCompactDetailRow(entry.key, entry.value),
                   ),
                 ],
               ),
@@ -837,9 +873,9 @@ class _LoadingStateTimelineDialogState extends State<_LoadingStateTimelineDialog
 
   String _formatTimestamp(DateTime timestamp) {
     return '${timestamp.hour.toString().padLeft(2, '0')}:'
-           '${timestamp.minute.toString().padLeft(2, '0')}:'
-           '${timestamp.second.toString().padLeft(2, '0')}.'
-           '${timestamp.millisecond.toString().padLeft(3, '0')}';
+        '${timestamp.minute.toString().padLeft(2, '0')}:'
+        '${timestamp.second.toString().padLeft(2, '0')}.'
+        '${timestamp.millisecond.toString().padLeft(3, '0')}';
   }
 
   Widget _buildDetailsView() {
@@ -947,7 +983,8 @@ class _LoadingStateTimelineDialogState extends State<_LoadingStateTimelineDialog
       LoadingState.phaseBuildRootView => 'Build Root View',
       LoadingState.phaseFirstPaint => 'First Paint (FP)',
       LoadingState.phaseFirstContentfulPaint => 'First Contentful Paint (FCP)',
-      LoadingState.phaseLargestContentfulPaint => 'Largest Contentful Paint (LCP)',
+      LoadingState.phaseLargestContentfulPaint =>
+        'Largest Contentful Paint (LCP)',
       LoadingState.phaseAttachToFlutter => 'Attach to Flutter',
       LoadingState.phaseDetachFromFlutter => 'Detach from Flutter',
       LoadingState.phaseDispose => 'Dispose',
@@ -984,7 +1021,8 @@ class _LoadingStateTimelineDialogState extends State<_LoadingStateTimelineDialog
 
     // Default: capitalize words
     final String spaced = splitByUppercaseBoundary(phaseName).join(' ');
-    return spaced.split('_')
+    return spaced
+        .split('_')
         .map((word) => word.isNotEmpty
             ? word[0].toUpperCase() + word.substring(1).toLowerCase()
             : '')
@@ -998,7 +1036,8 @@ class _LoadingStateTimelineDialogState extends State<_LoadingStateTimelineDialog
       (p) => p.name == LoadingState.phaseWindowLoad,
       orElse: () => LoadingPhase(name: '', timestamp: DateTime(9999)),
     );
-    final windowLoadTimestamp = windowLoadPhase.name.isNotEmpty ? windowLoadPhase.timestamp : null;
+    final windowLoadTimestamp =
+        windowLoadPhase.name.isNotEmpty ? windowLoadPhase.timestamp : null;
 
     // Return phases before windowLoad (inclusive) that are not network or substep phases
     return phases.where((p) {
@@ -1026,12 +1065,13 @@ class _LoadingStateTimelineDialogState extends State<_LoadingStateTimelineDialog
 
       // Include if before or at windowLoad
       return windowLoadTimestamp == null ||
-             p.timestamp.isBefore(windowLoadTimestamp) ||
-             p.timestamp == windowLoadTimestamp;
+          p.timestamp.isBefore(windowLoadTimestamp) ||
+          p.timestamp == windowLoadTimestamp;
     }).toList();
   }
 
-  Widget _buildPhasesTable(String title, List<LoadingPhase> phases, Color color) {
+  Widget _buildPhasesTable(
+      String title, List<LoadingPhase> phases, Color color) {
     if (phases.isEmpty) return SizedBox.shrink();
 
     return Container(
@@ -1078,15 +1118,17 @@ class _LoadingStateTimelineDialogState extends State<_LoadingStateTimelineDialog
     return Column(
       children: [
         InkWell(
-          onTap: hasSubsteps ? () {
-            setState(() {
-              if (isExpanded) {
-                _expandedPhases.remove(phase.name);
-              } else {
-                _expandedPhases.add(phase.name);
-              }
-            });
-          } : null,
+          onTap: hasSubsteps
+              ? () {
+                  setState(() {
+                    if (isExpanded) {
+                      _expandedPhases.remove(phase.name);
+                    } else {
+                      _expandedPhases.add(phase.name);
+                    }
+                  });
+                }
+              : null,
           child: Container(
             padding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
             decoration: BoxDecoration(
@@ -1103,12 +1145,14 @@ class _LoadingStateTimelineDialogState extends State<_LoadingStateTimelineDialog
                 SizedBox(
                   width: 20,
                   child: hasSubsteps
-                    ? Icon(
-                        isExpanded ? Icons.keyboard_arrow_down : Icons.keyboard_arrow_right,
-                        size: 16,
-                        color: Colors.white54,
-                      )
-                    : null,
+                      ? Icon(
+                          isExpanded
+                              ? Icons.keyboard_arrow_down
+                              : Icons.keyboard_arrow_right,
+                          size: 16,
+                          color: Colors.white54,
+                        )
+                      : null,
                 ),
                 // Phase name
                 Expanded(
@@ -1229,7 +1273,8 @@ class _LoadingStateTimelineDialogState extends State<_LoadingStateTimelineDialog
   String _formatParameters(Map<String, dynamic> params) {
     if (params.isEmpty) return '';
 
-    final entries = params.entries.take(2).map((e) => '${e.key}: ${e.value}').join(', ');
+    final entries =
+        params.entries.take(2).map((e) => '${e.key}: ${e.value}').join(', ');
     if (params.length > 2) {
       return '$entries...';
     }
@@ -1299,34 +1344,34 @@ class _LoadingStateTimelineDialogState extends State<_LoadingStateTimelineDialog
             ),
           ),
           ...errors.map((error) => Container(
-            padding: EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              border: Border(
-                bottom: BorderSide(color: Colors.white.withOpacity(0.1)),
-              ),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  error.phase,
-                  style: TextStyle(
-                    color: Colors.red,
-                    fontSize: 11,
-                    fontWeight: FontWeight.bold,
+                padding: EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  border: Border(
+                    bottom: BorderSide(color: Colors.white.withOpacity(0.1)),
                   ),
                 ),
-                SizedBox(height: 4),
-                Text(
-                  error.error.toString(),
-                  style: TextStyle(
-                    color: Colors.red.shade300,
-                    fontSize: 10,
-                  ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      error.phase,
+                      style: TextStyle(
+                        color: Colors.red,
+                        fontSize: 11,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    SizedBox(height: 4),
+                    Text(
+                      error.error.toString(),
+                      style: TextStyle(
+                        color: Colors.red.shade300,
+                        fontSize: 10,
+                      ),
+                    ),
+                  ],
                 ),
-              ],
-            ),
-          )),
+              )),
         ],
       ),
     );
@@ -1405,7 +1450,8 @@ class _LoadingStateTimelineDialogState extends State<_LoadingStateTimelineDialog
   final Set<String> _expandedPhases = {};
 }
 
-class _WebFInspectorFloatingPanelState extends State<WebFInspectorFloatingPanel> {
+class _WebFInspectorFloatingPanelState
+    extends State<WebFInspectorFloatingPanel> {
   Offset _position = Offset(20, 100); // Initial position
   Timer? _refreshTimer;
   Timer? _renderTreeDumpTimer;
@@ -1452,7 +1498,9 @@ class _WebFInspectorFloatingPanelState extends State<WebFInspectorFloatingPanel>
     }
   }
 
-  void _showPopupNotice(String message, {required Color backgroundColor, Duration duration = const Duration(seconds: 2)}) {
+  void _showPopupNotice(String message,
+      {required Color backgroundColor,
+      Duration duration = const Duration(seconds: 2)}) {
     final messenger = ScaffoldMessenger.maybeOf(context);
     if (messenger != null) {
       messenger.hideCurrentSnackBar();
@@ -1483,7 +1531,10 @@ class _WebFInspectorFloatingPanelState extends State<WebFInspectorFloatingPanel>
               color: backgroundColor,
               borderRadius: BorderRadius.circular(8),
               boxShadow: const [
-                BoxShadow(color: Colors.black26, blurRadius: 10, offset: Offset(0, 4)),
+                BoxShadow(
+                    color: Colors.black26,
+                    blurRadius: 10,
+                    offset: Offset(0, 4)),
               ],
             ),
             child: Text(message, style: const TextStyle(color: Colors.white)),
@@ -1510,13 +1561,46 @@ class _WebFInspectorFloatingPanelState extends State<WebFInspectorFloatingPanel>
     );
 
     _renderTreeDumpTimer = Timer(const Duration(seconds: 5), () async {
-      final tree = _dumpRenderObjectTree();
-      await Clipboard.setData(ClipboardData(text: tree));
-      if (!mounted) return;
-      _showPopupNotice(
-        'Render tree copied to clipboard',
-        backgroundColor: Colors.green,
-      );
+      final String tree = _dumpRenderObjectTree();
+      final bool shouldSaveToFile = shouldPersistRenderTreeDumpToFile(tree);
+
+      try {
+        if (shouldSaveToFile) {
+          final String savedFilePath =
+              await writeRenderTreeDumpToFile(tree, routePath: 'root');
+          final String? pullCommand = Platform.isAndroid
+              ? buildAndroidRenderTreeDumpPullCommand(savedFilePath)
+              : null;
+          await Clipboard.setData(ClipboardData(
+            text: pullCommand ?? savedFilePath,
+          ));
+          if (!mounted) return;
+          _showPopupNotice(
+            pullCommand != null
+                ? 'Render tree was too large for the clipboard. Saved to file and copied an adb pull command.'
+                : 'Render tree was too large for the clipboard. Saved to file and copied the path.',
+            backgroundColor: Colors.green,
+            duration: const Duration(seconds: 3),
+          );
+          return;
+        }
+
+        await Clipboard.setData(ClipboardData(text: tree));
+        if (!mounted) return;
+        _showPopupNotice(
+          'Render tree copied to clipboard',
+          backgroundColor: Colors.green,
+        );
+      } catch (e) {
+        if (!mounted) return;
+        _showPopupNotice(
+          shouldSaveToFile
+              ? 'Failed to save render tree dump: $e'
+              : 'Failed to copy render tree: $e',
+          backgroundColor: Colors.red,
+          duration: const Duration(seconds: 4),
+        );
+      }
     });
   }
 
@@ -1626,10 +1710,12 @@ class _WebFInspectorFloatingPanelState extends State<WebFInspectorFloatingPanel>
 
 class _WebFInspectorBottomSheet extends StatefulWidget {
   @override
-  State<_WebFInspectorBottomSheet> createState() => _WebFInspectorBottomSheetState();
+  State<_WebFInspectorBottomSheet> createState() =>
+      _WebFInspectorBottomSheetState();
 }
 
-class _WebFInspectorBottomSheetState extends State<_WebFInspectorBottomSheet> with SingleTickerProviderStateMixin {
+class _WebFInspectorBottomSheetState extends State<_WebFInspectorBottomSheet>
+    with SingleTickerProviderStateMixin {
   Timer? _refreshTimer;
   late TabController _tabController;
 
@@ -1667,7 +1753,8 @@ class _WebFInspectorBottomSheetState extends State<_WebFInspectorBottomSheet> wi
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Failed to clear caches: $e', style: TextStyle(fontSize: 12)),
+          content: Text('Failed to clear caches: $e',
+              style: TextStyle(fontSize: 12)),
           duration: Duration(seconds: 2),
           backgroundColor: Colors.red,
         ),
@@ -1768,7 +1855,10 @@ class _WebFInspectorBottomSheetState extends State<_WebFInspectorBottomSheet> wi
     );
   }
 
-  Widget _buildSwitchRow({required String label, required bool value, required ValueChanged<bool> onChanged}) {
+  Widget _buildSwitchRow(
+      {required String label,
+      required bool value,
+      required ValueChanged<bool> onChanged}) {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
@@ -1939,7 +2029,8 @@ class _WebFInspectorBottomSheetState extends State<_WebFInspectorBottomSheet> wi
           SizedBox(height: 16),
           Expanded(
             child: attachedController != null && attachedControllerName != null
-                ? _buildSingleControllerPerformance(attachedController, attachedControllerName)
+                ? _buildSingleControllerPerformance(
+                    attachedController, attachedControllerName)
                 : Center(
                     child: Text(
                       'No attached controller found',
@@ -2135,7 +2226,8 @@ class _WebFInspectorBottomSheetState extends State<_WebFInspectorBottomSheet> wi
                       context: context,
                       builder: (context) => AlertDialog(
                         title: Text('Confirm Disposal'),
-                        content: Text('Are you sure you want to dispose all ${manager.controllerCount} controllers?'),
+                        content: Text(
+                            'Are you sure you want to dispose all ${manager.controllerCount} controllers?'),
                         actions: [
                           TextButton(
                             onPressed: () => Navigator.of(context).pop(false),
@@ -2275,7 +2367,9 @@ class _WebFInspectorBottomSheetState extends State<_WebFInspectorBottomSheet> wi
                   onPressed: () async {
                     // Get current route path if available
                     String? routePath = controller.currentBuildContext?.path;
-                    final bool isDesktop = Platform.isMacOS || Platform.isWindows || Platform.isLinux;
+                    final bool isDesktop = Platform.isMacOS ||
+                        Platform.isWindows ||
+                        Platform.isLinux;
 
                     showDialog(
                       context: context,
@@ -2324,13 +2418,17 @@ class _WebFInspectorBottomSheetState extends State<_WebFInspectorBottomSheet> wi
                         context: context,
                         builder: (context) => AlertDialog(
                           backgroundColor: Color(0xFF1E1E1E),
-                          title: Text('Failed to dump render tree', style: TextStyle(color: Colors.white)),
-                          content: Text(dumpError.toString(), style: TextStyle(color: Colors.white70)),
+                          title: Text('Failed to dump render tree',
+                              style: TextStyle(color: Colors.white)),
+                          content: Text(dumpError.toString(),
+                              style: TextStyle(color: Colors.white70)),
                           actions: [
                             TextButton(
                               onPressed: () => Navigator.of(context).pop(),
-                              style: TextButton.styleFrom(foregroundColor: Colors.white),
-                              child: Text('OK', style: TextStyle(color: Colors.white)),
+                              style: TextButton.styleFrom(
+                                  foregroundColor: Colors.white),
+                              child: Text('OK',
+                                  style: TextStyle(color: Colors.white)),
                             ),
                           ],
                         ),
@@ -2343,7 +2441,8 @@ class _WebFInspectorBottomSheetState extends State<_WebFInspectorBottomSheet> wi
                         context: context,
                         builder: (context) => AlertDialog(
                           backgroundColor: Color(0xFF1E1E1E),
-                          title: Text('Render tree is empty', style: TextStyle(color: Colors.white)),
+                          title: Text('Render tree is empty',
+                              style: TextStyle(color: Colors.white)),
                           content: Text(
                             'No render object tree available for this route.',
                             style: TextStyle(color: Colors.white70),
@@ -2351,8 +2450,10 @@ class _WebFInspectorBottomSheetState extends State<_WebFInspectorBottomSheet> wi
                           actions: [
                             TextButton(
                               onPressed: () => Navigator.of(context).pop(),
-                              style: TextButton.styleFrom(foregroundColor: Colors.white),
-                              child: Text('OK', style: TextStyle(color: Colors.white)),
+                              style: TextButton.styleFrom(
+                                  foregroundColor: Colors.white),
+                              child: Text('OK',
+                                  style: TextStyle(color: Colors.white)),
                             ),
                           ],
                         ),
@@ -2360,11 +2461,71 @@ class _WebFInspectorBottomSheetState extends State<_WebFInspectorBottomSheet> wi
                       return;
                     }
 
+                    final bool dumpTooLargeForClipboard =
+                        shouldPersistRenderTreeDumpToFile(dumpResult.text);
+                    String? savedFilePath = dumpResult.savedFilePath;
+                    Object? fileSaveError;
+                    if (dumpTooLargeForClipboard &&
+                        (savedFilePath == null || savedFilePath.isEmpty)) {
+                      try {
+                        savedFilePath = await writeRenderTreeDumpToFile(
+                          dumpResult.text,
+                          routePath: routePath,
+                        );
+                      } catch (e) {
+                        fileSaveError = e;
+                      }
+                    }
+
+                    if (!context.mounted) return;
+
+                    if (fileSaveError != null) {
+                      await showDialog(
+                        context: context,
+                        builder: (context) => AlertDialog(
+                          backgroundColor: Color(0xFF1E1E1E),
+                          title: Text(
+                            'Failed to save render tree',
+                            style: TextStyle(color: Colors.white),
+                          ),
+                          content: Text(
+                            fileSaveError.toString(),
+                            style: TextStyle(color: Colors.white70),
+                          ),
+                          actions: [
+                            TextButton(
+                              onPressed: () => Navigator.of(context).pop(),
+                              style: TextButton.styleFrom(
+                                  foregroundColor: Colors.white),
+                              child: Text('OK',
+                                  style: TextStyle(color: Colors.white)),
+                            ),
+                          ],
+                        ),
+                      );
+                      return;
+                    }
+
+                    final bool shouldCopyFilePath = savedFilePath != null &&
+                        savedFilePath.isNotEmpty &&
+                        (isDesktop || dumpTooLargeForClipboard);
+                    final String? androidPullCommand = savedFilePath != null &&
+                            savedFilePath.isNotEmpty &&
+                            Platform.isAndroid
+                        ? buildAndroidRenderTreeDumpPullCommand(savedFilePath)
+                        : null;
+                    final bool shouldCopyAndroidPullCommand =
+                        dumpTooLargeForClipboard && androidPullCommand != null;
+                    final bool canCopyTreeInline = !dumpTooLargeForClipboard;
                     Object? clipboardError;
-                    final String? savedFilePath = dumpResult.savedFilePath;
-                    final bool shouldCopyFilePath = isDesktop && savedFilePath != null && savedFilePath.isNotEmpty;
                     try {
-                      await Clipboard.setData(ClipboardData(text: shouldCopyFilePath ? savedFilePath : dumpResult.text));
+                      await Clipboard.setData(ClipboardData(
+                        text: shouldCopyAndroidPullCommand
+                            ? androidPullCommand
+                            : shouldCopyFilePath
+                                ? savedFilePath
+                                : dumpResult.text,
+                      ));
                     } catch (e) {
                       clipboardError = e;
                     }
@@ -2376,13 +2537,17 @@ class _WebFInspectorBottomSheetState extends State<_WebFInspectorBottomSheet> wi
                         context: context,
                         builder: (context) => AlertDialog(
                           backgroundColor: Color(0xFF1E1E1E),
-                          title: Text('Failed to copy to clipboard', style: TextStyle(color: Colors.white)),
-                          content: Text(clipboardError.toString(), style: TextStyle(color: Colors.white70)),
+                          title: Text('Failed to copy to clipboard',
+                              style: TextStyle(color: Colors.white)),
+                          content: Text(clipboardError.toString(),
+                              style: TextStyle(color: Colors.white70)),
                           actions: [
                             TextButton(
                               onPressed: () => Navigator.of(context).pop(),
-                              style: TextButton.styleFrom(foregroundColor: Colors.white),
-                              child: Text('OK', style: TextStyle(color: Colors.white)),
+                              style: TextButton.styleFrom(
+                                  foregroundColor: Colors.white),
+                              child: Text('OK',
+                                  style: TextStyle(color: Colors.white)),
                             ),
                           ],
                         ),
@@ -2391,34 +2556,45 @@ class _WebFInspectorBottomSheetState extends State<_WebFInspectorBottomSheet> wi
                     }
 
                     final summary = shouldCopyFilePath
-                        ? 'Render object tree saved to file.\n\nFile path copied to clipboard:\n$savedFilePath'
+                        ? shouldCopyAndroidPullCommand
+                            ? 'Render object tree was too large to copy directly.\n\nSaved to file inside app storage and copied the adb pull command to clipboard:\n$androidPullCommand'
+                            : dumpTooLargeForClipboard
+                                ? 'Render object tree was too large to copy directly.\n\nSaved to file and copied the file path to clipboard:\n$savedFilePath'
+                                : 'Render object tree saved to file.\n\nFile path copied to clipboard:\n$savedFilePath'
                         : 'Render object tree copied to clipboard.';
 
                     await showDialog(
                       context: context,
                       builder: (context) => AlertDialog(
                         backgroundColor: Color(0xFF1E1E1E),
-                        title: Text('Copied', style: TextStyle(color: Colors.white)),
-                        content: Text(summary, style: TextStyle(color: Colors.white70)),
+                        title: Text('Copied',
+                            style: TextStyle(color: Colors.white)),
+                        content: Text(summary,
+                            style: TextStyle(color: Colors.white70)),
                         actions: [
-                          if (shouldCopyFilePath)
+                          if (shouldCopyFilePath && canCopyTreeInline)
                             TextButton(
                               onPressed: () async {
                                 try {
-                                  await Clipboard.setData(ClipboardData(text: dumpResult!.text));
+                                  await Clipboard.setData(
+                                      ClipboardData(text: dumpResult!.text));
                                 } finally {
                                   if (context.mounted) {
                                     Navigator.of(context).pop();
                                   }
                                 }
                               },
-                              style: TextButton.styleFrom(foregroundColor: Colors.white),
-                              child: Text('Copy Tree', style: TextStyle(color: Colors.white)),
+                              style: TextButton.styleFrom(
+                                  foregroundColor: Colors.white),
+                              child: Text('Copy Tree',
+                                  style: TextStyle(color: Colors.white)),
                             ),
                           TextButton(
                             onPressed: () => Navigator.of(context).pop(),
-                            style: TextButton.styleFrom(foregroundColor: Colors.white),
-                            child: Text('OK', style: TextStyle(color: Colors.white)),
+                            style: TextButton.styleFrom(
+                                foregroundColor: Colors.white),
+                            child: Text('OK',
+                                style: TextStyle(color: Colors.white)),
                           ),
                         ],
                       ),
@@ -2519,7 +2695,8 @@ class _WebFInspectorBottomSheetState extends State<_WebFInspectorBottomSheet> wi
     );
   }
 
-  Widget _buildSingleControllerPerformance(WebFController controller, String controllerName) {
+  Widget _buildSingleControllerPerformance(
+      WebFController controller, String controllerName) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -2597,7 +2774,8 @@ class _WebFInspectorBottomSheetState extends State<_WebFInspectorBottomSheet> wi
     );
   }
 
-  Widget buildPerformanceMetricsList(WebFControllerManager manager, List<String> controllerNames) {
+  Widget buildPerformanceMetricsList(
+      WebFControllerManager manager, List<String> controllerNames) {
     if (controllerNames.isEmpty) {
       return Center(
         child: Text(
@@ -2707,10 +2885,12 @@ class _WebFInspectorBottomSheetState extends State<_WebFInspectorBottomSheet> wi
     );
   }
 
-  Widget _buildRouteMetrics(String routePath, RoutePerformanceMetrics metrics, WebFController controller) {
+  Widget _buildRouteMetrics(String routePath, RoutePerformanceMetrics metrics,
+      WebFController controller) {
     final bool hasFPData = metrics.fpReported;
     final bool hasFCPData = metrics.fcpReported;
-    final bool hasLCPData = metrics.lastReportedLCPTime > 0 || metrics.lcpReported;
+    final bool hasLCPData =
+        metrics.lastReportedLCPTime > 0 || metrics.lcpReported;
 
     if (!hasFPData && !hasFCPData && !hasLCPData) {
       return Container();
@@ -2722,10 +2902,14 @@ class _WebFInspectorBottomSheetState extends State<_WebFInspectorBottomSheet> wi
     return Container(
       padding: EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: isCurrentRoute ? Colors.blue.withValues(alpha: 0.1) : Colors.white.withValues(alpha: 0.05),
+        color: isCurrentRoute
+            ? Colors.blue.withValues(alpha: 0.1)
+            : Colors.white.withValues(alpha: 0.05),
         borderRadius: BorderRadius.circular(8),
         border: Border.all(
-          color: isCurrentRoute ? Colors.blue.withValues(alpha: 0.3) : Colors.white12,
+          color: isCurrentRoute
+              ? Colors.blue.withValues(alpha: 0.3)
+              : Colors.white12,
         ),
       ),
       child: Column(
@@ -2883,7 +3067,8 @@ class _WebFInspectorBottomSheetState extends State<_WebFInspectorBottomSheet> wi
     );
   }
 
-  Widget _buildRouteLCPMetric(RoutePerformanceMetrics metrics, WebFController controller) {
+  Widget _buildRouteLCPMetric(
+      RoutePerformanceMetrics metrics, WebFController controller) {
     final double lcpTime = metrics.lastReportedLCPTime;
     final bool isFinalized = metrics.lcpReported;
     final dom.Element? lcpElement = metrics.currentLCPElement?.target;
@@ -3123,7 +3308,9 @@ class _WebFInspectorBottomSheetState extends State<_WebFInspectorBottomSheet> wi
                         shape: BoxShape.circle,
                         color: isCurrentRoute ? Colors.green : Colors.blue,
                         border: Border.all(
-                          color: isCurrentRoute ? Colors.green.shade300 : Colors.blue.shade300,
+                          color: isCurrentRoute
+                              ? Colors.green.shade300
+                              : Colors.blue.shade300,
                           width: 2,
                         ),
                       ),
@@ -3152,10 +3339,14 @@ class _WebFInspectorBottomSheetState extends State<_WebFInspectorBottomSheet> wi
                   child: Container(
                     padding: EdgeInsets.all(12),
                     decoration: BoxDecoration(
-                      color: isCurrentRoute ? Colors.green.withOpacity(0.1) : Colors.white.withOpacity(0.05),
+                      color: isCurrentRoute
+                          ? Colors.green.withOpacity(0.1)
+                          : Colors.white.withOpacity(0.05),
                       borderRadius: BorderRadius.circular(6),
                       border: Border.all(
-                        color: isCurrentRoute ? Colors.green.withOpacity(0.3) : Colors.white10,
+                        color: isCurrentRoute
+                            ? Colors.green.withOpacity(0.3)
+                            : Colors.white10,
                       ),
                     ),
                     child: Column(
@@ -3166,7 +3357,9 @@ class _WebFInspectorBottomSheetState extends State<_WebFInspectorBottomSheet> wi
                             Icon(
                               Icons.route,
                               size: 16,
-                              color: isCurrentRoute ? Colors.green : Colors.white54,
+                              color: isCurrentRoute
+                                  ? Colors.green
+                                  : Colors.white54,
                             ),
                             SizedBox(width: 8),
                             Expanded(
@@ -3181,7 +3374,8 @@ class _WebFInspectorBottomSheetState extends State<_WebFInspectorBottomSheet> wi
                             ),
                             if (isCurrentRoute)
                               Container(
-                                padding: EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                padding: EdgeInsets.symmetric(
+                                    horizontal: 6, vertical: 2),
                                 decoration: BoxDecoration(
                                   color: Colors.green.withOpacity(0.2),
                                   borderRadius: BorderRadius.circular(4),
@@ -3441,7 +3635,8 @@ class _WebFInspectorBottomSheetState extends State<_WebFInspectorBottomSheet> wi
                               setState(() {
                                 _isCacheDisabled = value;
                                 if (value) {
-                                  HttpCacheController.mode = HttpCacheMode.NO_CACHE;
+                                  HttpCacheController.mode =
+                                      HttpCacheMode.NO_CACHE;
                                 } else {
                                   HttpCacheController.mode = _originalCacheMode;
                                 }
@@ -3495,15 +3690,19 @@ class _WebFInspectorBottomSheetState extends State<_WebFInspectorBottomSheet> wi
                         )
                       : () {
                           // Filter requests based on selected type
-                          final filteredRequests = _selectedNetworkFilter == null
-                              ? requests
-                              : requests.where((req) {
-                                  // For fetch/xhr filter, include both types
-                                  if (_selectedNetworkFilter == NetworkRequestType.fetch) {
-                                    return req.type == NetworkRequestType.fetch || req.type == NetworkRequestType.xhr;
-                                  }
-                                  return req.type == _selectedNetworkFilter;
-                                }).toList();
+                          final filteredRequests =
+                              _selectedNetworkFilter == null
+                                  ? requests
+                                  : requests.where((req) {
+                                      // For fetch/xhr filter, include both types
+                                      if (_selectedNetworkFilter ==
+                                          NetworkRequestType.fetch) {
+                                        return req.type ==
+                                                NetworkRequestType.fetch ||
+                                            req.type == NetworkRequestType.xhr;
+                                      }
+                                      return req.type == _selectedNetworkFilter;
+                                    }).toList();
 
                           if (filteredRequests.isEmpty) {
                             return Center(
@@ -3712,7 +3911,8 @@ class _WebFInspectorBottomSheetState extends State<_WebFInspectorBottomSheet> wi
         SizedBox(height: 12),
         // Request headers
         if (request.requestHeaders.isNotEmpty) ...[
-          _buildHeadersSection('Request Headers', request.requestHeaders, '${request.requestId}_request'),
+          _buildHeadersSection('Request Headers', request.requestHeaders,
+              '${request.requestId}_request'),
           SizedBox(height: 12),
         ],
         // Request body
@@ -3721,19 +3921,23 @@ class _WebFInspectorBottomSheetState extends State<_WebFInspectorBottomSheet> wi
           SizedBox(height: 12),
         ],
         // Response headers
-        if (request.responseHeaders != null && request.responseHeaders!.isNotEmpty) ...[
-          _buildHeadersSection('Response Headers', request.responseHeaders!, '${request.requestId}_response'),
+        if (request.responseHeaders != null &&
+            request.responseHeaders!.isNotEmpty) ...[
+          _buildHeadersSection('Response Headers', request.responseHeaders!,
+              '${request.requestId}_response'),
           SizedBox(height: 12),
         ],
         // Response body preview
-        if (request.responseBody != null && request.responseBody!.isNotEmpty) ...[
+        if (request.responseBody != null &&
+            request.responseBody!.isNotEmpty) ...[
           _buildExpandableResponseBody(request),
         ],
       ],
     );
   }
 
-  Widget _buildDetailSection(String title, String content, IconData icon, {bool isUrl = false}) {
+  Widget _buildDetailSection(String title, String content, IconData icon,
+      {bool isUrl = false}) {
     return Container(
       padding: EdgeInsets.all(12),
       decoration: BoxDecoration(
@@ -3826,9 +4030,11 @@ class _WebFInspectorBottomSheetState extends State<_WebFInspectorBottomSheet> wi
     );
   }
 
-  Widget _buildHeadersSection(String title, Map<String, List<String>> headers, String sectionId) {
+  Widget _buildHeadersSection(
+      String title, Map<String, List<String>> headers, String sectionId) {
     final isExpanded = _expandedHeaders.contains(sectionId);
-    final showAllHeaders = isExpanded || headers.length <= 3; // Show first 3 headers when collapsed
+    final showAllHeaders = isExpanded ||
+        headers.length <= 3; // Show first 3 headers when collapsed
 
     return Container(
       padding: EdgeInsets.all(12),
@@ -3858,7 +4064,9 @@ class _WebFInspectorBottomSheetState extends State<_WebFInspectorBottomSheet> wi
                 icon: Icon(Icons.copy_all, size: 16),
                 color: Colors.white54,
                 onPressed: () async {
-                  final allHeaders = headers.entries.map((e) => '${e.key}: ${e.value.join(', ')}').join('\n');
+                  final allHeaders = headers.entries
+                      .map((e) => '${e.key}: ${e.value.join(', ')}')
+                      .join('\n');
                   await Clipboard.setData(ClipboardData(text: allHeaders));
                   if (!mounted) return;
                   ScaffoldMessenger.of(context).showSnackBar(
@@ -3905,65 +4113,69 @@ class _WebFInspectorBottomSheetState extends State<_WebFInspectorBottomSheet> wi
             ],
           ),
           SizedBox(height: 8),
-          ...(showAllHeaders ? headers.entries : headers.entries.take(3)).map((entry) => Padding(
-                padding: EdgeInsets.only(bottom: 4),
-                child: GestureDetector(
-                  onTap: () async {
-                    final headerText = '${entry.key}: ${entry.value.join(', ')}';
-                    await Clipboard.setData(ClipboardData(text: headerText));
-                    if (!mounted) return;
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text('Header copied to clipboard'),
-                        duration: Duration(seconds: 2),
-                        backgroundColor: Colors.green.withOpacity(0.8),
-                      ),
-                    );
-                  },
-                  child: MouseRegion(
-                    cursor: SystemMouseCursors.click,
-                    child: Container(
-                      padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                      decoration: BoxDecoration(
-                        color: Colors.transparent,
-                        borderRadius: BorderRadius.circular(4),
-                      ),
-                      child: Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            '${entry.key}: ',
-                            style: TextStyle(
-                              color: Colors.blue.shade300,
-                              fontSize: 11,
-                              fontFamily: 'monospace',
-                            ),
+          ...(showAllHeaders ? headers.entries : headers.entries.take(3))
+              .map((entry) => Padding(
+                    padding: EdgeInsets.only(bottom: 4),
+                    child: GestureDetector(
+                      onTap: () async {
+                        final headerText =
+                            '${entry.key}: ${entry.value.join(', ')}';
+                        await Clipboard.setData(
+                            ClipboardData(text: headerText));
+                        if (!mounted) return;
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text('Header copied to clipboard'),
+                            duration: Duration(seconds: 2),
+                            backgroundColor: Colors.green.withOpacity(0.8),
                           ),
-                          Expanded(
-                            child: Text(
-                              entry.value.join(', '),
-                              style: TextStyle(
-                                color: Colors.white70,
-                                fontSize: 11,
-                                fontFamily: 'monospace',
-                                decoration: TextDecoration.underline,
-                                decorationStyle: TextDecorationStyle.dotted,
-                                decorationColor: Colors.white30,
+                        );
+                      },
+                      child: MouseRegion(
+                        cursor: SystemMouseCursors.click,
+                        child: Container(
+                          padding:
+                              EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: Colors.transparent,
+                            borderRadius: BorderRadius.circular(4),
+                          ),
+                          child: Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                '${entry.key}: ',
+                                style: TextStyle(
+                                  color: Colors.blue.shade300,
+                                  fontSize: 11,
+                                  fontFamily: 'monospace',
+                                ),
                               ),
-                            ),
+                              Expanded(
+                                child: Text(
+                                  entry.value.join(', '),
+                                  style: TextStyle(
+                                    color: Colors.white70,
+                                    fontSize: 11,
+                                    fontFamily: 'monospace',
+                                    decoration: TextDecoration.underline,
+                                    decorationStyle: TextDecorationStyle.dotted,
+                                    decorationColor: Colors.white30,
+                                  ),
+                                ),
+                              ),
+                              SizedBox(width: 8),
+                              Icon(
+                                Icons.copy,
+                                size: 12,
+                                color: Colors.white30,
+                              ),
+                            ],
                           ),
-                          SizedBox(width: 8),
-                          Icon(
-                            Icons.copy,
-                            size: 12,
-                            color: Colors.white30,
-                          ),
-                        ],
+                        ),
                       ),
                     ),
-                  ),
-                ),
-              )),
+                  )),
           // Show count of hidden headers when collapsed
           if (!isExpanded && headers.length > 3) ...[
             SizedBox(height: 4),
@@ -3993,11 +4205,14 @@ class _WebFInspectorBottomSheetState extends State<_WebFInspectorBottomSheet> wi
 
     if (!isImage) {
       try {
-        responseString = utf8.decode(request.responseBody!, allowMalformed: true);
+        responseString =
+            utf8.decode(request.responseBody!, allowMalformed: true);
 
         // Try to parse JSON
         if (request.mimeType?.contains('json') ??
-            false || responseString.trimLeft().startsWith('{') || responseString.trimLeft().startsWith('[')) {
+            false ||
+                responseString.trimLeft().startsWith('{') ||
+                responseString.trimLeft().startsWith('[')) {
           try {
             jsonData = jsonDecode(responseString);
             isJson = true;
@@ -4011,7 +4226,10 @@ class _WebFInspectorBottomSheetState extends State<_WebFInspectorBottomSheet> wi
       }
     }
 
-    final isLongResponse = !isImage && !isJson && responseString != null && responseString.length > 500;
+    final isLongResponse = !isImage &&
+        !isJson &&
+        responseString != null &&
+        responseString.length > 500;
 
     return Container(
       padding: EdgeInsets.all(12),
@@ -4041,7 +4259,8 @@ class _WebFInspectorBottomSheetState extends State<_WebFInspectorBottomSheet> wi
                   icon: Icon(Icons.copy, size: 16),
                   color: Colors.white54,
                   onPressed: () async {
-                    await Clipboard.setData(ClipboardData(text: responseString!));
+                    await Clipboard.setData(
+                        ClipboardData(text: responseString!));
                     if (!mounted) return;
                     ScaffoldMessenger.of(context).showSnackBar(
                       SnackBar(
@@ -4201,7 +4420,8 @@ class _WebFInspectorBottomSheetState extends State<_WebFInspectorBottomSheet> wi
                       SizedBox(width: 8),
                       Flexible(
                         child: Container(
-                          padding: EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                          padding:
+                              EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                           decoration: BoxDecoration(
                             color: Colors.blue.withOpacity(0.2),
                             borderRadius: BorderRadius.circular(3),
@@ -4287,9 +4507,9 @@ class _WebFInspectorBottomSheetState extends State<_WebFInspectorBottomSheet> wi
             ),
             child: isJson
                 ? _buildJsonViewer(jsonData, isExpanded)
-                    : isFormData && formDataFields != null
-                        ? _buildFormDataViewer(formDataFields, isExpanded)
-                        : SelectableText(
+                : isFormData && formDataFields != null
+                    ? _buildFormDataViewer(formDataFields, isExpanded)
+                    : SelectableText(
                         requestString,
                         style: TextStyle(
                           color: Colors.white70,
@@ -4318,7 +4538,8 @@ class _WebFInspectorBottomSheetState extends State<_WebFInspectorBottomSheet> wi
 
   Widget _buildFormDataViewer(Map<String, String> formData, bool isExpanded) {
     final entries = formData.entries.toList();
-    final displayCount = isExpanded ? entries.length : 5.clamp(0, entries.length);
+    final displayCount =
+        isExpanded ? entries.length : 5.clamp(0, entries.length);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -4432,12 +4653,19 @@ class _WebFInspectorBottomSheetState extends State<_WebFInspectorBottomSheet> wi
     }
 
     // JPEG signature: FF D8 FF
-    if (data.length >= 3 && data[0] == 0xFF && data[1] == 0xD8 && data[2] == 0xFF) {
+    if (data.length >= 3 &&
+        data[0] == 0xFF &&
+        data[1] == 0xD8 &&
+        data[2] == 0xFF) {
       return true;
     }
 
     // GIF signature: 47 49 46 38 (GIF87a or GIF89a)
-    if (data.length >= 6 && data[0] == 0x47 && data[1] == 0x49 && data[2] == 0x46 && data[3] == 0x38) {
+    if (data.length >= 6 &&
+        data[0] == 0x47 &&
+        data[1] == 0x49 &&
+        data[2] == 0x46 &&
+        data[3] == 0x38) {
       return true;
     }
 
@@ -4460,14 +4688,21 @@ class _WebFInspectorBottomSheetState extends State<_WebFInspectorBottomSheet> wi
     }
 
     // ICO signature: 00 00 01 00
-    if (data.length >= 4 && data[0] == 0x00 && data[1] == 0x00 && data[2] == 0x01 && data[3] == 0x00) {
+    if (data.length >= 4 &&
+        data[0] == 0x00 &&
+        data[1] == 0x00 &&
+        data[2] == 0x01 &&
+        data[3] == 0x00) {
       return true;
     }
 
     // SVG detection - check if it starts with XML or SVG tags
     try {
-      final str = utf8.decode(data.take(1000).toList(), allowMalformed: true).toLowerCase();
-      if (str.contains('<svg') || (str.contains('<?xml') && str.contains('svg'))) {
+      final str = utf8
+          .decode(data.take(1000).toList(), allowMalformed: true)
+          .toLowerCase();
+      if (str.contains('<svg') ||
+          (str.contains('<?xml') && str.contains('svg'))) {
         return true;
       }
     } catch (_) {
@@ -4900,18 +5135,22 @@ class _WebFInspectorBottomSheetState extends State<_WebFInspectorBottomSheet> wi
     );
   }
 
-  Widget _buildConsoleArgs(List<ConsoleValue> args, ConsoleLogLevel level, int contextId) {
+  Widget _buildConsoleArgs(
+      List<ConsoleValue> args, ConsoleLogLevel level, int contextId) {
     return SingleChildScrollView(
       scrollDirection: Axis.horizontal,
       child: Wrap(
         spacing: 8.0,
         runSpacing: 4.0,
-        children: args.map((arg) => _buildConsoleValue(arg, level, contextId)).toList(),
+        children: args
+            .map((arg) => _buildConsoleValue(arg, level, contextId))
+            .toList(),
       ),
     );
   }
 
-  Widget _buildConsoleValue(ConsoleValue value, ConsoleLogLevel level, int contextId) {
+  Widget _buildConsoleValue(
+      ConsoleValue value, ConsoleLogLevel level, int contextId) {
     if (value is ConsolePrimitiveValue) {
       return Text(
         value.displayString,
@@ -5077,7 +5316,9 @@ class _JsonTreeViewState extends State<_JsonTreeView> {
                               });
                             },
                             child: Icon(
-                              isExpanded ? Icons.keyboard_arrow_down : Icons.keyboard_arrow_right,
+                              isExpanded
+                                  ? Icons.keyboard_arrow_down
+                                  : Icons.keyboard_arrow_right,
                               size: 16,
                               color: Colors.white54,
                             ),
@@ -5129,7 +5370,9 @@ class _JsonTreeViewState extends State<_JsonTreeView> {
                     children: [
                       _buildJsonTree(value, currentPath, depth + 1),
                       Padding(
-                        padding: EdgeInsets.only(left: indent + 16), // Add extra indent for closing bracket
+                        padding: EdgeInsets.only(
+                            left: indent +
+                                16), // Add extra indent for closing bracket
                         child: Text(
                           value is Map ? '}' : ']',
                           style: TextStyle(
@@ -5179,7 +5422,9 @@ class _JsonTreeViewState extends State<_JsonTreeView> {
                               });
                             },
                             child: Icon(
-                              isExpanded ? Icons.keyboard_arrow_down : Icons.keyboard_arrow_right,
+                              isExpanded
+                                  ? Icons.keyboard_arrow_down
+                                  : Icons.keyboard_arrow_right,
                               size: 16,
                               color: Colors.white54,
                             ),
@@ -5231,7 +5476,9 @@ class _JsonTreeViewState extends State<_JsonTreeView> {
                     children: [
                       _buildJsonTree(value, currentPath, depth + 1),
                       Padding(
-                        padding: EdgeInsets.only(left: indent + 16), // Add extra indent for closing bracket
+                        padding: EdgeInsets.only(
+                            left: indent +
+                                16), // Add extra indent for closing bracket
                         child: Text(
                           value is Map ? '}' : ']',
                           style: TextStyle(
@@ -5396,7 +5643,8 @@ class _RemoteObjectWidgetState extends State<_RemoteObjectWidget> {
                     fontFamily: 'monospace',
                     fontSize: 12,
                     color: _getObjectColor(),
-                    fontStyle: widget.remoteObject.objectType == RemoteObjectType.function
+                    fontStyle: widget.remoteObject.objectType ==
+                            RemoteObjectType.function
                         ? FontStyle.italic
                         : FontStyle.normal,
                   ),
@@ -5456,7 +5704,9 @@ class _RemoteObjectWidgetState extends State<_RemoteObjectWidget> {
 
     // Simply build all properties in order
     // The [[Prototype]] property will be handled specially in _buildProperty
-    return _properties!.map((prop) => _buildProperty(prop, isHtmlElement)).toList();
+    return _properties!
+        .map((prop) => _buildProperty(prop, isHtmlElement))
+        .toList();
   }
 
   bool _isHtmlElement() {
@@ -5465,23 +5715,29 @@ class _RemoteObjectWidgetState extends State<_RemoteObjectWidget> {
     final desc = widget.remoteObject.description;
 
     // First check the description format
-    if (desc.startsWith('<') && desc.contains('>') && (desc.contains('…') || desc.endsWith('/>'))) {
+    if (desc.startsWith('<') &&
+        desc.contains('>') &&
+        (desc.contains('…') || desc.endsWith('/>'))) {
       return true;
     }
 
     // Also check if all properties look like child nodes
     if (_properties != null && _properties!.isNotEmpty) {
       // If most properties look like child nodes, this is probably an element showing its children
-      final childNodeCount =
-          _properties!.where((prop) => prop.name != '[[Prototype]]' && _isChildNode(prop.name)).length;
-      final totalCount = _properties!.where((prop) => prop.name != '[[Prototype]]').length;
+      final childNodeCount = _properties!
+          .where(
+              (prop) => prop.name != '[[Prototype]]' && _isChildNode(prop.name))
+          .length;
+      final totalCount =
+          _properties!.where((prop) => prop.name != '[[Prototype]]').length;
       return totalCount > 0 && childNodeCount == totalCount;
     }
 
     return false;
   }
 
-  Widget _buildProperty(RemoteObjectProperty property, bool isParentHtmlElement) {
+  Widget _buildProperty(
+      RemoteObjectProperty property, bool isParentHtmlElement) {
     // Special handling for [[Prototype]] property
     if (property.name == '[[Prototype]]' && property.valueId.isNotEmpty) {
       // Create a remote object for the prototype
@@ -5571,7 +5827,8 @@ class _RemoteObjectWidgetState extends State<_RemoteObjectWidget> {
             style: TextStyle(
               fontFamily: 'monospace',
               fontSize: 11,
-              color: property.isOwn ? Colors.blue.shade300 : Colors.grey.shade400,
+              color:
+                  property.isOwn ? Colors.blue.shade300 : Colors.grey.shade400,
             ),
           ),
           Flexible(
