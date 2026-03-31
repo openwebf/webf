@@ -3302,19 +3302,19 @@ class CSSRenderStyle extends RenderStyle
             !renderStyle.isSelfRenderReplaced() &&
             renderStyle.position != CSSPositionType.absolute &&
             renderStyle.position != CSSPositionType.fixed) {
-          RenderWidgetElementChild? childWrapper;
-          final RenderBoxModel? currentLayoutBox =
-              renderBoxModelInLayoutStack.isNotEmpty ? renderBoxModelInLayoutStack.last : null;
-          if (currentLayoutBox != null && identical(currentLayoutBox.renderStyle, renderStyle)) {
-            childWrapper = currentLayoutBox.findWidgetElementChild();
-          }
-          childWrapper ??= target.attachedRenderer?.findWidgetElementChild();
-          double? maxConstraintWidth;
-          try {
-            maxConstraintWidth = childWrapper?.effectiveChildConstraints.maxWidth;
-          } catch (_) {}
-
           if (parentStyle.isSelfRenderWidget()) {
+            RenderWidgetElementChild? childWrapper;
+            final RenderBoxModel? currentLayoutBox =
+                renderBoxModelInLayoutStack.isNotEmpty ? renderBoxModelInLayoutStack.last : null;
+            if (currentLayoutBox != null && identical(currentLayoutBox.renderStyle, renderStyle)) {
+              childWrapper = currentLayoutBox.findWidgetElementChild();
+            }
+            childWrapper ??= target.attachedRenderer?.findWidgetElementChild();
+            double? maxConstraintWidth;
+            try {
+              maxConstraintWidth = childWrapper?.effectiveChildConstraints.maxWidth;
+            } catch (_) {}
+
             if (childWrapper != null && maxConstraintWidth != null && maxConstraintWidth.isFinite) {
               // Prefer the smaller (more restrictive) containing block width:
               // - Widget subtree constraints can differ from CSS logical width when an element
@@ -3349,26 +3349,10 @@ class CSSRenderStyle extends RenderStyle
             // If there is no WebFWidgetElementChild (or no constraints yet),
             // fall through and let the parent (flex) constraints logic handle it.
           } else {
-            final RenderBoxModel? currentLayoutBoxForAncestor =
-                renderBoxModelInLayoutStack.isNotEmpty ? renderBoxModelInLayoutStack.last : null;
-            final bool parentIsAncestorInCurrentTree = currentLayoutBoxForAncestor == null
-                ? true
-                : isRenderSubtreeAncestor(
-                    parentStyle.attachedRenderBoxModel,
-                    currentLayoutBoxForAncestor,
-                  );
-            if (renderStyle.isSelfRenderWidget() &&
-                !parentIsAncestorInCurrentTree &&
-                childWrapper != null &&
-                maxConstraintWidth != null &&
-                maxConstraintWidth.isFinite) {
-              logicalWidth = maxConstraintWidth;
-            } else {
-              final RenderBoxModel? parentBox = parentStyle.attachedRenderBoxModel;
-              final BoxConstraints? pcc = parentBox?.contentConstraints;
-              if (pcc != null && pcc.hasBoundedWidth && pcc.maxWidth.isFinite) {
-                logicalWidth = pcc.maxWidth - renderStyle.margin.horizontal;
-              }
+            final RenderBoxModel? parentBox = parentStyle.attachedRenderBoxModel;
+            final BoxConstraints? pcc = parentBox?.contentConstraints;
+            if (pcc != null && pcc.hasBoundedWidth && pcc.maxWidth.isFinite) {
+              logicalWidth = pcc.maxWidth - renderStyle.margin.horizontal;
             }
           }
 
@@ -3416,26 +3400,6 @@ class CSSRenderStyle extends RenderStyle
                 }
               } else {
                 logicalWidth = maxConstraintWidth;
-              }
-            } else if (renderStyle.isSelfRenderWidget() &&
-                childWrapper != null &&
-                maxConstraintWidth != null &&
-                maxConstraintWidth.isFinite) {
-              final RenderBoxModel? currentLayoutBoxForAncestor =
-                  renderBoxModelInLayoutStack.isNotEmpty ? renderBoxModelInLayoutStack.last : null;
-              final bool ancestorIsAncestorInCurrentTree = currentLayoutBoxForAncestor == null
-                  ? true
-                  : isRenderSubtreeAncestor(
-                      ancestorRenderStyle.attachedRenderBoxModel,
-                      currentLayoutBoxForAncestor,
-                    );
-              if (!ancestorIsAncestorInCurrentTree) {
-                // Only the portal-mounted WidgetElement root should ignore DOM
-                // ancestors from a detached render subtree. Regular descendants
-                // still resolve width from their active DOM containing block.
-                logicalWidth = maxConstraintWidth;
-              } else {
-                logicalWidth = ancestorRenderStyle.contentBoxLogicalWidth;
               }
             } else {
               logicalWidth = ancestorRenderStyle.contentBoxLogicalWidth;
