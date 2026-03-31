@@ -1,3 +1,13 @@
+## 0.24.25
+
+### Bug Fixes
+
+- **Rendering/Widget/CSS**: remove an overly broad widget width fallback that could
+  clamp detached or hybrid-native widget subtrees to unrelated DOM ancestor widths,
+  while preserving the intended popup/portal constraint behavior.
+- **Android/Diagnostics**: handle large Android render tree dumps more defensively to
+  avoid failures while collecting or reporting oversized render tree output.
+
 ## 0.24.24
 
 ### Performance Improvements
