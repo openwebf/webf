@@ -199,8 +199,30 @@ class RenderWidget extends RenderBoxModel
     if (renderStyle.width.type != CSSLengthType.AUTO) {
       final double? logicalContentWidth = renderStyle.contentBoxLogicalWidth;
       if (logicalContentWidth != null && logicalContentWidth.isFinite) {
-        final double clampedWidth = logicalContentWidth.clamp(
-            contentConstraints!.minWidth, contentConstraints!.maxWidth);
+        double minWidth = childConstraints.minWidth;
+        double maxWidth = childConstraints.maxWidth;
+
+        // Percentage-width widget subtrees can briefly inherit a zero max-width
+        // from flex adjustment even though their used content width has already
+        // resolved from the containing block. Preserve that resolved width here
+        // instead of collapsing the hosted Flutter child to 0px.
+        if (renderStyle.width.type == CSSLengthType.PERCENTAGE &&
+            maxWidth == 0 &&
+            logicalContentWidth > 0) {
+          maxWidth = logicalContentWidth;
+          if (minWidth > maxWidth) {
+            minWidth = maxWidth;
+          }
+          childConstraints = BoxConstraints(
+            minWidth: minWidth,
+            maxWidth: maxWidth,
+            minHeight: childConstraints.minHeight,
+            maxHeight: childConstraints.maxHeight,
+          );
+        }
+
+        final double clampedWidth =
+            logicalContentWidth.clamp(minWidth, maxWidth).toDouble();
         childConstraints = childConstraints.tighten(width: clampedWidth);
       }
     }
