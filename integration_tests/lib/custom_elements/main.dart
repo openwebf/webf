@@ -26,6 +26,7 @@ import 'flutter_cupertino_portal_modal_popup.dart';
 import 'flutter_portal_popup_item.dart';
 import 'flutter_bottom_sheet.dart';
 import 'flutter_ifc_host.dart';
+import 'flutter_tooltips.dart';
 
 void defineWebFCustomElements() {
   WebF.defineCustomElement('flutter-button',
@@ -65,4 +66,6 @@ void defineWebFCustomElements() {
   WebF.defineCustomElement('flutter-max-height-container', (context) => FlutterMaxHeightContainerElement(context));
   WebF.defineCustomElement('flutter-fixed-height-slot', (context) => FlutterFixedHeightSlotElement(context));
   WebF.defineCustomElement('flutter-ifc-host', (context) => FlutterIFCHostElement(context));
+  WebF.defineCustomElement('flutter-tooltips', (context) => FlutterToolTipsElement(context));
+  WebF.defineCustomElement('webf-test-auto-size-text', (context) => WebFTestAutoSizeTextElement(context));
 }
