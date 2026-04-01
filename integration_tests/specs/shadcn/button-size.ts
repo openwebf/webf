@@ -58,7 +58,9 @@ describe('Shadcn button sizes integration', () => {
           await waitForText(container, 'Extra small', flush);
           await waitForText(container, 'Large', flush);
 
-          expect(container.querySelectorAll('button').length).toBe(5);
+          const buttons = Array.from(container.querySelectorAll('button')) as HTMLButtonElement[];
+          expect(buttons.length).toBe(5);
+          expect(getComputedStyle(buttons[2]).backgroundColor).toBe('rgb(24, 24, 27)');
           expect(container.querySelector('button[aria-label="Expand"]')).not.toBeNull();
           await snapshot();
         },

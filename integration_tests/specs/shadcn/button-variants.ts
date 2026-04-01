@@ -58,7 +58,9 @@ describe('Shadcn button variants integration', () => {
           await waitForText(container, 'Primary action', flush);
           await waitForText(container, 'Delete action', flush);
 
-          expect(container.querySelectorAll('button').length).toBe(5);
+          const buttons = Array.from(container.querySelectorAll('button')) as HTMLButtonElement[];
+          expect(buttons.length).toBe(5);
+          expect(getComputedStyle(buttons[0]).backgroundColor).toBe('rgb(24, 24, 27)');
           await snapshot();
         },
         {
