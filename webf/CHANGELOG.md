@@ -1,3 +1,11 @@
+## 0.24.25+2
+
+### Bug Fixes
+
+- **Rendering/Widget/Flex**: preserve hosted Flutter widget text painting after nested updates
+  in flex layouts by preventing percentage-width widget children from collapsing to a transient
+  zero-width layout during relayout.
+
 ## 0.24.25+1
 
 ### Bug Fixes
