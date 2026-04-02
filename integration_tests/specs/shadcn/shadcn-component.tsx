@@ -2,7 +2,7 @@
 import * as React from 'react';
 import { Alert, AlertAction, AlertDescription, AlertTitle } from '../../../use_cases/src/components/ui/alert';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '../../../use_cases/src/components/ui/accordion';
-import { Avatar, AvatarFallback } from '../../../use_cases/src/components/ui/avatar';
+import { Avatar, AvatarFallback, AvatarImage } from '../../../use_cases/src/components/ui/avatar';
 import { Badge } from '../../../use_cases/src/components/ui/badge';
 import {
   Breadcrumb,
@@ -285,6 +285,28 @@ export function AvatarFixture() {
         <div className="grid gap-1">
           <div className="font-medium text-zinc-950">Jane Doe</div>
           <div className="text-sm text-zinc-500">jane@example.com</div>
+        </div>
+      </div>
+    </Surface>
+  );
+}
+
+export function AvatarImageFixture() {
+  return (
+    <Surface title="shadcn_avatar_image">
+      <div className="flex items-center gap-3">
+        <Avatar className="h-12 w-12">
+          <AvatarImage
+            alt="OpenWebF avatar"
+            src={`data:image/svg+xml;utf8,${encodeURIComponent(
+              '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48"><rect width="48" height="48" rx="24" fill="#18181b"/><circle cx="24" cy="18" r="9" fill="#fafafa"/><path d="M10 41c3-8 11-12 14-12s11 4 14 12" fill="#d4d4d8"/></svg>',
+            )}`}
+          />
+          <AvatarFallback>OW</AvatarFallback>
+        </Avatar>
+        <div className="grid gap-1">
+          <div className="font-medium text-zinc-950">OpenWebF</div>
+          <div className="text-sm text-zinc-500">Image avatar fixture</div>
         </div>
       </div>
     </Surface>

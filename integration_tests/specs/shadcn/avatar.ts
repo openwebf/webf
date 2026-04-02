@@ -1,5 +1,5 @@
 import React from 'react';
-import { AvatarFixture } from './shadcn-component';
+import { AvatarFixture, AvatarImageFixture } from './shadcn-component';
 import { runShadcnCase } from './shadcn-test-utils';
 
 describe('Shadcn avatar integration', () => {
@@ -12,4 +12,18 @@ describe('Shadcn avatar integration', () => {
       },
     );
   });
+  
+  it('shadcn_avatar_image', async () => {
+      await runShadcnCase(
+        React.createElement(AvatarImageFixture),
+        ['shadcn_avatar_image', 'OpenWebF', 'Image avatar fixture'],
+        async (container) => {
+          const image = container.querySelector('img[alt="OpenWebF avatar"]') as HTMLImageElement | null;
+          expect(image).not.toBeNull();
+          expect(image!.getAttribute('src')?.startsWith('data:image/svg+xml;utf8,')).toBe(true);
+          expect(container.textContent).not.toContain('OW');
+          await snapshot();
+        },
+      );
+    });
 });
