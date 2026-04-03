@@ -446,10 +446,16 @@ class InlineItemsBuilder {
     if (_boxStack.isEmpty) {
       _consumedRootContent = true;
     }
-    // Allow inline-block/inline-flex, or inline replaced/widget elements.
+    // Allow:
+    // - inline-block / inline-flex
+    // - inline replaced / inline widget elements
+    // - block / flex children that are intentionally represented as atomic
+    //   placeholders when they split an inline formatting context
     assert(
       box.renderStyle.display == CSSDisplay.inlineBlock ||
       box.renderStyle.display == CSSDisplay.inlineFlex ||
+      box.renderStyle.display == CSSDisplay.block ||
+      box.renderStyle.display == CSSDisplay.flex ||
       (box.renderStyle.display == CSSDisplay.inline &&
           (box.renderStyle.isSelfRenderReplaced() || box.renderStyle.isSelfRenderWidget()))
     );
