@@ -175,6 +175,7 @@ class RenderEventListener extends RenderBoxModel
 
   @override
   void performLayout() {
+    clearPendingLayoutUpdateForCurrentLayoutPass();
     updateIntrinsicMeasurementInvalidationForCurrentLayoutPass();
     final RenderBox? currentChild = child;
     if (hasSize &&
