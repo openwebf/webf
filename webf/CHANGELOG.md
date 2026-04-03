@@ -1,3 +1,16 @@
+## 0.24.26
+
+### Bug Fixes
+
+- **Accessibility/Semantics**: avoid Flutter semantics assertions when transparent
+  proxy wrappers are dirtied mid-frame by tracking runtime layout dirtiness and
+  skipping dirty proxy children during semantics traversal instead of relying on
+  debug-only layout checks.
+- **Rendering/Widget/Inline**: restore detached portal widget width fallback so
+  portal-mounted widget subtrees use their active child constraints instead of
+  unrelated DOM ancestors, and allow block/flex atomic placeholders in widget-hosted
+  inline formatting contexts without tripping inline-item assertions.
+
 ## 0.24.25+2
 
 ### Bug Fixes
