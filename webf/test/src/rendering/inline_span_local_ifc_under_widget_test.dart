@@ -87,4 +87,25 @@ void main() {
     expect(ifc!.paragraphLineMetrics.length, 1);
     expect(ifc.paragraphLineMetrics.first.height, moreOrLessEquals(24.0, epsilon: 0.8));
   });
+
+  testWidgets('inline <span> under RenderWidget with flex child should not trip atomic inline assertion', (WidgetTester tester) async {
+    await WebFWidgetTestUtils.prepareWidgetTest(
+      tester: tester,
+      controllerName: 'inline-span-flex-child-${DateTime.now().millisecondsSinceEpoch}',
+      html: '''
+        <flutter-ifc-host id="host" style="height: 120px;">
+          <span id="s" style="font-size: 20px; line-height: 24px;">
+            before
+            <div id="row" style="display: flex; min-height: 30px;">
+              <span>nested</span>
+            </div>
+            after
+          </span>
+        </flutter-ifc-host>
+      ''',
+    );
+
+    await tester.pump();
+    expect(tester.takeException(), isNull);
+  });
 }

@@ -3378,19 +3378,25 @@ class CSSRenderStyle extends RenderStyle
               maxConstraintWidth = childWrapper?.effectiveChildConstraints.maxWidth;
             } catch (_) {}
 
-            if (ancestorRenderStyle.isSelfRenderWidget() &&
+            final RenderBoxModel? currentLayoutBoxForAncestor =
+                renderBoxModelInLayoutStack.isNotEmpty ? renderBoxModelInLayoutStack.last : null;
+            final bool ancestorIsAncestorInCurrentTree = currentLayoutBoxForAncestor == null
+                ? true
+                : isRenderSubtreeAncestor(
+                    ancestorRenderStyle.attachedRenderBoxModel,
+                    currentLayoutBoxForAncestor,
+                  );
+
+            if (renderStyle.isSelfRenderWidget() &&
+                !ancestorIsAncestorInCurrentTree &&
                 childWrapper != null &&
                 maxConstraintWidth != null &&
                 maxConstraintWidth.isFinite) {
-              final RenderBoxModel? currentLayoutBoxForAncestor =
-                  renderBoxModelInLayoutStack.isNotEmpty ? renderBoxModelInLayoutStack.last : null;
-              final bool ancestorIsAncestorInCurrentTree = currentLayoutBoxForAncestor == null
-                  ? true
-                  : isRenderSubtreeAncestor(
-                      ancestorRenderStyle.attachedRenderBoxModel,
-                      currentLayoutBoxForAncestor,
-                    );
-
+              logicalWidth = maxConstraintWidth;
+            } else if (ancestorRenderStyle.isSelfRenderWidget() &&
+                childWrapper != null &&
+                maxConstraintWidth != null &&
+                maxConstraintWidth.isFinite) {
               if (ancestorIsAncestorInCurrentTree) {
                 final double? ancestorContentLogicalWidth = ancestorRenderStyle.contentBoxLogicalWidth;
                 if (ancestorContentLogicalWidth != null && ancestorContentLogicalWidth.isFinite) {
