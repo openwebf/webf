@@ -153,10 +153,20 @@ abstract class RenderLayoutBox extends RenderBoxModel
       final RenderLayoutParentData parentData =
           child.parentData as RenderLayoutParentData;
       parentData.semanticsIndex = index;
-      visitor(child);
+      if (!_shouldSkipSemanticsProxyChild(child)) {
+        visitor(child);
+      }
       child = parentData.nextSibling;
       index++;
     }
+  }
+
+  bool _shouldSkipSemanticsProxyChild(RenderBox child) {
+    if (child is! RenderBoxModel ||
+        (child is! RenderEventListener && child is! RenderLayoutBoxWrapper)) {
+      return false;
+    }
+    return child.hasPendingLayoutUpdate || child.needsRelayout;
   }
 
   // Aggregate intrinsic sizing over non-positioned children.

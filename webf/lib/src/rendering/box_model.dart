@@ -120,7 +120,8 @@ bool debugRenderObjectNeedsLayout(RenderObject renderObject) {
   return result;
 }
 
-bool canReuseStableProxyChildLayout(RenderBox? child, BoxConstraints constraints) {
+bool canReuseStableProxyChildLayout(
+    RenderBox? child, BoxConstraints constraints) {
   if (child == null || !child.hasSize || child.constraints != constraints) {
     return false;
   }
@@ -434,11 +435,13 @@ abstract class RenderBoxModel extends RenderBox
 
   // Whether it needs relayout due to percentage calculation.
   bool needsRelayout = false;
+  bool _hasPendingLayoutUpdate = true;
   bool _hasPendingIntrinsicMeasurementInvalidation = true;
   bool _hasPendingSubtreeIntrinsicMeasurementInvalidation = true;
   String? _debugIntrinsicMeasurementDirtyReason = 'initial';
   int _clearIntrinsicMeasurementInvalidationAfterLayoutPass = 1;
 
+  bool get hasPendingLayoutUpdate => _hasPendingLayoutUpdate;
   bool get hasPendingIntrinsicMeasurementInvalidation =>
       _hasPendingIntrinsicMeasurementInvalidation;
   bool get hasPendingSubtreeIntrinsicMeasurementInvalidation =>
@@ -460,6 +463,11 @@ abstract class RenderBoxModel extends RenderBox
 
   void markNeedsRelayout() {
     needsRelayout = true;
+  }
+
+  @protected
+  void clearPendingLayoutUpdateForCurrentLayoutPass() {
+    _hasPendingLayoutUpdate = false;
   }
 
   void markNeedsIntrinsicMeasurementUpdate([String reason = 'unspecified']) {
@@ -525,8 +533,10 @@ abstract class RenderBoxModel extends RenderBox
 
   @override
   void layout(Constraints constraints, {bool parentUsesSize = false}) {
-    _lastLaidOutAsRelayoutBoundary =
-        !parentUsesSize || sizedByParent || constraints.isTight || parent == null;
+    _lastLaidOutAsRelayoutBoundary = !parentUsesSize ||
+        sizedByParent ||
+        constraints.isTight ||
+        parent == null;
     if (renderBoxModelInLayoutStack.isEmpty) {
       renderBoxModelLayoutPassId++;
     }
@@ -649,9 +659,8 @@ abstract class RenderBoxModel extends RenderBox
       // width of 0 (e.g., auto-width flex item whose only child is out-of-flow).
       // In such cases, the containing block still exists, but the abspos box should size
       // from its own content rather than the flex item's zero content width.
-      final bool isAbsOrFixed =
-          style.position == CSSPositionType.absolute ||
-              style.position == CSSPositionType.fixed;
+      final bool isAbsOrFixed = style.position == CSSPositionType.absolute ||
+          style.position == CSSPositionType.fixed;
       if (isAbsOrFixed &&
           style.width.isAuto &&
           style.isParentRenderFlexLayout() &&
@@ -681,8 +690,7 @@ abstract class RenderBoxModel extends RenderBox
         }
       } else {
         // Not in a flex context, inherit parent's content width constraint normally
-        double parentContentWidth =
-            parentFlowStyle.contentMaxConstraintsWidth;
+        double parentContentWidth = parentFlowStyle.contentMaxConstraintsWidth;
         if (parentContentWidth != double.infinity) {
           parentBoxContentConstraintsWidth = parentContentWidth;
         }
@@ -710,7 +718,7 @@ abstract class RenderBoxModel extends RenderBox
         !style.isSelfRenderReplaced() &&
         style.borderBoxLogicalWidth == null &&
         parentBoxContentConstraintsWidth != null) {
-        parentBoxContentConstraintsWidth = null;
+      parentBoxContentConstraintsWidth = null;
     }
 
     double? containingBlockPaddingBoxWidth;
@@ -731,12 +739,10 @@ abstract class RenderBoxModel extends RenderBox
         style.minWidth.isAuto ? null : style.minWidth.computedValue;
     double? maxWidth =
         style.maxWidth.isNone ? null : style.maxWidth.computedValue;
-    double? minHeight = style.minHeight.isAuto
-        ? null
-        : style.minHeight.computedValue;
-    double? maxHeight = style.maxHeight.isNone
-        ? null
-        : style.maxHeight.computedValue;
+    double? minHeight =
+        style.minHeight.isAuto ? null : style.minHeight.computedValue;
+    double? maxHeight =
+        style.maxHeight.isNone ? null : style.maxHeight.computedValue;
 
     double maxConstraintWidth = style.borderBoxLogicalWidth ??
         parentBoxContentConstraintsWidth ??
@@ -747,9 +753,8 @@ abstract class RenderBoxModel extends RenderBox
     // This handles cases where style-tree logical widths are unavailable (e.g., parent inline-block
     // with auto width) but the containing block has been measured. See:
     // https://www.w3.org/TR/css-position-3/#abs-non-replaced-width
-    final bool isAbsOrFixed =
-        style.position == CSSPositionType.absolute ||
-            style.position == CSSPositionType.fixed;
+    final bool isAbsOrFixed = style.position == CSSPositionType.absolute ||
+        style.position == CSSPositionType.fixed;
     if (maxConstraintWidth == double.infinity &&
         isAbsOrFixed &&
         !style.isSelfRenderReplaced() &&
@@ -832,8 +837,7 @@ abstract class RenderBoxModel extends RenderBox
     }
     // Height should be not smaller than border and padding in vertical direction
     // when box-sizing is border-box which is only supported.
-    double minConstraintHeight =
-        styleBorder.vertical + stylePadding.vertical;
+    double minConstraintHeight = styleBorder.vertical + stylePadding.vertical;
     double maxConstraintHeight =
         style.borderBoxLogicalHeight ?? double.infinity;
 
@@ -876,8 +880,7 @@ abstract class RenderBoxModel extends RenderBox
       maxConstraintWidth =
           maxConstraintWidth > maxWidth ? maxWidth : maxConstraintWidth;
       // Only reduce minConstraintWidth if maxWidth is larger than border+padding requirements
-      double borderPadding =
-          styleBorder.horizontal + stylePadding.horizontal;
+      double borderPadding = styleBorder.horizontal + stylePadding.horizontal;
       if (maxWidth >= borderPadding) {
         minConstraintWidth =
             minConstraintWidth > maxWidth ? maxWidth : minConstraintWidth;
@@ -968,6 +971,7 @@ abstract class RenderBoxModel extends RenderBox
 
   @override
   void markNeedsLayout() {
+    _hasPendingLayoutUpdate = true;
     final RenderObject? relayoutParent = _relayoutParentOnSizeChange;
     // Some wrapper parents mirror child.boxSize while laying the child out
     // with parentUsesSize: false to keep a local relayout boundary.
@@ -1111,6 +1115,7 @@ abstract class RenderBoxModel extends RenderBox
     this.contentConstraints = contentConstraints;
     clearOverflowLayout();
     isSelfSizeChanged = false;
+    clearPendingLayoutUpdateForCurrentLayoutPass();
     updateIntrinsicMeasurementInvalidationForCurrentLayoutPass();
 
     // Reset cached CSS baselines before a new layout pass. They will be

@@ -97,6 +97,7 @@ class RenderLayoutBoxWrapper extends RenderBoxModel
 
   @override
   void performLayout() {
+    clearPendingLayoutUpdateForCurrentLayoutPass();
     renderStyle.computeContentBoxLogicalWidth();
     renderStyle.computeContentBoxLogicalHeight();
 
@@ -106,7 +107,8 @@ class RenderLayoutBoxWrapper extends RenderBoxModel
     final RenderBox? c = child;
     if (c == null) {
       size = constraints.constrain(Size.zero);
-      initOverflowLayout(Rect.fromLTRB(0, 0, size.width, size.height), Rect.fromLTRB(0, 0, size.width, size.height));
+      initOverflowLayout(Rect.fromLTRB(0, 0, size.width, size.height),
+          Rect.fromLTRB(0, 0, size.width, size.height));
       _lastWrapperConstraints = constraints;
       _lastResolvedChildConstraints = null;
       return;
@@ -127,9 +129,13 @@ class RenderLayoutBoxWrapper extends RenderBoxModel
       // CSS logic already accounts for its padding/border.
     } else if (c is RenderTextBox) {
       // Text nodes inside wrappers should measure themselves with a sensible bound.
-      final double maxW = constraints.hasBoundedWidth ? constraints.maxWidth : double.infinity;
-      final double maxH = constraints.hasBoundedHeight ? constraints.maxHeight : double.infinity;
-      childConstraints = BoxConstraints(minWidth: 0, maxWidth: maxW, minHeight: 0, maxHeight: maxH);
+      final double maxW =
+          constraints.hasBoundedWidth ? constraints.maxWidth : double.infinity;
+      final double maxH = constraints.hasBoundedHeight
+          ? constraints.maxHeight
+          : double.infinity;
+      childConstraints = BoxConstraints(
+          minWidth: 0, maxWidth: maxW, minHeight: 0, maxHeight: maxH);
     } else {
       // Fallback: provide loose, unbounded constraints so inner WebF render boxes
       // can compute their own CSS-based constraints without being forced to expand.
@@ -158,7 +164,8 @@ class RenderLayoutBoxWrapper extends RenderBoxModel
       }
       if (minW > maxW) minW = maxW;
       if (minH > maxH) minH = maxH;
-      return BoxConstraints(minWidth: minW, maxWidth: maxW, minHeight: minH, maxHeight: maxH);
+      return BoxConstraints(
+          minWidth: minW, maxWidth: maxW, minHeight: minH, maxHeight: maxH);
     }
 
     childConstraints = intersect(childConstraints, constraints);
@@ -176,7 +183,8 @@ class RenderLayoutBoxWrapper extends RenderBoxModel
       // Use sibling-oriented collapsed margins so the inter-item spacing equals
       // the CSS collapsed result between previous bottom and current top.
       final double childMarginTop = renderStyle.collapsedMarginTopForSibling;
-      final double childMarginBottom = renderStyle.collapsedMarginBottomForSibling;
+      final double childMarginBottom =
+          renderStyle.collapsedMarginBottomForSibling;
       final double childMarginLeft = renderStyle.marginLeft.computedValue;
       final double childMarginRight = renderStyle.marginRight.computedValue;
 
@@ -186,34 +194,47 @@ class RenderLayoutBoxWrapper extends RenderBoxModel
       // elements where content can extend beyond the box; for clipping containers
       // the intermediate RenderLayoutBoxWrapper (created for the Scrollable chain)
       // never propagates scrollableSize, leaving it at Size.zero.
-      final bool isClippingContainer = c.renderStyle.effectiveOverflowX != CSSOverflowType.visible ||
-          c.renderStyle.effectiveOverflowY != CSSOverflowType.visible;
-      final Size contentScrollable = isClippingContainer ? c.size : c.scrollableSize;
+      final bool isClippingContainer =
+          c.renderStyle.effectiveOverflowX != CSSOverflowType.visible ||
+              c.renderStyle.effectiveOverflowY != CSSOverflowType.visible;
+      final Size contentScrollable =
+          isClippingContainer ? c.size : c.scrollableSize;
 
       // Decide sizing based on list axis. In a horizontal list (unbounded width),
       // widen by left+right margins so gaps appear between items. In a vertical
       // list (unbounded height), increase height by top+bottom margins.
-      final bool isHorizontalList = constraints.hasBoundedHeight && !constraints.hasBoundedWidth;
-      final bool isVerticalList = constraints.hasBoundedWidth && !constraints.hasBoundedHeight;
+      final bool isHorizontalList =
+          constraints.hasBoundedHeight && !constraints.hasBoundedWidth;
+      final bool isVerticalList =
+          constraints.hasBoundedWidth && !constraints.hasBoundedHeight;
 
       double wrapperWidth;
       double wrapperHeight;
       if (isHorizontalList) {
-        wrapperWidth = contentScrollable.width + childMarginLeft + childMarginRight;
+        wrapperWidth =
+            contentScrollable.width + childMarginLeft + childMarginRight;
         // Height is tight from the viewport; still offset child by vertical margins below.
-        wrapperHeight = constraints.hasBoundedHeight ? constraints.maxHeight : (contentScrollable.height + childMarginTop + childMarginBottom);
+        wrapperHeight = constraints.hasBoundedHeight
+            ? constraints.maxHeight
+            : (contentScrollable.height + childMarginTop + childMarginBottom);
       } else if (isVerticalList) {
-        wrapperWidth = constraints.hasBoundedWidth ? constraints.maxWidth : (contentScrollable.width + childMarginLeft + childMarginRight);
-        wrapperHeight = contentScrollable.height + childMarginTop + childMarginBottom;
+        wrapperWidth = constraints.hasBoundedWidth
+            ? constraints.maxWidth
+            : (contentScrollable.width + childMarginLeft + childMarginRight);
+        wrapperHeight =
+            contentScrollable.height + childMarginTop + childMarginBottom;
       } else {
         // Fallback (no tightness info): include both margins conservatively.
-        wrapperWidth = contentScrollable.width + childMarginLeft + childMarginRight;
-        wrapperHeight = contentScrollable.height + childMarginTop + childMarginBottom;
+        wrapperWidth =
+            contentScrollable.width + childMarginLeft + childMarginRight;
+        wrapperHeight =
+            contentScrollable.height + childMarginTop + childMarginBottom;
       }
 
       size = constraints.constrain(Size(wrapperWidth, wrapperHeight));
 
-      if (renderStyle.isSelfPositioned() || renderStyle.isSelfStickyPosition()) {
+      if (renderStyle.isSelfPositioned() ||
+          renderStyle.isSelfStickyPosition()) {
         CSSPositionedLayout.applyPositionedChildOffset(this, c);
       } else {
         // Offset the child within the wrapper by its margins
@@ -226,7 +247,8 @@ class RenderLayoutBoxWrapper extends RenderBoxModel
     }
 
     calculateBaseline();
-    initOverflowLayout(Rect.fromLTRB(0, 0, size.width, size.height), Rect.fromLTRB(0, 0, size.width, size.height));
+    initOverflowLayout(Rect.fromLTRB(0, 0, size.width, size.height),
+        Rect.fromLTRB(0, 0, size.width, size.height));
   }
 
   @override
@@ -241,7 +263,9 @@ class RenderLayoutBoxWrapper extends RenderBoxModel
 
   @override
   bool hitTest(BoxHitTestResult result, {required Offset position}) {
-    if (!hasSize || !contentVisibilityHitTest(result, position: position) || renderStyle.isVisibilityHidden) {
+    if (!hasSize ||
+        !contentVisibilityHitTest(result, position: position) ||
+        renderStyle.isVisibilityHidden) {
       return false;
     }
 
@@ -249,9 +273,12 @@ class RenderLayoutBoxWrapper extends RenderBoxModel
       if (!hasSize) {
         if (debugNeedsLayout) {
           throw FlutterError.fromParts(<DiagnosticsNode>[
-            ErrorSummary('Cannot hit test a render box that has never been laid out.'),
-            describeForError('The hitTest() method was called on this RenderBox'),
-            ErrorDescription("Unfortunately, this object's geometry is not known at this time, "
+            ErrorSummary(
+                'Cannot hit test a render box that has never been laid out.'),
+            describeForError(
+                'The hitTest() method was called on this RenderBox'),
+            ErrorDescription(
+                "Unfortunately, this object's geometry is not known at this time, "
                 'probably because it has never been laid out. '
                 'This means it cannot be accurately hit-tested.'),
             ErrorHint('If you are trying '
@@ -263,7 +290,8 @@ class RenderLayoutBoxWrapper extends RenderBoxModel
         throw FlutterError.fromParts(<DiagnosticsNode>[
           ErrorSummary('Cannot hit test a render box with no size.'),
           describeForError('The hitTest() method was called on this RenderBox'),
-          ErrorDescription('Although this node is not marked as needing layout, '
+          ErrorDescription(
+              'Although this node is not marked as needing layout, '
               'its size is not set.'),
           ErrorHint('A RenderBox object must have an '
               'explicit size before it can be hit-tested. Make sure '
@@ -283,14 +311,18 @@ class RenderLayoutBoxWrapper extends RenderBoxModel
     }
 
     final BoxParentData childParentData = child!.parentData as BoxParentData;
-    bool isHit = result.addWithPaintOffset(offset: childParentData.offset, position: position, hitTest: (result, position) {
-      // addWithPaintOffset is to add an offset to the child node, the calculation itself does not need to bring an offset.
-      if (hasSize && hitTestChildren(result, position: position) || hitTestSelf(position)) {
-        result.add(BoxHitTestEntry(this, position));
-        return true;
-      }
-      return false;
-    });
+    bool isHit = result.addWithPaintOffset(
+        offset: childParentData.offset,
+        position: position,
+        hitTest: (result, position) {
+          // addWithPaintOffset is to add an offset to the child node, the calculation itself does not need to bring an offset.
+          if (hasSize && hitTestChildren(result, position: position) ||
+              hitTestSelf(position)) {
+            result.add(BoxHitTestEntry(this, position));
+            return true;
+          }
+          return false;
+        });
     return isHit;
   }
 
@@ -304,7 +336,9 @@ class RenderLayoutBoxWrapper extends RenderBoxModel
 class LayoutBoxWrapper extends SingleChildRenderObjectWidget {
   final dom.Element ownerElement;
 
-  const LayoutBoxWrapper({super.key, required Widget child, required this.ownerElement}) : super(child: child);
+  const LayoutBoxWrapper(
+      {super.key, required Widget child, required this.ownerElement})
+      : super(child: child);
 
   @override
   RenderObject createRenderObject(BuildContext context) {
