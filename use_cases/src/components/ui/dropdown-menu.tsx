@@ -83,7 +83,7 @@ export const DropdownMenuContent = React.forwardRef<
     <div
       ref={mergedRef}
       className={cn(
-        'absolute right-0 top-full z-50 mt-2 min-w-56 rounded-md border border-zinc-200 bg-white p-1 shadow-lg',
+        'absolute right-0 top-full z-50 mt-2 w-64 rounded-md border border-zinc-200 bg-white p-1 shadow-lg',
         className,
       )}
       {...props}
@@ -97,7 +97,7 @@ export const DropdownMenuGroup = React.forwardRef<
   HTMLDivElement,
   React.HTMLAttributes<HTMLDivElement>
 >(({ className, ...props }, ref) => (
-  <div ref={ref} className={cn('grid gap-1', className)} {...props} />
+  <div ref={ref} className={cn('flex flex-col gap-1', className)} {...props} />
 ));
 
 DropdownMenuGroup.displayName = 'DropdownMenuGroup';
@@ -105,12 +105,23 @@ DropdownMenuGroup.displayName = 'DropdownMenuGroup';
 export const DropdownMenuLabel = React.forwardRef<
   HTMLDivElement,
   React.HTMLAttributes<HTMLDivElement>
->(({ className, ...props }, ref) => (
+>(({ className, children, ...props }, ref) => (
   <div
     ref={ref}
-    className={cn('px-2 py-1.5 text-xs font-semibold text-zinc-500', className)}
+    className={cn(
+      'mb-1 grid gap-2 px-2 pt-1.5 text-xs font-semibold text-zinc-500',
+      className,
+    )}
     {...props}
-  />
+  >
+    <span>{children}</span>
+    <span
+      aria-hidden="true"
+      className="block h-px w-full overflow-hidden bg-zinc-300 text-transparent"
+    >
+      .
+    </span>
+  </div>
 ));
 
 DropdownMenuLabel.displayName = 'DropdownMenuLabel';
@@ -119,7 +130,18 @@ export const DropdownMenuSeparator = React.forwardRef<
   HTMLDivElement,
   React.HTMLAttributes<HTMLDivElement>
 >(({ className, ...props }, ref) => (
-  <div ref={ref} className={cn('my-1 h-px bg-zinc-200', className)} {...props} />
+  <div
+    ref={ref}
+    className={cn('-mx-1 my-1 px-1', className)}
+    {...props}
+  >
+    <span
+      aria-hidden="true"
+      className="block h-px w-full overflow-hidden bg-zinc-300 text-transparent"
+    >
+      .
+    </span>
+  </div>
 ));
 
 DropdownMenuSeparator.displayName = 'DropdownMenuSeparator';
@@ -135,7 +157,7 @@ export const DropdownMenuItem = React.forwardRef<
       ref={ref}
       type="button"
       className={cn(
-        'flex w-full items-center justify-between rounded-sm px-2 py-1.5 text-sm text-zinc-700 transition-colors hover:bg-zinc-100 hover:text-zinc-950',
+        'flex w-full appearance-none items-center justify-between rounded-sm border-0 bg-transparent px-2 py-1.5 text-left text-sm text-zinc-700 shadow-none outline-none transition-colors hover:bg-zinc-100 hover:text-zinc-950',
         className,
       )}
       onClick={(event) => {
