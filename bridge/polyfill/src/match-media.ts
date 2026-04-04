@@ -99,9 +99,15 @@ export const matchMedia: MatchMedia = (mediaQuery: string): MediaQueryList => {
   // Only support one expression now
   let expression = query.expressions[0];
   let feature = expression.feature;
-  let expValue = expression.value;
+  let expValue = (expression.value || '').trim().toLowerCase();
   let expMatches: boolean;
   let invalidFeature = false;
+
+  const getViewportSize = () => {
+    const width = typeof window.innerWidth === 'number' ? window.innerWidth : (document.documentElement?.clientWidth || 0);
+    const height = typeof window.innerHeight === 'number' ? window.innerHeight : (document.documentElement?.clientHeight || 0);
+    return { width, height };
+  };
 
   switch (feature) {
     case 'prefers-color-scheme':
@@ -119,8 +125,39 @@ export const matchMedia: MatchMedia = (mediaQuery: string): MediaQueryList => {
         window.onColorSchemeChange = null;
       };
       // @ts-ignore
-      expMatches = expValue === '' || window.colorScheme === expValue;
+      expMatches = expValue === '' || String(window.colorScheme || '').toLowerCase() === expValue;
       break;
+    case 'orientation': {
+      const { width, height } = getViewportSize();
+      if (expValue === '') {
+        expMatches = width >= 0 && height >= 0;
+      } else {
+        const isLandscape = width > height;
+        expMatches = expValue === 'landscape' ? isLandscape : expValue === 'portrait' ? !isLandscape : false;
+      }
+      break;
+    }
+    case 'forced-colors': {
+      // Default to 'none' unless host provides a value.
+      // @ts-ignore
+      const current = String(window.forcedColors || 'none').toLowerCase();
+      expMatches = expValue === '' ? current !== 'none' : expValue === current;
+      break;
+    }
+    case 'prefers-contrast': {
+      // Default to 'no-preference' unless host provides a value.
+      // @ts-ignore
+      const current = String(window.prefersContrast || 'no-preference').toLowerCase();
+      expMatches = expValue === '' ? current !== 'no-preference' : expValue === current;
+      break;
+    }
+    case 'prefers-reduced-motion': {
+      // Default to 'no-preference' unless host provides a value.
+      // @ts-ignore
+      const current = String(window.prefersReducedMotion || 'no-preference').toLowerCase();
+      expMatches = expValue === '' ? current !== 'no-preference' : expValue === current;
+      break;
+    }
     default:
       // If query is invalid, serialized text should turn into "not all".
       media = 'not all';
@@ -143,4 +180,3 @@ export const matchMedia: MatchMedia = (mediaQuery: string): MediaQueryList => {
     }
   }
 }
-

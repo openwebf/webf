@@ -62,6 +62,22 @@ static inline bool FeatureWithValidIdent(const String& media_feature, CSSValueID
     return ident == CSSValueID::kDark || ident == CSSValueID::kLight || ident == CSSValueID::kNoPreference;
   }
 
+  // prefers-reduced-motion: reduce | no-preference
+  if (media_feature == media_feature_names_atomicstring::kPrefersReducedMotion) {
+    return ident == CSSValueID::kReduce || ident == CSSValueID::kNoPreference;
+  }
+
+  // forced-colors: active | none
+  if (media_feature == media_feature_names_atomicstring::kForcedColors) {
+    return ident == CSSValueID::kActive || ident == CSSValueID::kNone;
+  }
+
+  // prefers-contrast: no-preference | more | less | custom
+  if (media_feature == media_feature_names_atomicstring::kPrefersContrast) {
+    return ident == CSSValueID::kNoPreference || ident == CSSValueID::kMore ||
+           ident == CSSValueID::kLess || ident == CSSValueID::kCustom;
+  }
+
   // dynamic-range / video-dynamic-range: standard | high
   if (media_feature == media_feature_names_atomicstring::kDynamicRange ||
       media_feature == media_feature_names_atomicstring::kVideoDynamicRange) {

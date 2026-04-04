@@ -104,6 +104,18 @@ CSSValueID MediaValuesDynamic::PreferredColorScheme() const {
   return CSSValueID::kLight;
 }
 
+bool MediaValuesDynamic::PrefersReducedMotion() const {
+  return CalculatePrefersReducedMotion(context_);
+}
+
+bool MediaValuesDynamic::ForcedColorsActive() const {
+  return false;
+}
+
+CSSValueID MediaValuesDynamic::PreferredContrast() const {
+  return CSSValueID::kNoPreference;
+}
+
 bool MediaValuesDynamic::Resizable() const {
   return CalculateResizable(context_);
 }
