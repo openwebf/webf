@@ -8,8 +8,8 @@ describe('Shadcn dialog integration', () => {
       React.createElement(DialogFixture),
       ['shadcn_dialog', 'Open dialog'],
       async (container, flush) => {
-        await snapshot();
         await clickButtonByText(container, flush, 'Open dialog');
+        await snapshot();
         expect(container.textContent).toContain('Migration profile');
         expect(container.textContent).toContain('Save changes');
         await clickButtonByText(container, flush, 'Save changes');

@@ -8,10 +8,12 @@ describe('Shadcn dialog overlay integration', () => {
       React.createElement(DialogFixture),
       ['shadcn_dialog', 'Open dialog'],
       async (container, flush) => {
+        await snapshot();
+
         await clickButtonByText(container, flush, 'Open dialog');
         expect(container.textContent).toContain('Migration profile');
         await snapshot();
-        
+
         const overlay = container.querySelector('.fixed.inset-0') as HTMLElement | null;
         expect(overlay).not.toBeNull();
         overlay!.click();
