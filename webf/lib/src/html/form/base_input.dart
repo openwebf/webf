@@ -86,6 +86,20 @@ mixin BaseInputElement on WidgetElement implements FormElementBase {
   @override
   FlutterInputElementState? get state => super.state as FlutterInputElementState?;
 
+  @override
+  void click() {
+    if (!disabled) {
+      ownerDocument.notePointerInteraction();
+      if (state != null) {
+        state?.focus();
+      } else {
+        markPendingFocus();
+      }
+      ownerDocument.updateFocusTarget(this, focusVisible: false);
+    }
+    super.click();
+  }
+
   // Expose element value for resolving mixin conflicts from the concrete class.
   String get elementValue => _value;
 
