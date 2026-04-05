@@ -99,7 +99,7 @@ export function Select({
         contentRef,
       }}
     >
-      <div className="relative inline-flex">{children}</div>
+      <div className="relative block min-w-0">{children}</div>
     </SelectContext.Provider>
   );
 }
@@ -114,6 +114,7 @@ export const SelectTrigger = React.forwardRef<
     <button
       ref={ref}
       type="button"
+      data-slot="select-trigger"
       disabled={disabled}
       data-state={open ? 'open' : 'closed'}
       className={cn(
@@ -142,6 +143,7 @@ export const SelectValue = React.forwardRef<
   return (
     <span
       ref={ref}
+      data-slot="select-value"
       className={cn('truncate text-left', !selectedLabel && 'text-zinc-400', className)}
       {...props}
     >
@@ -173,8 +175,9 @@ export const SelectContent = React.forwardRef<
   return (
     <div
       ref={mergedRef}
+      data-slot="select-content"
       className={cn(
-        'absolute left-0 top-full z-50 mt-2 min-w-full rounded-md border border-zinc-200 bg-white p-1 shadow-lg',
+        'absolute inset-x-0 top-full z-50 mt-2 flex min-w-full flex-col rounded-md border border-zinc-200 bg-white p-2 shadow-lg',
         className,
       )}
       {...props}
@@ -188,7 +191,12 @@ export const SelectGroup = React.forwardRef<
   HTMLDivElement,
   React.HTMLAttributes<HTMLDivElement>
 >(({ className, ...props }, ref) => (
-  <div ref={ref} className={cn('grid gap-1', className)} {...props} />
+  <div
+    ref={ref}
+    data-slot="select-group"
+    className={cn('flex w-full min-w-0 flex-col gap-1', className)}
+    {...props}
+  />
 ));
 
 SelectGroup.displayName = 'SelectGroup';
@@ -199,19 +207,27 @@ export const SelectLabel = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <div
     ref={ref}
-    className={cn('px-2 py-1.5 text-xs font-semibold text-zinc-500', className)}
+    data-slot="select-label"
+    className={cn('px-3 py-1.5 text-xs font-semibold text-zinc-500', className)}
     {...props}
   />
 ));
 
 SelectLabel.displayName = 'SelectLabel';
 
-export const SelectSeparator = React.forwardRef<
-  HTMLDivElement,
-  React.HTMLAttributes<HTMLDivElement>
->(({ className, ...props }, ref) => (
-  <div ref={ref} className={cn('my-1 h-px bg-zinc-200', className)} {...props} />
-));
+export const SelectSeparator = React.forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDivElement>>(
+  ({ className, ...props }, ref) => (
+    <div
+      ref={ref}
+      data-slot="select-separator"
+      role="separator"
+      className={cn('my-1 w-full px-1', className)}
+      {...props}
+    >
+      <div className="h-px w-full bg-zinc-200" />
+    </div>
+  ),
+);
 
 SelectSeparator.displayName = 'SelectSeparator';
 
@@ -237,8 +253,9 @@ export const SelectItem = React.forwardRef<
     <button
       ref={ref}
       type="button"
+      data-slot="select-item"
       className={cn(
-        'flex w-full items-center justify-between rounded-sm px-2 py-1.5 text-sm text-zinc-700 transition-colors hover:bg-zinc-100 hover:text-zinc-950',
+        'flex w-full min-w-0 items-center justify-between rounded-sm border-0 bg-transparent px-3 py-2 text-sm text-zinc-700 shadow-none transition-colors hover:bg-zinc-100 hover:text-zinc-950',
         selected && 'bg-zinc-100 text-zinc-950',
         className,
       )}
@@ -246,8 +263,8 @@ export const SelectItem = React.forwardRef<
       onClick={() => context.setValue(value)}
       {...props}
     >
-      <span>{label}</span>
-      <span className={cn('text-zinc-400', !selected && 'opacity-0')}>✓</span>
+      <span className="truncate">{label}</span>
+      <span className={cn('ml-3 shrink-0 text-zinc-400', !selected && 'opacity-0')}>✓</span>
     </button>
   );
 });
