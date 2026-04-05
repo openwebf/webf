@@ -1,6 +1,6 @@
 import React from 'react';
-import { CalendarFixture } from './shadcn-component';
-import { runShadcnCase } from './shadcn-test-utils';
+import { CalendarFixture } from './shared/shadcn-component';
+import { runShadcnCase } from './shared/shadcn-test-utils';
 
 describe('Shadcn calendar integration', () => {
   it('shadcn_calendar', async () => {

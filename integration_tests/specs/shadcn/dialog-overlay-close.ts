@@ -1,6 +1,6 @@
 import React from 'react';
-import { DialogFixture } from './shadcn-component';
-import { clickButtonByText, runShadcnCase } from './shadcn-test-utils';
+import { DialogFixture } from './shared/shadcn-component';
+import { clickButtonByText, runShadcnCase } from './shared/shadcn-test-utils';
 
 describe('Shadcn dialog overlay integration', () => {
   it('shadcn_dialog_overlay_close', async () => {

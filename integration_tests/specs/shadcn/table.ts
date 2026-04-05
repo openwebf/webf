@@ -1,6 +1,6 @@
 import React from 'react';
-import { TableFixture } from './shadcn-component';
-import { runShadcnCase } from './shadcn-test-utils';
+import { TableFixture } from './shared/shadcn-component';
+import { runShadcnCase } from './shared/shadcn-test-utils';
 
 // TODO not implement Table Element
 xdescribe('Shadcn table integration', () => {

@@ -1,6 +1,6 @@
 import React from 'react';
-import { RadioGroupFixture } from './shadcn-component';
-import { runShadcnCase } from './shadcn-test-utils';
+import { RadioGroupFixture } from './shared/shadcn-component';
+import { runShadcnCase } from './shared/shadcn-test-utils';
 
 describe('Shadcn radio group integration', () => {
   it('shadcn_radio_group', async () => {

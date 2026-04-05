@@ -1,6 +1,6 @@
 import React from 'react';
-import { DropdownMenuFixture } from './shadcn-component';
-import { clickButtonByText, clickButtonContainingText, runShadcnCase } from './shadcn-test-utils';
+import { DropdownMenuFixture } from './shared/shadcn-component';
+import { clickButtonByText, clickButtonContainingText, runShadcnCase } from './shared/shadcn-test-utils';
 
 describe('Shadcn dropdown menu integration', () => {
   it('shadcn_dropdown_menu', async () => {

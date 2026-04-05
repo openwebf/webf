@@ -1,6 +1,6 @@
 import React from 'react';
-import { TextareaFixture } from './shadcn-component';
-import { runShadcnCase } from './shadcn-test-utils';
+import { TextareaFixture } from './shared/shadcn-component';
+import { runShadcnCase } from './shared/shadcn-test-utils';
 
 describe('Shadcn textarea integration', () => {
   it('shadcn_textarea', async () => {

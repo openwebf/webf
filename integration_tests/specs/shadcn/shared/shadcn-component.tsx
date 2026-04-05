@@ -1,9 +1,9 @@
 /** @jsxImportSource react */
 import * as React from 'react';
-import { Alert, AlertAction, AlertDescription, AlertTitle } from '../../../use_cases/src/components/ui/alert';
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '../../../use_cases/src/components/ui/accordion';
-import { Avatar, AvatarFallback, AvatarImage } from '../../../use_cases/src/components/ui/avatar';
-import { Badge } from '../../../use_cases/src/components/ui/badge';
+import { Alert, AlertAction, AlertDescription, AlertTitle } from '../../../../use_cases/src/components/ui/alert';
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '../../../../use_cases/src/components/ui/accordion';
+import { Avatar, AvatarFallback, AvatarImage } from '../../../../use_cases/src/components/ui/avatar';
+import { Badge } from '../../../../use_cases/src/components/ui/badge';
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -11,8 +11,8 @@ import {
   BreadcrumbList,
   BreadcrumbPage,
   BreadcrumbSeparator,
-} from '../../../use_cases/src/components/ui/breadcrumb';
-import { Calendar } from '../../../use_cases/src/components/ui/calendar';
+} from '../../../../use_cases/src/components/ui/breadcrumb';
+import { Calendar } from '../../../../use_cases/src/components/ui/calendar';
 import {
   Card,
   CardAction,
@@ -21,10 +21,10 @@ import {
   CardFooter,
   CardHeader,
   CardTitle,
-} from '../../../use_cases/src/components/ui/card';
-import { Checkbox } from '../../../use_cases/src/components/ui/checkbox';
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '../../../use_cases/src/components/ui/collapsible';
-import { Button } from '../../../use_cases/src/components/ui/button';
+} from '../../../../use_cases/src/components/ui/card';
+import { Checkbox } from '../../../../use_cases/src/components/ui/checkbox';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '../../../../use_cases/src/components/ui/collapsible';
+import { Button } from '../../../../use_cases/src/components/ui/button';
 import {
   Dialog,
   DialogBody,
@@ -34,7 +34,7 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from '../../../use_cases/src/components/ui/dialog';
+} from '../../../../use_cases/src/components/ui/dialog';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -44,9 +44,9 @@ import {
   DropdownMenuSeparator,
   DropdownMenuShortcut,
   DropdownMenuTrigger,
-} from '../../../use_cases/src/components/ui/dropdown-menu';
-import { Field, FieldDescription, FieldGroup, FieldLabel } from '../../../use_cases/src/components/ui/field';
-import { Input } from '../../../use_cases/src/components/ui/input';
+} from '../../../../use_cases/src/components/ui/dropdown-menu';
+import { Field, FieldDescription, FieldGroup, FieldLabel } from '../../../../use_cases/src/components/ui/field';
+import { Input } from '../../../../use_cases/src/components/ui/input';
 import {
   Popover,
   PopoverContent,
@@ -54,9 +54,9 @@ import {
   PopoverHeader,
   PopoverTitle,
   PopoverTrigger,
-} from '../../../use_cases/src/components/ui/popover';
-import { Progress, ProgressLabel, ProgressValue } from '../../../use_cases/src/components/ui/progress';
-import { RadioGroup, RadioGroupItem } from '../../../use_cases/src/components/ui/radio-group';
+} from '../../../../use_cases/src/components/ui/popover';
+import { Progress, ProgressLabel, ProgressValue } from '../../../../use_cases/src/components/ui/progress';
+import { RadioGroup, RadioGroupItem } from '../../../../use_cases/src/components/ui/radio-group';
 import {
   Select,
   SelectContent,
@@ -66,10 +66,10 @@ import {
   SelectSeparator,
   SelectTrigger,
   SelectValue,
-} from '../../../use_cases/src/components/ui/select';
-import { Separator } from '../../../use_cases/src/components/ui/separator';
-import { Skeleton } from '../../../use_cases/src/components/ui/skeleton';
-import { Switch } from '../../../use_cases/src/components/ui/switch';
+} from '../../../../use_cases/src/components/ui/select';
+import { Separator } from '../../../../use_cases/src/components/ui/separator';
+import { Skeleton } from '../../../../use_cases/src/components/ui/skeleton';
+import { Switch } from '../../../../use_cases/src/components/ui/switch';
 import {
   Table,
   TableBody,
@@ -78,9 +78,9 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from '../../../use_cases/src/components/ui/table';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '../../../use_cases/src/components/ui/tabs';
-import { Textarea } from '../../../use_cases/src/components/ui/textarea';
+} from '../../../../use_cases/src/components/ui/table';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '../../../../use_cases/src/components/ui/tabs';
+import { Textarea } from '../../../../use_cases/src/components/ui/textarea';
 
 function Surface({
   title,

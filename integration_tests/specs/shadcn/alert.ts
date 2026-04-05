@@ -1,6 +1,6 @@
 import React from 'react';
-import { AlertFixture } from './shadcn-component';
-import { runShadcnCase } from './shadcn-test-utils';
+import { AlertFixture } from './shared/shadcn-component';
+import { runShadcnCase } from './shared/shadcn-test-utils';
 
 describe('Shadcn alert integration', () => {
   it('shadcn_alert', async () => {

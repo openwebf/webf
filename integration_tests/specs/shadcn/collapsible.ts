@@ -1,6 +1,6 @@
 import React from 'react';
-import { CollapsibleFixture } from './shadcn-component';
-import { clickButtonByText, runShadcnCase } from './shadcn-test-utils';
+import { CollapsibleFixture } from './shared/shadcn-component';
+import { clickButtonByText, runShadcnCase } from './shared/shadcn-test-utils';
 
 describe('Shadcn collapsible integration', () => {
   it('shadcn_collapsible', async () => {

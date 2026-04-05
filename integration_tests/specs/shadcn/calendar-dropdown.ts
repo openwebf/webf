@@ -1,6 +1,6 @@
 import React from 'react';
-import { CalendarDropdownFixture } from './shadcn-component';
-import { findButtonContainingText, runShadcnCase, waitForText } from './shadcn-test-utils';
+import { CalendarDropdownFixture } from './shared/shadcn-component';
+import { findButtonContainingText, runShadcnCase, waitForText } from './shared/shadcn-test-utils';
 
 describe('Shadcn calendar dropdown integration', () => {
   it('shadcn_calendar_dropdown', async () => {

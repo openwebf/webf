@@ -1,6 +1,6 @@
 import React from 'react';
-import { AvatarFixture, AvatarImageFixture } from './shadcn-component';
-import { runShadcnCase } from './shadcn-test-utils';
+import { AvatarFixture, AvatarImageFixture } from './shared/shadcn-component';
+import { runShadcnCase } from './shared/shadcn-test-utils';
 
 describe('Shadcn avatar integration', () => {
   it('shadcn_avatar', async () => {

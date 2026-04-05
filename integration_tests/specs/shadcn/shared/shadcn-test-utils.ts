@@ -1,5 +1,5 @@
 import React from 'react';
-import styles from './shadcn-componennt.css';
+import styles from './shadcn-component.css';
 
 export type FlushFn = (frames?: number) => Promise<void>;
 export type VerifyFn = (container: HTMLElement, flush: FlushFn) => Promise<void> | void;

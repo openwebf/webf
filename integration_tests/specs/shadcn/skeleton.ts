@@ -1,6 +1,6 @@
 import React from 'react';
-import { SkeletonFixture } from './shadcn-component';
-import { runShadcnCase } from './shadcn-test-utils';
+import { SkeletonFixture } from './shared/shadcn-component';
+import { runShadcnCase } from './shared/shadcn-test-utils';
 
 describe('Shadcn skeleton integration', () => {
   it('shadcn_skeleton', async () => {

@@ -1,6 +1,6 @@
 import React from 'react';
-import { PopoverFixture } from './shadcn-component';
-import { clickButtonByText, runShadcnCase } from './shadcn-test-utils';
+import { PopoverFixture } from './shared/shadcn-component';
+import { clickButtonByText, runShadcnCase } from './shared/shadcn-test-utils';
 
 describe('Shadcn popover toggle integration', () => {
   it('shadcn_popover_toggle', async () => {

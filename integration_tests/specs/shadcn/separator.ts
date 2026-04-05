@@ -1,6 +1,6 @@
 import React from 'react';
-import { SeparatorFixture } from './shadcn-component';
-import { runShadcnCase } from './shadcn-test-utils';
+import { SeparatorFixture } from './shared/shadcn-component';
+import { runShadcnCase } from './shared/shadcn-test-utils';
 
 describe('Shadcn separator integration', () => {
   it('shadcn_separator', async () => {

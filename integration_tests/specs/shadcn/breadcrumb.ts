@@ -1,6 +1,6 @@
 import React from 'react';
-import { BreadcrumbFixture } from './shadcn-component';
-import { runShadcnCase } from './shadcn-test-utils';
+import { BreadcrumbFixture } from './shared/shadcn-component';
+import { runShadcnCase } from './shared/shadcn-test-utils';
 
 describe('Shadcn breadcrumb integration', () => {
   it('shadcn_breadcrumb', async () => {

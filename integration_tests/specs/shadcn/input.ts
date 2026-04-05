@@ -1,6 +1,6 @@
 import React from 'react';
-import { InputFixture } from './shadcn-component';
-import { runShadcnCase } from './shadcn-test-utils';
+import { InputFixture } from './shared/shadcn-component';
+import { runShadcnCase } from './shared/shadcn-test-utils';
 
 describe('Shadcn input integration', () => {
   it('shadcn_input', async () => {

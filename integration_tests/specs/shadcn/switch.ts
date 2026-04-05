@@ -1,6 +1,6 @@
 import React from 'react';
-import { SwitchFixture } from './shadcn-component';
-import { runShadcnCase } from './shadcn-test-utils';
+import { SwitchFixture } from './shared/shadcn-component';
+import { runShadcnCase } from './shared/shadcn-test-utils';
 
 describe('Shadcn switch integration', () => {
   it('shadcn_switch', async () => {

@@ -1,6 +1,6 @@
 import React from 'react';
-import { CalendarFixture } from './shadcn-component';
-import { findButtonContainingText, runShadcnCase } from './shadcn-test-utils';
+import { CalendarFixture } from './shared/shadcn-component';
+import { findButtonContainingText, runShadcnCase } from './shared/shadcn-test-utils';
 
 describe('Shadcn calendar navigation integration', () => {
   it('shadcn_calendar_navigation', async () => {

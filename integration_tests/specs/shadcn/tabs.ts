@@ -1,6 +1,6 @@
 import React from 'react';
-import { TabsFixture } from './shadcn-component';
-import { clickButtonByText, runShadcnCase } from './shadcn-test-utils';
+import { TabsFixture } from './shared/shadcn-component';
+import { clickButtonByText, runShadcnCase } from './shared/shadcn-test-utils';
 
 describe('Shadcn tabs integration', () => {
   it('shadcn_tabs', async () => {

@@ -1,6 +1,6 @@
 import React from 'react';
-import { BadgeFixture } from './shadcn-component';
-import { runShadcnCase } from './shadcn-test-utils';
+import { BadgeFixture } from './shared/shadcn-component';
+import { runShadcnCase } from './shared/shadcn-test-utils';
 
 describe('Shadcn badge integration', () => {
   it('shadcn_badge', async () => {

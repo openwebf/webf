@@ -1,6 +1,6 @@
 import React from 'react';
-import styles from './shadcn-componennt.css';
-import { Button } from './shadcn-component';
+import styles from './shared/shadcn-component.css';
+import { Button } from './shared/shadcn-component';
 
 async function waitForText(
   container: HTMLElement,

@@ -1,6 +1,6 @@
 import React from 'react';
-import { CheckboxFixture } from './shadcn-component';
-import { runShadcnCase } from './shadcn-test-utils';
+import { CheckboxFixture } from './shared/shadcn-component';
+import { runShadcnCase } from './shared/shadcn-test-utils';
 
 describe('Shadcn checkbox integration', () => {
   it('shadcn_checkbox', async () => {

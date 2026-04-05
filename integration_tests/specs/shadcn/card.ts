@@ -1,6 +1,6 @@
 import React from 'react';
-import { CardFixture } from './shadcn-component';
-import { runShadcnCase } from './shadcn-test-utils';
+import { CardFixture } from './shared/shadcn-component';
+import { runShadcnCase } from './shared/shadcn-test-utils';
 
 describe('Shadcn card integration', () => {
   it('shadcn_card', async () => {

@@ -1,6 +1,6 @@
 import React from 'react';
-import { AccordionFixture } from './shadcn-component';
-import { clickButtonContainingText, runShadcnCase } from './shadcn-test-utils';
+import { AccordionFixture } from './shared/shadcn-component';
+import { clickButtonContainingText, runShadcnCase } from './shared/shadcn-test-utils';
 
 describe('Shadcn accordion integration', () => {
   it('shadcn_accordion', async () => {

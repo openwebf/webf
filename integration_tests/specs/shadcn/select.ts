@@ -1,6 +1,6 @@
 import React from 'react';
-import { SelectFixture } from './shadcn-component';
-import { findButtonContainingText, runShadcnCase } from './shadcn-test-utils';
+import { SelectFixture } from './shared/shadcn-component';
+import { findButtonContainingText, runShadcnCase } from './shared/shadcn-test-utils';
 
 describe('Shadcn select integration', () => {
   it('shadcn_select', async () => {
