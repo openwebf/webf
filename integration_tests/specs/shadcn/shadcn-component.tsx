@@ -505,6 +505,22 @@ export function CalendarFixture() {
   );
 }
 
+export function CalendarDropdownFixture() {
+  const [selected, setSelected] = React.useState<Date | null>(new Date(2026, 0, 31));
+
+  return (
+    <Surface title="shadcn_calendar_dropdown">
+      <Calendar
+        selected={selected ?? undefined}
+        onSelect={setSelected}
+        captionLayout="dropdown"
+        showWeekNumber
+      />
+      <div className="text-sm text-zinc-500">Selected: {formatDate(selected)}</div>
+    </Surface>
+  );
+}
+
 export function SelectFixture() {
   const [value, setValue] = React.useState('starter');
 

@@ -1,6 +1,6 @@
 import React from 'react';
 import { CalendarDropdownFixture } from './shadcn-component';
-import { findButtonContainingText, runShadcnCase } from './shadcn-test-utils';
+import { findButtonContainingText, runShadcnCase, waitForText } from './shadcn-test-utils';
 
 describe('Shadcn calendar dropdown integration', () => {
   it('shadcn_calendar_dropdown', async () => {
@@ -12,14 +12,39 @@ describe('Shadcn calendar dropdown integration', () => {
         expect(calendar).toBeTruthy();
         expect(calendar!.getBoundingClientRect().width).toBeGreaterThan(340);
 
-        const nextButton = findButtonContainingText(container, '›');
-        expect(nextButton).toBeDefined();
-        nextButton!.click();
-        await flush(2);
+        const selectTriggers = Array.from(
+          calendar!.querySelectorAll('[data-slot="select-trigger"]'),
+        ) as HTMLButtonElement[];
+        expect(selectTriggers.length).toBe(2);
 
-        expect(container.textContent).toContain('Feb');
+        const monthTrigger = selectTriggers[0];
+        const yearTrigger = selectTriggers[1];
+
+        monthTrigger.click();
+        await flush(2);
+        await waitForText(container, 'Feb', flush);
+        await waitForText(container, 'Dec', flush);
+        await snapshot();
+
+        const marchItem = findButtonContainingText(container, 'Mar');
+        expect(marchItem).toBeDefined();
+        marchItem!.click();
+        await flush(2);
+        expect(monthTrigger.textContent).toContain('Mar');
+        await snapshot();
+
+        yearTrigger.click();
+        await flush(2);
+        await waitForText(container, '2028', flush);
+        await snapshot();
+
+        const year2028Item = findButtonContainingText(container, '2028');
+        expect(year2028Item).toBeDefined();
+        year2028Item!.click();
+        await flush(2);
+        expect(yearTrigger.textContent).toContain('2028');
         await snapshot();
       },
     );
-  });
+  }, 15000);
 });
