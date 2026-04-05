@@ -231,7 +231,7 @@ export const ShadcnShowcasePage: React.FC = () => {
   return (
     <div id="main" className="min-h-screen w-full bg-zinc-50">
       <WebFListView className="mx-auto w-full max-w-6xl px-4 py-6 md:px-6">
-        {/* <section className="mb-6 overflow-hidden rounded-3xl border border-zinc-200 bg-white shadow-sm">
+        <section className="mb-6 overflow-hidden rounded-3xl border border-zinc-200 bg-white shadow-sm">
           <div className="grid gap-6 border-b border-zinc-100 bg-[linear-gradient(135deg,#fafafa,#f4f4f5)] px-6 py-8 md:grid-cols-[1.2fr,0.8fr]">
             <div className="grid gap-4">
               <Badge variant="secondary" className="w-fit">
@@ -425,9 +425,9 @@ export const ShadcnShowcasePage: React.FC = () => {
               <Button variant="outline">Open PRD</Button>
             </CardFooter>
           </Card>
-        </section> */}
+        </section>
 
-        {/* <section className="mb-6 grid gap-6 xl:grid-cols-[1.05fr,0.95fr]">
+        <section className="mb-6 grid gap-6 xl:grid-cols-[1.05fr,0.95fr]">
           <Card>
             <CardHeader>
               <CardTitle>Alert + Breadcrumb</CardTitle>
@@ -543,9 +543,9 @@ export const ShadcnShowcasePage: React.FC = () => {
               </div>
             </CardContent>
           </Card>
-        </section> */}
+        </section>
 
-        {/* <section className="mb-6 grid gap-6 xl:grid-cols-[1.05fr,0.95fr]">
+        <section className="mb-6 grid gap-6 xl:grid-cols-[1.05fr,0.95fr]">
           <Card>
             <CardHeader>
               <CardTitle>Radio Group + Progress</CardTitle>
@@ -681,10 +681,10 @@ export const ShadcnShowcasePage: React.FC = () => {
               </Collapsible>
             </CardContent>
           </Card>
-        </section> */}
+        </section>
 
         <section className="mb-6 grid gap-6 xl:grid-cols-[1.05fr,0.95fr]">
-          {/* <Card>
+          <Card>
             <CardHeader>
               <CardTitle>Select + Textarea</CardTitle>
               <CardDescription>
@@ -766,9 +766,9 @@ export const ShadcnShowcasePage: React.FC = () => {
                 </div>
               </div>
             </CardContent>
-          </Card> */}
+          </Card>
 
-          {/* <Card>
+          <Card>
             <CardHeader>
               <CardTitle>Tabs</CardTitle>
               <CardDescription>
@@ -866,11 +866,11 @@ export const ShadcnShowcasePage: React.FC = () => {
                 </div>
               </Tabs>
             </CardContent>
-          </Card> */}
+          </Card>
         </section>
 
         <section className="mb-6 grid gap-6 xl:grid-cols-[1.05fr,0.95fr]">
-          {/* <Card>
+          <Card>
             <CardHeader>
               <CardTitle>Accordion</CardTitle>
               <CardDescription>
@@ -916,17 +916,17 @@ export const ShadcnShowcasePage: React.FC = () => {
                 </AccordionItem>
               </Accordion>
             </CardContent>
-          </Card> */}
+          </Card>
 
           <Card>
-            {/* <CardHeader>
+            <CardHeader>
               <CardTitle>Popover + Calendar</CardTitle>
               <CardDescription>
                 使用 popover 承载 docs 风格的 date-picker 组合，并补齐一个独立 calendar 展示块。
               </CardDescription>
-            </CardHeader> */}
+            </CardHeader>
             <CardContent className="grid gap-5">
-              {/* <div className="flex flex-wrap gap-3">
+              <div className="flex flex-wrap gap-3">
                 <Popover>
                   <PopoverTrigger>
                     <Button variant="outline">{selectedDateLabel}</Button>
@@ -961,7 +961,7 @@ export const ShadcnShowcasePage: React.FC = () => {
                     </PopoverHeader>
                   </PopoverContent>
                 </Popover>
-              </div> */}
+              </div>
 
               <Separator />
 
@@ -999,7 +999,7 @@ export const ShadcnShowcasePage: React.FC = () => {
           </Card>
         </section>
 
-        {/* <section className="mb-6 grid gap-6 md:grid-cols-2">
+        <section className="mb-6 grid gap-6 md:grid-cols-2">
           <Card>
             <CardHeader>
               <CardTitle>Skeleton</CardTitle>
@@ -1091,9 +1091,9 @@ export const ShadcnShowcasePage: React.FC = () => {
               </div>
             </CardContent>
           </Card>
-        </section> */}
+        </section>
 
-        {/* <section className="mb-6 grid gap-6 xl:grid-cols-[1.05fr,0.95fr]">
+        <section className="mb-6 grid gap-6 xl:grid-cols-[1.05fr,0.95fr]">
           <Card>
             <CardHeader>
               <CardTitle>Dialog</CardTitle>
@@ -1266,10 +1266,10 @@ export const ShadcnShowcasePage: React.FC = () => {
               </div>
             </CardContent>
           </Card>
-        </section> */}
+        </section>
 
-        {/* <section className="mb-6 grid gap-6 xl:grid-cols-[1.05fr,0.95fr]">
-          <Card>
+        <section className="mb-6 grid gap-6 xl:grid-cols-[1.05fr,0.95fr]">
+          {/* <Card>
             <CardHeader>
               <CardTitle>Table</CardTitle>
               <CardDescription>
@@ -1313,7 +1313,7 @@ export const ShadcnShowcasePage: React.FC = () => {
                 </TableBody>
               </Table>
             </CardContent>
-          </Card>
+          </Card> */}
 
           <Card>
             <CardHeader>
@@ -1354,7 +1354,7 @@ export const ShadcnShowcasePage: React.FC = () => {
           </Card>
         </section>
 
-        <section>
+        {/* <section>
           <SectionTitle
             eyebrow="Deprecated"
             title="Legacy shadcn routes"
