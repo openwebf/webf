@@ -172,6 +172,7 @@ module.exports = {
   output: {
     path: buildPath,
     filename: '[name].build.js',
+    publicPath: '',
   },
   resolve: {
     extensions: ['.js', '.jsx', '.json', '.ts', '.tsx'],
@@ -228,6 +229,11 @@ module.exports = {
             }
           }
         ]
+      },
+      {
+        test: /\.(png|jpe?g|gif|webp)$/i,
+        exclude: /node_modules/,
+        type: 'asset/resource',
       },
       {
         test: /\.(jsx?|tsx?)$/i,

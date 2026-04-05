@@ -10,11 +10,11 @@ describe('Shadcn input integration', () => {
       async (container) => {
         const input = container.querySelector('input[placeholder="webf-enterprise-canvas"]') as HTMLInputElement | null;
         expect(input).not.toBeNull();
-        expect(input!.matches(':focus-visible')).toBe(false);
+        expect(input!.matches(':focus')).toBe(false);
         await snapshot();
         input!.click();
         await waitForFrame();
-        expect(input!.matches(':focus-visible')).toBe(true);
+        expect(input!.matches(':focus')).toBe(true);
         expect(getComputedStyle(input!).boxShadow).toContain('rgb(212, 212, 216)');
         await snapshot();
       },

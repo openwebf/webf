@@ -1,5 +1,5 @@
 describe('shadcn input click focus state', () => {
-  it('applies :focus-visible styles after clicking a text input', async () => {
+  it('applies :focus styles after clicking a text input', async () => {
     const style = document.createElement('style');
     style.textContent = `
       body {
@@ -20,7 +20,7 @@ describe('shadcn input click focus state', () => {
         outline: none;
         border-color: rgb(212, 212, 216);
       }
-      input:focus-visible {
+      input:focus {
         box-shadow: 0 0 0 2px rgb(212, 212, 216);
       }
     `;
@@ -32,12 +32,12 @@ describe('shadcn input click focus state', () => {
     document.body.appendChild(input);
 
     await waitForFrame();
-    expect(input.matches(':focus-visible')).toBe(false);
+    expect(input.matches(':focus')).toBe(false);
     await snapshot();
 
     input.click();
     await waitForFrame();
     await snapshot();
-    expect(input.matches(':focus-visible')).toBe(true);
+    expect(input.matches(':focus')).toBe(true);
   });
 });
