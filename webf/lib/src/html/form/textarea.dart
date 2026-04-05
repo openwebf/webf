@@ -145,13 +145,6 @@ class FlutterTextAreaElementState extends FlutterInputElementState {
   double? _committedHeight;
 
   String get _resizeMode {
-    final String resolved = widgetElement.ownerDocument.defaultView
-        .getComputedStyle(widgetElement)
-        .getPropertyValue('resize')
-        .trim()
-        .toLowerCase();
-    if (resolved.isNotEmpty) return resolved;
-
     final String specified = widgetElement.style
         .getPropertyValue('resize')
         .trim()

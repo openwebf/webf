@@ -38,6 +38,7 @@ export function Select({
   const [labels, setLabels] = React.useState<Record<string, React.ReactNode>>({});
   const contentRef = React.useRef<HTMLDivElement>(null);
   const currentValue = value ?? internalValue;
+  const items = React.Children.toArray(children);
 
   React.useEffect(() => {
     if (!open) {
@@ -88,7 +89,9 @@ export function Select({
         contentRef,
       }}
     >
-      <div className="relative block min-w-0">{children}</div>
+      <div className="relative block min-w-0">
+        <div className="min-w-0">{items}</div>
+      </div>
     </SelectContext.Provider>
   );
 }

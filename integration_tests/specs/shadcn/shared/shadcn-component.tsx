@@ -210,10 +210,10 @@ export function DropdownMenuFixture() {
   return (
     <Surface title="shadcn_dropdown_menu">
       <DropdownMenu>
-        <DropdownMenuTrigger key="trigger">
+        <DropdownMenuTrigger>
           <Button variant="outline">Open menu</Button>
         </DropdownMenuTrigger>
-        <DropdownMenuContent key="content">
+        <DropdownMenuContent>
           <DropdownMenuLabel>My Account</DropdownMenuLabel>
           <DropdownMenuGroup>
             <DropdownMenuItem>
@@ -480,10 +480,10 @@ export function PopoverFixture() {
   return (
     <Surface title="shadcn_popover">
       <Popover>
-        <PopoverTrigger key="trigger">
+        <PopoverTrigger>
           <Button variant="outline">Open popover</Button>
         </PopoverTrigger>
-        <PopoverContent key="content">
+        <PopoverContent>
           <PopoverHeader>
             <PopoverTitle>Popover title</PopoverTitle>
             <PopoverDescription>Popover body for official shadcn coverage.</PopoverDescription>
@@ -527,10 +527,10 @@ export function SelectFixture() {
   return (
     <Surface title="shadcn_select">
       <Select value={value} onValueChange={setValue}>
-        <SelectTrigger key="trigger">
+        <SelectTrigger>
           <SelectValue placeholder="Pick a tier" />
         </SelectTrigger>
-        <SelectContent key="content">
+        <SelectContent>
           <SelectGroup>
             <SelectLabel>Plans</SelectLabel>
             <SelectItem value="starter">Starter</SelectItem>

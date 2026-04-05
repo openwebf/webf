@@ -22,6 +22,7 @@ function useDropdownMenuContext(component: string) {
 export function DropdownMenu({ children }: { children: React.ReactNode }) {
   const [open, setOpen] = React.useState(false);
   const contentRef = React.useRef<HTMLDivElement>(null);
+  const items = React.Children.toArray(children);
 
   React.useEffect(() => {
     if (!open) {
@@ -41,7 +42,9 @@ export function DropdownMenu({ children }: { children: React.ReactNode }) {
 
   return (
     <DropdownMenuContext.Provider value={{ open, setOpen, contentRef }}>
-      <div className="relative inline-flex">{children}</div>
+      <div className="min-w-0 relative inline-flex">
+        <div className="min-w-0">{items}</div>
+      </div>
     </DropdownMenuContext.Provider>
   );
 }
