@@ -16,7 +16,8 @@ export const BreadcrumbList = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <ol
     ref={ref}
-    className={cn('flex flex-wrap items-center gap-1.5 text-sm text-zinc-500', className)}
+    style={{ listStyleType: 'none', margin: 0, padding: 0 }}
+    className={cn('m-0 flex list-none flex-wrap items-center gap-1.5 p-0 text-sm text-zinc-500', className)}
     {...props}
   />
 ));
@@ -27,7 +28,12 @@ export const BreadcrumbItem = React.forwardRef<
   HTMLLIElement,
   React.LiHTMLAttributes<HTMLLIElement>
 >(({ className, ...props }, ref) => (
-  <li ref={ref} className={cn('inline-flex items-center gap-1.5', className)} {...props} />
+  <li
+    ref={ref}
+    style={{ listStyleType: 'none' }}
+    className={cn('list-none inline-flex items-center gap-1.5', className)}
+    {...props}
+  />
 ));
 
 BreadcrumbItem.displayName = 'BreadcrumbItem';
@@ -65,7 +71,13 @@ export const BreadcrumbSeparator = React.forwardRef<
   HTMLLIElement,
   React.LiHTMLAttributes<HTMLLIElement>
 >(({ className, children = '/', ...props }, ref) => (
-  <li ref={ref} aria-hidden="true" className={cn('text-zinc-400', className)} {...props}>
+  <li
+    ref={ref}
+    aria-hidden="true"
+    style={{ listStyleType: 'none' }}
+    className={cn('list-none text-zinc-400', className)}
+    {...props}
+  >
     {children}
   </li>
 ));
