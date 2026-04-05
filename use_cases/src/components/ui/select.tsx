@@ -75,17 +75,6 @@ export function Select({
     });
   }, []);
 
-  const unregisterItem = React.useCallback((itemValue: string) => {
-    setLabels((prev) => {
-      if (!(itemValue in prev)) {
-        return prev;
-      }
-      const next = { ...prev };
-      delete next[itemValue];
-      return next;
-    });
-  }, []);
-
   return (
     <SelectContext.Provider
       value={{
@@ -95,7 +84,7 @@ export function Select({
         setValue,
         selectedLabel: currentValue ? labels[currentValue] : undefined,
         registerItem,
-        unregisterItem,
+        unregisterItem: () => {},
         contentRef,
       }}
     >

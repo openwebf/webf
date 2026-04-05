@@ -1,6 +1,13 @@
 import * as React from 'react';
 import { cn } from '../../lib/utils';
 import { Button } from './button';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from './select';
 
 const WEEKDAYS = ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'];
 const MONTHS = [
@@ -66,6 +73,7 @@ export function Calendar({
   selected,
   onSelect,
   className,
+  style,
   captionLayout = 'label',
   showOutsideDays = true,
   showWeekNumber = false,
@@ -95,72 +103,102 @@ export function Calendar({
   }, [fromYear, toYear, today]);
 
   const weeks = React.useMemo(() => getMonthMatrix(displayMonth), [displayMonth]);
+  const monthOptions = React.useMemo(
+    () =>
+      MONTHS.map((monthLabel, index) => ({
+        value: String(index),
+        label: monthLabel.slice(0, 3),
+      })),
+    [],
+  );
+  const dayCellSize = captionLayout === 'dropdown' ? 40 : 36;
+  const weekNumberColumnWidth = showWeekNumber ? 32 : 0;
+  const columnCount = showWeekNumber ? 8 : 7;
+  const gridGap = 4;
+  const calendarGridWidth =
+    weekNumberColumnWidth + dayCellSize * 7 + gridGap * (columnCount - 1);
+  const calendarWidth = calendarGridWidth + 24;
+  const monthTriggerWidth = 74;
+  const yearTriggerWidth = 90;
+  const monthContentWidth = 88;
+  const yearContentWidth = 104;
 
   return (
     <div
-      className={cn('w-fit rounded-lg border border-zinc-200 bg-white p-3', className)}
+      className={cn('rounded-lg border border-zinc-200 bg-white p-3', className)}
+      style={{ width: `${calendarWidth}px`, ...style }}
       {...props}
     >
-      <div className="mb-3 flex items-center justify-between gap-2">
-        <div className="flex items-center gap-2">
-          <Button
-            variant="ghost"
-            size="icon-sm"
-            onClick={() =>
-              setDisplayMonth(
-                new Date(displayMonth.getFullYear(), displayMonth.getMonth() - 1, 1),
-              )
-            }
-          >
-            ‹
-          </Button>
-          {captionLayout === 'dropdown' ? (
-            <div className="flex items-center gap-2">
-              <select
-                className="h-8 rounded-md border border-zinc-200 bg-white px-2 text-sm text-zinc-700"
-                value={displayMonth.getMonth()}
-                onChange={(event) =>
-                  setDisplayMonth(
-                    new Date(
-                      displayMonth.getFullYear(),
-                      Number(event.target.value),
-                      1,
-                    ),
-                  )
-                }
+      <div className="mb-3 grid grid-cols-[32px_minmax(0,1fr)_32px] items-center gap-2">
+        <Button
+          variant="ghost"
+          size="icon-sm"
+          onClick={() =>
+            setDisplayMonth(
+              new Date(displayMonth.getFullYear(), displayMonth.getMonth() - 1, 1),
+            )
+          }
+        >
+          ‹
+        </Button>
+        {captionLayout === 'dropdown' ? (
+          <div className="flex min-w-0 items-center justify-center gap-1.5">
+            <Select
+              value={String(displayMonth.getMonth())}
+              onValueChange={(nextMonth) =>
+                setDisplayMonth(
+                  new Date(displayMonth.getFullYear(), Number(nextMonth), 1),
+                )
+              }
+            >
+              <SelectTrigger
+                className="h-8 min-w-0 gap-1 px-2 py-1 text-sm shadow-none"
+                style={{ width: `${monthTriggerWidth}px`, minWidth: `${monthTriggerWidth}px` }}
               >
-                {MONTHS.map((monthLabel, index) => (
-                  <option key={monthLabel} value={index}>
-                    {monthLabel.slice(0, 3)}
-                  </option>
+                <SelectValue placeholder={monthOptions[displayMonth.getMonth()].label} />
+              </SelectTrigger>
+              <SelectContent
+                className="min-w-0"
+                style={{ width: `${monthContentWidth}px`, minWidth: `${monthContentWidth}px` }}
+              >
+                {monthOptions.map((month) => (
+                  <SelectItem key={month.value} value={month.value}>
+                    {month.label}
+                  </SelectItem>
                 ))}
-              </select>
-              <select
-                className="h-8 rounded-md border border-zinc-200 bg-white px-2 text-sm text-zinc-700"
-                value={displayMonth.getFullYear()}
-                onChange={(event) =>
-                  setDisplayMonth(
-                    new Date(
-                      Number(event.target.value),
-                      displayMonth.getMonth(),
-                      1,
-                    ),
-                  )
-                }
+              </SelectContent>
+            </Select>
+            <Select
+              value={String(displayMonth.getFullYear())}
+              onValueChange={(nextYear) =>
+                setDisplayMonth(
+                  new Date(Number(nextYear), displayMonth.getMonth(), 1),
+                )
+              }
+            >
+              <SelectTrigger
+                className="h-8 min-w-0 gap-1 px-2 py-1 text-sm shadow-none"
+                style={{ width: `${yearTriggerWidth}px`, minWidth: `${yearTriggerWidth}px` }}
+              >
+                <SelectValue placeholder={String(displayMonth.getFullYear())} />
+              </SelectTrigger>
+              <SelectContent
+                className="min-w-0"
+                style={{ width: `${yearContentWidth}px`, minWidth: `${yearContentWidth}px` }}
               >
                 {years.map((year) => (
-                  <option key={year} value={year}>
+                  <SelectItem key={year} value={String(year)}>
                     {year}
-                  </option>
+                  </SelectItem>
                 ))}
-              </select>
-            </div>
-          ) : (
-            <div className="text-sm font-medium text-zinc-950">
-              {MONTHS[displayMonth.getMonth()]} {displayMonth.getFullYear()}
-            </div>
-          )}
-        </div>
+              </SelectContent>
+            </Select>
+          </div>
+        ) : (
+          <div className="text-center text-sm font-medium text-zinc-950">
+            {MONTHS[displayMonth.getMonth()]} {displayMonth.getFullYear()}
+          </div>
+        )}
         <Button
           variant="ghost"
           size="icon-sm"
@@ -175,16 +213,18 @@ export function Calendar({
       </div>
 
       <div
-        className={cn(
-          'grid gap-1 text-center text-xs text-zinc-500',
-          showWeekNumber ? 'grid-cols-[28px_repeat(7,1fr)]' : 'grid-cols-7',
-        )}
+        className="grid gap-1 text-center text-xs text-zinc-500"
+        style={{
+          gridTemplateColumns: showWeekNumber
+            ? `32px repeat(7, minmax(${dayCellSize}px, 1fr))`
+            : `repeat(7, minmax(${dayCellSize}px, 1fr))`,
+        }}
       >
-        {showWeekNumber ? <div className="h-8" /> : null}
+        {showWeekNumber ? <div className="h-10" /> : null}
         {WEEKDAYS.map((weekday) => (
           <div
             key={weekday}
-            className="flex h-8 items-center justify-center font-medium"
+            className="flex h-10 items-center justify-center font-medium"
           >
             {weekday}
           </div>
@@ -193,7 +233,7 @@ export function Calendar({
         {weeks.map((week) => (
           <React.Fragment key={week[0].toISOString()}>
             {showWeekNumber ? (
-              <div className="flex h-9 items-center justify-center text-[11px] text-zinc-400">
+              <div className="flex h-10 items-center justify-center text-[11px] text-zinc-400">
                 {getWeekNumber(week[0])}
               </div>
             ) : null}
@@ -203,7 +243,7 @@ export function Calendar({
               const isToday = isSameDay(day, today);
 
               if (outside && !showOutsideDays) {
-                return <div key={day.toISOString()} className="h-9 w-9" />;
+                return <div key={day.toISOString()} className="h-10" />;
               }
 
               return (
@@ -211,7 +251,7 @@ export function Calendar({
                   key={day.toISOString()}
                   type="button"
                   className={cn(
-                    'flex h-9 w-9 items-center justify-center rounded-md text-sm transition-colors',
+                    'flex h-10 w-full items-center justify-center rounded-md text-sm transition-colors',
                     active
                       ? 'bg-zinc-900 text-white'
                       : 'text-zinc-800 hover:bg-zinc-100',

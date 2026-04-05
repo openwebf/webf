@@ -40,6 +40,7 @@ describe('Shadcn select integration', () => {
 
         expect(container.textContent).toContain('Selected: pro');
         expect(container.textContent).not.toContain('Enterprise');
+        expect(trigger!.textContent).toContain('Pro');
         await snapshot();
 
         trigger!.click();
