@@ -1,9 +1,11 @@
 import * as React from 'react';
 import { cn } from '../../lib/utils';
+import { Button } from './button';
 
 type PopoverContextValue = {
   open: boolean;
-  setOpen: (open: boolean) => void;
+  setOpen: React.Dispatch<React.SetStateAction<boolean>>;
+  rootRef: React.RefObject<HTMLDivElement>;
   contentRef: React.RefObject<HTMLDivElement>;
 };
 
@@ -19,6 +21,7 @@ function usePopoverContext(component: string) {
 
 export function Popover({ children }: { children: React.ReactNode }) {
   const [open, setOpen] = React.useState(false);
+  const rootRef = React.useRef<HTMLDivElement>(null);
   const contentRef = React.useRef<HTMLDivElement>(null);
   const items = React.Children.toArray(children);
 
@@ -27,20 +30,20 @@ export function Popover({ children }: { children: React.ReactNode }) {
       return;
     }
 
-    const handlePointerDown = (event: Event) => {
-      if (contentRef.current?.contains(event.target as Node)) {
+    const handleDocumentClick = (event: Event) => {
+      if (rootRef.current?.contains(event.target as Node)) {
         return;
       }
       setOpen(false);
     };
 
-    document.addEventListener('pointerdown', handlePointerDown);
-    return () => document.removeEventListener('pointerdown', handlePointerDown);
+    document.addEventListener('click', handleDocumentClick);
+    return () => document.removeEventListener('click', handleDocumentClick);
   }, [open]);
 
   return (
-    <PopoverContext.Provider value={{ open, setOpen, contentRef }}>
-      <div className="relative inline-flex">
+    <PopoverContext.Provider value={{ open, setOpen, rootRef, contentRef }}>
+      <div ref={rootRef} className="relative inline-flex">
         <div className="min-w-0">{items}</div>
       </div>
     </PopoverContext.Provider>
@@ -52,12 +55,12 @@ export function PopoverTrigger({
 }: {
   children: React.ReactElement;
 }) {
-  const { open, setOpen } = usePopoverContext('PopoverTrigger');
+  const { setOpen } = usePopoverContext('PopoverTrigger');
 
   return React.cloneElement(children, {
     onClick: (event: React.MouseEvent) => {
       children.props.onClick?.(event);
-      setOpen(!open);
+      setOpen((value) => !value);
     },
   });
 }
@@ -130,3 +133,40 @@ export const PopoverDescription = React.forwardRef<
 ));
 
 PopoverDescription.displayName = 'PopoverDescription';
+
+export function PopoverSwitchFixture() {
+  return (
+    <div className="min-h-screen bg-zinc-50 p-6">
+      <div className="mx-auto grid max-w-3xl gap-4 rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm">
+        <h1 className="text-xl font-semibold text-zinc-950">
+          shadcn_popover_switch
+        </h1>
+        <div className="flex gap-3">
+          <Popover>
+            <PopoverTrigger>
+              <Button variant="outline">Left</Button>
+            </PopoverTrigger>
+            <PopoverContent align="start">
+              <PopoverHeader>
+                <PopoverTitle>Left title</PopoverTitle>
+                <PopoverDescription>Left body</PopoverDescription>
+              </PopoverHeader>
+            </PopoverContent>
+          </Popover>
+
+          <Popover>
+            <PopoverTrigger>
+              <Button variant="ghost">Center</Button>
+            </PopoverTrigger>
+            <PopoverContent align="center">
+              <PopoverHeader>
+                <PopoverTitle>Center title</PopoverTitle>
+                <PopoverDescription>Center body</PopoverDescription>
+              </PopoverHeader>
+            </PopoverContent>
+          </Popover>
+        </div>
+      </div>
+    </div>
+  );
+}
