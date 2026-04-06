@@ -6,7 +6,7 @@ describe('Shadcn calendar integration', () => {
   it('shadcn_calendar', async () => {
     await runShadcnCase(
       React.createElement(CalendarFixture),
-      ['shadcn_calendar', 'April 2024', 'Selected: 2024-04-14'],
+      ['shadcn_calendar', 'April 2024', 'Selected: 2024-04-16'],
       async (container, flush) => {
         const dayButton = Array.from(container.querySelectorAll('button')).find(
           (node) => node.textContent?.trim() === '16',

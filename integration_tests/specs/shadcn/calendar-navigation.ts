@@ -8,10 +8,12 @@ describe('Shadcn calendar navigation integration', () => {
       React.createElement(CalendarFixture),
       ['shadcn_calendar', 'April 2024'],
       async (container, flush) => {
+        await waitForFrame();
+        await snapshot(1);
         const nextButton = findButtonContainingText(container, '›');
         expect(nextButton).toBeDefined();
         nextButton!.click();
-        await flush(2);
+        await waitForFrame();
 
         expect(container.textContent).toContain('May 2024');
         await snapshot();

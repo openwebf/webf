@@ -524,7 +524,7 @@ export function PopoverLayerFixture() {
 }
 
 export function CalendarFixture() {
-  const [selected, setSelected] = React.useState<Date | null>(new Date(2024, 3, 14));
+  const [selected, setSelected] = React.useState<Date | null>(new Date(2024, 3, 16));
 
   return (
     <Surface title="shadcn_calendar">
