@@ -70,8 +70,13 @@ export const PopoverContent = React.forwardRef<
   React.HTMLAttributes<HTMLDivElement> & {
     align?: 'start' | 'center' | 'end';
   }
->(({ className, align = 'center', ...props }, ref) => {
-  const { open, contentRef } = usePopoverContext('PopoverContent');
+>(({ className, align = 'center', style, ...props }, ref) => {
+  const { open, rootRef, contentRef } = usePopoverContext('PopoverContent');
+  const [position, setPosition] = React.useState({
+    top: 0,
+    left: 0,
+    ready: false,
+  });
   const mergedRef = (node: HTMLDivElement | null) => {
     contentRef.current = node;
     if (typeof ref === 'function') {
@@ -81,25 +86,72 @@ export const PopoverContent = React.forwardRef<
     }
   };
 
+  React.useEffect(() => {
+    const anchor = rootRef.current;
+    const content = contentRef.current;
+    if (!open || !anchor || !content) {
+      setPosition((current) => (current.ready ? { ...current, ready: false } : current));
+      return;
+    }
+
+    let frameId = 0;
+
+    const updatePosition = () => {
+      const anchorRect = anchor.getBoundingClientRect();
+      const contentRect = content.getBoundingClientRect();
+      let nextLeft = anchorRect.left;
+
+      if (align === 'center') {
+        nextLeft += (anchorRect.width - contentRect.width) / 2;
+      } else if (align === 'end') {
+        nextLeft += anchorRect.width - contentRect.width;
+      }
+
+      setPosition({
+        top: anchorRect.bottom + 8,
+        left: nextLeft,
+        ready: true,
+      });
+    };
+
+    const scheduleUpdate = () => {
+      cancelAnimationFrame(frameId);
+      frameId = requestAnimationFrame(updatePosition);
+    };
+
+    scheduleUpdate();
+    anchor.addEventListener('onscreen', scheduleUpdate);
+    content.addEventListener('onscreen', scheduleUpdate);
+    window.addEventListener('resize', scheduleUpdate);
+    window.addEventListener('scroll', scheduleUpdate);
+
+    return () => {
+      cancelAnimationFrame(frameId);
+      anchor.removeEventListener('onscreen', scheduleUpdate);
+      content.removeEventListener('onscreen', scheduleUpdate);
+      window.removeEventListener('resize', scheduleUpdate);
+      window.removeEventListener('scroll', scheduleUpdate);
+    };
+  }, [align, contentRef, open, rootRef]);
+
   if (!open) {
     return null;
   }
 
-  const alignmentClass =
-    align === 'start'
-      ? 'left-0'
-      : align === 'end'
-        ? 'right-0'
-        : 'left-1/2 -translate-x-1/2';
-
   return (
     <div
       ref={mergedRef}
+      data-slot="popover-content"
       className={cn(
-        'absolute top-full z-50 mt-2 w-72 rounded-xl border border-zinc-200 bg-white p-4 shadow-lg',
-        alignmentClass,
+        'fixed left-0 top-0 z-[9999] w-72 rounded-xl border border-zinc-200 bg-white p-4 shadow-lg',
         className,
       )}
+      style={{
+        ...style,
+        top: position.top,
+        left: position.left,
+        visibility: position.ready ? 'visible' : 'hidden',
+      }}
       {...props}
     />
   );

@@ -9,9 +9,16 @@ describe('Shadcn popover integration', () => {
       ['shadcn_popover', 'Open popover'],
       async (container, flush) => {
         await snapshot();
-        await clickButtonByText(container, flush, 'Open popover');
+        const button = await clickButtonByText(container, flush, 'Open popover');
+        await flush(2);
         expect(container.textContent).toContain('Popover title');
         expect(container.textContent).toContain('Popover body for official shadcn coverage.');
+        const content = container.querySelector('[data-slot="popover-content"]') as HTMLDivElement | null;
+        expect(content).not.toBeNull();
+        expect(getComputedStyle(content!).position).toBe('fixed');
+        expect(content!.getBoundingClientRect().top).toBeGreaterThanOrEqual(
+          button.getBoundingClientRect().bottom,
+        );
         await snapshot();
       },
     );

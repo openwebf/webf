@@ -494,6 +494,35 @@ export function PopoverFixture() {
   );
 }
 
+export function PopoverLayerFixture() {
+  return (
+    <Surface title="shadcn_popover_layer">
+      <div className="grid gap-0">
+        <Popover>
+          <PopoverTrigger>
+            <Button variant="outline">Open layered popover</Button>
+          </PopoverTrigger>
+          <PopoverContent align="start" className="w-[320px]">
+            <PopoverHeader>
+              <PopoverTitle>Popover layer title</PopoverTitle>
+              <PopoverDescription>
+                This content should stay above the overlapping block below.
+              </PopoverDescription>
+            </PopoverHeader>
+          </PopoverContent>
+        </Popover>
+
+        <div
+          data-slot="popover-underlay"
+          className="-mt-10 h-56 rounded-xl border border-amber-300 bg-amber-100 p-4 text-sm text-amber-900"
+        >
+          Overlapping block for popover stacking verification.
+        </div>
+      </div>
+    </Surface>
+  );
+}
+
 export function CalendarFixture() {
   const [selected, setSelected] = React.useState<Date | null>(new Date(2024, 3, 14));
 
