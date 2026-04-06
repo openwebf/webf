@@ -29,7 +29,13 @@ export const GridLayoutPage: React.FC = () => {
       <WebFListView className="p-5 flex flex-col gap-6 w-full box-border pb-20">
 
         {/* Hero */}
-        <div className="grid grid-cols-3 grid-rows-3 gap-3 p-5 rounded-2xl" style={{ background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' }}>
+        <div
+          className="grid grid-cols-3 gap-3 p-5 rounded-2xl"
+          style={{
+            background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+            gridTemplateRows: 'auto auto auto',
+          }}
+        >
           <div className="col-span-3 bg-white/90 rounded-xl p-4 text-center text-xl font-extrabold text-indigo-700">
             CSS Grid Layout
           </div>
