@@ -176,9 +176,9 @@ class FlutterTextAreaElementState extends FlutterInputElementState {
 
   int get _preferredRows {
     final String? rowsAttr = widgetElement.getAttribute('rows');
-    if (rowsAttr == null) return 3;
+    if (rowsAttr == null) return 2;
     final int? parsed = int.tryParse(rowsAttr);
-    return parsed != null && parsed > 0 ? parsed : 3;
+    return parsed != null && parsed > 0 ? parsed : 2;
   }
 
   double _clampDouble(double value, double lower, double upper) {
@@ -324,45 +324,48 @@ class FlutterTextAreaElementState extends FlutterInputElementState {
       return input;
     }
 
-    return Stack(
-      key: const ValueKey('webf-textarea-resize-shell'),
-      clipBehavior: Clip.none,
-      children: [
-        input,
-        PositionedDirectional(
-          end: 0,
-          bottom: 0,
-          child: GestureDetector(
-            behavior: HitTestBehavior.translucent,
-            onPanStart: _handleResizeStart,
-            onPanUpdate: _handleResizeUpdate,
-            onPanEnd: (_) => setState(_commitResize),
-            onPanCancel: _cancelResize,
-            child: SizedBox(
-              key: const ValueKey('webf-textarea-resize-handle'),
-              width: gripGeometry.hitSize,
-              height: gripGeometry.hitSize,
-              child: Align(
-                alignment: Alignment.bottomRight,
-                child: SizedBox(
-                  width: gripGeometry.visualSize,
-                  height: gripGeometry.visualSize,
-                  child: CustomPaint(
-                    painter: _TextareaResizeHandlePainter(
-                      color: Color.lerp(
-                        widgetElement.renderStyle.borderRightColor.value,
-                        widgetElement.renderStyle.color.value,
-                        0.32,
-                      )!,
-                      geometry: gripGeometry,
+    return Directionality(
+      textDirection: widgetElement.renderStyle.direction,
+      child: Stack(
+        key: const ValueKey('webf-textarea-resize-shell'),
+        clipBehavior: Clip.none,
+        children: [
+          input,
+          PositionedDirectional(
+            end: 0,
+            bottom: 0,
+            child: GestureDetector(
+              behavior: HitTestBehavior.translucent,
+              onPanStart: _handleResizeStart,
+              onPanUpdate: _handleResizeUpdate,
+              onPanEnd: (_) => setState(_commitResize),
+              onPanCancel: _cancelResize,
+              child: SizedBox(
+                key: const ValueKey('webf-textarea-resize-handle'),
+                width: gripGeometry.hitSize,
+                height: gripGeometry.hitSize,
+                child: Align(
+                  alignment: Alignment.bottomRight,
+                  child: SizedBox(
+                    width: gripGeometry.visualSize,
+                    height: gripGeometry.visualSize,
+                    child: CustomPaint(
+                      painter: _TextareaResizeHandlePainter(
+                        color: Color.lerp(
+                          widgetElement.renderStyle.borderRightColor.value,
+                          widgetElement.renderStyle.color.value,
+                          0.32,
+                        )!,
+                        geometry: gripGeometry,
+                      ),
                     ),
                   ),
                 ),
               ),
             ),
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 }
