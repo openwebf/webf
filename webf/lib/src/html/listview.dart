@@ -706,6 +706,87 @@ class WebFListViewState extends WebFWidgetElementState {
     );
   }
 
+  List<Widget> _buildSingleTreeChildren() {
+    final List<Widget> children = <Widget>[];
+    for (final Node node in widgetElement.childNodes) {
+      if (node is dom.Element) {
+        final CSSPositionType positionType = node.renderStyle.position;
+        if (positionType == CSSPositionType.absolute ||
+            positionType == CSSPositionType.sticky) {
+          if (node.holderAttachedPositionedElement != null) {
+            children.add(PositionPlaceHolder(
+                node.holderAttachedPositionedElement!, node));
+          }
+          if (positionType == CSSPositionType.sticky) {
+            children.add(node.toWidget());
+          }
+          continue;
+        } else if (positionType == CSSPositionType.fixed) {
+          if (node.holderAttachedPositionedElement != null) {
+            children.add(PositionPlaceHolder(
+                node.holderAttachedPositionedElement!, node));
+          }
+          continue;
+        }
+      }
+      children.add(node.toWidget());
+    }
+    return children;
+  }
+
+  bool _shouldUseSingleTreeScrollable({
+    required bool hasLoadListener,
+    required bool hasRefreshListener,
+    required Header? header,
+    required Footer? footer,
+  }) {
+    // Preserve the lazy ListView/EasyRefresh path for scenarios that depend on
+    // list virtualization or refresh/load-more hooks. For page-shell usage,
+    // render the children in one WebF render tree so CSS stacking contexts and
+    // z-index can overlap across list items like a regular overflow container.
+    return !hasLoadListener &&
+        !hasRefreshListener &&
+        header == null &&
+        footer == null &&
+        widgetElement.shrinkWrap;
+  }
+
+  Widget _buildSingleTreeScrollable(BuildContext context) {
+    final Map<String, String> inlineStyle =
+        widgetElement.axis == Axis.horizontal
+            ? const <String, String>{
+                'display': 'flex',
+                'flex-direction': 'row',
+                'align-items': 'flex-start',
+              }
+            : const <String, String>{'display': 'block'};
+
+    Widget child = WebFWidgetElementChild(
+      child: WebFHTMLElement(
+        tagName: 'DIV',
+        controller: widgetElement.controller,
+        parentElement: widgetElement,
+        inlineStyle: inlineStyle,
+        children: _buildSingleTreeChildren(),
+      ),
+    );
+
+    child = SingleChildScrollView(
+      controller: scrollController,
+      scrollDirection: widgetElement.axis,
+      child: child,
+    );
+
+    if (widgetElement.axis == Axis.horizontal) {
+      child = Directionality(
+        textDirection: widgetElement.renderStyle.direction,
+        child: child,
+      );
+    }
+
+    return child;
+  }
+
   /// Builds the header widget for pull-to-refresh functionality
   ///
   /// This method can be overridden by subclasses to customize the pull-to-refresh header.
@@ -763,28 +844,40 @@ class WebFListViewState extends WebFWidgetElementState {
   /// that can be handled in JavaScript.
   @override
   Widget build(BuildContext context) {
-    // Build the ListView
-    Widget listView = ListView.builder(
-        controller: scrollController,
-        scrollDirection: widgetElement.axis,
-        shrinkWrap: widgetElement.shrinkWrap,
-        itemCount: widgetElement.childNodes.length,
-        itemBuilder: (context, index) {
-          return buildListViewItemByIndex(index);
-        });
+    final bool hasLoadListener = widgetElement.hasEventListener('loadmore');
+    final bool hasRefreshListener = widgetElement.hasEventListener('refresh');
+    final Header? header = buildEasyRefreshHeader();
+    final Footer? footer = buildEasyRefreshFooter();
+
+    Widget scrollable = _shouldUseSingleTreeScrollable(
+      hasLoadListener: hasLoadListener,
+      hasRefreshListener: hasRefreshListener,
+      header: header,
+      footer: footer,
+    )
+        ? _buildSingleTreeScrollable(context)
+        : ListView.builder(
+            controller: scrollController,
+            scrollDirection: widgetElement.axis,
+            shrinkWrap: widgetElement.shrinkWrap,
+            itemCount: widgetElement.childNodes.length,
+            itemBuilder: (context, index) {
+              return buildListViewItemByIndex(index);
+            },
+          );
 
     // Honor CSS 'direction' for horizontal lists by providing a Directionality
     // so Flutter computes axisDirection = left for RTL and right for LTR.
-    if (widgetElement.axis == Axis.horizontal) {
-      listView = Directionality(
+    if (widgetElement.axis == Axis.horizontal &&
+        scrollable is! Directionality) {
+      scrollable = Directionality(
         textDirection: widgetElement.renderStyle.direction,
-        child: listView,
+        child: scrollable,
       );
     }
 
-    // Wrap the ListView with NestedScrollCoordinator to handle incoming scroll from nested elements
-    // This allows the ListView to receive scroll events from nested overflow containers or ListViews
-    Widget result = listView;
+    // Wrap the scrollable with NestedScrollCoordinator to handle incoming scroll from nested elements
+    Widget result = scrollable;
     if (scrollController != null) {
       result = NestedScrollCoordinator(
         axis: widgetElement.axis,
@@ -792,11 +885,6 @@ class WebFListViewState extends WebFWidgetElementState {
         child: result,
       );
     }
-
-    final bool hasLoadListener = widgetElement.hasEventListener('loadmore');
-    final bool hasRefreshListener = widgetElement.hasEventListener('refresh');
-    final Header? header = buildEasyRefreshHeader();
-    final Footer? footer = buildEasyRefreshFooter();
 
     // EasyRefresh's scroll physics can schedule timers during layout (e.g. via ballistic
     // simulations). When refresh/load-more isn't used, avoid wrapping to keep widget
