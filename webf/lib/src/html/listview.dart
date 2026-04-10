@@ -734,24 +734,78 @@ class WebFListViewState extends WebFWidgetElementState {
     return children;
   }
 
+  bool _subtreeHasAbsoluteOrStickyDescendant(Node node) {
+    if (node is! dom.Element) return false;
+
+    final CSSPositionType positionType = node.renderStyle.position;
+    if (positionType == CSSPositionType.absolute ||
+        positionType == CSSPositionType.sticky) {
+      return true;
+    }
+
+    for (final Node child in node.childNodes) {
+      if (_subtreeHasAbsoluteOrStickyDescendant(child)) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  bool _subtreeHasFixedDescendant(Node node) {
+    if (node is! dom.Element) return false;
+
+    if (node.renderStyle.position == CSSPositionType.fixed) {
+      return true;
+    }
+
+    for (final Node child in node.childNodes) {
+      if (_subtreeHasFixedDescendant(child)) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  bool _shouldUseSingleTreeForPositionedOverlap() {
+    for (final Node child in widgetElement.childNodes) {
+      if (_subtreeHasFixedDescendant(child)) {
+        return false;
+      }
+
+      if (child is dom.Element) {
+        final CSSPositionType positionType = child.renderStyle.position;
+        if (positionType != CSSPositionType.absolute &&
+            positionType != CSSPositionType.sticky) {
+          for (final Node descendant in child.childNodes) {
+            if (_subtreeHasAbsoluteOrStickyDescendant(descendant)) {
+              return true;
+            }
+          }
+        }
+      }
+    }
+
+    return false;
+  }
+
   bool _shouldUseSingleTreeScrollable({
     required bool hasLoadListener,
     required bool hasRefreshListener,
     required Header? header,
     required Footer? footer,
   }) {
-    // Preserve the lazy ListView/EasyRefresh path for scenarios that depend on
-    // list virtualization or refresh/load-more hooks. For page-shell usage,
-    // render the children in one WebF render tree so CSS stacking contexts and
-    // z-index can overlap across list items like a regular overflow container.
+    // For ordinary page-shell usage without lazy loading hooks, render the list
+    // in one WebF render tree so stacking contexts, z-index and positioned
+    // descendants behave like a normal overflow container.
     return !hasLoadListener &&
         !hasRefreshListener &&
         header == null &&
         footer == null &&
-        widgetElement.shrinkWrap;
+        widgetElement.shrinkWrap &&
+        _shouldUseSingleTreeForPositionedOverlap();
   }
 
-  Widget _buildSingleTreeScrollable(BuildContext context) {
+  Widget _buildSingleTreeScrollable() {
     final Map<String, String> inlineStyle =
         widgetElement.axis == Axis.horizontal
             ? const <String, String>{
@@ -848,14 +902,15 @@ class WebFListViewState extends WebFWidgetElementState {
     final bool hasRefreshListener = widgetElement.hasEventListener('refresh');
     final Header? header = buildEasyRefreshHeader();
     final Footer? footer = buildEasyRefreshFooter();
-
-    Widget scrollable = _shouldUseSingleTreeScrollable(
+    final bool useSingleTreeScrollable = _shouldUseSingleTreeScrollable(
       hasLoadListener: hasLoadListener,
       hasRefreshListener: hasRefreshListener,
       header: header,
       footer: footer,
-    )
-        ? _buildSingleTreeScrollable(context)
+    );
+
+    Widget listView = useSingleTreeScrollable
+        ? _buildSingleTreeScrollable()
         : ListView.builder(
             controller: scrollController,
             scrollDirection: widgetElement.axis,
@@ -868,17 +923,17 @@ class WebFListViewState extends WebFWidgetElementState {
 
     // Honor CSS 'direction' for horizontal lists by providing a Directionality
     // so Flutter computes axisDirection = left for RTL and right for LTR.
-    if (widgetElement.axis == Axis.horizontal &&
-        scrollable is! Directionality) {
-      scrollable = Directionality(
+    if (widgetElement.axis == Axis.horizontal && !useSingleTreeScrollable) {
+      listView = Directionality(
         textDirection: widgetElement.renderStyle.direction,
-        child: scrollable,
+        child: listView,
       );
     }
 
-    // Wrap the scrollable with NestedScrollCoordinator to handle incoming scroll from nested elements
-    Widget result = scrollable;
-    if (scrollController != null) {
+    // Wrap the ListView with NestedScrollCoordinator to handle incoming scroll from nested elements
+    // This allows the ListView to receive scroll events from nested overflow containers or ListViews
+    Widget result = listView;
+    if (scrollController != null && !useSingleTreeScrollable) {
       result = NestedScrollCoordinator(
         axis: widgetElement.axis,
         controller: scrollController!,
