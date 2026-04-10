@@ -97,6 +97,16 @@ abstract class Element extends ContainerNode
   String tagName = unknown;
 
   // ---------------------------------------------------------------------------
+  // Display rebuild deferred-connect gate
+  //
+  // When a CSS display transition from none → visible fires while the parent
+  // element is temporarily disconnected (e.g., during tab switch or page
+  // refresh), the widget rebuild notification is silently dropped by the guard
+  // in _updateHostingWidgetWithDisplay(). This flag records the missed rebuild
+  // so that connectedCallback() can re-issue it once the element re-attaches.
+  bool _pendingDisplayRebuildOnConnect = false;
+
+  // ---------------------------------------------------------------------------
   // Blink style-sync first-paint gate
   //
   // When Blink is enabled, DOM insertion UICommands can arrive one frame earlier
@@ -1546,6 +1556,15 @@ abstract class Element extends ContainerNode
     if (_connectedCompleter != null) {
       _connectedCompleter!.complete();
     }
+    // Replay any none → visible display rebuild that was dropped while the
+    // parent was disconnected (see _pendingDisplayRebuildOnConnect).
+    if (_pendingDisplayRebuildOnConnect) {
+      _pendingDisplayRebuildOnConnect = false;
+      if (renderStyle.display != CSSDisplay.none) {
+        final Element? targetElement = holderAttachedContainingBlockElement ?? parentElement;
+        targetElement?.renderStyle.requestWidgetToRebuild(UpdateDisplayReason());
+      }
+    }
     super.connectedCallback();
     _updateNameMap(getAttribute(_nameAttr));
     _updateIDMap(_id);
@@ -1562,6 +1581,9 @@ abstract class Element extends ContainerNode
   @override
   void disconnectedCallback() {
     super.disconnectedCallback();
+    // Cancel any pending display rebuild — the element is leaving the DOM again,
+    // so the deferred none→visible rebuild is no longer meaningful.
+    _pendingDisplayRebuildOnConnect = false;
     _updateIDMap(null, oldID: _id);
     _updateNameMap(null, oldName: getAttribute(_nameAttr));
     // Remove from class index
@@ -1841,7 +1863,15 @@ abstract class Element extends ContainerNode
   void _updateHostingWidgetWithDisplay(CSSDisplay oldDisplay) {
     CSSDisplay presentDisplay = renderStyle.display;
 
-    if (parentElement == null || !parentElement!.isConnected) return;
+    if (parentElement == null || !parentElement!.isConnected) {
+      // If this is a none → visible transition and the parent is temporarily
+      // disconnected, defer the rebuild notification to connectedCallback().
+      // Without this, the widget stays stuck as SizedBox.shrink().
+      if (oldDisplay == CSSDisplay.none && presentDisplay != CSSDisplay.none) {
+        _pendingDisplayRebuildOnConnect = true;
+      }
+      return;
+    }
     // Destroy renderer of element when display is changed to none.
     if (presentDisplay == CSSDisplay.none) {
       renderStyle.requestWidgetToRebuild(UpdateDisplayReason());
