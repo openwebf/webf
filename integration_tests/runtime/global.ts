@@ -351,6 +351,17 @@ async function simulatePointMove(x: number, y: number, pointer: number = 0) {
   });
 }
 
+async function simulateHover(x: number, y: number, pointer: number = 0) {
+  return new Promise((resolve) => {
+    requestAnimationFrame(async () => {
+      await simulatePointer([
+        [x, y, PointerChange.hover],
+      ], pointer);
+      resolve();
+    });
+  });
+}
+
 async function simulatePointAdd(x: number, y: number, pointer: number = 0) {
   return new Promise(resolve => {
     requestAnimationFrame(async () => {
@@ -706,6 +717,7 @@ Object.assign(global, {
   simulatePointRemove,
   simulatePointAdd,
   simulatePointMove,
+  simulateHover,
   test_computed_value,
   resizeViewport,
   cacheSnapshot,

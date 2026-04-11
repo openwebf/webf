@@ -179,6 +179,40 @@ void main() {
       });
 
       testWidgets(
+          'document hover targeting falls back to nearest ancestor with target-side :hover selectors',
+          (WidgetTester tester) async {
+        final prepared = await _prepareMaterialWidgetTest(
+          tester: tester,
+          controllerName:
+              'hover-ancestor-fallback-${DateTime.now().millisecondsSinceEpoch}',
+          html: '''
+            <html>
+              <head>
+                <style>
+                  #card:hover { color: purple; }
+                </style>
+              </head>
+              <body>
+                <div id="card">
+                  <input id="field" />
+                </div>
+              </body>
+            </html>
+          ''',
+        );
+
+        final card = prepared.getElementById('card');
+        final field = prepared.getElementById('field');
+        await tester.pump(Duration(milliseconds: 50));
+
+        prepared.document.updateHoverTarget(field);
+        await tester.pump(Duration(milliseconds: 50));
+
+        expect(field.matches(':hover'), isFalse);
+        expect(card.matches(':hover'), isTrue);
+      });
+
+      testWidgets(
           'document hover queue keeps the leaf target when ancestors receive the same event',
           (WidgetTester tester) async {
         final prepared = await WebFWidgetTestUtils.prepareWidgetTest(

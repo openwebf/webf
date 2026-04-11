@@ -143,16 +143,20 @@ void _simulatePointer(Pointer<Void> context, Pointer<MousePointer> mousePointerL
     double y = mousePointerList.elementAt(i).ref.y;
     PointerSignalKind signalKind = PointerSignalKind.values[mousePointerList.elementAt(i).ref.signalKind];
     double change = mousePointerList.elementAt(i).ref.change;
+    final PointerChange pointerChange = _getPointerChange(change);
 
     if (signalKind == PointerSignalKind.none) {
+      final PointerDeviceKind kind =
+          pointerChange == PointerChange.hover
+              ? PointerDeviceKind.mouse
+              : PointerDeviceKind.touch;
       data.add(PointerData(
           physicalX: (x) * window.devicePixelRatio,
           physicalY: (56.0 + y) * window.devicePixelRatio,
-          // MouseEvent will trigger [RendererBinding.dispatchEvent] -> [BaseMouseTracker.updateWithEvent]
-          // which handle extra mouse connection phase for [event.kind = PointerDeviceKind.mouse].
-          // Prefer to use touch event.
-          kind: PointerDeviceKind.touch,
-          change: _getPointerChange(change),
+          // Keep touch as the default for integration gesture helpers. Only the
+          // explicit hover path should use mouse semantics so CSS :hover can be tested.
+          kind: kind,
+          change: pointerChange,
           pointerIdentifier: pointer));
     } else if (signalKind == PointerSignalKind.scroll) {
       data.add(PointerData(
@@ -160,7 +164,7 @@ void _simulatePointer(Pointer<Void> context, Pointer<MousePointer> mousePointerL
           physicalY: (56.0 + y) * window.devicePixelRatio,
           kind: PointerDeviceKind.mouse,
           signalKind: signalKind,
-          change: _getPointerChange(change),
+          change: pointerChange,
           device: 0,
           embedderId: 0,
           scrollDeltaX: mousePointerList.elementAt(i).ref.delayX,

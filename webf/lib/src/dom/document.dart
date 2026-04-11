@@ -279,11 +279,7 @@ class Document extends ContainerNode {
   }
 
   void updateHoverTarget(Element? target) {
-    final bool platformAllowsHover = _isDesktopHoverPlatform;
-    final bool targetAllowsHover = platformAllowsHover &&
-        target != null &&
-        target.canActivatePseudoClassOnTarget('hover');
-    final Element? nextTarget = targetAllowsHover ? target : null;
+    final Element? nextTarget = _resolveHoverTarget(target);
     if (identical(_hoverTarget, nextTarget)) return;
     _hoverTarget?.updateHoverState(false);
     _hoverTarget = nextTarget;
@@ -292,9 +288,35 @@ class Document extends ContainerNode {
 
   void clearHoverTarget(Element target) {
     if (_hoverTarget == null) return;
-    if (identical(_hoverTarget, target)) {
+    if (_isInclusiveAncestor(target, _hoverTarget) ||
+        _isInclusiveAncestor(_hoverTarget!, target)) {
       updateHoverTarget(null);
     }
+  }
+
+  Element? _resolveHoverTarget(Element? target) {
+    if (!_isDesktopHoverPlatform || target == null) return null;
+
+    Element? candidate = target;
+    while (candidate != null) {
+      if (candidate.canActivatePseudoClassOnTarget('hover')) {
+        return candidate;
+      }
+      candidate = candidate.parentElement;
+    }
+
+    return null;
+  }
+
+  bool _isInclusiveAncestor(Element ancestor, Element? descendant) {
+    Element? current = descendant;
+    while (current != null) {
+      if (identical(current, ancestor)) {
+        return true;
+      }
+      current = current.parentElement;
+    }
+    return false;
   }
 
   void updateActiveTarget(Element? target) {
