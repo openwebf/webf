@@ -22,9 +22,9 @@ export const Switch = React.forwardRef<HTMLButtonElement, SwitchProps>(
         disabled={disabled}
         data-state={isChecked ? 'checked' : 'unchecked'}
         className={cn(
-          'inline-flex h-6 w-11 shrink-0 items-center justify-start rounded-full border border-transparent bg-zinc-200 px-0.5 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-300 disabled:cursor-not-allowed disabled:opacity-50',
+          'inline-flex h-6 w-11 shrink-0 items-center justify-start rounded-full border border-transparent bg-zinc-200 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-300 disabled:cursor-not-allowed disabled:opacity-50',
+          isChecked ? 'pl-5 pr-0.5' : 'pl-0.5 pr-5',
           isChecked && 'bg-zinc-900',
-          isChecked && 'justify-end',
           className,
         )}
         onClick={() => {
@@ -36,11 +36,7 @@ export const Switch = React.forwardRef<HTMLButtonElement, SwitchProps>(
         }}
         {...props}
       >
-        <span
-          className={cn(
-            'h-5 w-5 rounded-full bg-white shadow-sm',
-          )}
-        />
+        <span className={cn('block h-5 w-5 rounded-full bg-white shadow-sm')} />
       </button>
     );
   },
