@@ -37,7 +37,8 @@ class WaterfallEntry {
   Duration start;
   Duration end;
   final List<WaterfallSubEntry> subEntries;
-  final PerformanceSpan? span; // For drill-down into flame chart
+  final PerformanceSpan? span; // For drill-down into flame chart (single span)
+  final List<PerformanceSpan> spans; // For aggregated entries (multiple spans)
 
   WaterfallEntry({
     required this.category,
@@ -46,9 +47,11 @@ class WaterfallEntry {
     required this.end,
     this.subEntries = const [],
     this.span,
+    this.spans = const [],
   });
 
   Duration get duration => end - start;
+  bool get hasDrillDown => span != null || spans.isNotEmpty;
 }
 
 class WaterfallSubEntry {
@@ -228,17 +231,64 @@ WaterfallData _buildWaterfallDataImpl(
 
   // --- Performance spans from tracker ---
   // Snapshot to avoid ConcurrentModificationException (tracker may still be recording)
+  // Group root spans by category into time-clustered aggregated entries.
+  // Spans within the same category that are close together (< 50ms gap) are merged.
   final rootSpanSnapshot = List.of(tracker.rootSpans);
+  final spansByCategory = <WaterfallCategory, List<PerformanceSpan>>{};
   for (final span in rootSpanSnapshot) {
     if (!span.isComplete) continue;
     final cat = _spanCategory(span.category);
-    entries.add(WaterfallEntry(
-      category: cat,
-      label: _spanLabel(span),
-      start: offset(span.startTime),
-      end: offset(span.endTime!),
-      span: span,
-    ));
+    (spansByCategory[cat] ??= []).add(span);
+  }
+
+  for (final entry in spansByCategory.entries) {
+    final cat = entry.key;
+    final spans = entry.value;
+    if (spans.isEmpty) continue;
+
+    // Sort by start time
+    spans.sort((a, b) => a.startTime.compareTo(b.startTime));
+
+    // Cluster spans with gaps < 50ms into groups
+    const clusterGap = Duration(milliseconds: 50);
+    var clusterStart = offset(spans.first.startTime);
+    var clusterEnd = offset(spans.first.endTime!);
+    var clusterSpans = <PerformanceSpan>[spans.first];
+
+    void flushCluster() {
+      final totalDuration = clusterSpans.fold<Duration>(
+          Duration.zero, (sum, s) => sum + s.duration);
+      final count = clusterSpans.length;
+      final catName = cat.name[0].toUpperCase() + cat.name.substring(1);
+      final label = count == 1
+          ? _spanLabel(clusterSpans.first)
+          : '$catName ($count ops, ${_formatDuration(totalDuration)})';
+      entries.add(WaterfallEntry(
+        category: cat,
+        label: label,
+        start: clusterStart,
+        end: clusterEnd,
+        span: count == 1 ? clusterSpans.first : null,
+        spans: count > 1 ? List.of(clusterSpans) : const [],
+      ));
+    }
+
+    for (int i = 1; i < spans.length; i++) {
+      final spanStart = offset(spans[i].startTime);
+      final spanEnd = offset(spans[i].endTime!);
+      if (spanStart - clusterEnd > clusterGap) {
+        // Gap too large — flush current cluster and start new one
+        flushCluster();
+        clusterStart = spanStart;
+        clusterEnd = spanEnd;
+        clusterSpans = [spans[i]];
+      } else {
+        // Extend current cluster
+        if (spanEnd > clusterEnd) clusterEnd = spanEnd;
+        clusterSpans.add(spans[i]);
+      }
+    }
+    flushCluster();
   }
 
   // --- Milestones ---
@@ -441,6 +491,7 @@ class WaterfallChart extends StatefulWidget {
 class _WaterfallChartState extends State<WaterfallChart> {
   _ChartMode _mode = _ChartMode.overview;
   PerformanceSpan? _selectedSpan;
+  List<PerformanceSpan> _selectedSpans = const [];
   double _zoom = 1.0;
 
   // Separate scroll controllers for each scroll view — Flutter requires
@@ -501,6 +552,16 @@ class _WaterfallChartState extends State<WaterfallChart> {
     super.dispose();
   }
 
+  void _drillDownEntry(WaterfallEntry entry) {
+    setState(() {
+      _selectedSpan = entry.span;
+      _selectedSpans = entry.spans;
+      _mode = _ChartMode.flame;
+      _detailSpan = null;
+      _selectedEntry = null;
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     final data =
@@ -511,14 +572,30 @@ class _WaterfallChartState extends State<WaterfallChart> {
         _buildToolbar(data),
         const Divider(height: 1, color: Colors.white24),
         Expanded(
-          child: _mode == _ChartMode.overview
-              ? _buildOverview(data)
-              : _buildFlameChart(),
+          child: Stack(
+            children: [
+              Positioned.fill(
+                child: _mode == _ChartMode.overview
+                    ? _buildOverview(data)
+                    : _buildFlameChart(),
+              ),
+              if (_selectedEntry != null && _mode == _ChartMode.overview)
+                Positioned(
+                  left: 0,
+                  right: 0,
+                  bottom: 0,
+                  child: _buildEntryDetailPanel(),
+                ),
+              if (_detailSpan != null && _mode == _ChartMode.flame)
+                Positioned(
+                  left: 0,
+                  right: 0,
+                  bottom: 0,
+                  child: _buildDetailPanel(),
+                ),
+            ],
+          ),
         ),
-        if (_selectedEntry != null && _mode == _ChartMode.overview)
-          _buildEntryDetailPanel(),
-        if (_detailSpan != null && _mode == _ChartMode.flame)
-          _buildDetailPanel(),
       ],
     );
   }
@@ -766,13 +843,8 @@ class _WaterfallChartState extends State<WaterfallChart> {
                         });
                       },
                       onDoubleTap: () {
-                        if (entry.span != null) {
-                          setState(() {
-                            _selectedSpan = entry.span;
-                            _mode = _ChartMode.flame;
-                            _detailSpan = null;
-                            _selectedEntry = null;
-                          });
+                        if (entry.hasDrillDown) {
+                          _drillDownEntry(entry);
                         }
                       },
                       child: Container(
@@ -837,14 +909,7 @@ class _WaterfallChartState extends State<WaterfallChart> {
         });
       },
       onDoubleTap: () {
-        if (entry.span != null) {
-          setState(() {
-            _selectedSpan = entry.span;
-            _mode = _ChartMode.flame;
-            _detailSpan = null;
-            _selectedEntry = null;
-          });
-        }
+        if (entry.hasDrillDown) _drillDownEntry(entry);
       },
       child: CustomPaint(
         size: Size(chartWidth, 22),
@@ -854,7 +919,7 @@ class _WaterfallChartState extends State<WaterfallChart> {
           color: color,
           subEntries: entry.subEntries,
           pixelsPerMs: pixelsPerMs,
-          hasDrillDown: entry.span != null,
+          hasDrillDown: entry.hasDrillDown,
         ),
       ),
     );
@@ -863,8 +928,13 @@ class _WaterfallChartState extends State<WaterfallChart> {
   // -- Flame chart mode --
 
   Widget _buildFlameChart() {
-    final span = _selectedSpan;
-    if (span == null) {
+    // Support both single span and multi-span aggregated entries
+    final List<PerformanceSpan> rootSpans;
+    if (_selectedSpan != null) {
+      rootSpans = [_selectedSpan!];
+    } else if (_selectedSpans.isNotEmpty) {
+      rootSpans = _selectedSpans;
+    } else {
       return const Center(
         child: Text(
           'Tap a Style, Layout, or Paint bar in the Overview\nto drill down into the recursive call tree.',
@@ -874,9 +944,11 @@ class _WaterfallChartState extends State<WaterfallChart> {
       );
     }
 
-    // Collect all spans in the tree with flattened depth
+    // Collect all spans, normalizing depth so root spans are at depth 0
     final allSpans = <PerformanceSpan>[];
-    _collectSpans(span, allSpans);
+    for (final rs in rootSpans) {
+      _collectSpans(rs, allSpans);
+    }
 
     if (allSpans.isEmpty) {
       return const Center(
@@ -885,8 +957,15 @@ class _WaterfallChartState extends State<WaterfallChart> {
       );
     }
 
-    final rootStart = span.startTime;
-    final rootDurationMs = span.duration.inMicroseconds / 1000.0;
+    // Use earliest root start and latest root end
+    final rootStart = rootSpans
+        .map((s) => s.startTime)
+        .reduce((a, b) => a.isBefore(b) ? a : b);
+    final rootEnd = rootSpans
+        .map((s) => s.endTime!)
+        .reduce((a, b) => a.isAfter(b) ? a : b);
+    final rootDurationMs =
+        rootEnd.difference(rootStart).inMicroseconds / 1000.0;
     if (rootDurationMs <= 0) {
       return const Center(
         child: Text('Span has zero duration.',
@@ -894,7 +973,9 @@ class _WaterfallChartState extends State<WaterfallChart> {
       );
     }
 
-    final maxDepth = span.maxDepth - span.depth;
+    // Find min depth among root spans for normalization
+    final minDepth = rootSpans.map((s) => s.depth).reduce(math.min);
+    final maxDepth = allSpans.map((s) => s.maxDepth).reduce(math.max) - minDepth;
     final pixelsPerMs = _zoom * 2.0;
     final chartWidth = math.max(rootDurationMs * pixelsPerMs, 200.0);
     const rowHeight = 20.0;
@@ -915,6 +996,7 @@ class _WaterfallChartState extends State<WaterfallChart> {
                   setState(() {
                     _mode = _ChartMode.overview;
                     _selectedSpan = null;
+                    _selectedSpans = const [];
                     _detailSpan = null;
                   });
                 },
@@ -926,12 +1008,14 @@ class _WaterfallChartState extends State<WaterfallChart> {
               ),
               const SizedBox(width: 8),
               Text(
-                '${_spanLabel(span)} — ${_formatDuration(span.duration)}',
+                rootSpans.length == 1
+                    ? '${_spanLabel(rootSpans.first)} — ${_formatDuration(rootSpans.first.duration)}'
+                    : '${rootSpans.length} spans — ${_formatDuration(rootEnd.difference(rootStart))}',
                 style: const TextStyle(color: Colors.white, fontSize: 12),
               ),
               const SizedBox(width: 8),
               Text(
-                '(${span.subtreeCount} spans, max depth ${maxDepth + 1})',
+                '(${allSpans.length} total, max depth ${maxDepth + 1})',
                 style: const TextStyle(color: Colors.white38, fontSize: 10),
               ),
             ],
@@ -964,14 +1048,14 @@ class _WaterfallChartState extends State<WaterfallChart> {
                 onTapDown: (details) {
                   _handleFlameChartTap(
                       details.localPosition, allSpans, rootStart,
-                      pixelsPerMs, rowHeight, span.depth);
+                      pixelsPerMs, rowHeight, minDepth);
                 },
                 child: CustomPaint(
                   size: Size(chartWidth, chartHeight),
                   painter: _FlameChartPainter(
                     spans: allSpans,
                     rootStart: rootStart,
-                    rootDepth: span.depth,
+                    rootDepth: minDepth,
                     pixelsPerMs: pixelsPerMs,
                     rowHeight: rowHeight,
                     selectedSpan: _detailSpan,
@@ -1057,6 +1141,11 @@ class _WaterfallChartState extends State<WaterfallChart> {
           details.write('\n${kv.key}: ${kv.value}');
         }
       }
+    } else if (entry.spans.isNotEmpty) {
+      final totalOps = entry.spans.length;
+      final totalChildren = entry.spans.fold<int>(0, (s, sp) => s + sp.children.length);
+      details.write('\nSpans: $totalOps');
+      if (totalChildren > 0) details.write('  Total children: $totalChildren');
     }
 
     return Container(
@@ -1093,16 +1182,9 @@ class _WaterfallChartState extends State<WaterfallChart> {
               ],
             ),
           ),
-          if (entry.span != null)
+          if (entry.hasDrillDown)
             InkWell(
-              onTap: () {
-                setState(() {
-                  _selectedSpan = entry.span;
-                  _mode = _ChartMode.flame;
-                  _detailSpan = null;
-                  _selectedEntry = null;
-                });
-              },
+              onTap: () => _drillDownEntry(entry),
               child: Container(
                 padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                 decoration: BoxDecoration(
