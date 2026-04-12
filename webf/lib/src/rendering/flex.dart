@@ -19,6 +19,7 @@ import 'package:webf/src/html/forms.dart' show ButtonElement;
 import 'package:webf/src/html/semantics_text.dart' show SpanElement;
 import 'package:webf/src/html/text.dart';
 import 'package:webf/widget.dart';
+import 'package:webf/src/devtools/panel/performance_tracker.dart';
 
 const bool _enableFlexProfileSections = !kReleaseMode &&
     bool.fromEnvironment('WEBF_ENABLE_LAYOUT_PROFILE_SECTIONS');
@@ -4669,6 +4670,7 @@ class RenderFlexLayout extends RenderLayoutBox {
 
   @override
   void performLayout() {
+    final layoutHandle = PerformanceTracker.instance.beginSpan('layout', 'flexLayout');
     try {
       _doPerformLayout();
 
@@ -4682,6 +4684,8 @@ class RenderFlexLayout extends RenderLayoutBox {
         reportException('performLayout', e, stack);
       }
       rethrow;
+    } finally {
+      layoutHandle?.end();
     }
   }
 

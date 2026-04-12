@@ -23,6 +23,8 @@ import 'package:webf/src/devtools/panel/remote_object_service.dart';
 import 'package:webf/src/launcher/render_tree_dump_storage.dart';
 import 'package:webf/dom.dart' as dom;
 import 'package:webf/src/launcher/loading_state.dart';
+import 'package:webf/src/devtools/panel/performance_tracker.dart';
+import 'package:webf/src/devtools/panel/waterfall_chart.dart';
 
 /// A floating inspector panel for WebF that provides debugging tools and insights.
 ///
@@ -1738,6 +1740,9 @@ class _WebFInspectorBottomSheetState extends State<_WebFInspectorBottomSheet>
   // Track the selected network filter
   NetworkRequestType? _selectedNetworkFilter;
 
+  // Track whether to show waterfall or metrics in performance tab
+  bool _showWaterfall = false;
+
   Future<void> _clearAllCaches() async {
     try {
       await WebF.clearAllCaches();
@@ -2763,12 +2768,58 @@ class _WebFInspectorBottomSheetState extends State<_WebFInspectorBottomSheet>
             ],
           ),
         ),
-        SizedBox(height: 16),
-        // Performance metrics
+        SizedBox(height: 8),
+        // Metrics / Waterfall toggle
+        Row(
+          children: [
+            GestureDetector(
+              onTap: () => setState(() => _showWaterfall = false),
+              child: Container(
+                padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                decoration: BoxDecoration(
+                  color: !_showWaterfall ? const Color(0xFF1A2A40) : Colors.white10,
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(
+                    color: !_showWaterfall ? Colors.blue : Colors.white24,
+                  ),
+                ),
+                child: Text('Metrics',
+                    style: TextStyle(
+                        fontSize: 11,
+                        color: !_showWaterfall ? Colors.blue : Colors.white54)),
+              ),
+            ),
+            SizedBox(width: 8),
+            GestureDetector(
+              onTap: () => setState(() => _showWaterfall = true),
+              child: Container(
+                padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                decoration: BoxDecoration(
+                  color: _showWaterfall ? const Color(0xFF2A1A3A) : Colors.white10,
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(
+                    color: _showWaterfall ? Colors.purple : Colors.white24,
+                  ),
+                ),
+                child: Text('Waterfall',
+                    style: TextStyle(
+                        fontSize: 11,
+                        color: _showWaterfall ? Colors.purple : Colors.white54)),
+              ),
+            ),
+          ],
+        ),
+        SizedBox(height: 8),
+        // Performance metrics or waterfall
         Expanded(
-          child: SingleChildScrollView(
-            child: _buildPerformanceMetrics(controller),
-          ),
+          child: _showWaterfall
+              ? WaterfallChart(
+                  loadingState: controller.loadingState,
+                  tracker: PerformanceTracker.instance,
+                )
+              : SingleChildScrollView(
+                  child: _buildPerformanceMetrics(controller),
+                ),
         ),
       ],
     );

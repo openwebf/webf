@@ -17,6 +17,7 @@ import 'package:flutter/scheduler.dart';
 import 'package:webf/css.dart';
 import 'package:webf/dom.dart';
 import 'package:webf/webf.dart';
+import 'package:webf/src/devtools/panel/performance_tracker.dart';
 import 'package:ffi/ffi.dart';
 
 // FFI callback for native method result
@@ -443,10 +444,13 @@ class LinkElement extends Element {
         if (ownerView.enableBlink) {
           await _sendStyleSheetToNative(cssString, href: href);
         } else {
+          final parseHandle = PerformanceTracker.instance.beginSpan(
+              'cssParse', 'parseStylesheet', metadata: {'url': href});
           final String? sheetHref = _resolvedHyperlink?.toString() ?? href;
           _styleSheet = CSSParser(cssString, href: sheetHref).parse(
               windowWidth: windowWidth, windowHeight: windowHeight, isDarkMode: ownerView.rootController.isDarkMode);
           _styleSheet?.href = sheetHref;
+          parseHandle?.end(metadata: {'ruleCount': _styleSheet?.cssRules.length ?? 0});
 
           // Resolve and inline any @import rules before applying
           await _resolveCSSImports(ownerDocument, _styleSheet!);
@@ -739,6 +743,8 @@ mixin StyleElementMixin on Element {
       return;
     }
 
+    final parseHandle = PerformanceTracker.instance.beginSpan(
+        'cssParse', 'parseInlineStyle');
     if (_styleSheet != null) {
       _styleSheet!.replaceSync(
         text,
@@ -767,6 +773,7 @@ mixin StyleElementMixin on Element {
       }();
     }
 
+    parseHandle?.end(metadata: {'ruleCount': _styleSheet?.cssRules.length ?? 0});
     _lastStyleSheetSignature = newSignature;
     if (_styleSheet != null) {
       if (DebugFlags.enableCssMultiStyleTrace) {

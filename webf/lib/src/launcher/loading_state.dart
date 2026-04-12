@@ -2394,6 +2394,23 @@ class LoadingState {
   /// Gets all recorded errors
   List<LoadingError> get errors => List.unmodifiable(_errors);
 
+  /// Gets the start time of the loading state tracking.
+  DateTime? get startTime => _startTime;
+
+  /// Calculates the adjusted elapsed time for a phase, accounting for the pause
+  /// between preloadEnd and attachToFlutter in preload mode.
+  ///
+  /// This is the public wrapper for the internal [_getAdjustedElapsedTime] method,
+  /// used by the waterfall performance chart to position bars correctly.
+  Duration getAdjustedElapsedTime(LoadingPhase phase) =>
+      _getAdjustedElapsedTime(phase);
+
+  /// Returns the pause duration between preloadEnd and attachToFlutter.
+  ///
+  /// This is the public wrapper for the internal [_getPauseDuration] method,
+  /// used by the waterfall performance chart to show pause gaps.
+  Duration getPauseDuration() => _getPauseDuration();
+
   /// Checks if there are any errors
   bool get hasErrors => _errors.isNotEmpty;
 

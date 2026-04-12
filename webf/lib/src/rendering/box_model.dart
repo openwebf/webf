@@ -18,6 +18,7 @@ import 'package:webf/rendering.dart';
 import 'box_overflow.dart';
 import 'debug_overlay.dart';
 import 'package:webf/src/accessibility/semantics.dart';
+import 'package:webf/src/devtools/panel/performance_tracker.dart';
 
 // The hashCode of all the renderBox which is in layout.
 List<int> renderBoxInLayoutHashCodes = [];
@@ -1445,7 +1446,9 @@ abstract class RenderBoxModel extends RenderBox
       return;
     }
 
+    final paintHandle = PerformanceTracker.instance.beginSpan('paint', 'paint');
     paintBoxModel(context, offset);
+    paintHandle?.end();
   }
 
   String? layoutExceptions;

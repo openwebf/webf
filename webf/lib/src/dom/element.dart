@@ -25,6 +25,7 @@ import 'package:webf/widget.dart';
 import 'package:webf/src/css/query_selector.dart' as query_selector;
 import 'intersection_observer.dart';
 import 'intersection_observer_entry.dart';
+import 'package:webf/src/devtools/panel/performance_tracker.dart';
 
 const String _oneSpace = ' ';
 const String _styleProperty = 'style';
@@ -2463,6 +2464,8 @@ abstract class Element extends ContainerNode
   }
 
   void applyStyle(CSSStyleDeclaration style) {
+    final applyHandle = PerformanceTracker.instance.beginSpan(
+        'styleRecalc', 'applyStyle', metadata: {'tagName': tagName});
     final SelectorAncestorTokenSet? ancestorTokens =
         DebugFlags.enableCssAncestryFastPath
             ? _elementRuleCollector.buildAncestorTokens(this)
@@ -2480,6 +2483,7 @@ abstract class Element extends ContainerNode
     applyInlineStyle(style);
     _applyPseudoStyle(style,
         ancestorTokens: ancestorTokens, evaluator: selectorEvaluator);
+    applyHandle?.end();
   }
 
   void applyAttributeStyle(CSSStyleDeclaration style) {
@@ -2496,6 +2500,8 @@ abstract class Element extends ContainerNode
 
   void recalculateStyle(
       {bool rebuildNested = false, bool forceRecalculate = false}) {
+    final recalcHandle = PerformanceTracker.instance.beginSpan(
+        'styleRecalc', 'recalculateStyle', metadata: {'tagName': tagName});
     // Pseudo elements (::before/::after) are styled via their parent's
     // matched pseudo rules. A full recalc using the standard element
     // pipeline would discard those properties (only defaults/inline apply).
@@ -2504,6 +2510,7 @@ abstract class Element extends ContainerNode
     if (this is PseudoElement) {
       // Still flush any pending inline or merged properties if present.
       style.flushPendingProperties();
+      recalcHandle?.end();
       return;
     }
     // Always update CSS variables even for display:none elements when rebuilding nested
@@ -2544,6 +2551,7 @@ abstract class Element extends ContainerNode
         }
       }
     }
+    recalcHandle?.end();
   }
 
   void _removeInlineStyle() {
