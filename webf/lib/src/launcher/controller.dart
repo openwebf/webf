@@ -37,6 +37,7 @@ import 'package:webf/dom.dart';
 import 'package:webf/rendering.dart';
 import 'package:webf/webf.dart';
 import 'package:webf/devtools.dart'; // Import for ChromeDevToolsService
+import 'package:webf/src/devtools/panel/performance_tracker.dart';
 import 'package:webf/src/launcher/render_tree_dump_storage.dart';
 
 // Error handler when load bundle failed.
@@ -851,6 +852,13 @@ class WebFController with Diagnosticable {
       _loadingState.recordPhase(LoadingState.phaseInit, parameters: {
         'contextId': view.contextId,
       });
+
+      // Auto-start performance tracking for the waterfall chart.
+      // Only start if not already recording to avoid clearing data from a
+      // prior controller init (e.g., inspector panel's own controller).
+      if (!PerformanceTracker.instance.enabled) {
+        PerformanceTracker.instance.startSession();
+      }
 
       final double contextId = view.contextId;
       // Register the loading state dumper for this context

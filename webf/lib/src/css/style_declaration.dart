@@ -15,6 +15,7 @@ import 'package:webf/dom.dart';
 import 'package:webf/bridge.dart';
 import 'package:webf/html.dart';
 import 'package:quiver/collection.dart';
+import 'package:webf/src/devtools/panel/performance_tracker.dart';
 
 typedef StyleChangeListener = void Function(
     String property, String? original, String present,
@@ -965,6 +966,9 @@ class CSSStyleDeclaration extends DynamicBindingObject
     Element? target = this.target;
     // If style target element not exists, no need to do flush operation.
     if (target == null) return;
+    final flushHandle = PerformanceTracker.instance.beginSpan(
+        'styleApply', 'flushPendingProperties',
+        metadata: {'propertyCount': _pendingProperties.length});
 
     // Display change from none to other value that the renderBoxModel is null.
     if (_pendingProperties.containsKey(DISPLAY) && target.isConnected) {
@@ -977,6 +981,7 @@ class CSSStyleDeclaration extends DynamicBindingObject
     }
 
     if (_pendingProperties.isEmpty) {
+      flushHandle?.end();
       return;
     }
 
@@ -994,6 +999,7 @@ class CSSStyleDeclaration extends DynamicBindingObject
       _emitPropertyChanged(propertyName, prevValue?.value, currentValue.value,
           baseHref: currentValue.baseHref);
       onStyleFlushed?.call(<String>[propertyName]);
+      flushHandle?.end();
       return;
     }
 
@@ -1045,6 +1051,7 @@ class CSSStyleDeclaration extends DynamicBindingObject
     if (flushedPropertyNames != null) {
       styleFlushed!(flushedPropertyNames);
     }
+    flushHandle?.end();
   }
 
   void _flushOrderedPendingProperties(

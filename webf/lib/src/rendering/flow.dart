@@ -17,6 +17,7 @@ import 'package:webf/dom.dart';
 import 'package:webf/html.dart';
 import 'package:webf/foundation.dart';
 import 'package:webf/rendering.dart';
+import 'package:webf/src/devtools/panel/performance_tracker.dart';
 
 bool _canReuseFlowChildLayout(RenderBox child, BoxConstraints constraints) {
   return canReuseStableProxyChildLayout(child, constraints);
@@ -736,6 +737,7 @@ class RenderFlowLayout extends RenderLayoutBox {
 
   @override
   void performLayout() {
+    final layoutHandle = PerformanceTracker.instance.beginSpan('layout', 'flowLayout');
     try {
       _doPerformLayout();
 
@@ -752,6 +754,8 @@ class RenderFlowLayout extends RenderLayoutBox {
         reportException('performLayout', e, stack);
       }
       rethrow;
+    } finally {
+      layoutHandle?.end();
     }
   }
 

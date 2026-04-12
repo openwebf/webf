@@ -27,6 +27,7 @@ import 'package:webf/rendering.dart';
 import 'package:webf/src/css/query_selector.dart' as query_selector;
 import 'package:webf/src/dom/element_registry.dart' as element_registry;
 import 'package:webf/src/dom/intersection_observer.dart';
+import 'package:webf/src/devtools/panel/performance_tracker.dart';
 
 // Removed _InactiveRenderObjects helper (unused).
 
@@ -921,6 +922,8 @@ class Document extends ContainerNode {
   void flushStyle({bool rebuild = false}) {
     if (ownerView.enableBlink) return;
 
+    final flushHandle = PerformanceTracker.instance.beginSpan(
+        'styleFlush', 'flushStyle');
     final int dirtyAtStart = _styleDirtyElements.length;
     // Always attempt to update active stylesheets first so changedRuleSet can
     // mark targeted elements dirty (even if we had no prior dirty set).
@@ -937,6 +940,7 @@ class Document extends ContainerNode {
 
     if (dirtyAfterSheets == 0 && !sheetsUpdated) {
       _recalculating = false;
+      flushHandle?.end(metadata: {'dirtyCount': 0, 'sheetsUpdated': false});
       return;
     }
     bool recalcFromRoot = _styleDirtyElements.any((address) {
@@ -982,6 +986,11 @@ class Document extends ContainerNode {
     _styleDirtyElements.clear();
     _styleDirtyElementsRebuildNested.clear();
     _recalculating = false;
+    flushHandle?.end(metadata: {
+      'dirtyCount': dirtyAfterSheets,
+      'sheetsUpdated': sheetsUpdated,
+      'recalcFromRoot': recalcFromRoot,
+    });
   }
 
   void scheduleStyleUpdate() {

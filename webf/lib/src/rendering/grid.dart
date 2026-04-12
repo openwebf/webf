@@ -14,6 +14,7 @@ import 'package:webf/css.dart';
 import 'package:webf/src/foundation/debug_flags.dart';
 import 'package:webf/src/foundation/logger.dart';
 import 'package:webf/src/foundation/string_parsers.dart';
+import 'package:webf/src/devtools/panel/performance_tracker.dart';
 
 class _GridAutoCursor {
   int row;
@@ -1899,6 +1900,7 @@ class RenderGridLayout extends RenderLayoutBox {
 
   @override
   void performLayout() {
+    final layoutHandle = PerformanceTracker.instance.beginSpan('layout', 'gridLayout');
     beforeLayout();
     final BoxConstraints contentConstraints = this.contentConstraints ?? constraints;
     try {
@@ -1915,6 +1917,8 @@ class RenderGridLayout extends RenderLayoutBox {
         renderingLogger.severe('RenderGridLayout.performLayout error: $error\n$stack');
       }
       rethrow;
+    } finally {
+      layoutHandle?.end();
     }
   }
 
