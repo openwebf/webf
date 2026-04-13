@@ -1,3 +1,23 @@
+## 0.24.27
+
+### Features
+
+- **DevTools/Performance**: add waterfall performance chart to the inspector panel
+  that visualizes the full rendering pipeline (CSS parse, style flush/recalc/apply,
+  layout, paint) on a shared time axis with milestone markers (FP, FCP, LCP).
+  Supports drill-down into recursive stages via a flame chart view with self-time
+  vs child-time coloring.
+- **DevTools/Performance**: instrument all 6 pipeline stages with hierarchical span
+  tracking via a zero-cost `PerformanceTracker` singleton (single boolean check when
+  disabled). Auto-records during page load with stage distinction for
+  preload/prerender vs display phases.
+
+### Performance Improvements
+
+- **DevTools/Performance**: cache waterfall data model and filtered item lists to
+  avoid rebuilding on every frame. Add proper `shouldRepaint` checks to overview
+  and flame chart painters to skip redundant repaints during scrolling.
+
 ## 0.24.26
 
 ### Bug Fixes
