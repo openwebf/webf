@@ -74,11 +74,13 @@ class WaterfallMilestone {
   final String label;
   Duration offset;
   final Color color;
+  final bool isStageDivider; // true for stage transitions like attachToFlutter
 
   WaterfallMilestone({
     required this.label,
     required this.offset,
     required this.color,
+    this.isStageDivider = false,
   });
 }
 
@@ -86,11 +88,15 @@ class WaterfallData {
   final List<WaterfallEntry> entries;
   final List<WaterfallMilestone> milestones;
   final Duration totalDuration;
+  /// Offset of the attachToFlutter phase (null if not a preload/prerender session).
+  /// Everything before this is "Preload/Prerender", everything after is "Display".
+  final Duration? attachOffset;
 
   WaterfallData({
     required this.entries,
     required this.milestones,
     required this.totalDuration,
+    this.attachOffset,
   });
 }
 
@@ -125,14 +131,18 @@ WaterfallData _buildWaterfallDataImpl(
   // --- Lifecycle phases ---
   // Snapshot to avoid ConcurrentModificationException
   final phases = List.of(loadingState.phases);
+  Duration? attachOffset;
   if (phases.isNotEmpty) {
     final lifecyclePhaseNames = [
       LoadingState.phaseInit,
+      LoadingState.phasePreload,
+      LoadingState.phasePreRender,
       LoadingState.phaseLoadStart,
       LoadingState.phaseEvaluateStart,
       LoadingState.phaseEvaluateComplete,
       LoadingState.phaseDOMContentLoaded,
       LoadingState.phaseWindowLoad,
+      LoadingState.phaseAttachToFlutter,
     ];
     final relevantPhases =
         phases.where((p) => lifecyclePhaseNames.contains(p.name)).toList();
@@ -293,7 +303,15 @@ WaterfallData _buildWaterfallDataImpl(
 
   // --- Milestones ---
   for (final phase in phases) {
-    if (phase.name == LoadingState.phaseFirstPaint) {
+    if (phase.name == LoadingState.phaseAttachToFlutter) {
+      attachOffset = offset(phase.timestamp);
+      milestones.add(WaterfallMilestone(
+        label: 'Attach',
+        offset: attachOffset,
+        color: const Color(0xFFFFB74D),
+        isStageDivider: true,
+      ));
+    } else if (phase.name == LoadingState.phaseFirstPaint) {
       milestones.add(WaterfallMilestone(
         label: 'FP',
         offset: offset(phase.timestamp),
@@ -314,7 +332,6 @@ WaterfallData _buildWaterfallDataImpl(
       ));
     }
   }
-
   // Normalize: shift all entries so the timeline starts at the earliest event
   var minStart = const Duration(days: 999);
   for (final e in entries) {
@@ -350,10 +367,17 @@ WaterfallData _buildWaterfallDataImpl(
   // Sort all entries by start time on a single shared timeline
   entries.sort((a, b) => a.start.compareTo(b.start));
 
+  // Normalize attachOffset along with entries/milestones
+  Duration? normalizedAttach = attachOffset;
+  if (minStart > Duration.zero && normalizedAttach != null) {
+    normalizedAttach = normalizedAttach - minStart;
+  }
+
   return WaterfallData(
     entries: entries,
     milestones: milestones,
     totalDuration: maxEnd,
+    attachOffset: normalizedAttach,
   );
 }
 
@@ -387,6 +411,10 @@ Color _lifecycleColor(String name) {
   switch (name) {
     case 'init':
       return const Color(0xFF1565C0);
+    case 'preload':
+      return const Color(0xFF8D6E00);
+    case 'preRender':
+      return const Color(0xFF8D6E00);
     case 'loadStart':
       return const Color(0xFF0277BD);
     case 'evaluateStart':
@@ -397,6 +425,8 @@ Color _lifecycleColor(String name) {
       return const Color(0xFF2E7D32);
     case 'windowLoad':
       return const Color(0xFFE65100);
+    case 'attachToFlutter':
+      return const Color(0xFFFFB74D);
     default:
       return const Color(0xFF546E7A);
   }
@@ -494,8 +524,7 @@ class _WaterfallChartState extends State<WaterfallChart> {
   List<PerformanceSpan> _selectedSpans = const [];
   double _zoom = 1.0;
 
-  // Separate scroll controllers for each scroll view — Flutter requires
-  // one controller per scroll position.
+  // Scroll controllers
   final ScrollController _rulerHScrollController = ScrollController();
   final ScrollController _chartHScrollController = ScrollController();
   final ScrollController _labelsVScrollController = ScrollController();
@@ -513,20 +542,85 @@ class _WaterfallChartState extends State<WaterfallChart> {
 
   bool _syncingScroll = false;
 
+  // --- Data cache ---
+  WaterfallData? _cachedData;
+  int _cachedSpanCount = -1;
+  int _cachedPhaseCount = -1;
+  int _cachedNetworkCount = -1;
+  List<_OverviewItem>? _cachedItems;
+  Set<WaterfallCategory>? _cachedFilterSet;
+
+  WaterfallData _getData() {
+    final tracker = widget.tracker;
+    final ls = widget.loadingState;
+    final spanCount = tracker.totalSpanCount;
+    final phaseCount = ls.phases.length;
+    final networkCount = ls.networkRequests.length;
+    if (_cachedData != null &&
+        spanCount == _cachedSpanCount &&
+        phaseCount == _cachedPhaseCount &&
+        networkCount == _cachedNetworkCount) {
+      return _cachedData!;
+    }
+    _cachedData = buildWaterfallData(ls, tracker);
+    _cachedSpanCount = spanCount;
+    _cachedPhaseCount = phaseCount;
+    _cachedNetworkCount = networkCount;
+    _cachedItems = null; // invalidate derived cache
+    return _cachedData!;
+  }
+
+  List<_OverviewItem> _getItems(WaterfallData data) {
+    if (_cachedItems != null && _setEquals(_cachedFilterSet, _enabledCategories)) {
+      return _cachedItems!;
+    }
+    final filtered = data.entries
+        .where((e) => _enabledCategories.contains(e.category))
+        .toList();
+    final items = <_OverviewItem>[];
+    if (data.attachOffset != null && filtered.isNotEmpty) {
+      bool addedPreHeader = false;
+      bool addedDisplayHeader = false;
+      for (final entry in filtered) {
+        if (!addedPreHeader) {
+          items.add(_OverviewItem.header('Preload / Prerender'));
+          addedPreHeader = true;
+        }
+        if (!addedDisplayHeader && entry.start >= data.attachOffset!) {
+          items.add(_OverviewItem.header('Display'));
+          addedDisplayHeader = true;
+        }
+        items.add(_OverviewItem.entry(entry));
+      }
+      if (!addedDisplayHeader) {
+        items.add(_OverviewItem.header('Display — (no entries)'));
+      }
+    } else {
+      for (final entry in filtered) {
+        items.add(_OverviewItem.entry(entry));
+      }
+    }
+    _cachedItems = items;
+    _cachedFilterSet = Set.from(_enabledCategories);
+    return items;
+  }
+
+  static bool _setEquals(Set<WaterfallCategory>? a, Set<WaterfallCategory> b) {
+    if (a == null || a.length != b.length) return false;
+    return a.containsAll(b);
+  }
+
   @override
   void initState() {
     super.initState();
-    // Sync horizontal scroll: ruler ↔ chart
     _rulerHScrollController.addListener(() => _syncScroll(
         _rulerHScrollController, _chartHScrollController));
     _chartHScrollController.addListener(() => _syncScroll(
         _chartHScrollController, _rulerHScrollController));
-    // Sync vertical scroll: labels ↔ bars
     _labelsVScrollController.addListener(() => _syncScroll(
         _labelsVScrollController, _barsVScrollController));
     _barsVScrollController.addListener(() => _syncScroll(
         _barsVScrollController, _labelsVScrollController));
-    // Sync flame chart horizontal scroll: ruler ↔ body
     _flameRulerHScrollController.addListener(() => _syncScroll(
         _flameRulerHScrollController, _flameBodyHScrollController));
     _flameBodyHScrollController.addListener(() => _syncScroll(
@@ -564,8 +658,7 @@ class _WaterfallChartState extends State<WaterfallChart> {
 
   @override
   Widget build(BuildContext context) {
-    final data =
-        buildWaterfallData(widget.loadingState, widget.tracker);
+    final data = _getData();
 
     return Column(
       children: [
@@ -769,133 +862,193 @@ class _WaterfallChartState extends State<WaterfallChart> {
   // -- Overview mode --
 
   Widget _buildOverview(WaterfallData data) {
-    final filtered = data.entries
-        .where((e) => _enabledCategories.contains(e.category))
-        .toList();
+    final items = _getItems(data);
 
-    if (filtered.isEmpty && data.milestones.isEmpty) {
-      return Center(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Text(
-              'No performance data recorded.\nReload the page or tap Record to capture.',
-              textAlign: TextAlign.center,
-              style: TextStyle(color: Colors.white38, fontSize: 12),
-            ),
-          ],
+    if (items.isEmpty && data.milestones.isEmpty) {
+      return const Center(
+        child: Text(
+          'No performance data recorded.\nReload the page or tap Record to capture.',
+          textAlign: TextAlign.center,
+          style: TextStyle(color: Colors.white38, fontSize: 12),
         ),
       );
     }
 
     final totalMs = data.totalDuration.inMicroseconds / 1000.0;
     final pixelsPerMs = _zoom * 2.0; // base: 2px per ms
-    final chartWidth = math.max(totalMs * pixelsPerMs, 200.0);
+    final contentWidth = totalMs * pixelsPerMs;
 
     const labelWidth = 140.0;
     const rowHeight = 22.0;
     const rulerHeight = 24.0;
 
-    return Column(
-      children: [
-        // Time ruler
-        SizedBox(
-          height: rulerHeight,
-          child: Row(
-            children: [
-              const SizedBox(width: labelWidth),
-              Expanded(
-                child: SingleChildScrollView(
-                  controller: _rulerHScrollController,
-                  scrollDirection: Axis.horizontal,
-                  child: CustomPaint(
-                    size: Size(chartWidth, rulerHeight),
-                    painter: _TimeRulerPainter(
-                      totalMs: totalMs,
-                      pixelsPerMs: pixelsPerMs,
-                      milestones: data.milestones,
+    return LayoutBuilder(builder: (context, constraints) {
+      final availableWidth = constraints.maxWidth - labelWidth - 1;
+      final chartWidth = math.max(contentWidth, availableWidth);
+      final attachX = data.attachOffset != null
+          ? data.attachOffset!.inMicroseconds / 1000.0 * pixelsPerMs
+          : null;
+
+      return Column(
+        children: [
+          // Time ruler
+          SizedBox(
+            height: rulerHeight,
+            child: Row(
+              children: [
+                const SizedBox(width: labelWidth),
+                Expanded(
+                  child: SingleChildScrollView(
+                    controller: _rulerHScrollController,
+                    scrollDirection: Axis.horizontal,
+                    child: CustomPaint(
+                      size: Size(chartWidth, rulerHeight),
+                      painter: _TimeRulerPainter(
+                        totalMs: totalMs,
+                        pixelsPerMs: pixelsPerMs,
+                        milestones: data.milestones,
+                        attachX: attachX,
+                      ),
                     ),
                   ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
-        ),
-        const Divider(height: 1, color: Colors.white12),
-        // Chart rows
-        Expanded(
-          child: Row(
-            children: [
-              // Labels
-              SizedBox(
-                width: labelWidth,
-                child: ListView.builder(
-                  controller: _labelsVScrollController,
-                  itemCount: filtered.length,
-                  itemExtent: rowHeight,
-                  itemBuilder: (ctx, i) {
-                    final entry = filtered[i];
-                    final isSelected = _selectedEntry == entry;
-                    return GestureDetector(
-                      onTap: () {
-                        setState(() {
-                          _selectedEntry = entry;
-                        });
-                      },
-                      onDoubleTap: () {
-                        if (entry.hasDrillDown) {
-                          _drillDownEntry(entry);
-                        }
-                      },
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 4),
-                        alignment: Alignment.centerLeft,
-                        color: isSelected
-                            ? Colors.white10
-                            : Colors.transparent,
-                        child: Text(
-                          entry.label,
-                          style: TextStyle(
-                            color: _categoryColor(entry.category),
-                            fontSize: 10,
+          const Divider(height: 1, color: Colors.white12),
+          // Stage bar (only for preload/prerender sessions)
+          if (data.attachOffset != null)
+            SizedBox(
+              height: 16,
+              child: Row(
+                children: [
+                  const SizedBox(width: labelWidth),
+                  Expanded(
+                    child: SingleChildScrollView(
+                      scrollDirection: Axis.horizontal,
+                      child: SizedBox(
+                        width: chartWidth,
+                        child: CustomPaint(
+                          size: Size(chartWidth, 16),
+                          painter: _StageBarPainter(
+                            attachX: attachX!,
+                            chartWidth: chartWidth,
                           ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
                         ),
                       ),
-                    );
-                  },
-                ),
+                    ),
+                  ),
+                ],
               ),
-              const VerticalDivider(width: 1, color: Colors.white12),
-              // Bars
-              Expanded(
-                child: SingleChildScrollView(
-                  scrollDirection: Axis.horizontal,
-                  controller: _chartHScrollController,
-                  child: SizedBox(
-                    width: chartWidth,
-                    child: ListView.builder(
-                      controller: _barsVScrollController,
-                      itemCount: filtered.length,
-                      itemExtent: rowHeight,
-                      itemBuilder: (ctx, i) {
-                        return _buildOverviewRow(
-                            filtered[i], totalMs, pixelsPerMs, chartWidth);
-                      },
+            ),
+          // Chart rows
+          Expanded(
+            child: Row(
+              children: [
+                // Labels
+                SizedBox(
+                  width: labelWidth,
+                  child: ListView.builder(
+                    controller: _labelsVScrollController,
+                    itemCount: items.length,
+                    itemExtent: rowHeight,
+                    itemBuilder: (ctx, i) {
+                      final item = items[i];
+                      if (item.isHeader) {
+                        final isPreload = item.headerText!.startsWith('Preload');
+                        return Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 4),
+                          alignment: Alignment.centerLeft,
+                          color: isPreload
+                              ? const Color(0x20FFB74D)
+                              : const Color(0x204CAF50),
+                          child: Text(
+                            item.headerText!,
+                            style: TextStyle(
+                              color: isPreload
+                                  ? const Color(0xCCFFB74D)
+                                  : const Color(0xCC4CAF50),
+                              fontSize: 10,
+                              fontWeight: FontWeight.w600,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        );
+                      }
+                      final entry = item.entry!;
+                      final isSelected = _selectedEntry == entry;
+                      return GestureDetector(
+                        onTap: () {
+                          setState(() {
+                            _selectedEntry = entry;
+                          });
+                        },
+                        onDoubleTap: () {
+                          if (entry.hasDrillDown) {
+                            _drillDownEntry(entry);
+                          }
+                        },
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 4),
+                          alignment: Alignment.centerLeft,
+                          color: isSelected
+                              ? Colors.white10
+                              : Colors.transparent,
+                          child: Text(
+                            entry.label,
+                            style: TextStyle(
+                              color: _categoryColor(entry.category),
+                              fontSize: 10,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+                ),
+                const VerticalDivider(width: 1, color: Colors.white12),
+                // Bars
+                Expanded(
+                  child: SingleChildScrollView(
+                    scrollDirection: Axis.horizontal,
+                    controller: _chartHScrollController,
+                    child: SizedBox(
+                      width: chartWidth,
+                      child: ListView.builder(
+                        controller: _barsVScrollController,
+                        itemCount: items.length,
+                        itemExtent: rowHeight,
+                        itemBuilder: (ctx, i) {
+                          final item = items[i];
+                          if (item.isHeader) {
+                            final isPreload = item.headerText!.startsWith('Preload');
+                            return Container(
+                              color: isPreload
+                                  ? const Color(0x20FFB74D)
+                                  : const Color(0x204CAF50),
+                            );
+                          }
+                          return _buildOverviewRow(
+                              item.entry!, totalMs, pixelsPerMs, chartWidth,
+                              attachX: attachX);
+                        },
+                      ),
                     ),
                   ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
-        ),
-      ],
-    );
+        ],
+      );
+    });
   }
 
   Widget _buildOverviewRow(WaterfallEntry entry, double totalMs,
-      double pixelsPerMs, double chartWidth) {
+      double pixelsPerMs, double chartWidth, {double? attachX}) {
     final startMs = entry.start.inMicroseconds / 1000.0;
     final durationMs = entry.duration.inMicroseconds / 1000.0;
     final barLeft = startMs * pixelsPerMs;
@@ -920,6 +1073,7 @@ class _WaterfallChartState extends State<WaterfallChart> {
           subEntries: entry.subEntries,
           pixelsPerMs: pixelsPerMs,
           hasDrillDown: entry.hasDrillDown,
+          attachX: attachX,
         ),
       ),
     );
@@ -977,10 +1131,13 @@ class _WaterfallChartState extends State<WaterfallChart> {
     final minDepth = rootSpans.map((s) => s.depth).reduce(math.min);
     final maxDepth = allSpans.map((s) => s.maxDepth).reduce(math.max) - minDepth;
     final pixelsPerMs = _zoom * 2.0;
-    final chartWidth = math.max(rootDurationMs * pixelsPerMs, 200.0);
+    final contentWidth = rootDurationMs * pixelsPerMs;
     const rowHeight = 20.0;
     const rulerHeight = 24.0;
     final chartHeight = (maxDepth + 1) * rowHeight;
+
+    return LayoutBuilder(builder: (context, constraints) {
+    final chartWidth = math.max(contentWidth, constraints.maxWidth);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -1067,6 +1224,7 @@ class _WaterfallChartState extends State<WaterfallChart> {
         ),
       ],
     );
+    });
   }
 
   void _collectSpans(PerformanceSpan span, List<PerformanceSpan> result) {
@@ -1262,11 +1420,13 @@ class _TimeRulerPainter extends CustomPainter {
   final double totalMs;
   final double pixelsPerMs;
   final List<WaterfallMilestone> milestones;
+  final double? attachX; // x position of attachToFlutter divider
 
   _TimeRulerPainter({
     required this.totalMs,
     required this.pixelsPerMs,
     required this.milestones,
+    this.attachX,
   });
 
   @override
@@ -1358,6 +1518,7 @@ class _OverviewRowPainter extends CustomPainter {
   final List<WaterfallSubEntry> subEntries;
   final double pixelsPerMs;
   final bool hasDrillDown;
+  final double? attachX;
 
   _OverviewRowPainter({
     required this.barLeft,
@@ -1366,10 +1527,31 @@ class _OverviewRowPainter extends CustomPainter {
     required this.subEntries,
     required this.pixelsPerMs,
     required this.hasDrillDown,
+    this.attachX,
   });
 
   @override
   void paint(Canvas canvas, Size size) {
+    // Draw stage background shading
+    if (attachX != null) {
+      // Preload/prerender region — subtle amber tint
+      canvas.drawRect(
+        Rect.fromLTWH(0, 0, attachX!, size.height),
+        Paint()..color = const Color(0x0AFFB74D),
+      );
+      // Display region — subtle green tint
+      canvas.drawRect(
+        Rect.fromLTWH(attachX!, 0, size.width - attachX!, size.height),
+        Paint()..color = const Color(0x0A4CAF50),
+      );
+      // Divider line
+      final divPaint = Paint()
+        ..color = const Color(0x60FFB74D)
+        ..strokeWidth = 1.5;
+      canvas.drawLine(
+          Offset(attachX!, 0), Offset(attachX!, size.height), divPaint);
+    }
+
     final barTop = 3.0;
     final barHeight = size.height - 6.0;
 
@@ -1421,7 +1603,14 @@ class _OverviewRowPainter extends CustomPainter {
   }
 
   @override
-  bool shouldRepaint(_OverviewRowPainter old) => true;
+  bool shouldRepaint(_OverviewRowPainter old) =>
+      old.barLeft != barLeft ||
+      old.barWidth != barWidth ||
+      old.color != color ||
+      old.pixelsPerMs != pixelsPerMs ||
+      old.hasDrillDown != hasDrillDown ||
+      old.attachX != attachX ||
+      old.subEntries.length != subEntries.length;
 }
 
 class _FlameChartPainter extends CustomPainter {
@@ -1554,7 +1743,87 @@ class _FlameChartPainter extends CustomPainter {
   }
 
   @override
-  bool shouldRepaint(_FlameChartPainter old) => true;
+  bool shouldRepaint(_FlameChartPainter old) =>
+      old.spans.length != spans.length ||
+      old.rootStart != rootStart ||
+      old.rootDepth != rootDepth ||
+      old.pixelsPerMs != pixelsPerMs ||
+      old.rowHeight != rowHeight ||
+      !identical(old.selectedSpan, selectedSpan);
+}
+
+// ---------------------------------------------------------------------------
+class _StageBarPainter extends CustomPainter {
+  final double attachX;
+  final double chartWidth;
+
+  _StageBarPainter({required this.attachX, required this.chartWidth});
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    // Preload/prerender stage
+    canvas.drawRect(
+      Rect.fromLTWH(0, 0, attachX, size.height),
+      Paint()..color = const Color(0x30FFB74D),
+    );
+    // Display stage
+    canvas.drawRect(
+      Rect.fromLTWH(attachX, 0, chartWidth - attachX, size.height),
+      Paint()..color = const Color(0x304CAF50),
+    );
+    // Divider
+    canvas.drawLine(
+      Offset(attachX, 0),
+      Offset(attachX, size.height),
+      Paint()
+        ..color = const Color(0xAAFFB74D)
+        ..strokeWidth = 1.5,
+    );
+    // Labels
+    final preTp = TextPainter(
+      text: const TextSpan(
+        text: 'Preload / Prerender',
+        style: TextStyle(
+            color: Color(0xCCFFB74D), fontSize: 9, fontWeight: FontWeight.w600),
+      ),
+      textDirection: TextDirection.ltr,
+    )..layout();
+    if (attachX > preTp.width + 8) {
+      preTp.paint(canvas, Offset(4, (size.height - preTp.height) / 2));
+    }
+    final dispTp = TextPainter(
+      text: const TextSpan(
+        text: 'Display',
+        style: TextStyle(
+            color: Color(0xCC4CAF50), fontSize: 9, fontWeight: FontWeight.w600),
+      ),
+      textDirection: TextDirection.ltr,
+    )..layout();
+    dispTp.paint(
+        canvas, Offset(attachX + 4, (size.height - dispTp.height) / 2));
+  }
+
+  @override
+  bool shouldRepaint(_StageBarPainter old) =>
+      old.attachX != attachX || old.chartWidth != chartWidth;
+}
+
+// ---------------------------------------------------------------------------
+// Overview item wrapper — either a section header or a regular entry
+// ---------------------------------------------------------------------------
+
+class _OverviewItem {
+  final bool isHeader;
+  final String? headerText;
+  final WaterfallEntry? entry;
+
+  _OverviewItem.header(this.headerText)
+      : isHeader = true,
+        entry = null;
+
+  _OverviewItem.entry(this.entry)
+      : isHeader = false,
+        headerText = null;
 }
 
 // ---------------------------------------------------------------------------
