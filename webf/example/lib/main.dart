@@ -16,13 +16,13 @@ import 'package:webf/devtools.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:webf_example/cronet_adapter.dart';
 import 'package:webf_cupertino_ui/webf_cupertino_ui.dart';
-import 'package:webf_shadcn_ui/webf_shadcn_ui.dart';
+// import 'package:webf_shadcn_ui/webf_shadcn_ui.dart';
 import 'package:day_night_switcher/day_night_switcher.dart';
 import 'package:adaptive_theme/adaptive_theme.dart';
 
 import 'custom_hybrid_history_delegate.dart';
 
-import 'package:webf_lucide_icons/webf_lucide_icons.dart';
+// import 'package:webf_lucide_icons/webf_lucide_icons.dart';
 import 'package:webf_share/webf_share.dart';
 import 'package:webf_sqflite/webf_sqflite.dart';
 import 'package:webf_camera/webf_camera.dart';
@@ -57,8 +57,8 @@ void main() async {
   installWebFCupertinoUI();
   installWebFCamera();
   installWebFVideoPlayer();
-  installWebFShadcnUI();
-  installWebFLucideIcons();
+  // installWebFShadcnUI();
+  // installWebFLucideIcons();
 
   WebF.defineModule((context) => ShareModule(context));
   WebF.defineModule((context) => SQFliteModule(context));
