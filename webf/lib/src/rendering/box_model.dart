@@ -137,12 +137,18 @@ bool _hasReusableStableLayoutChain(RenderBox child) {
     if (child.renderStyle.width.isAuto || child.renderStyle.height.isAuto) {
       return false;
     }
+    // hasPendingLayoutUpdate is set by markNeedsLayout() and cleared only
+    // after doLayout() runs. If it is still true the child was not laid out
+    // in a previous pass and must not be skipped — skipping would leave it
+    // rendering stale content (blank elements after DOM mutations).
     return !child.needsRelayout &&
-        !child.hasPendingSubtreeIntrinsicMeasurementInvalidation;
+        !child.hasPendingSubtreeIntrinsicMeasurementInvalidation &&
+        !child.hasPendingLayoutUpdate;
   }
   if (child is RenderBoxModel) {
     return !child.needsRelayout &&
-        !child.hasPendingSubtreeIntrinsicMeasurementInvalidation;
+        !child.hasPendingSubtreeIntrinsicMeasurementInvalidation &&
+        !child.hasPendingLayoutUpdate;
   }
   if (child is RenderProxyBox) {
     final RenderBox? proxyChild = child.child;

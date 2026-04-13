@@ -3919,6 +3919,7 @@ class RenderFlexLayout extends RenderLayoutBox {
   ) {
     if (child.constraints != childConstraints ||
         effectiveChild.needsRelayout ||
+        effectiveChild.hasPendingLayoutUpdate ||
         (_childrenRequirePostMeasureLayout[child] == true) ||
         _subtreeHasPendingIntrinsicMeasureInvalidation(child)) {
       return false;
@@ -6062,7 +6063,7 @@ class RenderFlexLayout extends RenderLayoutBox {
         Map<String, Object?>? relayoutDetails;
 
         bool needsLayout = false;
-        if (effectiveChild.needsRelayout) {
+        if (effectiveChild.needsRelayout || effectiveChild.hasPendingLayoutUpdate) {
           needsLayout = true;
           relayoutReason =
               _FlexAdjustFastPathRelayoutReason.effectiveChildNeedsRelayout;
@@ -6255,6 +6256,7 @@ class RenderFlexLayout extends RenderLayoutBox {
 
       bool needsLayout = isFlexibleChild ||
           effectiveChild.needsRelayout ||
+          effectiveChild.hasPendingLayoutUpdate ||
           (_childrenRequirePostMeasureLayout[child] == true) ||
           _subtreeHasPendingIntrinsicMeasureInvalidation(child);
 
