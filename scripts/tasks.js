@@ -711,7 +711,7 @@ task('build-window-webf-lib', (done) => {
   const soBinaryDirectory = path.join(paths.bridge, `build/windows/lib/`).replaceAll(path.sep, path.posix.sep);
   const bridgeCmakeDir = path.join(paths.bridge, 'cmake-build-windows');
   // generate project
-  execSync(`cmake -DCMAKE_BUILD_TYPE=${buildType} -DENABLE_TEST=true -DINSTALL_GTEST=OFF -DINSTALL_GMOCK=OFF -DBENCHMARK_ENABLE_INSTALL=OFF ${externCmakeArgs.join(' ')} -B ${bridgeCmakeDir} -S ${paths.bridge}`,
+  execSync(`cmake -DCMAKE_BUILD_TYPE=${buildType} -DENABLE_TEST=true -DINSTALL_GTEST=OFF -DINSTALL_GMOCK=OFF ${externCmakeArgs.join(' ')} -B ${bridgeCmakeDir} -S ${paths.bridge}`,
     {
       cwd: paths.bridge,
       stdio: 'inherit',
@@ -733,10 +733,23 @@ task('build-window-webf-lib', (done) => {
     stdio: 'inherit'
   });
 
-  execSync(`cmake --install ./`, {
-    stdio: 'inherit',
-    cwd: path.join(paths.bridge, 'cmake-build-windows')
-  });
+  // Copy built DLLs to output directory instead of cmake --install
+  // (cmake --install also tries to install third-party libs which may fail)
+  const outputBinDir = path.join(soBinaryDirectory, 'bin');
+  const outputLibDir = path.join(soBinaryDirectory, 'lib');
+  if (!fs.existsSync(outputBinDir)) fs.mkdirSync(outputBinDir, { recursive: true });
+  if (!fs.existsSync(outputLibDir)) fs.mkdirSync(outputLibDir, { recursive: true });
+  const copyIfExists = (src, dest) => {
+    if (fs.existsSync(src)) fs.copyFileSync(src, dest);
+  };
+  // Copy DLLs (runtime) to bin/
+  copyIfExists(path.join(bridgeCmakeDir, 'libwebf.dll'), path.join(outputBinDir, 'libwebf.dll'));
+  copyIfExists(path.join(bridgeCmakeDir, 'libquickjs.dll'), path.join(outputBinDir, 'libquickjs.dll'));
+  // Copy import libs to lib/
+  copyIfExists(path.join(bridgeCmakeDir, 'libwebf.dll.a'), path.join(outputLibDir, 'libwebf.dll.a'));
+  copyIfExists(path.join(bridgeCmakeDir, 'libquickjs.dll.a'), path.join(outputLibDir, 'libquickjs.dll.a'));
+  // Copy unit test executable to output directory (test runner expects it at bridge/build/windows/lib/)
+  copyIfExists(path.join(bridgeCmakeDir, 'webf_unit_test.exe'), path.join(soBinaryDirectory, 'webf_unit_test.exe'));
 
   done();
 });
