@@ -1,3 +1,14 @@
+## 0.22.21
+
+### Features
+
+- Add waterfall performance chart to DevTools inspector panel with overview and flame chart modes.
+- Instrument full rendering pipeline (CSS parse, style flush, style recalc, style apply, layout, paint) with hierarchical span tracking.
+- Add milestone markers (FP, FCP, LCP, Attach) and preload/display stage headers to the waterfall timeline.
+- Add flame chart drill-down for recursive stages (style recalc, flex/flow layout, paint) with self-time vs child-time visualization.
+- Add profile export/import with adb pull commands for Android devices.
+- Auto-record performance spans during page load with zero-cost tracking when disabled.
+
 ## 0.22.20
 
 ### Features

@@ -32,8 +32,6 @@ import 'custom_elements/form.dart';
 import 'custom_elements/gesture_detector.dart';
 import 'custom_elements/flutter_sliver_listview.dart';
 import 'keyboard_case/popup.dart';
-import 'package:webf_cupertino_ui/webf_cupertino_ui.dart';
-
 import 'package:day_night_switcher/day_night_switcher.dart';
 import 'package:adaptive_theme/adaptive_theme.dart';
 import 'package:app_links/app_links.dart';
@@ -53,8 +51,6 @@ final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   final savedThemeMode = await AdaptiveTheme.getThemeMode();
-
-  installWebFCupertinoUI();
 
   // Initialize the controller manager
   WebFControllerManager.instance.initialize(WebFControllerManagerConfig(
@@ -97,71 +93,71 @@ void main() async {
   WebF.defineModule((context) => TestModule(context));
   WebF.defineModule((context) => ShareModule(context));
   WebF.defineModule((context) => DeepLinkModule(context));
-
-  // Add home controller with preloading
-  WebFControllerManager.instance.addWithPreload(
-      name: 'miracle_plus',
-      createController: () => WebFController(
-          routeObserver: routeObserver,
-          initialRoute: '/',
-          networkOptions: WebFNetworkOptions(
-            android: WebFNetworkOptions(
-                httpClientAdapter: () async {
-                  String cacheDirectory =
-                      await HttpCacheController.getCacheDirectory(Uri.parse('https://miracleplus.openwebf.com/'));
-                  CronetEngine cronetEngine = CronetEngine.build(
-                      cacheMode: (kReleaseMode || kProfileMode) ? CacheMode.disk : CacheMode.memory,
-                      cacheMaxSize: 24 * 1024 * 1024,
-                      enableBrotli: true,
-                      enableHttp2: true,
-                      enableQuic: true,
-                      storagePath: (kReleaseMode || kProfileMode) ? cacheDirectory : null);
-                  return CronetAdapter(cronetEngine);
-                },
-                enableHttpCache: false // Cronet have it's own http cache impls
-                ),
-          ),
-          // dioHttpClientAdapterAndroid: CronetAdapter(cronetEngine),
-          // dioHttpClientAdapter: NativeAdapter(),
-          onLCP: (time, isEvaluated) {
-            print('LCP time: $time, evaluated: $isEvaluated');
-          },
-          onLCPContentVerification: (contentInfo, routePath) {
-            print('contentInfo: $contentInfo');
-          },
-          httpLoggerOptions: HttpLoggerOptions(
-            requestHeader: true,
-            requestBody: true,
-          ),
-          onControllerInit: (controller) async {
-            // Built-in once-only error dump with debounce and per-load reset
-            controller.loadingState.onFinalLargestContentfulPaint((event) {
-              final dump = controller.dumpLoadingState(
-                options: LoadingStateDumpOptions.html |
-                    LoadingStateDumpOptions.api |
-                    LoadingStateDumpOptions.scripts |
-                    LoadingStateDumpOptions.networkDetailed,
-              );
-              debugPrint(dump.toStringFiltered());
-            });
-
-            // controller.loadingState.onFinalLargestContentfulPaint((_) {
-            //   if (!hasReported) {
-            //     LoadingStateDump dump = controller.dumpLoadingState(
-            //         options: LoadingStateDumpOptions.html |
-            //             LoadingStateDumpOptions.api |
-            //             LoadingStateDumpOptions.scripts |
-            //             LoadingStateDumpOptions.networkDetailed);
-            //     print(dump.toString());
-            //   }
-            //   hasReported = true;
-            // });
-          }),
-      bundle: WebFBundle.fromUrl('https://miracleplus.openwebf.com/'),
-      setup: (controller) {
-        controller.hybridHistory.delegate = CustomHybridHistoryDelegate();
-        controller.darkModeOverride = savedThemeMode?.isDark;
-      });
+  //
+  // // Add home controller with preloading
+  // WebFControllerManager.instance.addWithPreload(
+  //     name: 'miracle_plus',
+  //     createController: () => WebFController(
+  //         routeObserver: routeObserver,
+  //         initialRoute: '/',
+  //         networkOptions: WebFNetworkOptions(
+  //           android: WebFNetworkOptions(
+  //               httpClientAdapter: () async {
+  //                 String cacheDirectory =
+  //                     await HttpCacheController.getCacheDirectory(Uri.parse('https://miracleplus.openwebf.com/'));
+  //                 CronetEngine cronetEngine = CronetEngine.build(
+  //                     cacheMode: (kReleaseMode || kProfileMode) ? CacheMode.disk : CacheMode.memory,
+  //                     cacheMaxSize: 24 * 1024 * 1024,
+  //                     enableBrotli: true,
+  //                     enableHttp2: true,
+  //                     enableQuic: true,
+  //                     storagePath: (kReleaseMode || kProfileMode) ? cacheDirectory : null);
+  //                 return CronetAdapter(cronetEngine);
+  //               },
+  //               enableHttpCache: false // Cronet have it's own http cache impls
+  //               ),
+  //         ),
+  //         // dioHttpClientAdapterAndroid: CronetAdapter(cronetEngine),
+  //         // dioHttpClientAdapter: NativeAdapter(),
+  //         onLCP: (time, isEvaluated) {
+  //           print('LCP time: $time, evaluated: $isEvaluated');
+  //         },
+  //         onLCPContentVerification: (contentInfo, routePath) {
+  //           print('contentInfo: $contentInfo');
+  //         },
+  //         httpLoggerOptions: HttpLoggerOptions(
+  //           requestHeader: true,
+  //           requestBody: true,
+  //         ),
+  //         onControllerInit: (controller) async {
+  //           // Built-in once-only error dump with debounce and per-load reset
+  //           controller.loadingState.onFinalLargestContentfulPaint((event) {
+  //             final dump = controller.dumpLoadingState(
+  //               options: LoadingStateDumpOptions.html |
+  //                   LoadingStateDumpOptions.api |
+  //                   LoadingStateDumpOptions.scripts |
+  //                   LoadingStateDumpOptions.networkDetailed,
+  //             );
+  //             debugPrint(dump.toStringFiltered());
+  //           });
+  //
+  //           // controller.loadingState.onFinalLargestContentfulPaint((_) {
+  //           //   if (!hasReported) {
+  //           //     LoadingStateDump dump = controller.dumpLoadingState(
+  //           //         options: LoadingStateDumpOptions.html |
+  //           //             LoadingStateDumpOptions.api |
+  //           //             LoadingStateDumpOptions.scripts |
+  //           //             LoadingStateDumpOptions.networkDetailed);
+  //           //     print(dump.toString());
+  //           //   }
+  //           //   hasReported = true;
+  //           // });
+  //         }),
+  //     bundle: WebFBundle.fromUrl('https://miracleplus.openwebf.com/'),
+  //     setup: (controller) {
+  //       controller.hybridHistory.delegate = CustomHybridHistoryDelegate();
+  //       controller.darkModeOverride = savedThemeMode?.isDark;
+  //     });
 
   // // Add vue controller with preloading
   // WebFControllerManager.instance.addWithPrerendering(
