@@ -132,11 +132,11 @@ bool ElementAttributes::IsEquivalent(const ElementAttributes& other) const {
   return true;
 }
 
-std::unordered_map<AtomicString, AtomicString>::iterator ElementAttributes::begin() {
+std::unordered_map<AtomicString, AtomicString, AtomicString::KeyHasher>::iterator ElementAttributes::begin() {
   return attributes_.begin();
 }
 
-std::unordered_map<AtomicString, AtomicString>::iterator ElementAttributes::end() {
+std::unordered_map<AtomicString, AtomicString, AtomicString::KeyHasher>::iterator ElementAttributes::end() {
   return attributes_.end();
 }
 

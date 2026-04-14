@@ -39,8 +39,8 @@ class ElementAttributes : public ScriptWrappable {
   std::string ToString();
 
   bool IsEquivalent(const ElementAttributes& other) const;
-  std::unordered_map<AtomicString, AtomicString>::iterator begin();
-  std::unordered_map<AtomicString, AtomicString>::iterator end();
+  std::unordered_map<AtomicString, AtomicString, AtomicString::KeyHasher>::iterator begin();
+  std::unordered_map<AtomicString, AtomicString, AtomicString::KeyHasher>::iterator end();
 
   void Trace(GCVisitor* visitor) const override;
   const ElementAttributesPublicMethods* elementAttributesPublicMethods();
