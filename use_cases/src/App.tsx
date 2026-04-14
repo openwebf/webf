@@ -2,6 +2,7 @@ import React from 'react';
 import './App.css';
 import './main.css';
 import { Routes, Route } from './router';
+import { GlobalModal } from './components/GlobalModal';
 import {HomePage} from './pages/HomePage';
 import { CookiesPage } from './pages/CookiesPage';
 import { UrlEncodingPage } from './pages/UrlEncodingPage';
@@ -31,6 +32,10 @@ import { RoutingNotFoundPage } from './pages/RoutingNotFoundPage';
 import { WebFRouterAPIDemoPage } from './pages/WebFRouterAPIDemoPage';
 import {ContextMenuPage} from './pages/ContextMenuPage';
 import {ModalPopupPage} from './pages/ModalPopupPage';
+import {GlobalModalDemoPage} from './pages/GlobalModalDemoPage';
+import {SettingsSubPage} from './pages/globalModal/SettingsSubPage';
+import {ProfileSubPage} from './pages/globalModal/ProfileSubPage';
+import {HelpSubPage} from './pages/globalModal/HelpSubPage';
 import {LoadingPage} from './pages/LoadingPage';
 import {AlertPage} from './pages/AlertPage';
 import {ImagePreloadPage} from './pages/ImagePreloadPage';
@@ -149,6 +154,8 @@ function App() {
 
   return (
     <div className="App">
+      {/* Global root for overlays visible across all routes */}
+      {React.createElement('webf-global-root', null, React.createElement(GlobalModal))}
       <Routes>
         <Route path="/" title="Home" element={<HomePage/>}/>
 
@@ -292,6 +299,10 @@ function App() {
         <Route path="/alert" title="Alert" element={<AlertPage />} />
         <Route path="/theme-toggle" title="Theme Toggle" element={<ThemeTogglePage />} />
         <Route path="/gesture" title="Gesture Detection" element={<GesturePage />} />
+        <Route path="/global-modal" title="Global Modal Demo" element={<GlobalModalDemoPage />} />
+        <Route path="/global-modal/settings" title="Global Modal: Settings" element={<SettingsSubPage />} />
+        <Route path="/global-modal/profile" title="Global Modal: Profile" element={<ProfileSubPage />} />
+        <Route path="/global-modal/help" title="Global Modal: Help" element={<HelpSubPage />} />
         <Route path="/dragable-list" title="Dragable List" element={<DragableListPage />} />
 
         {/*<Route path="/show_case" title="Show Case" element={<ShowCasePage />} />*/}
@@ -307,6 +318,7 @@ function App() {
         {/*<Route path="/contextmenu" title="Context Menu" element={<ContextMenuPage />} />*/}
         {/*<Route path="/modalpopup" title="Modal Popup" element={<ModalPopupPage />} />*/}
         {/*<Route path="/loading" title="Loading" element={<LoadingPage />} />*/}
+        
       </Routes>
     </div>
   );
