@@ -182,7 +182,7 @@ function getParameterBaseType(type: ts.TypeNode, mode?: ParameterMode): Paramete
     } else if (identifier === 'ImplementedAs') {
       let secondNameNode: ts.LiteralTypeNode = typeReference.typeArguments![1] as unknown as ts.LiteralTypeNode;
       if (mode) {
-        mode.secondaryName = secondNameNode.literal['text'] as string;
+        mode.secondaryName = (secondNameNode.literal as any).text as string;
       }
       return getParameterBaseType(typeReference.typeArguments![0] as unknown as ts.TypeNode);
     } else if (identifier.indexOf('SupportAsync') >= 0) {
