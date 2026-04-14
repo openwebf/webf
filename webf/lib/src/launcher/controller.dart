@@ -39,6 +39,7 @@ import 'package:webf/src/launcher/dio_logger_options.dart';
 import 'package:webf/src/launcher/network_options.dart';
 
 import 'loading_state.dart';
+import 'package:webf/src/devtools/panel/performance_tracker.dart';
 
 // Error handler when load bundle failed.
 typedef LoadErrorHandler = void Function(FlutterError error, StackTrace stack);
@@ -814,6 +815,9 @@ class WebFController with Diagnosticable {
         initialCookies: initialCookies);
 
     _view!.initialize().then((_) async {
+      if (!PerformanceTracker.instance.enabled) {
+        PerformanceTracker.instance.startSession();
+      }
       _loadingState.recordPhase(LoadingState.phaseInit, parameters: {
         'contextId': view.contextId,
       });

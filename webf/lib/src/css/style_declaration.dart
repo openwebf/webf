@@ -9,6 +9,7 @@ import 'package:webf/dom.dart';
 import 'package:webf/bridge.dart';
 import 'package:webf/html.dart';
 import 'package:quiver/collection.dart';
+import 'package:webf/src/devtools/panel/performance_tracker.dart';
 
 typedef StyleChangeListener = void Function(String property, String? original, String present, {String? baseHref});
 typedef StyleFlushedListener = void Function(List<String> properties);
@@ -480,9 +481,13 @@ class CSSStyleDeclaration extends DynamicBindingObject with StaticDefinedBinding
   }
 
   void flushPendingProperties() {
+    final handle = PerformanceTracker.instance.beginSpan('styleApply', 'flushPendingProperties', metadata: {'propertyCount': _pendingProperties.length});
     Element? _target = target;
     // If style target element not exists, no need to do flush operation.
-    if (_target == null) return;
+    if (_target == null) {
+      handle?.end();
+      return;
+    }
 
     // Display change from none to other value that the renderBoxModel is null.
     if (_pendingProperties.containsKey(DISPLAY) &&
@@ -495,6 +500,7 @@ class CSSStyleDeclaration extends DynamicBindingObject with StaticDefinedBinding
     }
 
     if (_pendingProperties.isEmpty) {
+      handle?.end();
       return;
     }
 
@@ -534,6 +540,7 @@ class CSSStyleDeclaration extends DynamicBindingObject with StaticDefinedBinding
     }
 
     onStyleFlushed?.call(propertyNames);
+    handle?.end();
   }
 
   // Inserts the style of the given Declaration into the current Declaration.

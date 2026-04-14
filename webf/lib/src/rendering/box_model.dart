@@ -13,6 +13,7 @@ import 'package:path/path.dart';
 import 'package:vector_math/vector_math_64.dart' show Matrix4;
 import 'package:webf/css.dart';
 import 'package:webf/webf.dart';
+import 'package:webf/src/devtools/panel/performance_tracker.dart';
 import 'package:webf/gesture.dart';
 import 'package:webf/rendering.dart';
 
@@ -1351,17 +1352,21 @@ class RenderBoxModel extends RenderBox
 
   @override
   void paint(PaintingContext context, Offset offset) {
+    final handle = PerformanceTracker.instance.beginSpan('paint', 'paint');
     if (!shouldPaint) {
+      handle?.end();
       return;
     }
 
     // Paint layout error message if there was an exception during layout
     if (layoutExceptions != null) {
       _paintLayoutError(context, offset);
+      handle?.end();
       return;
     }
 
     paintBoxModel(context, offset);
+    handle?.end();
   }
 
   String? layoutExceptions;

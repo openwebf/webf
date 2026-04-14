@@ -8,6 +8,7 @@ import 'package:flutter/scheduler.dart';
 import 'package:webf/css.dart';
 import 'package:webf/dom.dart';
 import 'package:webf/webf.dart';
+import 'package:webf/src/devtools/panel/performance_tracker.dart';
 
 // Children of the <head> element all have display:none
 const Map<String, dynamic> _defaultStyle = {
@@ -276,9 +277,11 @@ class LinkElement extends Element {
 
         final String cssString = _cachedStyleSheetText = await resolveStringFromData(bundle.data!);
 
+        final parseHandle = PerformanceTracker.instance.beginSpan('cssParse', 'parseStylesheet', metadata: {'url': href});
         _styleSheet = CSSParser(cssString, href: href).parse(
             windowWidth: windowWidth, windowHeight: windowHeight, isDarkMode: ownerView.rootController.isDarkMode);
         _styleSheet?.href = href;
+        parseHandle?.end(metadata: {'ruleCount': _styleSheet?.cssRules.length ?? 0});
 
         ownerDocument.markElementStyleDirty(ownerDocument.documentElement!);
         ownerDocument.styleNodeManager.appendPendingStyleSheet(_styleSheet!);
@@ -470,8 +473,10 @@ mixin StyleElementMixin on Element {
         _styleSheet!.replaceSync(text,
             windowWidth: windowWidth, windowHeight: windowHeight, isDarkMode: ownerView.rootController.isDarkMode);
       } else {
+        final handle = PerformanceTracker.instance.beginSpan('cssParse', 'parseInlineStyle');
         _styleSheet = CSSParser(text).parse(
             windowWidth: windowWidth, windowHeight: windowHeight, isDarkMode: ownerView.rootController.isDarkMode);
+        handle?.end();
       }
       if (_styleSheet != null) {
         ownerDocument.markElementStyleDirty(ownerDocument.documentElement!);

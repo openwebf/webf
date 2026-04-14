@@ -1517,6 +1517,7 @@ class LoadingState {
   final List<LoadingScriptElement> _scriptElements = [];
   final Map<String, LoadingScriptElement> _pendingScripts = {};
   DateTime? _startTime;
+  DateTime? get startTime => _startTime;
   DateTime? _lastPhaseTime;
 
   // Track LCP candidates
@@ -2476,6 +2477,9 @@ class LoadingState {
     return totalDuration;
   }
 
+  /// Public wrapper for _getPauseDuration
+  Duration getPauseDuration() => _getPauseDuration();
+
   /// Calculates the pause duration between preloadEnd and attachToFlutter
   /// This is used to adjust elapsed times for phases after the pause
   Duration _getPauseDuration() {
@@ -2498,6 +2502,9 @@ class LoadingState {
 
     return Duration.zero;
   }
+
+  /// Public wrapper for _getAdjustedElapsedTime
+  Duration getAdjustedElapsedTime(LoadingPhase phase) => _getAdjustedElapsedTime(phase);
 
   /// Calculates the adjusted elapsed time for a phase, accounting for the pause
   /// and reset between preloadEnd and attachToFlutter in preload mode

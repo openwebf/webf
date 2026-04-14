@@ -22,6 +22,7 @@ import 'package:webf/rendering.dart';
 import 'package:webf/src/css/query_selector.dart' as QuerySelector;
 import 'package:webf/src/dom/element_registry.dart' as element_registry;
 import 'package:webf/src/foundation/cookie_jar.dart';
+import 'package:webf/src/devtools/panel/performance_tracker.dart';
 
 /// In the document tree, there may contains WidgetElement which connected to a Flutter Elements.
 /// And these flutter element will be unmounted in the end of this frame and their renderObject will call dispose() too.
@@ -560,13 +561,16 @@ class Document extends ContainerNode {
   }
 
   void flushStyle({bool rebuild = false}) {
+    final handle = PerformanceTracker.instance.beginSpan('styleFlush', 'flushStyle');
     if (_styleDirtyElements.isEmpty) {
       _recalculating = false;
+      handle?.end();
       return;
     }
     if (!styleNodeManager.updateActiveStyleSheets(rebuild: rebuild)) {
       _recalculating = false;
       _styleDirtyElements.clear();
+      handle?.end();
       return;
     }
     if (_styleDirtyElements.any((address) {
@@ -583,6 +587,7 @@ class Document extends ContainerNode {
     }
     _styleDirtyElements.clear();
     _recalculating = false;
+    handle?.end();
   }
 
   void recalculateStyleImmediately() {

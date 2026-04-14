@@ -19,6 +19,8 @@ import 'package:webf/src/foundation/http_cache.dart';
 import 'package:webf/dom.dart' as dom;
 import 'package:webf/src/launcher/controller.dart' show RoutePerformanceMetrics;
 import 'package:webf/src/launcher/loading_state.dart';
+import 'package:webf/src/devtools/panel/performance_tracker.dart';
+import 'package:webf/src/devtools/panel/waterfall_chart.dart';
 
 /// A floating inspector panel for WebF that provides debugging tools and insights.
 ///
@@ -2083,6 +2085,9 @@ class _WebFInspectorBottomSheetState extends State<_WebFInspectorBottomSheet> wi
   // Track whether cache is disabled
   bool _isCacheDisabled = HttpCacheController.mode == HttpCacheMode.NO_CACHE;
 
+  // Waterfall chart toggle
+  bool _showWaterfall = false;
+
   // Track which response bodies are expanded
   final Set<String> _expandedResponseBodies = {};
   final Set<String> _expandedRequestBodies = {};
@@ -2739,7 +2744,7 @@ class _WebFInspectorBottomSheetState extends State<_WebFInspectorBottomSheet> wi
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // Controller info header
+        // Controller info header + Metrics/Waterfall toggle
         Container(
           padding: EdgeInsets.all(12),
           decoration: BoxDecoration(
@@ -2784,30 +2789,67 @@ class _WebFInspectorBottomSheetState extends State<_WebFInspectorBottomSheet> wi
                   ],
                 ),
               ),
-              Container(
-                padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                decoration: BoxDecoration(
-                  color: Colors.green.withOpacity(0.2),
-                  borderRadius: BorderRadius.circular(4),
-                ),
-                child: Text(
-                  'ATTACHED',
-                  style: TextStyle(
-                    color: Colors.green,
-                    fontSize: 11,
-                    fontWeight: FontWeight.w500,
+              // Metrics / Waterfall toggle
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  GestureDetector(
+                    onTap: () => setState(() => _showWaterfall = false),
+                    child: Container(
+                      padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: !_showWaterfall ? const Color(0xFF1A2A40) : Colors.white10,
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(
+                          color: !_showWaterfall ? Colors.blue : Colors.white24,
+                        ),
+                      ),
+                      child: Text(
+                        'Metrics',
+                        style: TextStyle(
+                          fontSize: 11,
+                          color: !_showWaterfall ? Colors.blue : Colors.white54,
+                        ),
+                      ),
+                    ),
                   ),
-                ),
+                  SizedBox(width: 4),
+                  GestureDetector(
+                    onTap: () => setState(() => _showWaterfall = true),
+                    child: Container(
+                      padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: _showWaterfall ? const Color(0xFF1A2A40) : Colors.white10,
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(
+                          color: _showWaterfall ? Colors.blue : Colors.white24,
+                        ),
+                      ),
+                      child: Text(
+                        'Waterfall',
+                        style: TextStyle(
+                          fontSize: 11,
+                          color: _showWaterfall ? Colors.blue : Colors.white54,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ],
           ),
         ),
         SizedBox(height: 16),
-        // Performance metrics
+        // Performance metrics or waterfall chart
         Expanded(
-          child: SingleChildScrollView(
-            child: _buildPerformanceMetrics(controller),
-          ),
+          child: _showWaterfall
+              ? WaterfallChart(
+                  loadingState: controller.loadingState,
+                  tracker: PerformanceTracker.instance,
+                )
+              : SingleChildScrollView(
+                  child: _buildPerformanceMetrics(controller),
+                ),
         ),
       ],
     );
