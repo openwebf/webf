@@ -154,7 +154,6 @@ jobs:
           if-no-files-found: warn
 
   build-linux:
-    if: false  # TEMPORARILY DISABLED - focusing on Windows
     name: Build Linux Bridge
     runs-on: ubuntu-latest
 
@@ -251,7 +250,6 @@ jobs:
           if-no-files-found: warn
 
   build-macos:
-    if: false  # TEMPORARILY DISABLED - focusing on Windows
     name: Build macOS Bridge
     runs-on: macos-latest
 
@@ -335,7 +333,6 @@ jobs:
           if-no-files-found: warn
 
   build-ios:
-    if: false  # TEMPORARILY DISABLED - focusing on Windows
     name: Build iOS Bridge
     runs-on: macos-latest
 
@@ -407,7 +404,6 @@ jobs:
           if-no-files-found: warn
 
   build-android:
-    if: false  # TEMPORARILY DISABLED - focusing on Windows
     name: Build Android Bridge
     runs-on: macos-latest
 
@@ -502,7 +498,7 @@ jobs:
     name: Collect and Upload Debug Symbols to LFS
     runs-on: ubuntu-latest
     # Wait for all bridge builds to complete
-    needs: [build-windows]  # TEMPORARILY: other platforms disabled
+    needs: [build-windows, build-linux, build-macos, build-ios, build-android]
 
     permissions:
       contents: write
@@ -649,7 +645,7 @@ jobs:
     name: Prepare and Publish WebF Package
     runs-on: ubuntu-latest
     # Wait for all bridge builds and debug symbol collection
-    needs: [build-windows, collect-debug-symbols]  # TEMPORARILY: other platforms disabled
+    needs: [build-windows, build-linux, build-macos, build-ios, build-android, collect-debug-symbols]
 
     permissions:
       contents: write

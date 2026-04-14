@@ -25,8 +25,20 @@ function copyLibraries() {
     process.exit(1);
   }
   
-  // Get all architecture directories (arm64-v8a, armeabi-v7a, x86)
-  const architectures = fs.readdirSync(SOURCE_DIR);
+  // Get all architecture directories (arm64-v8a, armeabi-v7a, x86, x86_64)
+  const architectures = fs.readdirSync(SOURCE_DIR).filter(entry => {
+    const entryPath = path.join(SOURCE_DIR, entry);
+    // Only include directories, skip files like .DS_Store
+    return fs.statSync(entryPath).isDirectory();
+  });
+  
+  if (architectures.length === 0) {
+    console.error('No architecture directories found in', SOURCE_DIR);
+    console.log('Please run "npm run build:bridge:android" first.');
+    process.exit(1);
+  }
+  
+  console.log(`Found architectures: ${architectures.join(', ')}`);
   
   // Copy each architecture directory
   architectures.forEach(arch => {
@@ -40,15 +52,21 @@ function copyLibraries() {
     
     // Copy all .so files
     const files = fs.readdirSync(sourceArchDir);
+    let copiedCount = 0;
     files.forEach(file => {
       if (file.endsWith('.so')) {
         const sourceFile = path.join(sourceArchDir, file);
         const targetFile = path.join(targetArchDir, file);
         
         fs.copyFileSync(sourceFile, targetFile);
-        console.log(`Copied ${arch}/${file}`);
+        console.log(`  Copied ${arch}/${file}`);
+        copiedCount++;
       }
     });
+    
+    if (copiedCount === 0) {
+      console.warn(`  Warning: No .so files found in ${arch}`);
+    }
   });
   
   console.log('Library copying completed.');
