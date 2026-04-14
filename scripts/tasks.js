@@ -652,12 +652,10 @@ task('generate-polyfill-bytecode', (done) => {
 });
 
 task('generate-bindings-code', (done) => {
-  if (!fs.existsSync(path.join(paths.codeGen, 'node_modules'))) {
-    spawnSync(NPM, ['install'], {
-      cwd: paths.codeGen,
-      stdio: 'inherit'
-    });
-  }
+  spawnSync(NPM, ['install'], {
+    cwd: paths.codeGen,
+    stdio: 'inherit'
+  });
 
   let buildResult = spawnSync(NPM, ['run', 'build'], {
     cwd: paths.codeGen,
