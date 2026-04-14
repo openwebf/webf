@@ -838,6 +838,9 @@ jobs:
           force: true
           skipTests: true
           relativePath: webf
+          # Pin to Flutter 3.27.x: newer stable (3.41+) pins intl to 0.20.2,
+          # which is incompatible with webf/example's flutter_form_builder ^9.7.0.
+          flutterBranch: 3.27.4
 
       - name: Summary
         run: |
