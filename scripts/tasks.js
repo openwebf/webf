@@ -719,7 +719,7 @@ task('build-window-webf-lib', (done) => {
         ...process.env,
         WEBF_JS_ENGINE: targetJSEngine,
         LIBRARY_OUTPUT_DIR: soBinaryDirectory,
-        MSYSTEM_PREFIX: 'C:/msys64/mingw64'
+        MSYSTEM_PREFIX: process.env.MSYSTEM_PREFIX || 'C:/msys64/mingw64'
       }
     });
 

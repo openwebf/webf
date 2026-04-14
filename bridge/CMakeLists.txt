@@ -22,9 +22,11 @@ if(CMAKE_SYSTEM_NAME MATCHES "MSYS" OR MINGW)
 
   # Install the DLL to the runtime binary directory
   # 'bin' is the standard destination for runtime executables and required DLLs
-  install(FILES "${LIBPTHREAD_DLL_PATH}" DESTINATION bin)
-  install(FILES "${LIBGCC_DLL_PATH}" DESTINATION bin)
-  install(FILES "${LIBSTDCXX_DLL_PATH}" DESTINATION bin)
+  # Use OPTIONAL since not all DLLs exist in every MSYS2 environment
+  # (e.g., UCRT64 with clang/libc++ doesn't have libgcc or libstdc++)
+  install(FILES "${LIBPTHREAD_DLL_PATH}" DESTINATION bin OPTIONAL)
+  install(FILES "${LIBGCC_DLL_PATH}" DESTINATION bin OPTIONAL)
+  install(FILES "${LIBSTDCXX_DLL_PATH}" DESTINATION bin OPTIONAL)
 endif()
 
 
