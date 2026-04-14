@@ -750,6 +750,9 @@ task('build-window-webf-lib', (done) => {
   copyIfExists(path.join(bridgeCmakeDir, 'libquickjs.dll.a'), path.join(outputLibDir, 'libquickjs.dll.a'));
   // Copy unit test executable to output directory (test runner expects it at bridge/build/windows/lib/)
   copyIfExists(path.join(bridgeCmakeDir, 'webf_unit_test.exe'), path.join(soBinaryDirectory, 'webf_unit_test.exe'));
+  // Copy DLLs next to unit test executable so it can find them at runtime
+  copyIfExists(path.join(bridgeCmakeDir, 'libwebf.dll'), path.join(soBinaryDirectory, 'libwebf.dll'));
+  copyIfExists(path.join(bridgeCmakeDir, 'libquickjs.dll'), path.join(soBinaryDirectory, 'libquickjs.dll'));
 
   done();
 });
