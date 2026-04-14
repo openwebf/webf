@@ -711,7 +711,7 @@ task('build-window-webf-lib', (done) => {
   const soBinaryDirectory = path.join(paths.bridge, `build/windows/lib/`).replaceAll(path.sep, path.posix.sep);
   const bridgeCmakeDir = path.join(paths.bridge, 'cmake-build-windows');
   // generate project
-  execSync(`cmake -DCMAKE_BUILD_TYPE=${buildType} ${externCmakeArgs.join(' ')} -B ${bridgeCmakeDir} -S ${paths.bridge}`,
+  execSync(`cmake -DCMAKE_BUILD_TYPE=${buildType} -DENABLE_TEST=true ${externCmakeArgs.join(' ')} -B ${bridgeCmakeDir} -S ${paths.bridge}`,
     {
       cwd: paths.bridge,
       stdio: 'inherit',
