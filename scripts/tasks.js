@@ -724,6 +724,9 @@ task('build-window-webf-lib', (done) => {
     });
 
   const webfTargets = ['webf'];
+  if (targetJSEngine === 'quickjs') {
+    webfTargets.push('webf_unit_test');
+  }
 
   // build
   execSync(`cmake --build ${bridgeCmakeDir} --target ${webfTargets.join(' ')} --verbose --config ${buildType}`, {
