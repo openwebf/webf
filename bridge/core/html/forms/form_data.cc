@@ -5,6 +5,7 @@
 
 #include "form_data.h"
 
+#include <algorithm>
 #include <utility>
 #include "binding_call_methods.h"
 #include "core/executing_context.h"
