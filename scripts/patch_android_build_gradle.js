@@ -9,6 +9,8 @@ const BUILD_GRADLE = path.resolve(__dirname, '../webf/android/build.gradle');
 // Patch the build.gradle file
 function patchBuildGradle() {
   console.log('Patching webf/android/build.gradle...');
+  console.log('  - Commenting out NDK abiFilters configuration');
+  console.log('  - Configuring to use prebuilt JNI libraries');
   
   // Target content - this is what we want the file to look like
   const targetContent = `group 'com.openwebf.webf'
@@ -55,9 +57,9 @@ android {
         //         arguments "-DANDROID_STL=c++_shared", "-DIS_ANDROID=TRUE"
         //     }
         // }
-        ndk {
-            abiFilters 'armeabi-v7a', 'arm64-v8a'
-        }
+        // ndk {
+        //     abiFilters 'armeabi-v7a', 'arm64-v8a'
+        // }
 
         // externalNativeBuild {
         //     cmake {

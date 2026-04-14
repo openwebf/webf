@@ -96,7 +96,7 @@ function updatePodspec() {
   const platformLineMatch = podspecContent.match(/s\.platform = :ios, '[\d.]+'\n/);
   if (platformLineMatch) {
     const insertPosition = platformLineMatch.index + platformLineMatch[0].length;
-    const frameworksConfig = `  s.vendored_frameworks = ['Frameworks/*.xcframework']\n  s.resource = 'Frameworks/*.xcframework'\n`;
+    const frameworksConfig = `  s.vendored_frameworks = ['Frameworks/*.xcframework']\n`;
     podspecContent = podspecContent.slice(0, insertPosition) + frameworksConfig + podspecContent.slice(insertPosition);
   }
   
