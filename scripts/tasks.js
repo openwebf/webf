@@ -48,7 +48,7 @@ const paths = {
   performanceTests: resolveWebF('performance_tests')
 };
 
-const NPM = platform == 'win32' ? 'npm.cmd' : 'npm';
+const NPM = (platform == 'win32' && !process.env.MSYSTEM) ? 'npm.cmd' : 'npm';
 const pkgVersion = readFileSync(path.join(paths.webf, 'pubspec.yaml'), 'utf-8').match(/version: (.*)/)[1].trim();
 const isProfile = process.env.ENABLE_PROFILE === 'true';
 
