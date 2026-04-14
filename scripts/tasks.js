@@ -654,6 +654,7 @@ task('generate-polyfill-bytecode', (done) => {
 task('generate-bindings-code', (done) => {
   spawnSync(NPM, ['install'], {
     cwd: paths.codeGen,
+    shell: true,
     stdio: 'inherit'
   });
 
