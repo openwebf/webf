@@ -13,6 +13,9 @@
 #include <chrono>
 #include <atomic>
 #include <vector>
+#if defined(_WIN32)
+#include <combaseapi.h>
+#endif
 
 using namespace webf;
 

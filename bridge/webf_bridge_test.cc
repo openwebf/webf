@@ -4,9 +4,11 @@
  */
 
 #include "webf_bridge_test.h"
+#ifndef _WIN32
 #include <execinfo.h>
-#include <signal.h>
 #include <unistd.h>
+#endif
+#include <signal.h>
 #include <atomic>
 #include "bindings/qjs/native_string_utils.h"
 #include "logging.h"
@@ -15,6 +17,7 @@
 std::unordered_map<int, webf::WebFTestContext*> testContextPool = std::unordered_map<int, webf::WebFTestContext*>();
 
 void handler(int sig) {
+#ifndef _WIN32
   void* array[10];
   size_t size;
 
@@ -24,6 +27,9 @@ void handler(int sig) {
   // print out all the frames to stderr
   fprintf(stderr, "Error: signal %d:\n", sig);
   backtrace_symbols_fd(array, size, STDERR_FILENO);
+#else
+  fprintf(stderr, "Error: signal %d\n", sig);
+#endif
   exit(1);
 }
 
