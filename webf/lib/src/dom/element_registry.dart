@@ -241,6 +241,9 @@ void defineBuiltInElements() {
   // Hybrid Routers
   defineElement(ROUTER_LINK, (context) => RouterLinkElement(context));
 
+  // Global Root
+  defineElement(GLOBAL_ROOT, (context) => GlobalRootElement(context));
+
   // SVG Elements
   defineElement(SVG, (context) => FlutterSvgElement(context));
 }
