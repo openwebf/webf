@@ -127,11 +127,18 @@ jobs:
           WEBF_BUILD: Release
           WEBF_JS_ENGINE: quickjs
 
+      - name: Run Bridge Unit Tests
+        shell: powershell
+        run: |
+          node scripts/run_bridge_unit_test.js
+
       - name: Strip debug symbols from Windows DLLs
         shell: msys2 {0}
         run: |
           # pub.dev has a 100 MiB uncompressed archive limit.
           # Unstripped libwebf.dll is ~57 MB; stripped it's ~8 MB.
+          # Run AFTER tests so tests use the same binary as dev, but
+          # BEFORE artifact upload so the published package fits.
           cd bridge/build/windows/lib
           ls -lh *.dll
           for dll in *.dll; do
@@ -140,11 +147,6 @@ jobs:
           done
           echo "After stripping:"
           ls -lh *.dll
-
-      - name: Run Bridge Unit Tests
-        shell: powershell
-        run: |
-          node scripts/run_bridge_unit_test.js
 
       - name: Upload Windows debug symbols artifact
         if: success()
