@@ -785,8 +785,9 @@ class _WaterfallChartState extends State<WaterfallChart> {
   final ScrollController _labelsVScrollController = ScrollController();
   final ScrollController _barsVScrollController = ScrollController();
   // Saved scroll positions for restoring after drill-down
-  double _savedHScrollOffset = 0.0;
-  double _savedVScrollOffset = 0.0;
+  double _savedOverviewHScrollOffset = 0.0;
+  double _savedOverviewVScrollOffset = 0.0;
+  double _savedFlameHScrollOffset = 0.0;
 
   // Flame chart mode controllers
   final ScrollController _flameRulerHScrollController = ScrollController();
@@ -932,10 +933,10 @@ class _WaterfallChartState extends State<WaterfallChart> {
   }
 
   void _drillDownEntry(WaterfallEntry entry) {
-    // Save current scroll positions before switching to flame chart
-    _savedHScrollOffset = _chartHScrollController.hasClients
+    // Save current overview scroll positions before switching to flame chart
+    _savedOverviewHScrollOffset = _chartHScrollController.hasClients
         ? _chartHScrollController.offset : 0.0;
-    _savedVScrollOffset = _barsVScrollController.hasClients
+    _savedOverviewVScrollOffset = _barsVScrollController.hasClients
         ? _barsVScrollController.offset : 0.0;
 
     setState(() {
@@ -1087,6 +1088,16 @@ class _WaterfallChartState extends State<WaterfallChart> {
     final selected = _mode == mode;
     return GestureDetector(
       onTap: () {
+        // Save scroll position of the current mode before switching
+        if (_mode == _ChartMode.overview) {
+          _savedOverviewHScrollOffset = _chartHScrollController.hasClients
+              ? _chartHScrollController.offset : 0.0;
+          _savedOverviewVScrollOffset = _barsVScrollController.hasClients
+              ? _barsVScrollController.offset : 0.0;
+        } else if (_mode == _ChartMode.flame) {
+          _savedFlameHScrollOffset = _flameBodyHScrollController.hasClients
+              ? _flameBodyHScrollController.offset : 0.0;
+        }
         setState(() {
           _mode = mode;
           _detailSpan = null;
@@ -1094,6 +1105,21 @@ class _WaterfallChartState extends State<WaterfallChart> {
           if (mode == _ChartMode.overview) {
             _selectedSpan = null;
             _selectedJsSpans = const [];
+          }
+        });
+        // Restore scroll position of the target mode after frame renders
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mode == _ChartMode.overview) {
+            if (_chartHScrollController.hasClients) {
+              _chartHScrollController.jumpTo(_savedOverviewHScrollOffset);
+            }
+            if (_barsVScrollController.hasClients) {
+              _barsVScrollController.jumpTo(_savedOverviewVScrollOffset);
+            }
+          } else if (mode == _ChartMode.flame) {
+            if (_flameBodyHScrollController.hasClients) {
+              _flameBodyHScrollController.jumpTo(_savedFlameHScrollOffset);
+            }
           }
         });
       },
@@ -1726,6 +1752,8 @@ class _WaterfallChartState extends State<WaterfallChart> {
             children: [
               InkWell(
                 onTap: () {
+                  _savedFlameHScrollOffset = _flameBodyHScrollController.hasClients
+                      ? _flameBodyHScrollController.offset : 0.0;
                   setState(() {
                     _mode = _ChartMode.overview;
                     _selectedSpan = null;
@@ -1737,10 +1765,10 @@ class _WaterfallChartState extends State<WaterfallChart> {
                   // Restore scroll positions after frame renders
                   WidgetsBinding.instance.addPostFrameCallback((_) {
                     if (_chartHScrollController.hasClients) {
-                      _chartHScrollController.jumpTo(_savedHScrollOffset);
+                      _chartHScrollController.jumpTo(_savedOverviewHScrollOffset);
                     }
                     if (_barsVScrollController.hasClients) {
-                      _barsVScrollController.jumpTo(_savedVScrollOffset);
+                      _barsVScrollController.jumpTo(_savedOverviewVScrollOffset);
                     }
                   });
                 },
@@ -2045,6 +2073,8 @@ class _WaterfallChartState extends State<WaterfallChart> {
               children: [
                 InkWell(
                   onTap: () {
+                    _savedFlameHScrollOffset = _flameBodyHScrollController.hasClients
+                        ? _flameBodyHScrollController.offset : 0.0;
                     setState(() {
                       _mode = _ChartMode.overview;
                       _selectedSpan = null;
@@ -2055,10 +2085,10 @@ class _WaterfallChartState extends State<WaterfallChart> {
                     });
                     WidgetsBinding.instance.addPostFrameCallback((_) {
                       if (_chartHScrollController.hasClients) {
-                        _chartHScrollController.jumpTo(_savedHScrollOffset);
+                        _chartHScrollController.jumpTo(_savedOverviewHScrollOffset);
                       }
                       if (_barsVScrollController.hasClients) {
-                        _barsVScrollController.jumpTo(_savedVScrollOffset);
+                        _barsVScrollController.jumpTo(_savedOverviewVScrollOffset);
                       }
                     });
                   },
