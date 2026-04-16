@@ -1,3 +1,20 @@
+## 0.22.22
+
+### Features
+
+- Add multi-threaded JS function profiling via QuickJS instrumentation with per-function name resolution.
+- Add JS thread swim lane to waterfall chart showing script eval, timer, event, rAF, microtask, and DOM mutation spans.
+- Add JS flame chart drill-down displaying individual JS/C function calls with call depth and duration.
+- Instrument text layout (paragraphLayout, textLayout) and inline formatting context layout for better coverage of rendering gaps.
+- Add frame boundary indicators to the waterfall chart with dropped frame highlighting (>16.67ms).
+- Use Flutter's persistent frame callback for accurate frame boundary detection instead of paint-end heuristics.
+- Support independent zoom and scroll state between overview and flame chart modes.
+
+### Fixes
+
+- Fix JS function name resolution for C functions and anonymous JS functions via property lookup fallback.
+- Fix per-frame clustering of paint/build/layout spans to avoid merging all spans into one giant bar across frames.
+
 ## 0.22.21
 
 ### Features
