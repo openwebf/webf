@@ -36,6 +36,12 @@ enum WaterfallCategory {
   build,
 }
 
+class _SpanSegment {
+  final double startMs;
+  final double endMs;
+  _SpanSegment({required this.startMs, required this.endMs});
+}
+
 class WaterfallEntry {
   final WaterfallCategory category;
   final String label;
@@ -44,6 +50,7 @@ class WaterfallEntry {
   final List<WaterfallSubEntry> subEntries;
   final PerformanceSpan? span; // For drill-down into flame chart (single span)
   final List<PerformanceSpan> spans; // For aggregated entries (multiple spans)
+  final List<_SpanSegment> spanSegments; // Individual span time segments for painting
 
   WaterfallEntry({
     required this.category,
@@ -53,6 +60,7 @@ class WaterfallEntry {
     this.subEntries = const [],
     this.span,
     this.spans = const [],
+    this.spanSegments = const [],
   });
 
   Duration get duration => end - start;
@@ -304,6 +312,13 @@ WaterfallData _buildWaterfallDataImpl(
       final label = count == 1
           ? _spanLabel(clusterSpans.first)
           : '$catName ($count ops, ${_formatDuration(totalDuration)})';
+      // Build span segments so the painter draws each span individually
+      final segments = count > 1
+          ? clusterSpans.map((s) => _SpanSegment(
+              startMs: offset(s.startTime).inMicroseconds / 1000.0,
+              endMs: offset(s.endTime!).inMicroseconds / 1000.0,
+            )).toList()
+          : const <_SpanSegment>[];
       entries.add(WaterfallEntry(
         category: cat,
         label: label,
@@ -311,6 +326,7 @@ WaterfallData _buildWaterfallDataImpl(
         end: clusterEnd,
         span: count == 1 ? clusterSpans.first : null,
         spans: count > 1 ? List.of(clusterSpans) : const [],
+        spanSegments: segments,
       ));
     }
 
@@ -1416,6 +1432,7 @@ class _WaterfallChartState extends State<WaterfallChart> {
           pixelsPerMs: pixelsPerMs,
           hasDrillDown: entry.hasDrillDown,
           attachX: attachX,
+          spanSegments: entry.spanSegments.isNotEmpty ? entry.spanSegments : null,
         ),
       ),
     );
@@ -1873,6 +1890,7 @@ class _OverviewRowPainter extends CustomPainter {
   final double pixelsPerMs;
   final bool hasDrillDown;
   final double? attachX;
+  final List<_SpanSegment>? spanSegments;
 
   _OverviewRowPainter({
     required this.barLeft,
@@ -1882,6 +1900,7 @@ class _OverviewRowPainter extends CustomPainter {
     required this.pixelsPerMs,
     required this.hasDrillDown,
     this.attachX,
+    this.spanSegments,
   });
 
   @override
@@ -1909,8 +1928,27 @@ class _OverviewRowPainter extends CustomPainter {
     final barTop = 3.0;
     final barHeight = size.height - 6.0;
 
-    if (subEntries.isEmpty) {
-      // Simple solid bar
+    if (spanSegments != null && spanSegments!.isNotEmpty) {
+      // Aggregated spans — draw translucent background range, then solid segments
+      final bgPaint = Paint()..color = color.withValues(alpha: 0.15);
+      canvas.drawRRect(
+        RRect.fromRectAndRadius(
+          Rect.fromLTWH(barLeft, barTop, barWidth, barHeight),
+          const Radius.circular(2),
+        ),
+        bgPaint,
+      );
+      final segPaint = Paint()..color = color;
+      for (final seg in spanSegments!) {
+        final segLeft = seg.startMs * pixelsPerMs;
+        final segWidth = math.max((seg.endMs - seg.startMs) * pixelsPerMs, 1.5);
+        canvas.drawRect(
+          Rect.fromLTWH(segLeft, barTop, segWidth, barHeight),
+          segPaint,
+        );
+      }
+    } else if (subEntries.isEmpty) {
+      // Simple solid bar (single span or lifecycle)
       final paint = Paint()..color = color;
       canvas.drawRRect(
         RRect.fromRectAndRadius(
