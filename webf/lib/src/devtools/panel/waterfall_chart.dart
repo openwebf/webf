@@ -514,15 +514,31 @@ WaterfallData _buildWaterfallDataImpl(
   }
 
   // Detect frame boundaries from paint span end times.
-  // Each frame in the rendering pipeline ends with a paint span.
-  final frameBoundaries = <Duration>[];
+  // Multiple paint spans can fire within a single frame (one per render object),
+  // so we cluster paint ends within 5ms and use the last end time per cluster.
+  final paintEnds = <Duration>[];
   for (final span in rootSpanSnapshot) {
     if (!span.isComplete || span.category != 'paint') continue;
     var boundary = offset(span.endTime!);
     if (minStart > Duration.zero) boundary = boundary - minStart;
-    frameBoundaries.add(boundary);
+    paintEnds.add(boundary);
   }
-  frameBoundaries.sort();
+  paintEnds.sort();
+  final frameBoundaries = <Duration>[];
+  if (paintEnds.isNotEmpty) {
+    var clusterEnd = paintEnds.first;
+    for (int i = 1; i < paintEnds.length; i++) {
+      if ((paintEnds[i] - clusterEnd).inMilliseconds < 5) {
+        // Same frame — extend cluster
+        clusterEnd = paintEnds[i];
+      } else {
+        // New frame — flush previous cluster
+        frameBoundaries.add(clusterEnd);
+        clusterEnd = paintEnds[i];
+      }
+    }
+    frameBoundaries.add(clusterEnd);
+  }
 
   return WaterfallData(
     entries: entries,
