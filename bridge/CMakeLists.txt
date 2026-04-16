@@ -207,6 +207,7 @@ if (${WEBF_JS_ENGINE} MATCHES "quickjs")
   list(APPEND BRIDGE_INCLUDE ${CMAKE_CURRENT_SOURCE_DIR}/third_party/modp_b64/include)
   list(APPEND BRIDGE_LINK_LIBS quickjs)
   list(APPEND BRIDGE_LINK_LIBS modb)
+  list(APPEND BRIDGE_LINK_LIBS js_profiler_hooks)
 
   list(APPEND BRIDGE_SOURCE
     # Binding files
