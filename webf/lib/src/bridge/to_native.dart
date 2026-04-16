@@ -852,6 +852,59 @@ void clearUICommand(double contextId) {
   _clearUICommandItems(_allocatedPages[contextId]!);
 }
 
+// JS Thread Profiling FFI bindings
+typedef NativeSetJSThreadProfilingEnabled = Void Function(Int8, Int64);
+typedef DartSetJSThreadProfilingEnabled = void Function(int, int);
+
+final DartSetJSThreadProfilingEnabled _setJSThreadProfilingEnabled =
+    WebFDynamicLibrary.ref.lookup<NativeFunction<NativeSetJSThreadProfilingEnabled>>('setJSThreadProfilingEnabled').asFunction();
+
+void setJSThreadProfilingEnabled(bool enabled, {int minDurationUs = 10}) {
+  _setJSThreadProfilingEnabled(enabled ? 1 : 0, minDurationUs);
+}
+
+typedef NativeGetJSProfilerSessionStartUs = Int64 Function();
+typedef DartGetJSProfilerSessionStartUs = int Function();
+
+final DartGetJSProfilerSessionStartUs _getJSProfilerSessionStartUs =
+    WebFDynamicLibrary.ref.lookup<NativeFunction<NativeGetJSProfilerSessionStartUs>>('getJSProfilerSessionStartUs').asFunction();
+
+int getJSProfilerSessionStartUs() {
+  return _getJSProfilerSessionStartUs();
+}
+
+typedef NativeDrainJSThreadProfilingSpans = Int32 Function(Pointer<Void>, Int32);
+typedef DartDrainJSThreadProfilingSpans = int Function(Pointer<Void>, int);
+
+final DartDrainJSThreadProfilingSpans _drainJSThreadProfilingSpans =
+    WebFDynamicLibrary.ref.lookup<NativeFunction<NativeDrainJSThreadProfilingSpans>>('drainJSThreadProfilingSpans').asFunction();
+
+int drainJSThreadProfilingSpans(Pointer<NativeJSThreadSpan> outSpans, int maxSpans) {
+  return _drainJSThreadProfilingSpans(outSpans.cast<Void>(), maxSpans);
+}
+
+typedef NativeIsJSThreadProfilingEnabled = Int8 Function();
+typedef DartIsJSThreadProfilingEnabled = int Function();
+
+final DartIsJSThreadProfilingEnabled _isJSThreadProfilingEnabled =
+    WebFDynamicLibrary.ref.lookup<NativeFunction<NativeIsJSThreadProfilingEnabled>>('isJSThreadProfilingEnabled').asFunction();
+
+bool isJSThreadProfilingEnabled() {
+  return _isJSThreadProfilingEnabled() == 1;
+}
+
+typedef NativeGetJSProfilerAtomName = Pointer<Utf8> Function(Uint32);
+typedef DartGetJSProfilerAtomName = Pointer<Utf8> Function(int);
+
+final DartGetJSProfilerAtomName _getJSProfilerAtomName =
+    WebFDynamicLibrary.ref.lookup<NativeFunction<NativeGetJSProfilerAtomName>>('getJSProfilerAtomName').asFunction();
+
+String getJSProfilerAtomName(int atom) {
+  final ptr = _getJSProfilerAtomName(atom);
+  if (ptr == nullptr) return '';
+  return ptr.toDartString();
+}
+
 void flushUICommandWithContextId(double contextId, Pointer<NativeBindingObject> selfPointer) {
   WebFController? controller = WebFController.getControllerOfJSContextId(contextId);
   if (controller != null) {
@@ -874,5 +927,9 @@ void flushUICommand(WebFViewController view, Pointer<NativeBindingObject> selfPo
   final handle = PerformanceTracker.instance.beginSpan('domConstruction', 'flushUICommand', metadata: {'commandCount': commands.length});
   execUICommands(view, commands);
   handle?.end();
+  // Drain JS thread profiling spans piggy-backing on the UI command flush
+  if (PerformanceTracker.instance.enabled) {
+    PerformanceTracker.instance.drainJSThreadSpans();
+  }
   SchedulerBinding.instance.scheduleFrame();
 }

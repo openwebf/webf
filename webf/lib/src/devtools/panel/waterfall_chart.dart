@@ -34,6 +34,16 @@ enum WaterfallCategory {
   htmlParse,
   domConstruction,
   build,
+  // JS Thread categories
+  jsFunction,
+  jsScriptEval,
+  jsTimer,
+  jsEvent,
+  jsRAF,
+  jsIdle,
+  jsMicrotask,
+  jsMutationObserver,
+  jsFlushUICommand,
 }
 
 class _SpanSegment {
@@ -51,6 +61,7 @@ class WaterfallEntry {
   final PerformanceSpan? span; // For drill-down into flame chart (single span)
   final List<PerformanceSpan> spans; // For aggregated entries (multiple spans)
   final List<_SpanSegment> spanSegments; // Individual span time segments for painting
+  final List<JSThreadSpan> jsSpans; // JS thread spans for drill-down flame chart
 
   WaterfallEntry({
     required this.category,
@@ -61,10 +72,11 @@ class WaterfallEntry {
     this.span,
     this.spans = const [],
     this.spanSegments = const [],
+    this.jsSpans = const [],
   });
 
   Duration get duration => end - start;
-  bool get hasDrillDown => span != null || spans.isNotEmpty;
+  bool get hasDrillDown => span != null || spans.isNotEmpty || jsSpans.isNotEmpty;
 }
 
 class WaterfallSubEntry {
@@ -348,6 +360,83 @@ WaterfallData _buildWaterfallDataImpl(
     flushCluster();
   }
 
+  // --- JS Thread spans from profiler ---
+  // Show high-level categories (scriptEval, timer, event, microtask, etc.)
+  // as overview rows. Individual jsFunction/jsCFunction spans are attached
+  // for flame-chart drill-down.
+  final jsSpans = List.of(tracker.jsThreadSpans);
+  if (jsSpans.isNotEmpty) {
+    // Sort all spans by start time for efficient range queries
+    final allJsSorted = List.of(jsSpans)
+      ..sort((a, b) => a.startOffset.compareTo(b.startOffset));
+
+    // Collect high-level category spans (not individual function calls)
+    final highlevelCategories = {
+      'jsScriptEval', 'jsTimer', 'jsEvent', 'jsRAF', 'jsIdle',
+      'jsMicrotask', 'jsMutationObserver', 'jsFlushUICommand',
+    };
+    final jsByCategory = <WaterfallCategory, List<JSThreadSpan>>{};
+    for (final js in jsSpans) {
+      if (!highlevelCategories.contains(js.category)) continue;
+      final cat = _jsSpanCategory(js.category);
+      (jsByCategory[cat] ??= []).add(js);
+    }
+    for (final mapEntry in jsByCategory.entries) {
+      final cat = mapEntry.key;
+      final spans = mapEntry.value;
+      if (spans.isEmpty) continue;
+      spans.sort((a, b) => a.startOffset.compareTo(b.startOffset));
+
+      const clusterGap = Duration(milliseconds: 50);
+      var clusterStart = spans.first.startOffset;
+      var clusterEnd = spans.first.endOffset;
+      var clusterSpans = <JSThreadSpan>[spans.first];
+
+      void flushJSCluster() {
+        final totalDuration = clusterSpans.fold<Duration>(
+            Duration.zero, (sum, s) => sum + s.duration);
+        final count = clusterSpans.length;
+        final catLabel = _categoryLabel(cat);
+        final label = count == 1
+            ? catLabel
+            : '$catLabel ($count, ${_formatDuration(totalDuration)})';
+        final segments = count > 1
+            ? clusterSpans.map((s) => _SpanSegment(
+                startMs: s.startOffset.inMicroseconds / 1000.0,
+                endMs: s.endOffset.inMicroseconds / 1000.0,
+              )).toList()
+            : const <_SpanSegment>[];
+        // Collect all JS spans (including function calls) within this cluster's time range
+        final clusterJsSpans = allJsSorted
+            .where((s) => s.startOffset >= clusterStart && s.endOffset <= clusterEnd)
+            .toList();
+        entries.add(WaterfallEntry(
+          category: cat,
+          label: label,
+          start: clusterStart,
+          end: clusterEnd,
+          spanSegments: segments,
+          jsSpans: clusterJsSpans,
+        ));
+      }
+
+      for (int i = 1; i < spans.length; i++) {
+        final spanStart = spans[i].startOffset;
+        final spanEnd = spans[i].endOffset;
+        if (spanStart - clusterEnd > clusterGap) {
+          flushJSCluster();
+          clusterStart = spanStart;
+          clusterEnd = spanEnd;
+          clusterSpans = [spans[i]];
+        } else {
+          if (spanEnd > clusterEnd) clusterEnd = spanEnd;
+          clusterSpans.add(spans[i]);
+        }
+      }
+      flushJSCluster();
+    }
+  }
+
   // --- Milestones ---
   for (int i = 0; i < phaseNames.length; i++) {
     final name = phaseNames[i];
@@ -517,6 +606,25 @@ Color _categoryColor(WaterfallCategory cat) {
       return const Color(0xFF78909C);
     case WaterfallCategory.build:
       return const Color(0xFF29B6F6);
+    // JS Thread categories — green/teal palette
+    case WaterfallCategory.jsFunction:
+      return const Color(0xFF66BB6A);
+    case WaterfallCategory.jsScriptEval:
+      return const Color(0xFF43A047);
+    case WaterfallCategory.jsTimer:
+      return const Color(0xFF66BB6A);
+    case WaterfallCategory.jsEvent:
+      return const Color(0xFF26A69A);
+    case WaterfallCategory.jsRAF:
+      return const Color(0xFF26A69A);
+    case WaterfallCategory.jsIdle:
+      return const Color(0xFF80CBC4);
+    case WaterfallCategory.jsMicrotask:
+      return const Color(0xFF81C784);
+    case WaterfallCategory.jsMutationObserver:
+      return const Color(0xFF4DB6AC);
+    case WaterfallCategory.jsFlushUICommand:
+      return const Color(0xFFFFB74D);
   }
 }
 
@@ -580,6 +688,62 @@ String _categoryLabel(WaterfallCategory cat) {
       return 'DOM';
     case WaterfallCategory.build:
       return 'Build';
+    case WaterfallCategory.jsFunction:
+      return 'JS Function';
+    case WaterfallCategory.jsScriptEval:
+      return 'JS Script Eval';
+    case WaterfallCategory.jsTimer:
+      return 'JS Timer';
+    case WaterfallCategory.jsEvent:
+      return 'JS Event';
+    case WaterfallCategory.jsRAF:
+      return 'JS rAF';
+    case WaterfallCategory.jsIdle:
+      return 'JS Idle';
+    case WaterfallCategory.jsMicrotask:
+      return 'JS Microtask';
+    case WaterfallCategory.jsMutationObserver:
+      return 'JS MutationObserver';
+    case WaterfallCategory.jsFlushUICommand:
+      return 'JS FlushUI';
+  }
+}
+
+bool _isJSThreadCategory(WaterfallCategory cat) {
+  return cat == WaterfallCategory.jsFunction ||
+      cat == WaterfallCategory.jsScriptEval ||
+      cat == WaterfallCategory.jsTimer ||
+      cat == WaterfallCategory.jsEvent ||
+      cat == WaterfallCategory.jsRAF ||
+      cat == WaterfallCategory.jsIdle ||
+      cat == WaterfallCategory.jsMicrotask ||
+      cat == WaterfallCategory.jsMutationObserver ||
+      cat == WaterfallCategory.jsFlushUICommand;
+}
+
+WaterfallCategory _jsSpanCategory(String category) {
+  switch (category) {
+    case 'jsFunction':
+    case 'jsCFunction':
+      return WaterfallCategory.jsFunction;
+    case 'jsScriptEval':
+      return WaterfallCategory.jsScriptEval;
+    case 'jsTimer':
+      return WaterfallCategory.jsTimer;
+    case 'jsEvent':
+      return WaterfallCategory.jsEvent;
+    case 'jsRAF':
+      return WaterfallCategory.jsRAF;
+    case 'jsIdle':
+      return WaterfallCategory.jsIdle;
+    case 'jsMicrotask':
+      return WaterfallCategory.jsMicrotask;
+    case 'jsMutationObserver':
+      return WaterfallCategory.jsMutationObserver;
+    case 'jsFlushUICommand':
+      return WaterfallCategory.jsFlushUICommand;
+    default:
+      return WaterfallCategory.jsFunction;
   }
 }
 
@@ -611,6 +775,7 @@ class _WaterfallChartState extends State<WaterfallChart> {
   _ChartMode _mode = _ChartMode.overview;
   PerformanceSpan? _selectedSpan;
   List<PerformanceSpan> _selectedSpans = const [];
+  List<JSThreadSpan> _selectedJsSpans = const [];
   double _zoom = 1.0;
 
   // Scroll controllers
@@ -631,6 +796,7 @@ class _WaterfallChartState extends State<WaterfallChart> {
 
   // Tap detail
   PerformanceSpan? _detailSpan;
+  JSThreadSpan? _detailJsSpan;
   WaterfallEntry? _selectedEntry;
 
   bool _syncingScroll = false;
@@ -640,6 +806,7 @@ class _WaterfallChartState extends State<WaterfallChart> {
   int _cachedSpanCount = -1;
   int _cachedPhaseCount = -1;
   int _cachedNetworkCount = -1;
+  int _cachedJSSpanCount = -1;
 
   /// Imported phases from a loaded profile (null when using live data).
   List<ExportablePhase>? _importedPhases;
@@ -652,10 +819,12 @@ class _WaterfallChartState extends State<WaterfallChart> {
     final spanCount = tracker.totalSpanCount;
     final phaseCount = ls.phases.length;
     final networkCount = ls.networkRequests.length;
+    final jsSpanCount = tracker.jsThreadSpans.length;
     if (_cachedData != null &&
         spanCount == _cachedSpanCount &&
         phaseCount == _cachedPhaseCount &&
-        networkCount == _cachedNetworkCount) {
+        networkCount == _cachedNetworkCount &&
+        jsSpanCount == _cachedJSSpanCount) {
       return _cachedData!;
     }
     _cachedData = buildWaterfallData(ls, tracker,
@@ -663,6 +832,7 @@ class _WaterfallChartState extends State<WaterfallChart> {
     _cachedSpanCount = spanCount;
     _cachedPhaseCount = phaseCount;
     _cachedNetworkCount = networkCount;
+    _cachedJSSpanCount = jsSpanCount;
     _cachedItems = null; // invalidate derived cache
     return _cachedData!;
   }
@@ -674,29 +844,46 @@ class _WaterfallChartState extends State<WaterfallChart> {
     final filtered = data.entries
         .where((e) => _enabledCategories.contains(e.category))
         .toList();
+
+    // Separate Dart thread and JS thread entries
+    final dartEntries = filtered.where((e) => !_isJSThreadCategory(e.category)).toList();
+    final jsEntries = filtered.where((e) => _isJSThreadCategory(e.category)).toList();
+
     final items = <_OverviewItem>[];
-    if (data.attachOffset != null && filtered.isNotEmpty) {
-      bool addedPreHeader = false;
-      bool addedDisplayHeader = false;
-      for (final entry in filtered) {
-        if (!addedPreHeader) {
-          items.add(_OverviewItem.header('Preload / Prerender'));
-          addedPreHeader = true;
+
+    // Dart thread entries
+    if (dartEntries.isNotEmpty) {
+      if (data.attachOffset != null) {
+        bool addedPreHeader = false;
+        bool addedDisplayHeader = false;
+        items.add(_OverviewItem.header('Dart Thread'));
+        for (final entry in dartEntries) {
+          if (!addedPreHeader && entry.start < (data.attachOffset ?? Duration.zero)) {
+            items.add(_OverviewItem.header('  Preload / Prerender'));
+            addedPreHeader = true;
+          }
+          if (!addedDisplayHeader && entry.start >= data.attachOffset!) {
+            items.add(_OverviewItem.header('  Display'));
+            addedDisplayHeader = true;
+          }
+          items.add(_OverviewItem.entry(entry));
         }
-        if (!addedDisplayHeader && entry.start >= data.attachOffset!) {
-          items.add(_OverviewItem.header('Display'));
-          addedDisplayHeader = true;
+      } else {
+        items.add(_OverviewItem.header('Dart Thread'));
+        for (final entry in dartEntries) {
+          items.add(_OverviewItem.entry(entry));
         }
-        items.add(_OverviewItem.entry(entry));
       }
-      if (!addedDisplayHeader) {
-        items.add(_OverviewItem.header('Display — (no entries)'));
-      }
-    } else {
-      for (final entry in filtered) {
+    }
+
+    // JS thread entries
+    if (jsEntries.isNotEmpty) {
+      items.add(_OverviewItem.header('JS Thread'));
+      for (final entry in jsEntries) {
         items.add(_OverviewItem.entry(entry));
       }
     }
+
     _cachedItems = items;
     _cachedFilterSet = Set.from(_enabledCategories);
     return items;
@@ -753,6 +940,7 @@ class _WaterfallChartState extends State<WaterfallChart> {
     setState(() {
       _selectedSpan = entry.span;
       _selectedSpans = entry.spans;
+      _selectedJsSpans = entry.jsSpans;
       _mode = _ChartMode.flame;
       _detailSpan = null;
       _selectedEntry = null;
@@ -788,6 +976,13 @@ class _WaterfallChartState extends State<WaterfallChart> {
                   right: 0,
                   bottom: 0,
                   child: _buildDetailPanel(),
+                ),
+              if (_detailJsSpan != null && _mode == _ChartMode.flame)
+                Positioned(
+                  left: 0,
+                  right: 0,
+                  bottom: 0,
+                  child: _buildJsDetailPanel(),
                 ),
             ],
           ),
@@ -882,7 +1077,11 @@ class _WaterfallChartState extends State<WaterfallChart> {
         setState(() {
           _mode = mode;
           _detailSpan = null;
-          if (mode == _ChartMode.overview) _selectedSpan = null;
+          _detailJsSpan = null;
+          if (mode == _ChartMode.overview) {
+            _selectedSpan = null;
+            _selectedJsSpans = const [];
+          }
         });
       },
       child: Container(
@@ -1441,6 +1640,11 @@ class _WaterfallChartState extends State<WaterfallChart> {
   // -- Flame chart mode --
 
   Widget _buildFlameChart() {
+    // JS thread span flame chart
+    if (_selectedJsSpans.isNotEmpty) {
+      return _buildJsFlameChart();
+    }
+
     // Support both single span and multi-span aggregated entries
     final List<PerformanceSpan> rootSpans;
     if (_selectedSpan != null) {
@@ -1513,7 +1717,9 @@ class _WaterfallChartState extends State<WaterfallChart> {
                     _mode = _ChartMode.overview;
                     _selectedSpan = null;
                     _selectedSpans = const [];
+                    _selectedJsSpans = const [];
                     _detailSpan = null;
+                    _detailJsSpan = null;
                   });
                   // Restore scroll positions after frame renders
                   WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -1775,6 +1981,213 @@ class _WaterfallChartState extends State<WaterfallChart> {
           ),
           InkWell(
             onTap: () => setState(() => _detailSpan = null),
+            child: const Icon(Icons.close, size: 14, color: Colors.white38),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // -- JS Thread Flame Chart --
+
+  Widget _buildJsFlameChart() {
+    final jsSpans = _selectedJsSpans;
+    if (jsSpans.isEmpty) {
+      return const Center(
+        child: Text('No JS thread spans recorded.',
+            style: TextStyle(color: Colors.white38, fontSize: 12)),
+      );
+    }
+
+    // Find time bounds from JS spans
+    final earliestStart = jsSpans.map((s) => s.startOffset).reduce((a, b) => a < b ? a : b);
+    final latestEnd = jsSpans.map((s) => s.endOffset).reduce((a, b) => a > b ? a : b);
+    final totalDurationMs = (latestEnd - earliestStart).inMicroseconds / 1000.0;
+    if (totalDurationMs <= 0) {
+      return const Center(
+        child: Text('JS spans have zero duration.',
+            style: TextStyle(color: Colors.white38, fontSize: 12)),
+      );
+    }
+
+    final minDepth = jsSpans.map((s) => s.depth).reduce(math.min);
+    final maxDepth = jsSpans.map((s) => s.depth).reduce(math.max) - minDepth;
+    final pixelsPerMs = _zoom * 2.0;
+    final contentWidth = totalDurationMs * pixelsPerMs;
+    const rowHeight = 20.0;
+    const rulerHeight = 24.0;
+    final chartHeight = (maxDepth + 1) * rowHeight;
+
+    return LayoutBuilder(builder: (context, constraints) {
+      final chartWidth = math.max(contentWidth, constraints.maxWidth);
+
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Back button + info
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+            color: const Color(0xFF262626),
+            child: Row(
+              children: [
+                InkWell(
+                  onTap: () {
+                    setState(() {
+                      _mode = _ChartMode.overview;
+                      _selectedSpan = null;
+                      _selectedSpans = const [];
+                      _selectedJsSpans = const [];
+                      _detailSpan = null;
+                      _detailJsSpan = null;
+                    });
+                    WidgetsBinding.instance.addPostFrameCallback((_) {
+                      if (_chartHScrollController.hasClients) {
+                        _chartHScrollController.jumpTo(_savedHScrollOffset);
+                      }
+                      if (_barsVScrollController.hasClients) {
+                        _barsVScrollController.jumpTo(_savedVScrollOffset);
+                      }
+                    });
+                  },
+                  child: const Padding(
+                    padding: EdgeInsets.all(4),
+                    child: Icon(Icons.arrow_back, size: 14, color: Colors.white70),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Text(
+                  'JS Thread — ${jsSpans.length} spans — ${_formatDuration(latestEnd - earliestStart)}',
+                  style: const TextStyle(color: Colors.white, fontSize: 12),
+                ),
+                const SizedBox(width: 8),
+                Text(
+                  '(max depth ${maxDepth + 1})',
+                  style: const TextStyle(color: Colors.white38, fontSize: 10),
+                ),
+              ],
+            ),
+          ),
+          // Ruler
+          SizedBox(
+            height: rulerHeight,
+            child: SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              physics: const ClampingScrollPhysics(),
+              controller: _flameRulerHScrollController,
+              child: CustomPaint(
+                size: Size(chartWidth, rulerHeight),
+                painter: _TimeRulerPainter(
+                  totalMs: totalDurationMs,
+                  pixelsPerMs: pixelsPerMs,
+                  milestones: const [],
+                ),
+              ),
+            ),
+          ),
+          const Divider(height: 1, color: Colors.white12),
+          // Flame chart body
+          Expanded(
+            child: SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              physics: const ClampingScrollPhysics(),
+              controller: _flameBodyHScrollController,
+              child: SingleChildScrollView(
+                physics: const ClampingScrollPhysics(),
+                child: GestureDetector(
+                  onTapDown: (details) {
+                    _handleJsFlameChartTap(
+                        details.localPosition, jsSpans, earliestStart,
+                        pixelsPerMs, rowHeight, minDepth);
+                  },
+                  child: CustomPaint(
+                    size: Size(chartWidth, chartHeight),
+                    painter: _JSFlameChartPainter(
+                      spans: jsSpans,
+                      rootStartOffset: earliestStart,
+                      rootDepth: minDepth,
+                      pixelsPerMs: pixelsPerMs,
+                      rowHeight: rowHeight,
+                      selectedSpan: _detailJsSpan,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ],
+      );
+    });
+  }
+
+  void _handleJsFlameChartTap(
+      Offset pos,
+      List<JSThreadSpan> allSpans,
+      Duration rootStartOffset,
+      double pixelsPerMs,
+      double rowHeight,
+      int rootDepth) {
+    final row = (pos.dy / rowHeight).floor();
+    final ms = pos.dx / pixelsPerMs;
+
+    JSThreadSpan? hit;
+    for (final span in allSpans) {
+      final depth = span.depth - rootDepth;
+      if (depth != row) continue;
+      final spanStartMs =
+          (span.startOffset - rootStartOffset).inMicroseconds / 1000.0;
+      final spanEndMs =
+          (span.endOffset - rootStartOffset).inMicroseconds / 1000.0;
+      if (ms >= spanStartMs && ms <= spanEndMs) {
+        hit = span;
+        break;
+      }
+    }
+    setState(() => _detailJsSpan = hit);
+  }
+
+  Widget _buildJsDetailPanel() {
+    final span = _detailJsSpan!;
+    final cat = _jsSpanCategory(span.category);
+    final color = _categoryColor(cat);
+    final durationMs = (span.duration.inMicroseconds / 1000.0).toStringAsFixed(2);
+    return Container(
+      padding: const EdgeInsets.all(8),
+      color: const Color(0xFF2A2A2A),
+      child: Row(
+        children: [
+          Container(
+            width: 4,
+            height: 36,
+            decoration: BoxDecoration(
+              color: color,
+              borderRadius: BorderRadius.circular(2),
+            ),
+          ),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  span.funcName.isNotEmpty ? '${span.funcName}()' : span.category,
+                  style: const TextStyle(
+                      color: Colors.white, fontSize: 12,
+                      fontWeight: FontWeight.w500),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  'Duration: ${durationMs}ms  '
+                  'Depth: ${span.depth}  '
+                  'Category: ${span.category}'
+                  '${span.funcName.isNotEmpty ? '  Function: ${span.funcName}' : ''}',
+                  style: const TextStyle(color: Colors.white54, fontSize: 10),
+                ),
+              ],
+            ),
+          ),
+          InkWell(
+            onTap: () => setState(() => _detailJsSpan = null),
             child: const Icon(Icons.close, size: 14, color: Colors.white38),
           ),
         ],
@@ -2138,6 +2551,95 @@ class _FlameChartPainter extends CustomPainter {
   bool shouldRepaint(_FlameChartPainter old) =>
       old.spans.length != spans.length ||
       old.rootStart != rootStart ||
+      old.rootDepth != rootDepth ||
+      old.pixelsPerMs != pixelsPerMs ||
+      old.rowHeight != rowHeight ||
+      !identical(old.selectedSpan, selectedSpan);
+}
+
+// ---------------------------------------------------------------------------
+class _JSFlameChartPainter extends CustomPainter {
+  final List<JSThreadSpan> spans;
+  final Duration rootStartOffset;
+  final int rootDepth;
+  final double pixelsPerMs;
+  final double rowHeight;
+  final JSThreadSpan? selectedSpan;
+
+  _JSFlameChartPainter({
+    required this.spans,
+    required this.rootStartOffset,
+    required this.rootDepth,
+    required this.pixelsPerMs,
+    required this.rowHeight,
+    this.selectedSpan,
+  });
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    for (final span in spans) {
+      final depth = span.depth - rootDepth;
+      final startMs =
+          (span.startOffset - rootStartOffset).inMicroseconds / 1000.0;
+      final durationMs = span.duration.inMicroseconds / 1000.0;
+      final x = startMs * pixelsPerMs;
+      final w = math.max(durationMs * pixelsPerMs, 1.0);
+      final y = depth * rowHeight;
+
+      final cat = _jsSpanCategory(span.category);
+      final color = _categoryColor(cat);
+      final isSelected = identical(span, selectedSpan);
+
+      final barPaint = Paint()..color = color;
+      canvas.drawRRect(
+        RRect.fromRectAndRadius(
+          Rect.fromLTWH(x, y + 1, w, rowHeight - 2),
+          const Radius.circular(2),
+        ),
+        barPaint,
+      );
+
+      // Selection highlight
+      if (isSelected) {
+        final selPaint = Paint()
+          ..color = Colors.white
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = 1.5;
+        canvas.drawRRect(
+          RRect.fromRectAndRadius(
+            Rect.fromLTWH(x, y + 1, w, rowHeight - 2),
+            const Radius.circular(2),
+          ),
+          selPaint,
+        );
+      }
+
+      // Label (only if bar is wide enough)
+      if (w > 30) {
+        final label = span.funcName.isNotEmpty ? span.funcName : span.category;
+        final tp = TextPainter(
+          text: TextSpan(
+            text: w > 80
+                ? '$label ${_formatDuration(span.duration)}'
+                : label,
+            style: TextStyle(
+              color: isSelected ? Colors.white : Colors.white.withOpacity(0.9),
+              fontSize: 9,
+            ),
+          ),
+          textDirection: TextDirection.ltr,
+          maxLines: 1,
+          ellipsis: '\u2026',
+        )..layout(maxWidth: w - 4);
+        tp.paint(canvas, Offset(x + 2, y + (rowHeight - tp.height) / 2));
+      }
+    }
+  }
+
+  @override
+  bool shouldRepaint(_JSFlameChartPainter old) =>
+      old.spans.length != spans.length ||
+      old.rootStartOffset != rootStartOffset ||
       old.rootDepth != rootDepth ||
       old.pixelsPerMs != pixelsPerMs ||
       old.rowHeight != rowHeight ||

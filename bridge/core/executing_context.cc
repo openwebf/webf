@@ -31,6 +31,7 @@
 #include "qjs_window.h"
 #include "script_forbidden_scope.h"
 #include "timing/performance.h"
+#include "core/profiling/js_thread_profiler.h"
 
 namespace webf {
 
@@ -176,6 +177,7 @@ bool ExecutingContext::EvaluateJavaScript(const char* code,
                                           const char* sourceURL,
                                           int startLine,
                                           HTMLScriptElement* script_element) {
+  JSThreadProfiler::ScopedSpan _prof_guard(JSThreadProfiler::Instance(), kJSScriptEval);
   if (ScriptForbiddenScope::IsScriptForbidden()) {
     return false;
   }
@@ -240,6 +242,7 @@ bool ExecutingContext::EvaluateJavaScript(const char16_t* code, size_t length, c
 
 bool ExecutingContext::EvaluateJavaScript(const char16_t* code, size_t length, const char* sourceURL, int startLine,
                                           HTMLScriptElement* script_element) {
+  JSThreadProfiler::ScopedSpan _prof_guard(JSThreadProfiler::Instance(), kJSScriptEval);
   std::string utf8Code = toUTF8(std::u16string(reinterpret_cast<const char16_t*>(code), length));
 
   // Set document.currentScript if script element is provided
@@ -280,6 +283,7 @@ bool ExecutingContext::EvaluateModule(const char* code,
                                       const char* sourceURL,
                                       int startLine,
                                       HTMLScriptElement* script_element) {
+  JSThreadProfiler::ScopedSpan _prof_guard(JSThreadProfiler::Instance(), kJSScriptEval);
   if (ScriptForbiddenScope::IsScriptForbidden()) {
     return false;
   }
@@ -373,6 +377,7 @@ bool ExecutingContext::EvaluateByteCode(const uint8_t* bytes, size_t byteLength)
 }
 
 bool ExecutingContext::EvaluateByteCode(const uint8_t* bytes, size_t byteLength, HTMLScriptElement* script_element) {
+  JSThreadProfiler::ScopedSpan _prof_guard(JSThreadProfiler::Instance(), kJSScriptEval);
   // Validate input
   if (bytes == nullptr || byteLength == 0) {
     return true; // Empty bytecode is not an error
@@ -532,6 +537,7 @@ void ExecutingContext::ReportError(JSValueConst error, char** rust_errmsg, uint3
 }
 
 void ExecutingContext::DrainMicrotasks() {
+  JSThreadProfiler::ScopedSpan _prof_guard(JSThreadProfiler::Instance(), kJSMicrotask);
   DrainPendingPromiseJobs();
 
   DrawCanvasElementIfNeeded();

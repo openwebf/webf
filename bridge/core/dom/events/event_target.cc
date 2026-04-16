@@ -5,6 +5,7 @@
 #include "plugin_api/event_target.h"
 #include <cstdint>
 #include "binding_call_methods.h"
+#include "core/profiling/js_thread_profiler.h"
 #include "bindings/qjs/converter_impl.h"
 #include "core/html/custom/webf_router_link_element.h"
 #include "event_factory.h"
@@ -169,6 +170,7 @@ bool EventTarget::dispatchEvent(Event* event, ExceptionState& exception_state) {
 }
 
 DispatchEventResult EventTarget::FireEventListeners(Event& event, ExceptionState& exception_state) {
+  webf::JSThreadProfiler::ScopedSpan _prof_guard(webf::JSThreadProfiler::Instance(), webf::kJSEvent);
   assert(event.WasInitialized());
 
   EventTargetData* d = GetEventTargetData();

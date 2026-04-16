@@ -8,6 +8,7 @@
 #include <cassert>
 #include "dart_isolate_context.h"
 #include "foundation/native_type.h"
+#include "core/profiling/js_thread_profiler.h"
 
 using namespace webf;
 
@@ -208,6 +209,7 @@ void DartMethodPointer::toBlob(bool is_dedicated,
 }
 
 void DartMethodPointer::flushUICommand(bool is_dedicated, double context_id, void* native_binding_object) {
+  JSThreadProfiler::ScopedSpan _prof_guard(JSThreadProfiler::Instance(), kJSFlushUICommand);
 #if ENABLE_LOG
   WEBF_LOG(INFO) << "[Dispatcher] DartMethodPointer::flushUICommand SYNC call START";
 #endif

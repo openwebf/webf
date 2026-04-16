@@ -7,6 +7,7 @@
 #include <utility>
 #include "bindings/qjs/cppgc/garbage_collected.h"
 #include "core/executing_context.h"
+#include "core/profiling/js_thread_profiler.h"
 
 #if UNIT_TEST
 #include "webf_test_env.h"
@@ -24,6 +25,7 @@ DOMTimer::DOMTimer(ExecutingContext* context, std::shared_ptr<Function> callback
     : context_(context), callback_(std::move(callback)), status_(TimerStatus::kPending), kind_(timer_kind) {}
 
 void DOMTimer::Fire() {
+  JSThreadProfiler::ScopedSpan _prof_guard(JSThreadProfiler::Instance(), kJSTimer);
   if (status_ == TimerStatus::kTerminated)
     return;
 

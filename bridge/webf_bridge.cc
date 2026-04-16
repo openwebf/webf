@@ -6,6 +6,7 @@
 #include <core/binding_object.h>
 
 #include "core/dart_isolate_context.h"
+#include "core/profiling/js_thread_profiler.h"
 #include "core/html/html_script_element.h"
 #include "core/html/parser/html_parser.h"
 #include "core/page.h"
@@ -354,4 +355,30 @@ void executeNativeCallback(DartWork* work_ptr) {
   auto dart_work = *(work_ptr);
   dart_work(false);
   delete work_ptr;
+}
+
+void setJSThreadProfilingEnabled(int8_t enabled, int64_t min_duration_us) {
+  if (enabled) {
+    webf::JSThreadProfiler::Instance().Enable(min_duration_us);
+  } else {
+    webf::JSThreadProfiler::Instance().Disable();
+  }
+}
+
+int64_t getJSProfilerSessionStartUs() {
+  return webf::JSThreadProfiler::Instance().SessionStartUs();
+}
+
+int32_t drainJSThreadProfilingSpans(void* out_spans, int32_t max_spans) {
+  return webf::JSThreadProfiler::Instance().DrainSpans(
+      static_cast<webf::JSThreadSpan*>(out_spans), max_spans);
+}
+
+int8_t isJSThreadProfilingEnabled() {
+  return webf::JSThreadProfiler::Instance().enabled() ? 1 : 0;
+}
+
+const char* getJSProfilerAtomName(uint32_t atom) {
+  const std::string& name = webf::JSThreadProfiler::Instance().GetAtomName(static_cast<JSAtom>(atom));
+  return name.c_str();
 }

@@ -5,6 +5,7 @@
 #include "script_idle_task_controller.h"
 #include "core/executing_context.h"
 #include "core/frame/window.h"
+#include "core/profiling/js_thread_profiler.h"
 #include "qjs_idle_deadline.h"
 
 namespace webf {
@@ -18,6 +19,7 @@ IdleCallback::IdleCallback(ExecutingContext* context, std::shared_ptr<QJSFunctio
     : context_(context), callback_(std::move(callback)) {}
 
 void IdleCallback::Fire(double remaining_time) {
+  JSThreadProfiler::ScopedSpan _prof_guard(JSThreadProfiler::Instance(), kJSIdle);
   if (callback_ == nullptr)
     return;
 

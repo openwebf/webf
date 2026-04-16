@@ -6,6 +6,7 @@
 
 #include <utility>
 #include "bindings/qjs/cppgc/gc_visitor.h"
+#include "core/profiling/js_thread_profiler.h"
 
 namespace webf {
 
@@ -18,6 +19,7 @@ FrameCallback::FrameCallback(ExecutingContext* context, std::shared_ptr<Function
     : context_(context), callback_(std::move(callback)) {}
 
 void FrameCallback::Fire(double highResTimeStamp) {
+  JSThreadProfiler::ScopedSpan _prof_guard(JSThreadProfiler::Instance(), kJSRAF);
   if (callback_ == nullptr)
     return;
 

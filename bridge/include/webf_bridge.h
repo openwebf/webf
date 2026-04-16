@@ -173,4 +173,11 @@ void init_dart_dynamic_linking(void* data);
 WEBF_EXPORT_C
 void on_dart_context_finalized(void* dart_isolate_context);
 
+// JS Thread Profiling
+WEBF_EXPORT_C void setJSThreadProfilingEnabled(int8_t enabled, int64_t min_duration_us);
+WEBF_EXPORT_C int64_t getJSProfilerSessionStartUs();
+WEBF_EXPORT_C int32_t drainJSThreadProfilingSpans(void* out_spans, int32_t max_spans);
+WEBF_EXPORT_C int8_t isJSThreadProfilingEnabled();
+WEBF_EXPORT_C const char* getJSProfilerAtomName(uint32_t atom);
+
 #endif  // WEBF_BRIDGE_EXPORT_H

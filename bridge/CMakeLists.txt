@@ -107,6 +107,7 @@ list(APPEND BRIDGE_SOURCE
   foundation/native_byte_data.cc
   foundation/native_type.cc
   foundation/stop_watch.cc
+  core/profiling/js_thread_profiler.cc
   foundation/dart_readable.cc
   foundation/rust_readable.cc
   foundation/ui_command_buffer.cc
@@ -157,6 +158,11 @@ if (${WEBF_JS_ENGINE} MATCHES "quickjs")
     third_party/modp_b64/modp_b64.cc
   )
 
+  add_library(js_profiler_hooks STATIC
+    core/profiling/js_profiler_hooks.c
+  )
+  target_include_directories(js_profiler_hooks PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/core/profiling)
+
   list(APPEND QUICK_JS_SOURCE
     third_party/quickjs/cutils.c
     third_party/quickjs/dtoa.c
@@ -180,7 +186,8 @@ if (${WEBF_JS_ENGINE} MATCHES "quickjs")
     ./third_party/quickjs/qjsc.c
   )
 
-  target_link_libraries(quickjs PRIVATE Threads::Threads)
+  target_link_libraries(quickjs PRIVATE Threads::Threads js_profiler_hooks)
+  target_link_libraries(qjsc PRIVATE Threads::Threads js_profiler_hooks)
 
   set(MI_OVERRIDE OFF)
 #  if (NOT MSVC AND NOT DEFINED USE_SYSTEM_MALLOC)
@@ -191,8 +198,10 @@ if (${WEBF_JS_ENGINE} MATCHES "quickjs")
 #    target_link_libraries(qjsc mimalloc-static)
 #  endif()
 
-  target_include_directories(quickjs PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/third_party/quickjs/include)
-  target_include_directories(qjsc PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/third_party/quickjs/include)
+  target_include_directories(quickjs PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/third_party/quickjs/include
+    ${CMAKE_CURRENT_SOURCE_DIR}/core/profiling)
+  target_include_directories(qjsc PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/third_party/quickjs/include
+    ${CMAKE_CURRENT_SOURCE_DIR}/core/profiling)
 
   list(APPEND BRIDGE_INCLUDE ${CMAKE_CURRENT_SOURCE_DIR}/third_party)
   list(APPEND BRIDGE_INCLUDE ${CMAKE_CURRENT_SOURCE_DIR}/third_party/modp_b64/include)

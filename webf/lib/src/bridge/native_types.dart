@@ -41,6 +41,25 @@ final class RawEvent extends Struct {
   external int isCustomEvent;
 }
 
+// Matches C++ JSThreadSpan in js_thread_profiler.h
+// Note: struct padding means category (uint8) is followed by 7 bytes padding before start_us (int64)
+final class NativeJSThreadSpan extends Struct {
+  @Uint8()
+  external int category;
+
+  @Int64()
+  external int startUs;
+
+  @Int64()
+  external int endUs;
+
+  @Uint32()
+  external int funcNameAtom;
+
+  @Uint8()
+  external int depth;
+}
+
 final class EventDispatchResult extends Struct {
   @Bool()
   external bool canceled;

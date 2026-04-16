@@ -13,6 +13,10 @@
 library;
 
 import 'dart:convert';
+import 'dart:ffi';
+import 'package:ffi/ffi.dart';
+import 'package:webf/bridge.dart';
+import 'package:webf/src/bridge/to_native.dart' as to_native;
 
 /// Represents a single performance span in the rendering pipeline.
 class PerformanceSpan {
@@ -180,6 +184,12 @@ class PerformanceTracker {
   /// Top-level spans (not children of any other span).
   final List<PerformanceSpan> rootSpans = [];
 
+  /// JS thread spans collected from the C++ profiler.
+  final List<JSThreadSpan> jsThreadSpans = [];
+
+  /// Dart session start time, used for JS span clock reference.
+  DateTime? _dartSessionStart;
+
   /// Currently active span (acts as call stack via parent pointer).
   PerformanceSpan? _currentSpan;
 
@@ -194,19 +204,69 @@ class PerformanceTracker {
   /// Start a new recording session. Clears all previous spans.
   void startSession() {
     sessionStart = DateTime.now();
+    _dartSessionStart = sessionStart;
     rootSpans.clear();
+    jsThreadSpans.clear();
     _currentSpan = null;
     _totalSpanCount = 0;
     enabled = true;
+    // Enable C++ JS thread profiling
+    to_native.setJSThreadProfilingEnabled(true);
   }
 
   /// End the current recording session. Spans are preserved for reading.
   void endSession() {
     enabled = false;
+    // Drain any remaining JS spans
+    drainJSThreadSpans();
+    // Disable C++ JS thread profiling
+    to_native.setJSThreadProfilingEnabled(false);
     // Close any unclosed spans
     while (_currentSpan != null) {
       _currentSpan!.endTime ??= DateTime.now();
       _currentSpan = _currentSpan!.parent;
+    }
+  }
+
+  /// Drain JS thread profiling spans from the C++ ring buffer.
+  /// Called during flushUICommand and at session end.
+  void drainJSThreadSpans() {
+    if (!enabled && jsThreadSpans.isEmpty && _dartSessionStart == null) return;
+
+    const maxDrain = 4096;
+    final buffer = calloc<NativeJSThreadSpan>(maxDrain);
+    try {
+      final count = to_native.drainJSThreadProfilingSpans(buffer, maxDrain);
+      if (count <= 0) return;
+
+      // Cache resolved atom names to avoid repeated FFI calls
+      final atomNameCache = <int, String>{};
+
+      for (int i = 0; i < count; i++) {
+        final native = buffer[i];
+        // Convert C++ timestamps (µs from steady_clock session start) to
+        // offsets from Dart session start.
+        final startOffsetUs = native.startUs;
+        final endOffsetUs = native.endUs;
+
+        // Resolve function name from atom
+        final atom = native.funcNameAtom;
+        String funcName = '';
+        if (atom != 0) {
+          funcName = atomNameCache[atom] ??= to_native.getJSProfilerAtomName(atom);
+        }
+
+        jsThreadSpans.add(JSThreadSpan(
+          category: JSThreadSpan.categoryFromIndex(native.category),
+          startOffset: Duration(microseconds: startOffsetUs),
+          endOffset: Duration(microseconds: endOffsetUs),
+          funcNameAtom: atom,
+          funcName: funcName,
+          depth: native.depth,
+        ));
+      }
+    } finally {
+      calloc.free(buffer);
     }
   }
 
@@ -283,6 +343,7 @@ class PerformanceTracker {
   /// Clear all recorded spans without changing the enabled state.
   void clear() {
     rootSpans.clear();
+    jsThreadSpans.clear();
     _currentSpan = null;
     _totalSpanCount = 0;
   }
@@ -301,11 +362,13 @@ class PerformanceTracker {
     }
 
     final data = <String, dynamic>{
-      'version': 2,
+      'version': 3,
       'exportedAt': DateTime.now().toIso8601String(),
       'sessionStart': sessionStart?.microsecondsSinceEpoch,
       'totalSpanCount': countSpans(rootSpans),
       'rootSpans': rootSpans.map((s) => s.toJson()).toList(),
+      if (jsThreadSpans.isNotEmpty)
+        'jsThreadSpans': jsThreadSpans.map((s) => s.toJson()).toList(),
     };
     if (phases != null && phases.isNotEmpty) {
       data['phases'] = phases.map((p) => p.toJson()).toList();
@@ -319,6 +382,7 @@ class PerformanceTracker {
   List<ExportablePhase> importFromJson(String jsonString) {
     final data = jsonDecode(jsonString) as Map<String, dynamic>;
     rootSpans.clear();
+    jsThreadSpans.clear();
     _currentSpan = null;
     enabled = false;
 
@@ -334,6 +398,14 @@ class PerformanceTracker {
     }
     _totalSpanCount = data['totalSpanCount'] as int? ?? rootSpans.length;
 
+    // Restore JS thread spans if present
+    final jsSpansJson = data['jsThreadSpans'] as List?;
+    if (jsSpansJson != null) {
+      for (final jsJson in jsSpansJson) {
+        jsThreadSpans.add(JSThreadSpan.fromJson(jsJson as Map<String, dynamic>));
+      }
+    }
+
     // Restore phases if present
     final phasesJson = data['phases'] as List?;
     if (phasesJson != null) {
@@ -342,6 +414,65 @@ class PerformanceTracker {
           .toList();
     }
     return [];
+  }
+}
+
+/// Represents a single JS thread profiling span collected from QuickJS.
+class JSThreadSpan {
+  static const List<String> categoryNames = [
+    'jsFunction',      // 0: kJSFunction
+    'jsCFunction',     // 1: kJSCFunction
+    'jsScriptEval',    // 2: kJSScriptEval
+    'jsTimer',         // 3: kJSTimer
+    'jsEvent',         // 4: kJSEvent
+    'jsRAF',           // 5: kJSRAF
+    'jsIdle',          // 6: kJSIdle
+    'jsMicrotask',     // 7: kJSMicrotask
+    'jsMutationObserver', // 8: kJSMutationObserver
+    'jsFlushUICommand',   // 9: kJSFlushUICommand
+  ];
+
+  final String category;
+  final Duration startOffset;  // from Dart session start
+  final Duration endOffset;
+  final int funcNameAtom;
+  final String funcName;
+  final int depth;
+
+  JSThreadSpan({
+    required this.category,
+    required this.startOffset,
+    required this.endOffset,
+    required this.funcNameAtom,
+    this.funcName = '',
+    required this.depth,
+  });
+
+  Duration get duration => endOffset - startOffset;
+
+  static String categoryFromIndex(int index) {
+    if (index >= 0 && index < categoryNames.length) return categoryNames[index];
+    return 'jsUnknown';
+  }
+
+  Map<String, dynamic> toJson() => {
+    'category': category,
+    'startOffsetUs': startOffset.inMicroseconds,
+    'endOffsetUs': endOffset.inMicroseconds,
+    'funcNameAtom': funcNameAtom,
+    if (funcName.isNotEmpty) 'funcName': funcName,
+    'depth': depth,
+  };
+
+  static JSThreadSpan fromJson(Map<String, dynamic> json) {
+    return JSThreadSpan(
+      category: json['category'] as String,
+      startOffset: Duration(microseconds: json['startOffsetUs'] as int),
+      endOffset: Duration(microseconds: json['endOffsetUs'] as int),
+      funcNameAtom: json['funcNameAtom'] as int? ?? 0,
+      funcName: json['funcName'] as String? ?? '',
+      depth: json['depth'] as int,
+    );
   }
 }
 

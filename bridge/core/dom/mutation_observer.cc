@@ -36,6 +36,7 @@
 #include <algorithm>
 #include <unordered_set>
 #include "bindings/qjs/converter_impl.h"
+#include "core/profiling/js_thread_profiler.h"
 #include "mutation_observer_registration.h"
 #include "mutation_record.h"
 #include "node.h"
@@ -220,6 +221,7 @@ void MutationObserver::EnqueueMutationRecord(MutationRecord* mutation) {
 }
 
 void MutationObserver::Deliver() {
+  JSThreadProfiler::ScopedSpan _prof_guard(JSThreadProfiler::Instance(), kJSMutationObserver);
   if (!GetExecutingContext() || !GetExecutingContext()->IsContextValid())
     return;
 
