@@ -2333,14 +2333,29 @@ class _TimeRulerPainter extends CustomPainter {
       ms += interval;
     }
 
-    // Draw frame boundary indicators
+    // Draw frame boundary indicators with dropped-frame highlighting
     if (frameBoundaries.isNotEmpty) {
-      final framePaint = Paint()
+      const droppedThresholdMs = 16.67; // 60fps
+      final normalPaint = Paint()
         ..color = const Color(0xFF555555)
         ..strokeWidth = 0.5;
+      final droppedPaint = Paint()
+        ..color = const Color(0xFFEF5350)
+        ..strokeWidth = 0.5;
+      final droppedBgPaint = Paint()
+        ..color = const Color(0x15EF5350);
       for (int i = 0; i < frameBoundaries.length; i++) {
-        final x = frameBoundaries[i].inMicroseconds / 1000.0 * pixelsPerMs;
-        canvas.drawLine(Offset(x, 0), Offset(x, size.height), framePaint);
+        final xMs = frameBoundaries[i].inMicroseconds / 1000.0;
+        final x = xMs * pixelsPerMs;
+        final prevMs = i > 0 ? frameBoundaries[i - 1].inMicroseconds / 1000.0 : 0.0;
+        final gapMs = xMs - prevMs;
+        final isDropped = i > 0 && gapMs > droppedThresholdMs;
+        // Shade dropped-frame region
+        if (isDropped) {
+          final prevX = prevMs * pixelsPerMs;
+          canvas.drawRect(Rect.fromLTRB(prevX, 0, x, size.height), droppedBgPaint);
+        }
+        canvas.drawLine(Offset(x, 0), Offset(x, size.height), isDropped ? droppedPaint : normalPaint);
       }
     }
 
@@ -2761,12 +2776,26 @@ class _FrameBoundaryPainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
-    final paint = Paint()
+    const droppedThresholdMs = 16.67;
+    final normalPaint = Paint()
       ..color = const Color(0xFF444444)
       ..strokeWidth = 0.5;
-    for (final boundary in frameBoundaries) {
-      final x = boundary.inMicroseconds / 1000.0 * pixelsPerMs;
-      canvas.drawLine(Offset(x, 0), Offset(x, size.height), paint);
+    final droppedPaint = Paint()
+      ..color = const Color(0xFFEF5350)
+      ..strokeWidth = 0.5;
+    final droppedBgPaint = Paint()
+      ..color = const Color(0x10EF5350);
+    for (int i = 0; i < frameBoundaries.length; i++) {
+      final xMs = frameBoundaries[i].inMicroseconds / 1000.0;
+      final x = xMs * pixelsPerMs;
+      final prevMs = i > 0 ? frameBoundaries[i - 1].inMicroseconds / 1000.0 : 0.0;
+      final gapMs = xMs - prevMs;
+      final isDropped = i > 0 && gapMs > droppedThresholdMs;
+      if (isDropped) {
+        final prevX = prevMs * pixelsPerMs;
+        canvas.drawRect(Rect.fromLTRB(prevX, 0, x, size.height), droppedBgPaint);
+      }
+      canvas.drawLine(Offset(x, 0), Offset(x, size.height), isDropped ? droppedPaint : normalPaint);
     }
   }
 
