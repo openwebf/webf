@@ -97,9 +97,12 @@ function copyFile(source, destination) {
       fs.mkdirSync(destDir, { recursive: true });
     }
     
-    // Delete the destination file if it exists
-    if (fs.existsSync(destination)) {
+    // Delete the destination file or broken symlink if it exists
+    try {
+      fs.lstatSync(destination);
       fs.unlinkSync(destination);
+    } catch (e) {
+      // File doesn't exist at all, nothing to remove
     }
     
     // Read and write the file
