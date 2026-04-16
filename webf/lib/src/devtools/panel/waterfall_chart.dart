@@ -30,6 +30,10 @@ enum WaterfallCategory {
   style,
   layout,
   paint,
+  jsEval,
+  htmlParse,
+  domConstruction,
+  build,
 }
 
 class WaterfallEntry {
@@ -422,6 +426,16 @@ WaterfallCategory _spanCategory(String category) {
       return WaterfallCategory.layout;
     case 'paint':
       return WaterfallCategory.paint;
+    case 'jsEval':
+      return WaterfallCategory.jsEval;
+    case 'htmlParse':
+      return WaterfallCategory.htmlParse;
+    case 'domConstruction':
+      return WaterfallCategory.domConstruction;
+    case 'build':
+      return WaterfallCategory.build;
+    case 'network':
+      return WaterfallCategory.network;
     default:
       return WaterfallCategory.lifecycle;
   }
@@ -479,6 +493,14 @@ Color _categoryColor(WaterfallCategory cat) {
       return const Color(0xFFFFA726);
     case WaterfallCategory.paint:
       return const Color(0xFFEC407A);
+    case WaterfallCategory.jsEval:
+      return const Color(0xFFEF5350);
+    case WaterfallCategory.htmlParse:
+      return const Color(0xFF26A69A);
+    case WaterfallCategory.domConstruction:
+      return const Color(0xFF78909C);
+    case WaterfallCategory.build:
+      return const Color(0xFF29B6F6);
   }
 }
 
@@ -505,8 +527,18 @@ Color _flameSpanColor(PerformanceSpan span) {
       }
     case 'paint':
       return const Color(0xFFEC407A);
-    default:
+    case 'jsEval':
+      return const Color(0xFFEF5350);
+    case 'htmlParse':
+      return const Color(0xFF26A69A);
+    case 'domConstruction':
       return const Color(0xFF78909C);
+    case 'build':
+      return const Color(0xFF29B6F6);
+    case 'network':
+      return const Color(0xFF66BB6A);
+    default:
+      return const Color(0xFF90A4AE);
   }
 }
 
@@ -524,6 +556,14 @@ String _categoryLabel(WaterfallCategory cat) {
       return 'Layout';
     case WaterfallCategory.paint:
       return 'Paint';
+    case WaterfallCategory.jsEval:
+      return 'JS Eval';
+    case WaterfallCategory.htmlParse:
+      return 'HTML Parse';
+    case WaterfallCategory.domConstruction:
+      return 'DOM';
+    case WaterfallCategory.build:
+      return 'Build';
   }
 }
 
@@ -536,11 +576,15 @@ enum _ChartMode { overview, flame }
 class WaterfallChart extends StatefulWidget {
   final LoadingState loadingState;
   final PerformanceTracker tracker;
+  final VoidCallback? onToggleFullscreen;
+  final bool isFullscreen;
 
   const WaterfallChart({
     super.key,
     required this.loadingState,
     required this.tracker,
+    this.onToggleFullscreen,
+    this.isFullscreen = false,
   });
 
   @override
@@ -558,6 +602,10 @@ class _WaterfallChartState extends State<WaterfallChart> {
   final ScrollController _chartHScrollController = ScrollController();
   final ScrollController _labelsVScrollController = ScrollController();
   final ScrollController _barsVScrollController = ScrollController();
+  // Saved scroll positions for restoring after drill-down
+  double _savedHScrollOffset = 0.0;
+  double _savedVScrollOffset = 0.0;
+
   // Flame chart mode controllers
   final ScrollController _flameRulerHScrollController = ScrollController();
   final ScrollController _flameBodyHScrollController = ScrollController();
@@ -680,6 +728,12 @@ class _WaterfallChartState extends State<WaterfallChart> {
   }
 
   void _drillDownEntry(WaterfallEntry entry) {
+    // Save current scroll positions before switching to flame chart
+    _savedHScrollOffset = _chartHScrollController.hasClients
+        ? _chartHScrollController.offset : 0.0;
+    _savedVScrollOffset = _barsVScrollController.hasClients
+        ? _barsVScrollController.offset : 0.0;
+
     setState(() {
       _selectedSpan = entry.span;
       _selectedSpans = entry.spans;
@@ -734,6 +788,7 @@ class _WaterfallChartState extends State<WaterfallChart> {
       color: const Color(0xFF1E1E1E),
       child: SingleChildScrollView(
         scrollDirection: Axis.horizontal,
+        physics: const ClampingScrollPhysics(),
         child: Row(
           children: [
             // Mode toggle
@@ -790,6 +845,14 @@ class _WaterfallChartState extends State<WaterfallChart> {
               label: 'Import',
               onTap: _showImportDialog,
             ),
+            if (widget.onToggleFullscreen != null) ...[
+              const SizedBox(width: 8),
+              _buildToolbarButton(
+                icon: widget.isFullscreen ? Icons.fullscreen_exit : Icons.fullscreen,
+                label: widget.isFullscreen ? 'Exit' : 'Fullscreen',
+                onTap: widget.onToggleFullscreen!,
+              ),
+            ],
           ],
         ),
       ),
@@ -1173,6 +1236,7 @@ class _WaterfallChartState extends State<WaterfallChart> {
                   child: SingleChildScrollView(
                     controller: _rulerHScrollController,
                     scrollDirection: Axis.horizontal,
+                    physics: const ClampingScrollPhysics(),
                     child: CustomPaint(
                       size: Size(chartWidth, rulerHeight),
                       painter: _TimeRulerPainter(
@@ -1198,6 +1262,7 @@ class _WaterfallChartState extends State<WaterfallChart> {
                   Expanded(
                     child: SingleChildScrollView(
                       scrollDirection: Axis.horizontal,
+                      physics: const ClampingScrollPhysics(),
                       child: SizedBox(
                         width: chartWidth,
                         child: CustomPaint(
@@ -1222,6 +1287,7 @@ class _WaterfallChartState extends State<WaterfallChart> {
                   width: labelWidth,
                   child: ListView.builder(
                     controller: _labelsVScrollController,
+                    physics: const ClampingScrollPhysics(),
                     itemCount: items.length,
                     itemExtent: rowHeight,
                     itemBuilder: (ctx, i) {
@@ -1286,11 +1352,13 @@ class _WaterfallChartState extends State<WaterfallChart> {
                 Expanded(
                   child: SingleChildScrollView(
                     scrollDirection: Axis.horizontal,
+                    physics: const ClampingScrollPhysics(),
                     controller: _chartHScrollController,
                     child: SizedBox(
                       width: chartWidth,
                       child: ListView.builder(
                         controller: _barsVScrollController,
+                        physics: const ClampingScrollPhysics(),
                         itemCount: items.length,
                         itemExtent: rowHeight,
                         itemBuilder: (ctx, i) {
@@ -1334,7 +1402,9 @@ class _WaterfallChartState extends State<WaterfallChart> {
         });
       },
       onDoubleTap: () {
-        if (entry.hasDrillDown) _drillDownEntry(entry);
+        if (entry.hasDrillDown) {
+          _drillDownEntry(entry);
+        }
       },
       child: CustomPaint(
         size: Size(chartWidth, 22),
@@ -1428,6 +1498,15 @@ class _WaterfallChartState extends State<WaterfallChart> {
                     _selectedSpans = const [];
                     _detailSpan = null;
                   });
+                  // Restore scroll positions after frame renders
+                  WidgetsBinding.instance.addPostFrameCallback((_) {
+                    if (_chartHScrollController.hasClients) {
+                      _chartHScrollController.jumpTo(_savedHScrollOffset);
+                    }
+                    if (_barsVScrollController.hasClients) {
+                      _barsVScrollController.jumpTo(_savedVScrollOffset);
+                    }
+                  });
                 },
                 child: const Padding(
                   padding: EdgeInsets.all(4),
@@ -1455,6 +1534,7 @@ class _WaterfallChartState extends State<WaterfallChart> {
           height: rulerHeight,
           child: SingleChildScrollView(
             scrollDirection: Axis.horizontal,
+            physics: const ClampingScrollPhysics(),
             controller: _flameRulerHScrollController,
             child: CustomPaint(
               size: Size(chartWidth, rulerHeight),
@@ -1471,8 +1551,10 @@ class _WaterfallChartState extends State<WaterfallChart> {
         Expanded(
           child: SingleChildScrollView(
             scrollDirection: Axis.horizontal,
+            physics: const ClampingScrollPhysics(),
             controller: _flameBodyHScrollController,
             child: SingleChildScrollView(
+              physics: const ClampingScrollPhysics(),
               child: GestureDetector(
                 onTapDown: (details) {
                   _handleFlameChartTap(

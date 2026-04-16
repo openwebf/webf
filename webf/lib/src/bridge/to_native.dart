@@ -13,6 +13,7 @@ import 'package:ffi/ffi.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:webf/webf.dart';
+import 'package:webf/src/devtools/panel/performance_tracker.dart';
 
 // Steps for using dart:ffi to call a C function from Dart:
 // 1. Import dart:ffi.
@@ -335,52 +336,63 @@ Future<bool> evaluateScripts(double contextId, Uint8List codeBytes,
     _anonymousScriptEvaluationId++;
   }
 
-  QuickJSByteCodeCacheObject cacheObject =
-      await QuickJSByteCodeCache.getCacheObject(codeBytes, cacheKey: cacheKey, loadedFromCache: loadedFromCache);
-  if (QuickJSByteCodeCacheObject.cacheMode == ByteCodeCacheMode.DEFAULT &&
-      cacheObject.valid &&
-      cacheObject.bytes != null) {
-    bool result = await evaluateQuickjsByteCode(contextId, cacheObject.bytes!, scriptElement: scriptElement);
-    // If the bytecode evaluate failed, remove the cached file and fallback to raw javascript mode.
-    if (!result) {
-      await cacheObject.remove();
-      // Fallback to normal script mode.
-      return evaluateScripts(contextId, codeBytes, scriptElement: scriptElement);
-    }
-    return result;
-  } else {
-    Pointer<Utf8> urlPtr = url.toNativeUtf8();
-    Pointer<Uint8> codePtr = uint8ListToPointer(codeBytes);
-    Completer<bool> completer = Completer();
-
-    _EvaluateScriptsContext context = _EvaluateScriptsContext(completer, codeBytes, codePtr, urlPtr, cacheKey);
-    Pointer<NativeFunction<NativeEvaluateJavaScriptCallback>> resultCallback =
-        Pointer.fromFunction(handleEvaluateScriptsResult);
-
-    Pointer<NativeBindingObject> scriptElementPtr = scriptElement?.pointer! ?? nullptr;
-
-    try {
-      assert(_allocatedPages.containsKey(contextId));
-      if (QuickJSByteCodeCache.isCodeNeedCache(codeBytes)) {
-        // Export the bytecode from scripts
-        Pointer<Pointer<Uint8>> bytecodes = malloc.allocate(sizeOf<Pointer<Uint8>>());
-        Pointer<Uint64> bytecodeLen = malloc.allocate(sizeOf<Uint64>());
-
-        context.bytecodes = bytecodes;
-        context.bytecodeLen = bytecodeLen;
-
-        _evaluateScripts(_allocatedPages[contextId]!, codePtr, codeBytes.length, bytecodes, bytecodeLen, urlPtr, line,
-            scriptElementPtr, context, resultCallback);
-      } else {
-        _evaluateScripts(_allocatedPages[contextId]!, codePtr, codeBytes.length, nullptr, nullptr, urlPtr, line, scriptElementPtr,
-            context, resultCallback);
+  final handle = PerformanceTracker.instance.beginAsyncSpan('jsEval', 'evaluateScripts', metadata: {'url': url, 'size': codeBytes.length});
+  try {
+    QuickJSByteCodeCacheObject cacheObject =
+        await QuickJSByteCodeCache.getCacheObject(codeBytes, cacheKey: cacheKey, loadedFromCache: loadedFromCache);
+    if (QuickJSByteCodeCacheObject.cacheMode == ByteCodeCacheMode.DEFAULT &&
+        cacheObject.valid &&
+        cacheObject.bytes != null) {
+      bool result = await evaluateQuickjsByteCode(contextId, cacheObject.bytes!, scriptElement: scriptElement);
+      // If the bytecode evaluate failed, remove the cached file and fallback to raw javascript mode.
+      if (!result) {
+        await cacheObject.remove();
+        // Fallback to normal script mode.
+        handle?.end(metadata: {'cached': true, 'fallback': true});
+        return evaluateScripts(contextId, codeBytes, scriptElement: scriptElement);
       }
-      return completer.future;
-    } catch (e, stack) {
-      bridgeLogger.severe('Error in event listener', e, stack);
-    }
+      handle?.end(metadata: {'cached': true});
+      return result;
+    } else {
+      Pointer<Utf8> urlPtr = url.toNativeUtf8();
+      Pointer<Uint8> codePtr = uint8ListToPointer(codeBytes);
+      Completer<bool> completer = Completer();
 
-    return completer.future;
+      _EvaluateScriptsContext context = _EvaluateScriptsContext(completer, codeBytes, codePtr, urlPtr, cacheKey);
+      Pointer<NativeFunction<NativeEvaluateJavaScriptCallback>> resultCallback =
+          Pointer.fromFunction(handleEvaluateScriptsResult);
+
+      Pointer<NativeBindingObject> scriptElementPtr = scriptElement?.pointer! ?? nullptr;
+
+      try {
+        assert(_allocatedPages.containsKey(contextId));
+        if (QuickJSByteCodeCache.isCodeNeedCache(codeBytes)) {
+          // Export the bytecode from scripts
+          Pointer<Pointer<Uint8>> bytecodes = malloc.allocate(sizeOf<Pointer<Uint8>>());
+          Pointer<Uint64> bytecodeLen = malloc.allocate(sizeOf<Uint64>());
+
+          context.bytecodes = bytecodes;
+          context.bytecodeLen = bytecodeLen;
+
+          _evaluateScripts(_allocatedPages[contextId]!, codePtr, codeBytes.length, bytecodes, bytecodeLen, urlPtr, line,
+              scriptElementPtr, context, resultCallback);
+        } else {
+          _evaluateScripts(_allocatedPages[contextId]!, codePtr, codeBytes.length, nullptr, nullptr, urlPtr, line, scriptElementPtr,
+              context, resultCallback);
+        }
+        final result = await completer.future;
+        handle?.end(metadata: {'cached': false});
+        return result;
+      } catch (e, stack) {
+        bridgeLogger.severe('Error in event listener', e, stack);
+        handle?.end(metadata: {'error': e.toString()});
+      }
+
+      return completer.future;
+    }
+  } catch (e) {
+    handle?.end(metadata: {'error': e.toString()});
+    rethrow;
   }
 }
 
@@ -412,6 +424,7 @@ Future<bool> evaluateQuickjsByteCode(double contextId, Uint8List bytes, {ScriptE
   if (WebFController.getControllerOfJSContextId(contextId) == null) {
     return false;
   }
+  final handle = PerformanceTracker.instance.beginAsyncSpan('jsEval', 'evaluateByteCode', metadata: {'size': bytes.length});
   Completer<bool> completer = Completer();
   Pointer<Uint8> byteData = malloc.allocate(sizeOf<Uint8>() * bytes.length);
   byteData.asTypedList(bytes.length).setAll(0, bytes);
@@ -426,7 +439,9 @@ Future<bool> evaluateQuickjsByteCode(double contextId, Uint8List bytes, {ScriptE
 
   _evaluateQuickjsByteCode(_allocatedPages[contextId]!, byteData, bytes.length, scriptElementPtr, context, nativeCallback);
 
-  return completer.future;
+  final result = await completer.future;
+  handle?.end();
+  return result;
 }
 
 Future<bool> evaluateModule(double contextId, Uint8List codeBytes,
@@ -440,6 +455,7 @@ Future<bool> evaluateModule(double contextId, Uint8List codeBytes,
     _anonymousScriptEvaluationId++;
   }
 
+  final handle = PerformanceTracker.instance.beginAsyncSpan('jsEval', 'evaluateModule', metadata: {'url': url, 'size': codeBytes.length});
   {
     Pointer<Utf8> urlPtr = url.toNativeUtf8();
     Pointer<Uint8> codePtr = uint8ListToPointer(codeBytes);
@@ -466,9 +482,12 @@ Future<bool> evaluateModule(double contextId, Uint8List codeBytes,
         _evaluateModule(_allocatedPages[contextId]!, codePtr, codeBytes.length, nullptr, nullptr, urlPtr, line, scriptElementPtr,
             context, resultCallback);
       }
-      return completer.future;
+      final result = await completer.future;
+      handle?.end();
+      return result;
     } catch (e, stack) {
       bridgeLogger.severe('Error in event listener', e, stack);
+      handle?.end(metadata: {'error': e.toString()});
     }
 
     return completer.future;
@@ -505,6 +524,7 @@ Future<void> parseHTML(double contextId, Uint8List codeBytes) async {
     return completer.future;
   }
 
+  final handle = PerformanceTracker.instance.beginAsyncSpan('htmlParse', 'parseHTML', metadata: {'size': codeBytes.length});
   Pointer<Uint8> codePtr = uint8ListToPointer(codeBytes);
   try {
     assert(_allocatedPages.containsKey(contextId));
@@ -514,10 +534,12 @@ Future<void> parseHTML(double contextId, Uint8List codeBytes) async {
     _parseHTML(_allocatedPages[contextId]!, codePtr, codeBytes.length, context, resultCallback);
   } catch (e, stack) {
     bridgeLogger.severe('Error parsing HTML', e, stack);
+    handle?.end(metadata: {'error': e.toString()});
     completer.completeError(e);
   }
 
-  return completer.future;
+  await completer.future;
+  handle?.end();
 }
 
 class GumboOutput {
@@ -849,6 +871,8 @@ void flushUICommand(WebFViewController view, Pointer<NativeBindingObject> selfPo
   }
 
   List<UICommand> commands = nativeUICommandToDartFFI(view.contextId);
+  final handle = PerformanceTracker.instance.beginSpan('domConstruction', 'flushUICommand', metadata: {'commandCount': commands.length});
   execUICommands(view, commands);
+  handle?.end();
   SchedulerBinding.instance.scheduleFrame();
 }

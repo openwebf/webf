@@ -17,6 +17,7 @@ import 'package:webf/rendering.dart';
 import 'package:webf/webf.dart';
 import 'package:webf/launcher.dart';
 import 'package:webf/foundation.dart';
+import 'package:webf/src/devtools/panel/performance_tracker.dart';
 import 'package:path/path.dart' as path;
 
 typedef OnControllerCreated = void Function(WebFController controller);
@@ -605,6 +606,7 @@ class WebFState extends State<WebF> with RouteAware {
       'hasHybridRoute': initialRoute != '/',
     });
 
+    final handle = PerformanceTracker.instance.beginSpan('build', 'buildRootView', metadata: {'initialRoute': initialRoute});
     try {
       if (initialRoute != '/') {
         RouterLinkElement? child = widget.controller.view.getHybridRouterView(initialRoute);
@@ -630,6 +632,7 @@ class WebFState extends State<WebF> with RouteAware {
         }
 
         Widget routerRootWidget = child.toWidget();
+        handle?.end();
 
         // Call onBuildSuccess callback after successful widget build
         if (widget.onBuildSuccess != null) {
@@ -680,6 +683,7 @@ class WebFState extends State<WebF> with RouteAware {
       }
 
       final Widget rootWidget = widget.controller.view.document.documentElement!.toWidget();
+      handle?.end();
 
       // Call onBuildSuccess callback after successful widget build
       if (widget.onBuildSuccess != null) {
@@ -690,6 +694,7 @@ class WebFState extends State<WebF> with RouteAware {
 
       return rootWidget;
     } catch (e, stack) {
+      handle?.end(metadata: {'error': e.toString()});
       // Record any unexpected errors during buildRootView
       widget.controller.loadingState.recordError(
         LoadingState.phaseBuildRootView,

@@ -10,6 +10,7 @@ import 'package:webf/bridge.dart';
 import 'package:webf/foundation.dart';
 import 'package:webf/launcher.dart';
 import 'package:webf/dom.dart';
+import 'package:webf/src/devtools/panel/performance_tracker.dart';
 
 class UICommand {
   late final UICommandType type;
@@ -97,6 +98,7 @@ List<UICommand> nativeUICommandToDartFFI(double contextId) {
 
 void execUICommands(WebFViewController view, List<UICommand> commands) {
   Map<int, bool> pendingStylePropertiesTargets = {};
+  final handle = PerformanceTracker.instance.beginSpan('domConstruction', 'execUICommands', metadata: {'commandCount': commands.length});
 
   for(UICommand command in commands) {
     UICommandType commandType = command.type;
@@ -236,4 +238,5 @@ void execUICommands(WebFViewController view, List<UICommand> commands) {
     }
   }
   pendingStylePropertiesTargets.clear();
+  handle?.end();
 }

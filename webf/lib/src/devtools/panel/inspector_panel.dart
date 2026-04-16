@@ -2846,6 +2846,18 @@ class _WebFInspectorBottomSheetState extends State<_WebFInspectorBottomSheet> wi
               ? WaterfallChart(
                   loadingState: controller.loadingState,
                   tracker: PerformanceTracker.instance,
+                  onToggleFullscreen: () {
+                    // Close the bottom sheet and open fullscreen route
+                    Navigator.of(context).pop();
+                    Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (_) => _FullscreenWaterfallPage(
+                          loadingState: controller.loadingState,
+                          tracker: PerformanceTracker.instance,
+                        ),
+                      ),
+                    );
+                  },
                 )
               : SingleChildScrollView(
                   child: _buildPerformanceMetrics(controller),
@@ -5963,5 +5975,33 @@ class _RemoteObjectWidgetState extends State<_RemoteObjectWidget> {
       return Colors.blue.shade300;
     }
     return Colors.white70;
+  }
+}
+
+/// Fullscreen page for the waterfall performance chart.
+class _FullscreenWaterfallPage extends StatelessWidget {
+  final LoadingState loadingState;
+  final PerformanceTracker tracker;
+
+  const _FullscreenWaterfallPage({
+    required this.loadingState,
+    required this.tracker,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: Colors.black,
+      body: SafeArea(
+        child: WaterfallChart(
+          loadingState: loadingState,
+          tracker: tracker,
+          isFullscreen: true,
+          onToggleFullscreen: () {
+            Navigator.of(context).pop();
+          },
+        ),
+      ),
+    );
   }
 }

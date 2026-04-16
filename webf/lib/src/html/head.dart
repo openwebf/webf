@@ -268,8 +268,10 @@ class LinkElement extends Element {
         // Increment count when request.
         ownerDocument.incrementRequestCount();
 
+        final fetchHandle = PerformanceTracker.instance.beginAsyncSpan('network', 'fetchCSS', metadata: {'url': url});
         await bundle.resolve(baseUrl: ownerDocument.controller.url, uriParser: ownerDocument.controller.uriParser);
         await bundle.obtainData(ownerView.contextId);
+        fetchHandle?.end();
         assert(bundle.isResolved, 'Failed to obtain $url');
         _loading = false;
         // Decrement count when response.
