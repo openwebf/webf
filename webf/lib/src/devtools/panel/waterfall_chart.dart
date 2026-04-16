@@ -777,6 +777,7 @@ class _WaterfallChartState extends State<WaterfallChart> {
   List<PerformanceSpan> _selectedSpans = const [];
   List<JSThreadSpan> _selectedJsSpans = const [];
   double _zoom = 1.0;
+  double _flameZoom = 1.0;
 
   // Scroll controllers
   final ScrollController _rulerHScrollController = ScrollController();
@@ -942,7 +943,9 @@ class _WaterfallChartState extends State<WaterfallChart> {
       _selectedSpans = entry.spans;
       _selectedJsSpans = entry.jsSpans;
       _mode = _ChartMode.flame;
+      _flameZoom = 1.0;
       _detailSpan = null;
+      _detailJsSpan = null;
       _selectedEntry = null;
     });
   }
@@ -1009,8 +1012,13 @@ class _WaterfallChartState extends State<WaterfallChart> {
             const SizedBox(width: 12),
             // Zoom
             InkWell(
-              onTap: () =>
-                  setState(() => _zoom = (_zoom / 1.5).clamp(0.25, 64)),
+              onTap: () => setState(() {
+                if (_mode == _ChartMode.flame) {
+                  _flameZoom = (_flameZoom / 1.5).clamp(0.25, 64);
+                } else {
+                  _zoom = (_zoom / 1.5).clamp(0.25, 64);
+                }
+              }),
               child: const Padding(
                 padding: EdgeInsets.all(4),
                 child: Icon(Icons.remove, size: 16, color: Colors.white70),
@@ -1019,13 +1027,18 @@ class _WaterfallChartState extends State<WaterfallChart> {
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 4),
               child: Text(
-                '${(_zoom * 100).round()}%',
+                '${((_mode == _ChartMode.flame ? _flameZoom : _zoom) * 100).round()}%',
                 style: const TextStyle(color: Colors.white70, fontSize: 11),
               ),
             ),
             InkWell(
-              onTap: () =>
-                  setState(() => _zoom = (_zoom * 1.5).clamp(0.25, 64)),
+              onTap: () => setState(() {
+                if (_mode == _ChartMode.flame) {
+                  _flameZoom = (_flameZoom * 1.5).clamp(0.25, 64);
+                } else {
+                  _zoom = (_zoom * 1.5).clamp(0.25, 64);
+                }
+              }),
               child: const Padding(
                 padding: EdgeInsets.all(4),
                 child: Icon(Icons.add, size: 16, color: Colors.white70),
@@ -1693,7 +1706,7 @@ class _WaterfallChartState extends State<WaterfallChart> {
     // Find min depth among root spans for normalization
     final minDepth = rootSpans.map((s) => s.depth).reduce(math.min);
     final maxDepth = allSpans.map((s) => s.maxDepth).reduce(math.max) - minDepth;
-    final pixelsPerMs = _zoom * 2.0;
+    final pixelsPerMs = _flameZoom * 2.0;
     final contentWidth = rootDurationMs * pixelsPerMs;
     const rowHeight = 20.0;
     const rulerHeight = 24.0;
@@ -2012,7 +2025,7 @@ class _WaterfallChartState extends State<WaterfallChart> {
 
     final minDepth = jsSpans.map((s) => s.depth).reduce(math.min);
     final maxDepth = jsSpans.map((s) => s.depth).reduce(math.max) - minDepth;
-    final pixelsPerMs = _zoom * 2.0;
+    final pixelsPerMs = _flameZoom * 2.0;
     final contentWidth = totalDurationMs * pixelsPerMs;
     const rowHeight = 20.0;
     const rulerHeight = 24.0;
