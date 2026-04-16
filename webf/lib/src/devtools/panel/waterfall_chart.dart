@@ -112,6 +112,7 @@ class WaterfallMilestone {
 class WaterfallData {
   final List<WaterfallEntry> entries;
   final List<WaterfallMilestone> milestones;
+  final List<Duration> frameBoundaries;
   final Duration totalDuration;
   /// Offset of the attachToFlutter phase (null if not a preload/prerender session).
   /// Everything before this is "Preload/Prerender", everything after is "Display".
@@ -120,6 +121,7 @@ class WaterfallData {
   WaterfallData({
     required this.entries,
     required this.milestones,
+    this.frameBoundaries = const [],
     required this.totalDuration,
     this.attachOffset,
   });
@@ -511,9 +513,21 @@ WaterfallData _buildWaterfallDataImpl(
     normalizedAttach = normalizedAttach - minStart;
   }
 
+  // Detect frame boundaries from paint span end times.
+  // Each frame in the rendering pipeline ends with a paint span.
+  final frameBoundaries = <Duration>[];
+  for (final span in rootSpanSnapshot) {
+    if (!span.isComplete || span.category != 'paint') continue;
+    var boundary = offset(span.endTime!);
+    if (minStart > Duration.zero) boundary = boundary - minStart;
+    frameBoundaries.add(boundary);
+  }
+  frameBoundaries.sort();
+
   return WaterfallData(
     entries: entries,
     milestones: milestones,
+    frameBoundaries: frameBoundaries,
     totalDuration: maxEnd,
     attachOffset: normalizedAttach,
   );
@@ -1498,6 +1512,7 @@ class _WaterfallChartState extends State<WaterfallChart> {
                         pixelsPerMs: pixelsPerMs,
                         milestones: data.milestones,
                         attachX: attachX,
+                        frameBoundaries: data.frameBoundaries,
                       ),
                     ),
                   ),
@@ -1610,25 +1625,40 @@ class _WaterfallChartState extends State<WaterfallChart> {
                     controller: _chartHScrollController,
                     child: SizedBox(
                       width: chartWidth,
-                      child: ListView.builder(
-                        controller: _barsVScrollController,
-                        physics: const ClampingScrollPhysics(),
-                        itemCount: items.length,
-                        itemExtent: rowHeight,
-                        itemBuilder: (ctx, i) {
-                          final item = items[i];
-                          if (item.isHeader) {
-                            final isPreload = item.headerText!.startsWith('Preload');
-                            return Container(
-                              color: isPreload
-                                  ? const Color(0x20FFB74D)
-                                  : const Color(0x204CAF50),
-                            );
-                          }
-                          return _buildOverviewRow(
-                              item.entry!, totalMs, pixelsPerMs, chartWidth,
-                              attachX: attachX);
-                        },
+                      child: Stack(
+                        children: [
+                          // Frame boundary lines (background)
+                          if (data.frameBoundaries.isNotEmpty)
+                            Positioned.fill(
+                              child: CustomPaint(
+                                painter: _FrameBoundaryPainter(
+                                  frameBoundaries: data.frameBoundaries,
+                                  pixelsPerMs: pixelsPerMs,
+                                ),
+                              ),
+                            ),
+                          // Bar rows
+                          ListView.builder(
+                            controller: _barsVScrollController,
+                            physics: const ClampingScrollPhysics(),
+                            itemCount: items.length,
+                            itemExtent: rowHeight,
+                            itemBuilder: (ctx, i) {
+                              final item = items[i];
+                              if (item.isHeader) {
+                                final isPreload = item.headerText!.startsWith('Preload');
+                                return Container(
+                                  color: isPreload
+                                      ? const Color(0x20FFB74D)
+                                      : const Color(0x204CAF50),
+                                );
+                              }
+                              return _buildOverviewRow(
+                                  item.entry!, totalMs, pixelsPerMs, chartWidth,
+                                  attachX: attachX);
+                            },
+                          ),
+                        ],
                       ),
                     ),
                   ),
@@ -2248,12 +2278,14 @@ class _TimeRulerPainter extends CustomPainter {
   final double pixelsPerMs;
   final List<WaterfallMilestone> milestones;
   final double? attachX; // x position of attachToFlutter divider
+  final List<Duration> frameBoundaries;
 
   _TimeRulerPainter({
     required this.totalMs,
     required this.pixelsPerMs,
     required this.milestones,
     this.attachX,
+    this.frameBoundaries = const [],
   });
 
   @override
@@ -2283,6 +2315,17 @@ class _TimeRulerPainter extends CustomPainter {
       tp.paint(canvas, Offset(x + 2, 2));
 
       ms += interval;
+    }
+
+    // Draw frame boundary indicators
+    if (frameBoundaries.isNotEmpty) {
+      final framePaint = Paint()
+        ..color = const Color(0xFF555555)
+        ..strokeWidth = 0.5;
+      for (int i = 0; i < frameBoundaries.length; i++) {
+        final x = frameBoundaries[i].inMicroseconds / 1000.0 * pixelsPerMs;
+        canvas.drawLine(Offset(x, 0), Offset(x, size.height), framePaint);
+      }
     }
 
     // Draw milestone lines
@@ -2316,7 +2359,8 @@ class _TimeRulerPainter extends CustomPainter {
   bool shouldRepaint(_TimeRulerPainter old) =>
       old.totalMs != totalMs ||
       old.pixelsPerMs != pixelsPerMs ||
-      old.milestones != milestones;
+      old.milestones != milestones ||
+      old.frameBoundaries.length != frameBoundaries.length;
 
   double _niceInterval(double raw) {
     if (raw <= 1) return 1;
@@ -2687,6 +2731,33 @@ class _JSFlameChartPainter extends CustomPainter {
       old.pixelsPerMs != pixelsPerMs ||
       old.rowHeight != rowHeight ||
       !identical(old.selectedSpan, selectedSpan);
+}
+
+// ---------------------------------------------------------------------------
+class _FrameBoundaryPainter extends CustomPainter {
+  final List<Duration> frameBoundaries;
+  final double pixelsPerMs;
+
+  _FrameBoundaryPainter({
+    required this.frameBoundaries,
+    required this.pixelsPerMs,
+  });
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = const Color(0xFF444444)
+      ..strokeWidth = 0.5;
+    for (final boundary in frameBoundaries) {
+      final x = boundary.inMicroseconds / 1000.0 * pixelsPerMs;
+      canvas.drawLine(Offset(x, 0), Offset(x, size.height), paint);
+    }
+  }
+
+  @override
+  bool shouldRepaint(_FrameBoundaryPainter old) =>
+      old.frameBoundaries.length != frameBoundaries.length ||
+      old.pixelsPerMs != pixelsPerMs;
 }
 
 // ---------------------------------------------------------------------------
