@@ -1540,9 +1540,23 @@ class _WaterfallChartState extends State<WaterfallChart> {
       );
     }
 
-    final totalMs = data.totalDuration.inMicroseconds / 1000.0;
+    final Duration phaseStart;
+    final Duration phaseEnd;
+    switch (widget.phase) {
+      case WaterfallPhase.initToAttach:
+        phaseStart = Duration.zero;
+        phaseEnd = data.attachOffset ?? data.totalDuration;
+        break;
+      case WaterfallPhase.attachToPaint:
+        phaseStart = data.attachOffset ?? data.totalDuration;
+        phaseEnd = data.totalDuration;
+        break;
+    }
+    final phaseStartMs = phaseStart.inMicroseconds / 1000.0;
+    final phaseEndMs = phaseEnd.inMicroseconds / 1000.0;
+    final totalMs = phaseEndMs - phaseStartMs;
     final pixelsPerMs = _zoom * 2.0; // base: 2px per ms
-    final contentWidth = totalMs * pixelsPerMs;
+    final contentWidth = math.max(totalMs * pixelsPerMs, 0.0);
 
     const labelWidth = 140.0;
     const rowHeight = 22.0;
@@ -1551,9 +1565,10 @@ class _WaterfallChartState extends State<WaterfallChart> {
     return LayoutBuilder(builder: (context, constraints) {
       final availableWidth = constraints.maxWidth - labelWidth - 1;
       final chartWidth = math.max(contentWidth, availableWidth);
-      final attachX = data.attachOffset != null
-          ? data.attachOffset!.inMicroseconds / 1000.0 * pixelsPerMs
-          : null;
+      // Stage-divider vertical line is redundant in sub-tab mode (each tab is
+      // one side of the divider). Passing null disables the in-chart divider
+      // rendering.
+      final double? attachX = null;
 
       return Column(
         children: [
@@ -1573,6 +1588,7 @@ class _WaterfallChartState extends State<WaterfallChart> {
                       painter: _TimeRulerPainter(
                         totalMs: totalMs,
                         pixelsPerMs: pixelsPerMs,
+                        phaseStartMs: phaseStartMs,
                         milestones: data.milestones
                             .where((m) =>
                                 includeMilestoneForPhase(m, widget.phase, data.attachOffset))
@@ -1590,32 +1606,6 @@ class _WaterfallChartState extends State<WaterfallChart> {
             ),
           ),
           const Divider(height: 1, color: Colors.white12),
-          // Stage bar (only for preload/prerender sessions)
-          if (data.attachOffset != null)
-            SizedBox(
-              height: 16,
-              child: Row(
-                children: [
-                  const SizedBox(width: labelWidth),
-                  Expanded(
-                    child: SingleChildScrollView(
-                      scrollDirection: Axis.horizontal,
-                      physics: const ClampingScrollPhysics(),
-                      child: SizedBox(
-                        width: chartWidth,
-                        child: CustomPaint(
-                          size: Size(chartWidth, 16),
-                          painter: _StageBarPainter(
-                            attachX: attachX!,
-                            chartWidth: chartWidth,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
           // Chart rows
           Expanded(
             child: Row(
@@ -1708,6 +1698,7 @@ class _WaterfallChartState extends State<WaterfallChart> {
                                           b, widget.phase, data.attachOffset))
                                       .toList(),
                                   pixelsPerMs: pixelsPerMs,
+                                  phaseStartMs: phaseStartMs,
                                 ),
                               ),
                             ),
@@ -1729,7 +1720,8 @@ class _WaterfallChartState extends State<WaterfallChart> {
                               }
                               return _buildOverviewRow(
                                   item.entry!, totalMs, pixelsPerMs, chartWidth,
-                                  attachX: attachX);
+                                  attachX: attachX,
+                                  phaseStartMs: phaseStartMs);
                             },
                           ),
                         ],
@@ -1746,10 +1738,11 @@ class _WaterfallChartState extends State<WaterfallChart> {
   }
 
   Widget _buildOverviewRow(WaterfallEntry entry, double totalMs,
-      double pixelsPerMs, double chartWidth, {double? attachX}) {
+      double pixelsPerMs, double chartWidth,
+      {double? attachX, required double phaseStartMs}) {
     final startMs = entry.start.inMicroseconds / 1000.0;
     final durationMs = entry.duration.inMicroseconds / 1000.0;
-    final barLeft = startMs * pixelsPerMs;
+    final barLeft = (startMs - phaseStartMs) * pixelsPerMs;
     final barWidth = math.max(durationMs * pixelsPerMs, 2.0);
     final color = _categoryColor(entry.category);
 
@@ -1772,6 +1765,7 @@ class _WaterfallChartState extends State<WaterfallChart> {
           color: color,
           subEntries: entry.subEntries,
           pixelsPerMs: pixelsPerMs,
+          phaseStartMs: phaseStartMs,
           hasDrillDown: entry.hasDrillDown,
           attachX: attachX,
           spanSegments: entry.spanSegments.isNotEmpty ? entry.spanSegments : null,
@@ -1909,6 +1903,7 @@ class _WaterfallChartState extends State<WaterfallChart> {
               painter: _TimeRulerPainter(
                 totalMs: rootDurationMs,
                 pixelsPerMs: pixelsPerMs,
+                phaseStartMs: 0.0,
                 milestones: const [],
               ),
             ),
@@ -2226,6 +2221,7 @@ class _WaterfallChartState extends State<WaterfallChart> {
                 painter: _TimeRulerPainter(
                   totalMs: totalDurationMs,
                   pixelsPerMs: pixelsPerMs,
+                  phaseStartMs: 0.0,
                   milestones: const [],
                 ),
               ),
@@ -2350,6 +2346,7 @@ class _WaterfallChartState extends State<WaterfallChart> {
 class _TimeRulerPainter extends CustomPainter {
   final double totalMs;
   final double pixelsPerMs;
+  final double phaseStartMs;
   final List<WaterfallMilestone> milestones;
   final double? attachX; // x position of attachToFlutter divider
   final List<Duration> frameBoundaries;
@@ -2357,6 +2354,7 @@ class _TimeRulerPainter extends CustomPainter {
   _TimeRulerPainter({
     required this.totalMs,
     required this.pixelsPerMs,
+    required this.phaseStartMs,
     required this.milestones,
     this.attachX,
     this.frameBoundaries = const [],
@@ -2373,7 +2371,9 @@ class _TimeRulerPainter extends CustomPainter {
     final rawInterval = targetTickPx / pixelsPerMs;
     final interval = _niceInterval(rawInterval);
 
-    // Draw ticks
+    // Draw ticks — tick positions are LOCAL to the phase (0..totalMs), but
+    // the displayed label shows the ABSOLUTE time since load (phaseStartMs +
+    // localMs) so users can still read "time since page load" for any tick.
     double ms = 0;
     while (ms <= totalMs) {
       final x = ms * pixelsPerMs;
@@ -2381,7 +2381,7 @@ class _TimeRulerPainter extends CustomPainter {
 
       final tp = TextPainter(
         text: TextSpan(
-          text: _formatMs(ms),
+          text: _formatMs(phaseStartMs + ms),
           style: const TextStyle(color: Color(0xFF888888), fontSize: 9),
         ),
         textDirection: TextDirection.ltr,
@@ -2404,13 +2404,13 @@ class _TimeRulerPainter extends CustomPainter {
         ..color = const Color(0x15EF5350);
       for (int i = 0; i < frameBoundaries.length; i++) {
         final xMs = frameBoundaries[i].inMicroseconds / 1000.0;
-        final x = xMs * pixelsPerMs;
-        final prevMs = i > 0 ? frameBoundaries[i - 1].inMicroseconds / 1000.0 : 0.0;
+        final x = (xMs - phaseStartMs) * pixelsPerMs;
+        final prevMs = i > 0 ? frameBoundaries[i - 1].inMicroseconds / 1000.0 : phaseStartMs;
         final gapMs = xMs - prevMs;
         final isDropped = i > 0 && gapMs > droppedThresholdMs;
         // Shade dropped-frame region
         if (isDropped) {
-          final prevX = prevMs * pixelsPerMs;
+          final prevX = (prevMs - phaseStartMs) * pixelsPerMs;
           canvas.drawRect(Rect.fromLTRB(prevX, 0, x, size.height), droppedBgPaint);
         }
         canvas.drawLine(Offset(x, 0), Offset(x, size.height), isDropped ? droppedPaint : normalPaint);
@@ -2419,7 +2419,7 @@ class _TimeRulerPainter extends CustomPainter {
 
     // Draw milestone lines
     for (final m in milestones) {
-      final x = m.offset.inMicroseconds / 1000.0 * pixelsPerMs;
+      final x = (m.offset.inMicroseconds / 1000.0 - phaseStartMs) * pixelsPerMs;
       final mPaint = Paint()
         ..color = m.color.withOpacity(0.7)
         ..strokeWidth = 1.5
@@ -2448,6 +2448,7 @@ class _TimeRulerPainter extends CustomPainter {
   bool shouldRepaint(_TimeRulerPainter old) =>
       old.totalMs != totalMs ||
       old.pixelsPerMs != pixelsPerMs ||
+      old.phaseStartMs != phaseStartMs ||
       old.milestones != milestones ||
       old.frameBoundaries.length != frameBoundaries.length;
 
@@ -2477,6 +2478,7 @@ class _OverviewRowPainter extends CustomPainter {
   final Color color;
   final List<WaterfallSubEntry> subEntries;
   final double pixelsPerMs;
+  final double phaseStartMs;
   final bool hasDrillDown;
   final double? attachX;
   final List<_SpanSegment>? spanSegments;
@@ -2487,6 +2489,7 @@ class _OverviewRowPainter extends CustomPainter {
     required this.color,
     required this.subEntries,
     required this.pixelsPerMs,
+    required this.phaseStartMs,
     required this.hasDrillDown,
     this.attachX,
     this.spanSegments,
@@ -2529,7 +2532,7 @@ class _OverviewRowPainter extends CustomPainter {
       );
       final segPaint = Paint()..color = color;
       for (final seg in spanSegments!) {
-        final segLeft = seg.startMs * pixelsPerMs;
+        final segLeft = (seg.startMs - phaseStartMs) * pixelsPerMs;
         final segWidth = math.max((seg.endMs - seg.startMs) * pixelsPerMs, 1.5);
         canvas.drawRect(
           Rect.fromLTWH(segLeft, barTop, segWidth, barHeight),
@@ -2560,7 +2563,7 @@ class _OverviewRowPainter extends CustomPainter {
       for (final sub in subEntries) {
         final subStartMs = sub.start.inMicroseconds / 1000.0;
         final subDurationMs = sub.duration.inMicroseconds / 1000.0;
-        final subLeft = subStartMs * pixelsPerMs;
+        final subLeft = (subStartMs - phaseStartMs) * pixelsPerMs;
         final subWidth = math.max(subDurationMs * pixelsPerMs, 1.0);
         final subPaint = Paint()..color = sub.color;
         canvas.drawRect(
@@ -2589,6 +2592,7 @@ class _OverviewRowPainter extends CustomPainter {
       old.barWidth != barWidth ||
       old.color != color ||
       old.pixelsPerMs != pixelsPerMs ||
+      old.phaseStartMs != phaseStartMs ||
       old.hasDrillDown != hasDrillDown ||
       old.attachX != attachX ||
       old.subEntries.length != subEntries.length;
@@ -2826,10 +2830,12 @@ class _JSFlameChartPainter extends CustomPainter {
 class _FrameBoundaryPainter extends CustomPainter {
   final List<Duration> frameBoundaries;
   final double pixelsPerMs;
+  final double phaseStartMs;
 
   _FrameBoundaryPainter({
     required this.frameBoundaries,
     required this.pixelsPerMs,
+    required this.phaseStartMs,
   });
 
   @override
@@ -2845,12 +2851,12 @@ class _FrameBoundaryPainter extends CustomPainter {
       ..color = const Color(0x10EF5350);
     for (int i = 0; i < frameBoundaries.length; i++) {
       final xMs = frameBoundaries[i].inMicroseconds / 1000.0;
-      final x = xMs * pixelsPerMs;
-      final prevMs = i > 0 ? frameBoundaries[i - 1].inMicroseconds / 1000.0 : 0.0;
+      final x = (xMs - phaseStartMs) * pixelsPerMs;
+      final prevMs = i > 0 ? frameBoundaries[i - 1].inMicroseconds / 1000.0 : phaseStartMs;
       final gapMs = xMs - prevMs;
       final isDropped = i > 0 && gapMs > droppedThresholdMs;
       if (isDropped) {
-        final prevX = prevMs * pixelsPerMs;
+        final prevX = (prevMs - phaseStartMs) * pixelsPerMs;
         canvas.drawRect(Rect.fromLTRB(prevX, 0, x, size.height), droppedBgPaint);
       }
       canvas.drawLine(Offset(x, 0), Offset(x, size.height), isDropped ? droppedPaint : normalPaint);
@@ -2860,63 +2866,8 @@ class _FrameBoundaryPainter extends CustomPainter {
   @override
   bool shouldRepaint(_FrameBoundaryPainter old) =>
       old.frameBoundaries.length != frameBoundaries.length ||
-      old.pixelsPerMs != pixelsPerMs;
-}
-
-// ---------------------------------------------------------------------------
-class _StageBarPainter extends CustomPainter {
-  final double attachX;
-  final double chartWidth;
-
-  _StageBarPainter({required this.attachX, required this.chartWidth});
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    // Preload/prerender stage
-    canvas.drawRect(
-      Rect.fromLTWH(0, 0, attachX, size.height),
-      Paint()..color = const Color(0x30FFB74D),
-    );
-    // Display stage
-    canvas.drawRect(
-      Rect.fromLTWH(attachX, 0, chartWidth - attachX, size.height),
-      Paint()..color = const Color(0x304CAF50),
-    );
-    // Divider
-    canvas.drawLine(
-      Offset(attachX, 0),
-      Offset(attachX, size.height),
-      Paint()
-        ..color = const Color(0xAAFFB74D)
-        ..strokeWidth = 1.5,
-    );
-    // Labels
-    final preTp = TextPainter(
-      text: const TextSpan(
-        text: 'Preload / Prerender',
-        style: TextStyle(
-            color: Color(0xCCFFB74D), fontSize: 9, fontWeight: FontWeight.w600),
-      ),
-      textDirection: TextDirection.ltr,
-    )..layout();
-    if (attachX > preTp.width + 8) {
-      preTp.paint(canvas, Offset(4, (size.height - preTp.height) / 2));
-    }
-    final dispTp = TextPainter(
-      text: const TextSpan(
-        text: 'Display',
-        style: TextStyle(
-            color: Color(0xCC4CAF50), fontSize: 9, fontWeight: FontWeight.w600),
-      ),
-      textDirection: TextDirection.ltr,
-    )..layout();
-    dispTp.paint(
-        canvas, Offset(attachX + 4, (size.height - dispTp.height) / 2));
-  }
-
-  @override
-  bool shouldRepaint(_StageBarPainter old) =>
-      old.attachX != attachX || old.chartWidth != chartWidth;
+      old.pixelsPerMs != pixelsPerMs ||
+      old.phaseStartMs != phaseStartMs;
 }
 
 // ---------------------------------------------------------------------------
