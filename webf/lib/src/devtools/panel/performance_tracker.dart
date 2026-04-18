@@ -191,12 +191,16 @@ class PerformanceTracker {
   /// Dart session start time, used for JS span clock reference.
   DateTime? _dartSessionStart;
 
-  /// Monotonic clock source. Started once in [startSession].
+  /// Monotonic clock source. A fresh instance is created on every
+  /// [startSession] call and used for all timing within that session.
   Stopwatch? _stopwatch;
 
   /// Absolute C++ steady_clock microseconds captured at the instant the Dart
   /// stopwatch was started. Derived from `getSteadyClockNowUs()` and the
   /// stopwatch's elapsed at that instant. Constant for the session.
+  /// Note: there is a sub-ms skew equal to any OS/GC pause between the
+  /// `getSteadyClockNowUs()` FFI call and the `elapsedMicroseconds` read.
+  /// Accepted — well below visible waterfall resolution.
   int? _stopwatchStartAbsUs;
 
   /// Absolute C++ steady_clock microseconds of the C++ profiler's
@@ -249,8 +253,9 @@ class PerformanceTracker {
 
     // Step B: enable C++ profiling (this captures C++ session_start_).
     to_native.setJSThreadProfilingEnabled(true);
-    _cppSessionStartAbsUs = to_native.getJSProfilerSessionStartUs();
-    _cppToDartOffsetUs = _cppSessionStartAbsUs! - _stopwatchStartAbsUs!;
+    final cppSessionStartAbsUs = to_native.getJSProfilerSessionStartUs();
+    _cppSessionStartAbsUs = cppSessionStartAbsUs;
+    _cppToDartOffsetUs = cppSessionStartAbsUs - _stopwatchStartAbsUs!;
   }
 
   /// End the current recording session. Spans are preserved for reading.

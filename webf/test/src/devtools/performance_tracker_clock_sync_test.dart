@@ -16,9 +16,9 @@ void main() {
       tracker.startSession();
 
       final first = tracker.nowOffsetUs();
-      // Busy-wait ~1ms so stopwatch advances.
-      final end = DateTime.now().add(const Duration(milliseconds: 1));
-      while (DateTime.now().isBefore(end)) {}
+      // Busy-wait ~1ms using a local Stopwatch (not tracker state).
+      final wait = Stopwatch()..start();
+      while (wait.elapsedMicroseconds < 1000) {}
       final second = tracker.nowOffsetUs();
 
       expect(second, greaterThan(first),
