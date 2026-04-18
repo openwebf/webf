@@ -213,14 +213,37 @@ WaterfallData _buildWaterfallDataImpl(
         entries: [], milestones: [], totalDuration: Duration.zero);
   }
 
+  // When recording starts after page load (live profile), tracker.sessionStart
+  // is LATER than loadingState.startTime (which is sessionStart here).
+  // All monotonic offsets (PerformanceSpan.startOffsetUs, JSThreadSpan offsets,
+  // etc.) are anchored to tracker.sessionStart, so they must be shifted forward
+  // by (tracker.sessionStart − sessionStart) to align with wall-clock items on
+  // the same chart.
+  final monotonicShiftUs = (importedPhases == null &&
+          tracker.sessionStart != null &&
+          tracker.sessionStart != sessionStart)
+      ? tracker.sessionStart!.difference(sessionStart).inMicroseconds
+      : 0;
+
   Duration offset(DateTime t) => t.difference(sessionStart);
 
   // Prefer the monotonic offset when available; fall back to wall-clock diff.
   // Accepts (DateTime, int?) — the int? is the monotonic offset in µs.
   Duration offsetFromPair(DateTime wallClock, int? monotonicUs) {
-    if (monotonicUs != null) return Duration(microseconds: monotonicUs);
+    if (monotonicUs != null) {
+      return Duration(microseconds: monotonicUs + monotonicShiftUs);
+    }
     return wallClock.difference(sessionStart);
   }
+
+  // Convert a raw monotonic microsecond value to a chart-relative Duration.
+  Duration shiftedOffset(int monotonicUs) =>
+      Duration(microseconds: monotonicUs + monotonicShiftUs);
+
+  // Shift a JSThreadSpan Duration (already in tracker monotonic space) to the
+  // chart's sessionStart-relative timeline.
+  Duration shiftedJsOffset(Duration d) =>
+      Duration(microseconds: d.inMicroseconds + monotonicShiftUs);
 
   // --- Lifecycle phases ---
   // Use imported phases if available, otherwise snapshot from LoadingState
@@ -381,8 +404,8 @@ WaterfallData _buildWaterfallDataImpl(
 
     // Cluster spans with gaps < 50ms into groups
     const clusterGap = Duration(milliseconds: 50);
-    var clusterStart = Duration(microseconds: spans.first.startOffsetUs);
-    var clusterEnd = Duration(microseconds: spans.first.endOffsetUs!);
+    var clusterStart = shiftedOffset(spans.first.startOffsetUs);
+    var clusterEnd = shiftedOffset(spans.first.endOffsetUs!);
     var clusterSpans = <PerformanceSpan>[spans.first];
 
     void flushCluster() {
@@ -396,8 +419,8 @@ WaterfallData _buildWaterfallDataImpl(
       // Build span segments so the painter draws each span individually
       final segments = count > 1
           ? clusterSpans.map((s) => _SpanSegment(
-              startMs: s.startOffsetUs / 1000.0,
-              endMs: s.endOffsetUs! / 1000.0,
+              startMs: (s.startOffsetUs + monotonicShiftUs) / 1000.0,
+              endMs: (s.endOffsetUs! + monotonicShiftUs) / 1000.0,
             )).toList()
           : const <_SpanSegment>[];
       entries.add(WaterfallEntry(
@@ -412,8 +435,8 @@ WaterfallData _buildWaterfallDataImpl(
     }
 
     for (int i = 1; i < spans.length; i++) {
-      final spanStart = Duration(microseconds: spans[i].startOffsetUs);
-      final spanEnd = Duration(microseconds: spans[i].endOffsetUs!);
+      final spanStart = shiftedOffset(spans[i].startOffsetUs);
+      final spanEnd = shiftedOffset(spans[i].endOffsetUs!);
       if (spanStart - clusterEnd > clusterGap) {
         // Gap too large — flush current cluster and start new one
         flushCluster();
@@ -457,8 +480,8 @@ WaterfallData _buildWaterfallDataImpl(
       spans.sort((a, b) => a.startOffset.compareTo(b.startOffset));
 
       const clusterGap = Duration(milliseconds: 50);
-      var clusterStart = spans.first.startOffset;
-      var clusterEnd = spans.first.endOffset;
+      var clusterStart = shiftedJsOffset(spans.first.startOffset);
+      var clusterEnd = shiftedJsOffset(spans.first.endOffset);
       var clusterSpans = <JSThreadSpan>[spans.first];
 
       void flushJSCluster() {
@@ -471,13 +494,15 @@ WaterfallData _buildWaterfallDataImpl(
             : '$catLabel ($count, ${_formatDuration(totalDuration)})';
         final segments = count > 1
             ? clusterSpans.map((s) => _SpanSegment(
-                startMs: s.startOffset.inMicroseconds / 1000.0,
-                endMs: s.endOffset.inMicroseconds / 1000.0,
+                startMs: (s.startOffset.inMicroseconds + monotonicShiftUs) / 1000.0,
+                endMs: (s.endOffset.inMicroseconds + monotonicShiftUs) / 1000.0,
               )).toList()
             : const <_SpanSegment>[];
         // Collect all JS spans (including function calls) within this cluster's time range
         final clusterJsSpans = allJsSorted
-            .where((s) => s.startOffset >= clusterStart && s.endOffset <= clusterEnd)
+            .where((s) =>
+                shiftedJsOffset(s.startOffset) >= clusterStart &&
+                shiftedJsOffset(s.endOffset) <= clusterEnd)
             .toList();
         entries.add(WaterfallEntry(
           category: cat,
@@ -490,8 +515,8 @@ WaterfallData _buildWaterfallDataImpl(
       }
 
       for (int i = 1; i < spans.length; i++) {
-        final spanStart = spans[i].startOffset;
-        final spanEnd = spans[i].endOffset;
+        final spanStart = shiftedJsOffset(spans[i].startOffset);
+        final spanEnd = shiftedJsOffset(spans[i].endOffset);
         if (spanStart - clusterEnd > clusterGap) {
           flushJSCluster();
           clusterStart = spanStart;
@@ -586,7 +611,7 @@ WaterfallData _buildWaterfallDataImpl(
   final paintEnds = <Duration>[];
   for (final span in rootSpanSnapshot) {
     if (!span.isComplete || span.category != 'paint') continue;
-    var boundary = Duration(microseconds: span.endOffsetUs!);
+    var boundary = shiftedOffset(span.endOffsetUs!);
     if (minStart > Duration.zero) boundary = boundary - minStart;
     paintEnds.add(boundary);
   }
