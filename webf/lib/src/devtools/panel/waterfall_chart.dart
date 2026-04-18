@@ -215,20 +215,30 @@ WaterfallData _buildWaterfallDataImpl(
 
   Duration offset(DateTime t) => t.difference(sessionStart);
 
+  // Prefer the monotonic offset when available; fall back to wall-clock diff.
+  // Accepts (DateTime, int?) — the int? is the monotonic offset in µs.
+  Duration offsetFromPair(DateTime wallClock, int? monotonicUs) {
+    if (monotonicUs != null) return Duration(microseconds: monotonicUs);
+    return wallClock.difference(sessionStart);
+  }
+
   // --- Lifecycle phases ---
   // Use imported phases if available, otherwise snapshot from LoadingState
   final phaseNames = <String>[];
   final phaseTimestamps = <DateTime>[];
+  final phaseOffsetUs = <int?>[];
   if (importedPhases != null) {
     for (final p in importedPhases) {
       phaseNames.add(p.name);
       phaseTimestamps.add(p.timestamp);
+      phaseOffsetUs.add(null);
     }
   } else {
     final livePhases = List.of(loadingState.phases);
     for (final p in livePhases) {
       phaseNames.add(p.name);
       phaseTimestamps.add(p.timestamp);
+      phaseOffsetUs.add(p.offsetUs);
     }
   }
   Duration? attachOffset;
@@ -259,15 +269,17 @@ WaterfallData _buildWaterfallDataImpl(
         subEntries.add(WaterfallSubEntry(
           label: phaseNames[idx],
           color: _lifecycleColor(phaseNames[idx]),
-          start: offset(phaseTimestamps[idx]),
-          end: offset(phaseTimestamps[nextIdx]),
+          start: offsetFromPair(phaseTimestamps[idx], phaseOffsetUs[idx]),
+          end: offsetFromPair(phaseTimestamps[nextIdx], phaseOffsetUs[nextIdx]),
         ));
       }
       entries.add(WaterfallEntry(
         category: WaterfallCategory.lifecycle,
         label: 'Lifecycle',
-        start: offset(phaseTimestamps[relevantIndices.first]),
-        end: offset(phaseTimestamps[relevantIndices.last]),
+        start: offsetFromPair(
+            phaseTimestamps[relevantIndices.first], phaseOffsetUs[relevantIndices.first]),
+        end: offsetFromPair(
+            phaseTimestamps[relevantIndices.last], phaseOffsetUs[relevantIndices.last]),
         subEntries: subEntries,
       ));
     }
@@ -369,8 +381,8 @@ WaterfallData _buildWaterfallDataImpl(
 
     // Cluster spans with gaps < 50ms into groups
     const clusterGap = Duration(milliseconds: 50);
-    var clusterStart = offset(spans.first.startTime);
-    var clusterEnd = offset(spans.first.endTime!);
+    var clusterStart = Duration(microseconds: spans.first.startOffsetUs);
+    var clusterEnd = Duration(microseconds: spans.first.endOffsetUs!);
     var clusterSpans = <PerformanceSpan>[spans.first];
 
     void flushCluster() {
@@ -384,8 +396,8 @@ WaterfallData _buildWaterfallDataImpl(
       // Build span segments so the painter draws each span individually
       final segments = count > 1
           ? clusterSpans.map((s) => _SpanSegment(
-              startMs: offset(s.startTime).inMicroseconds / 1000.0,
-              endMs: offset(s.endTime!).inMicroseconds / 1000.0,
+              startMs: s.startOffsetUs / 1000.0,
+              endMs: s.endOffsetUs! / 1000.0,
             )).toList()
           : const <_SpanSegment>[];
       entries.add(WaterfallEntry(
@@ -400,8 +412,8 @@ WaterfallData _buildWaterfallDataImpl(
     }
 
     for (int i = 1; i < spans.length; i++) {
-      final spanStart = offset(spans[i].startTime);
-      final spanEnd = offset(spans[i].endTime!);
+      final spanStart = Duration(microseconds: spans[i].startOffsetUs);
+      final spanEnd = Duration(microseconds: spans[i].endOffsetUs!);
       if (spanStart - clusterEnd > clusterGap) {
         // Gap too large — flush current cluster and start new one
         flushCluster();
@@ -574,7 +586,7 @@ WaterfallData _buildWaterfallDataImpl(
   final paintEnds = <Duration>[];
   for (final span in rootSpanSnapshot) {
     if (!span.isComplete || span.category != 'paint') continue;
-    var boundary = offset(span.endTime!);
+    var boundary = Duration(microseconds: span.endOffsetUs!);
     if (minStart > Duration.zero) boundary = boundary - minStart;
     paintEnds.add(boundary);
   }
