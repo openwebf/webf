@@ -8,7 +8,11 @@ import 'package:webf/src/launcher/loading_state.dart';
 import 'package:webf/src/devtools/panel/performance_tracker.dart';
 import 'package:webf/src/devtools/panel/performance_waterfall_sub_tabs.dart';
 
-Widget _harness({required Duration? attachOffset, int initialIndex = 0}) {
+Widget _harness({
+  required Duration? attachOffset,
+  int initialIndex = 0,
+  ValueChanged<int>? onIndexChanged,
+}) {
   final loadingState = LoadingState();
   final tracker = PerformanceTracker.instance;
   return MaterialApp(
@@ -18,12 +22,17 @@ Widget _harness({required Duration? attachOffset, int initialIndex = 0}) {
         tracker: tracker,
         attachOffset: attachOffset,
         initialIndex: initialIndex,
+        onIndexChanged: onIndexChanged,
       ),
     ),
   );
 }
 
 void main() {
+  setUp(() {
+    PerformanceTracker.instance.clear();
+  });
+
   testWidgets('both sub-tab labels are present', (tester) async {
     await tester.pumpWidget(_harness(attachOffset: null));
     expect(find.text('Init → Attach'), findsOneWidget);
@@ -51,6 +60,20 @@ void main() {
     expect(tabBar.controller!.index, 0);
   });
 
+  testWidgets('onIndexChanged is not called when a disabled-tab tap is rejected',
+      (tester) async {
+    int? recordedIndex;
+    await tester.pumpWidget(_harness(
+      attachOffset: null,
+      onIndexChanged: (index) {
+        recordedIndex = index;
+      },
+    ));
+    await tester.tap(find.text('Attach → Paint'));
+    await tester.pumpAndSettle();
+    expect(recordedIndex, isNull);
+  });
+
   testWidgets('disabled tab is not selectable via initialIndex',
       (tester) async {
     await tester.pumpWidget(_harness(attachOffset: null, initialIndex: 1));
@@ -66,7 +89,22 @@ void main() {
       of: find.text('Attach → Paint'),
       matching: find.byType(Opacity),
     );
+    expect(opacityFinder, findsOneWidget);
     final opacity = tester.widget<Opacity>(opacityFinder);
     expect(opacity.opacity, 1.0);
+  });
+
+  testWidgets('didUpdateWidget clamps index to 0 when attachOffset flips to null',
+      (tester) async {
+    await tester.pumpWidget(_harness(
+      attachOffset: const Duration(milliseconds: 500),
+      initialIndex: 1,
+    ));
+    TabBar tabBar = tester.widget<TabBar>(find.byType(TabBar));
+    expect(tabBar.controller!.index, 1);
+
+    await tester.pumpWidget(_harness(attachOffset: null));
+    tabBar = tester.widget<TabBar>(find.byType(TabBar));
+    expect(tabBar.controller!.index, 0);
   });
 }
