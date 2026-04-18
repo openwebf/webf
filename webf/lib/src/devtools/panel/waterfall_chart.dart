@@ -901,6 +901,7 @@ class _WaterfallChartState extends State<WaterfallChart> {
   List<ExportablePhase>? _importedPhases;
   List<_OverviewItem>? _cachedItems;
   Set<WaterfallCategory>? _cachedFilterSet;
+  WaterfallPhase? _cachedFilterPhase;
 
   WaterfallData _getData() {
     final tracker = widget.tracker;
@@ -927,11 +928,14 @@ class _WaterfallChartState extends State<WaterfallChart> {
   }
 
   List<_OverviewItem> _getItems(WaterfallData data) {
-    if (_cachedItems != null && _setEquals(_cachedFilterSet, _enabledCategories)) {
+    if (_cachedItems != null &&
+        _setEquals(_cachedFilterSet, _enabledCategories) &&
+        _cachedFilterPhase == widget.phase) {
       return _cachedItems!;
     }
     final filtered = data.entries
         .where((e) => _enabledCategories.contains(e.category))
+        .where((e) => includeEntryForPhase(e, widget.phase, data.attachOffset))
         .toList();
 
     // Separate Dart thread and JS thread entries
@@ -942,26 +946,9 @@ class _WaterfallChartState extends State<WaterfallChart> {
 
     // Dart thread entries
     if (dartEntries.isNotEmpty) {
-      if (data.attachOffset != null) {
-        bool addedPreHeader = false;
-        bool addedDisplayHeader = false;
-        items.add(_OverviewItem.header('Dart Thread'));
-        for (final entry in dartEntries) {
-          if (!addedPreHeader && entry.start < (data.attachOffset ?? Duration.zero)) {
-            items.add(_OverviewItem.header('  Preload / Prerender'));
-            addedPreHeader = true;
-          }
-          if (!addedDisplayHeader && entry.start >= data.attachOffset!) {
-            items.add(_OverviewItem.header('  Display'));
-            addedDisplayHeader = true;
-          }
-          items.add(_OverviewItem.entry(entry));
-        }
-      } else {
-        items.add(_OverviewItem.header('Dart Thread'));
-        for (final entry in dartEntries) {
-          items.add(_OverviewItem.entry(entry));
-        }
+      items.add(_OverviewItem.header('Dart Thread'));
+      for (final entry in dartEntries) {
+        items.add(_OverviewItem.entry(entry));
       }
     }
 
@@ -975,6 +962,7 @@ class _WaterfallChartState extends State<WaterfallChart> {
 
     _cachedItems = items;
     _cachedFilterSet = Set.from(_enabledCategories);
+    _cachedFilterPhase = widget.phase;
     return items;
   }
 
@@ -1540,7 +1528,9 @@ class _WaterfallChartState extends State<WaterfallChart> {
   Widget _buildOverview(WaterfallData data) {
     final items = _getItems(data);
 
-    if (items.isEmpty && data.milestones.isEmpty) {
+    if (items.isEmpty &&
+        !data.milestones.any((m) =>
+            includeMilestoneForPhase(m, widget.phase, data.attachOffset))) {
       return const Center(
         child: Text(
           'No performance data recorded.\nReload the page or tap Record to capture.',
@@ -1583,9 +1573,15 @@ class _WaterfallChartState extends State<WaterfallChart> {
                       painter: _TimeRulerPainter(
                         totalMs: totalMs,
                         pixelsPerMs: pixelsPerMs,
-                        milestones: data.milestones,
+                        milestones: data.milestones
+                            .where((m) =>
+                                includeMilestoneForPhase(m, widget.phase, data.attachOffset))
+                            .toList(),
                         attachX: attachX,
-                        frameBoundaries: data.frameBoundaries,
+                        frameBoundaries: data.frameBoundaries
+                            .where((b) => includeFrameBoundaryForPhase(
+                                b, widget.phase, data.attachOffset))
+                            .toList(),
                       ),
                     ),
                   ),
@@ -1701,11 +1697,16 @@ class _WaterfallChartState extends State<WaterfallChart> {
                       child: Stack(
                         children: [
                           // Frame boundary lines (background)
-                          if (data.frameBoundaries.isNotEmpty)
+                          if (data.frameBoundaries.any((b) =>
+                              includeFrameBoundaryForPhase(
+                                  b, widget.phase, data.attachOffset)))
                             Positioned.fill(
                               child: CustomPaint(
                                 painter: _FrameBoundaryPainter(
-                                  frameBoundaries: data.frameBoundaries,
+                                  frameBoundaries: data.frameBoundaries
+                                      .where((b) => includeFrameBoundaryForPhase(
+                                          b, widget.phase, data.attachOffset))
+                                      .toList(),
                                   pixelsPerMs: pixelsPerMs,
                                 ),
                               ),
