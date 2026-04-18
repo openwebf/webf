@@ -30,6 +30,7 @@ enum JSSpanCategory : uint8_t {
   kJSMicrotask = 7,
   kJSMutationObserver = 8,
   kJSFlushUICommand = 9,
+  kJSBindingSyncCall = 10,
 };
 
 // Span stored in the ring buffer (completed spans only)
