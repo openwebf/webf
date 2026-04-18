@@ -469,7 +469,7 @@ class PerformanceTracker {
     }
 
     final data = <String, dynamic>{
-      'version': 3,
+      'version': 4,
       'exportedAt': DateTime.now().toIso8601String(),
       'sessionStart': sessionStart?.microsecondsSinceEpoch,
       'totalSpanCount': countSpans(rootSpans),
@@ -520,7 +520,10 @@ class PerformanceTracker {
     final phasesJson = data['phases'] as List?;
     if (phasesJson != null) {
       return phasesJson
-          .map((p) => ExportablePhase.fromJson(p as Map<String, dynamic>))
+          .map((p) => ExportablePhase.fromJson(
+                p as Map<String, dynamic>,
+                sessionAnchor: anchor,
+              ))
           .toList();
     }
     return [];
@@ -588,24 +591,34 @@ class JSThreadSpan {
 
 /// Lightweight phase representation for export/import.
 ///
-/// Captures just the name and timestamp from LoadingState phases so that
-/// lifecycle milestones (FP, FCP, LCP, Attach) survive round-tripping.
+/// Captures name, wall-clock timestamp, and monotonic offset so that
+/// lifecycle milestones (FP, FCP, LCP, Attach) survive round-tripping and
+/// the waterfall can render them on the monotonic timeline.
 class ExportablePhase {
   final String name;
   final DateTime timestamp;
 
-  ExportablePhase({required this.name, required this.timestamp});
+  /// Monotonic offset from session start, in microseconds.
+  final int offsetUs;
+
+  ExportablePhase({
+    required this.name,
+    required this.timestamp,
+    required this.offsetUs,
+  });
 
   Map<String, dynamic> toJson() => {
         'name': name,
-        'timestamp': timestamp.microsecondsSinceEpoch,
+        'offsetUs': offsetUs,
       };
 
-  static ExportablePhase fromJson(Map<String, dynamic> json) {
+  static ExportablePhase fromJson(Map<String, dynamic> json,
+      {required DateTime sessionAnchor}) {
+    final offsetUs = json['offsetUs'] as int;
     return ExportablePhase(
       name: json['name'] as String,
-      timestamp:
-          DateTime.fromMicrosecondsSinceEpoch(json['timestamp'] as int),
+      timestamp: sessionAnchor.add(Duration(microseconds: offsetUs)),
+      offsetUs: offsetUs,
     );
   }
 }

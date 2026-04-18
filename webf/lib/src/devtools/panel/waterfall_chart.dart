@@ -231,7 +231,7 @@ WaterfallData _buildWaterfallDataImpl(
     for (final p in importedPhases) {
       phaseNames.add(p.name);
       phaseTimestamps.add(p.timestamp);
-      phaseOffsetUs.add(null);
+      phaseOffsetUs.add(p.offsetUs);
     }
   } else {
     final livePhases = List.of(loadingState.phases);
@@ -1344,7 +1344,11 @@ class _WaterfallChartState extends State<WaterfallChart> {
       final tracker = widget.tracker;
       // Gather phases from LoadingState for milestone reconstruction
       final phases = widget.loadingState.phases
-          .map((p) => ExportablePhase(name: p.name, timestamp: p.timestamp))
+          .map((p) => ExportablePhase(
+                name: p.name,
+                timestamp: p.timestamp,
+                offsetUs: p.offsetUs ?? 0,
+              ))
           .toList();
       final json = tracker.exportToJson(phases: phases);
 
