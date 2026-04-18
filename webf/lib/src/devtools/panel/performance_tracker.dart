@@ -24,7 +24,9 @@ import 'package:webf/src/bridge/to_native.dart' as to_native;
 /// Primary timestamps are `startOffsetUs` / `endOffsetUs` — microseconds
 /// from the [PerformanceTracker] session start, captured from a monotonic
 /// stopwatch. `startTime`/`endTime` remain as derived `DateTime` values for
-/// API compatibility with existing consumers.
+/// API compatibility with existing consumers. The wall-clock anchor is
+/// captured once at session start; wall-clock drift during the session
+/// (e.g. NTP adjustment) is not reflected in the derived DateTime values.
 class PerformanceSpan {
   final String category;
   final String name;
@@ -374,6 +376,9 @@ class PerformanceTracker {
   ///
   /// [name] identifies the specific operation: 'parseStylesheet', 'flushStyle',
   /// 'recalculateStyle', 'flexLayout', 'paint', etc.
+  ///
+  /// Returns null when tracking is disabled, the span limit is reached, or
+  /// no session has been started.
   PerformanceSpanHandle? beginSpan(String category, String name,
       {Map<String, dynamic>? metadata}) {
     if (!enabled || _totalSpanCount >= maxSpans) return null;
@@ -407,6 +412,9 @@ class PerformanceTracker {
   /// network fetches, HTML parsing). The span is always added as a root span
   /// and does not affect [_currentSpan], so synchronous spans that run during
   /// the async gap are recorded independently.
+  ///
+  /// Returns null when tracking is disabled, the span limit is reached, or
+  /// no session has been started.
   AsyncPerformanceSpanHandle? beginAsyncSpan(String category, String name,
       {Map<String, dynamic>? metadata}) {
     if (!enabled || _totalSpanCount >= maxSpans) return null;
