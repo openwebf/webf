@@ -75,6 +75,9 @@ typedef TraverseElementCallback = void Function(Element element);
 class RoutePerformanceMetrics {
   final String routePath;
   DateTime? navigationStartTime;
+  /// Monotonic offset (from [PerformanceTracker.sessionStart]) at which this
+  /// route's navigation began. Drift-free companion to [navigationStartTime].
+  int? navigationStartOffsetUs;
   bool lcpReported = false;
   double largestContentfulPaintSize = 0;
   double lastReportedLCPTime = 0;
@@ -637,6 +640,10 @@ class WebFController with Diagnosticable {
       _routeMetrics[routePath] = RoutePerformanceMetrics(routePath);
       // Initialize the navigation start time for the new route
       _routeMetrics[routePath]!.navigationStartTime = DateTime.now();
+      _routeMetrics[routePath]!.navigationStartOffsetUs =
+          PerformanceTracker.instance.sessionStart != null
+              ? PerformanceTracker.instance.nowOffsetUs()
+              : null;
       // Capture the initial evaluated state when route is pushed
       _routeMetrics[routePath]!.initialEvaluatedState = evaluated;
     }
@@ -1003,6 +1010,10 @@ class WebFController with Diagnosticable {
       metrics.lastReportedLCPTime = 0;
       metrics.currentLCPElement = null;
       metrics.navigationStartTime = DateTime.now();
+      metrics.navigationStartOffsetUs =
+          PerformanceTracker.instance.sessionStart != null
+              ? PerformanceTracker.instance.nowOffsetUs()
+              : null;
 
       // Reset FCP tracking for new page load
       metrics.fcpReported = false;
@@ -1824,6 +1835,10 @@ class WebFController with Diagnosticable {
 
     final metrics = _currentRouteMetrics!;
     metrics.navigationStartTime = startTime;
+    metrics.navigationStartOffsetUs =
+        PerformanceTracker.instance.sessionStart != null
+            ? PerformanceTracker.instance.nowOffsetUs()
+            : null;
     metrics.lcpReported = false;
     metrics.largestContentfulPaintSize = 0;
     metrics.lastReportedLCPTime = 0;
@@ -1889,7 +1904,8 @@ class WebFController with Diagnosticable {
     if (contentSize > metrics.largestContentfulPaintSize) {
       metrics.largestContentfulPaintSize = contentSize;
       metrics.currentLCPElement = WeakReference(element);
-      final lcpTime = DateTime.now().difference(metrics.navigationStartTime!).inMilliseconds.toDouble();
+      final lcpTime = _monotonicDeltaMs(metrics)
+          ?? DateTime.now().difference(metrics.navigationStartTime!).inMilliseconds.toDouble();
       metrics.lastReportedLCPTime = lcpTime;
 
       // Fire the progressive onLCP callback
@@ -1962,12 +1978,14 @@ class WebFController with Diagnosticable {
     if (metrics.fcpReported || metrics.navigationStartTime == null) return;
 
     // Record first contentful paint phase
+    final deltaMs = _monotonicDeltaMs(metrics)
+        ?? DateTime.now().difference(metrics.navigationStartTime!).inMilliseconds.toDouble();
     _loadingState.recordPhase(LoadingState.phaseFirstContentfulPaint, parameters: {
-      'timeSinceNavigationStart': DateTime.now().difference(metrics.navigationStartTime!).inMilliseconds,
+      'timeSinceNavigationStart': deltaMs.round(),
     });
 
     metrics.fcpReported = true;
-    metrics.fcpTime = DateTime.now().difference(metrics.navigationStartTime!).inMilliseconds.toDouble();
+    metrics.fcpTime = deltaMs;
 
     // Fire the FCP callback
     if (onFCP != null) {
@@ -1991,12 +2009,14 @@ class WebFController with Diagnosticable {
     if (metrics.fpReported || metrics.navigationStartTime == null) return;
 
     // Record first paint phase
+    final deltaMs = _monotonicDeltaMs(metrics)
+        ?? DateTime.now().difference(metrics.navigationStartTime!).inMilliseconds.toDouble();
     _loadingState.recordPhase(LoadingState.phaseFirstPaint, parameters: {
-      'timeSinceNavigationStart': DateTime.now().difference(metrics.navigationStartTime!).inMilliseconds,
+      'timeSinceNavigationStart': deltaMs.round(),
     });
 
     metrics.fpReported = true;
-    metrics.fpTime = DateTime.now().difference(metrics.navigationStartTime!).inMilliseconds.toDouble();
+    metrics.fpTime = deltaMs;
 
     // Fire the FP callback
     if (onFP != null) {
@@ -2007,6 +2027,14 @@ class WebFController with Diagnosticable {
     if (onRouteFP != null) {
       onRouteFP!(metrics.fpTime, metrics.routePath);
     }
+  }
+
+  double? _monotonicDeltaMs(RoutePerformanceMetrics metrics) {
+    final startUs = metrics.navigationStartOffsetUs;
+    if (startUs == null) return null;
+    final tracker = PerformanceTracker.instance;
+    if (tracker.sessionStart == null) return null;
+    return (tracker.nowOffsetUs() - startUs) / 1000.0;
   }
 
   /// Dumps the loading state of the WebFController across its lifecycle.
