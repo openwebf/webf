@@ -21,6 +21,7 @@ import 'package:webf/src/launcher/controller.dart' show RoutePerformanceMetrics;
 import 'package:webf/src/launcher/loading_state.dart';
 import 'package:webf/src/devtools/panel/performance_tracker.dart';
 import 'package:webf/src/devtools/panel/waterfall_chart.dart';
+import 'package:webf/src/devtools/panel/performance_waterfall_sub_tabs.dart';
 
 /// A floating inspector panel for WebF that provides debugging tools and insights.
 ///
@@ -2078,6 +2079,7 @@ class _WebFInspectorBottomSheetState extends State<_WebFInspectorBottomSheet> wi
 
   // Static variable to remember the last selected tab
   static int _lastSelectedTabIndex = 0;
+  static int _lastSelectedPerfSubTabIndex = 0;
 
   // Track the original cache mode to restore it when unchecked
   final HttpCacheMode _originalCacheMode = HttpCacheController.mode;
@@ -2741,6 +2743,9 @@ class _WebFInspectorBottomSheetState extends State<_WebFInspectorBottomSheet> wi
   }
 
   Widget _buildSingleControllerPerformance(WebFController controller, String controllerName) {
+    final waterfallData = buildWaterfallData(
+        controller.loadingState, PerformanceTracker.instance);
+    final attachOffset = waterfallData.attachOffset;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -2843,28 +2848,44 @@ class _WebFInspectorBottomSheetState extends State<_WebFInspectorBottomSheet> wi
         // Performance metrics or waterfall chart
         Expanded(
           child: _showWaterfall
-              ? WaterfallChart(
-                  loadingState: controller.loadingState,
-                  tracker: PerformanceTracker.instance,
-                  phase: WaterfallPhase.initToAttach,
-                  onToggleFullscreen: () {
-                    // Close the bottom sheet and open fullscreen route
-                    Navigator.of(context).pop();
-                    Navigator.of(context).push(
-                      MaterialPageRoute(
-                        builder: (_) => _FullscreenWaterfallPage(
-                          loadingState: controller.loadingState,
-                          tracker: PerformanceTracker.instance,
-                        ),
-                      ),
-                    );
-                  },
-                )
+              ? _buildWaterfallSubTabs(controller, attachOffset)
               : SingleChildScrollView(
                   child: _buildPerformanceMetrics(controller),
                 ),
         ),
       ],
+    );
+  }
+
+  Widget _buildWaterfallSubTabs(
+      WebFController controller, Duration? attachOffset) {
+    return PerformanceWaterfallSubTabs(
+      loadingState: controller.loadingState,
+      tracker: PerformanceTracker.instance,
+      attachOffset: attachOffset,
+      initialIndex: _lastSelectedPerfSubTabIndex,
+      onIndexChanged: (i) => _lastSelectedPerfSubTabIndex = i,
+      onToggleFullscreen: () => _openFullscreenWaterfall(
+        context,
+        controller,
+        _lastSelectedPerfSubTabIndex == 1
+            ? WaterfallPhase.attachToPaint
+            : WaterfallPhase.initToAttach,
+      ),
+    );
+  }
+
+  void _openFullscreenWaterfall(
+      BuildContext context, WebFController controller, WaterfallPhase phase) {
+    Navigator.of(context).pop();
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => _FullscreenWaterfallPage(
+          loadingState: controller.loadingState,
+          tracker: PerformanceTracker.instance,
+          phase: phase,
+        ),
+      ),
     );
   }
 
@@ -5983,10 +6004,12 @@ class _RemoteObjectWidgetState extends State<_RemoteObjectWidget> {
 class _FullscreenWaterfallPage extends StatelessWidget {
   final LoadingState loadingState;
   final PerformanceTracker tracker;
+  final WaterfallPhase phase;
 
   const _FullscreenWaterfallPage({
     required this.loadingState,
     required this.tracker,
+    required this.phase,
   });
 
   @override
@@ -5997,7 +6020,7 @@ class _FullscreenWaterfallPage extends StatelessWidget {
         child: WaterfallChart(
           loadingState: loadingState,
           tracker: tracker,
-          phase: WaterfallPhase.initToAttach,
+          phase: phase,
           isFullscreen: true,
           onToggleFullscreen: () {
             Navigator.of(context).pop();
