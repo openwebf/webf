@@ -1081,6 +1081,14 @@ class _WaterfallChartState extends State<WaterfallChart> {
         physics: const ClampingScrollPhysics(),
         child: Row(
           children: [
+            if (widget.onToggleFullscreen != null) ...[
+              _buildToolbarButton(
+                icon: widget.isFullscreen ? Icons.fullscreen_exit : Icons.fullscreen,
+                label: widget.isFullscreen ? 'Exit' : 'Fullscreen',
+                onTap: widget.onToggleFullscreen!,
+              ),
+              const SizedBox(width: 8),
+            ],
             // Mode toggle
             _modeChip('Overview', _ChartMode.overview),
             const SizedBox(width: 4),
@@ -1145,14 +1153,6 @@ class _WaterfallChartState extends State<WaterfallChart> {
               label: 'Import',
               onTap: _showImportDialog,
             ),
-            if (widget.onToggleFullscreen != null) ...[
-              const SizedBox(width: 8),
-              _buildToolbarButton(
-                icon: widget.isFullscreen ? Icons.fullscreen_exit : Icons.fullscreen,
-                label: widget.isFullscreen ? 'Exit' : 'Fullscreen',
-                onTap: widget.onToggleFullscreen!,
-              ),
-            ],
           ],
         ),
       ),
