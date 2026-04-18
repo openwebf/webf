@@ -1565,10 +1565,6 @@ class _WaterfallChartState extends State<WaterfallChart> {
     return LayoutBuilder(builder: (context, constraints) {
       final availableWidth = constraints.maxWidth - labelWidth - 1;
       final chartWidth = math.max(contentWidth, availableWidth);
-      // Stage-divider vertical line is redundant in sub-tab mode (each tab is
-      // one side of the divider). Passing null disables the in-chart divider
-      // rendering.
-      final double? attachX = null;
 
       return Column(
         children: [
@@ -1593,7 +1589,6 @@ class _WaterfallChartState extends State<WaterfallChart> {
                             .where((m) =>
                                 includeMilestoneForPhase(m, widget.phase, data.attachOffset))
                             .toList(),
-                        attachX: attachX,
                         frameBoundaries: data.frameBoundaries
                             .where((b) => includeFrameBoundaryForPhase(
                                 b, widget.phase, data.attachOffset))
@@ -1621,19 +1616,14 @@ class _WaterfallChartState extends State<WaterfallChart> {
                     itemBuilder: (ctx, i) {
                       final item = items[i];
                       if (item.isHeader) {
-                        final isPreload = item.headerText!.startsWith('Preload');
                         return Container(
                           padding: const EdgeInsets.symmetric(horizontal: 4),
                           alignment: Alignment.centerLeft,
-                          color: isPreload
-                              ? const Color(0x20FFB74D)
-                              : const Color(0x204CAF50),
+                          color: const Color(0x204CAF50),
                           child: Text(
                             item.headerText!,
-                            style: TextStyle(
-                              color: isPreload
-                                  ? const Color(0xCCFFB74D)
-                                  : const Color(0xCC4CAF50),
+                            style: const TextStyle(
+                              color: Color(0xCC4CAF50),
                               fontSize: 10,
                               fontWeight: FontWeight.w600,
                             ),
@@ -1711,16 +1701,12 @@ class _WaterfallChartState extends State<WaterfallChart> {
                             itemBuilder: (ctx, i) {
                               final item = items[i];
                               if (item.isHeader) {
-                                final isPreload = item.headerText!.startsWith('Preload');
                                 return Container(
-                                  color: isPreload
-                                      ? const Color(0x20FFB74D)
-                                      : const Color(0x204CAF50),
+                                  color: const Color(0x204CAF50),
                                 );
                               }
                               return _buildOverviewRow(
-                                  item.entry!, totalMs, pixelsPerMs, chartWidth,
-                                  attachX: attachX,
+                                  item.entry!, pixelsPerMs, chartWidth,
                                   phaseStartMs: phaseStartMs);
                             },
                           ),
@@ -1737,9 +1723,9 @@ class _WaterfallChartState extends State<WaterfallChart> {
     });
   }
 
-  Widget _buildOverviewRow(WaterfallEntry entry, double totalMs,
+  Widget _buildOverviewRow(WaterfallEntry entry,
       double pixelsPerMs, double chartWidth,
-      {double? attachX, required double phaseStartMs}) {
+      {required double phaseStartMs}) {
     final startMs = entry.start.inMicroseconds / 1000.0;
     final durationMs = entry.duration.inMicroseconds / 1000.0;
     final barLeft = (startMs - phaseStartMs) * pixelsPerMs;
@@ -1767,7 +1753,6 @@ class _WaterfallChartState extends State<WaterfallChart> {
           pixelsPerMs: pixelsPerMs,
           phaseStartMs: phaseStartMs,
           hasDrillDown: entry.hasDrillDown,
-          attachX: attachX,
           spanSegments: entry.spanSegments.isNotEmpty ? entry.spanSegments : null,
         ),
       ),
@@ -2346,9 +2331,12 @@ class _WaterfallChartState extends State<WaterfallChart> {
 class _TimeRulerPainter extends CustomPainter {
   final double totalMs;
   final double pixelsPerMs;
+  /// Phase start offset in milliseconds since load. Tick labels display
+  /// `phaseStartMs + localMs` so users read absolute "time since load" even
+  /// when the x-axis origin is the phase start. Flame-chart callers pass 0.0
+  /// because their local coordinate system already starts at 0.
   final double phaseStartMs;
   final List<WaterfallMilestone> milestones;
-  final double? attachX; // x position of attachToFlutter divider
   final List<Duration> frameBoundaries;
 
   _TimeRulerPainter({
@@ -2356,7 +2344,6 @@ class _TimeRulerPainter extends CustomPainter {
     required this.pixelsPerMs,
     required this.phaseStartMs,
     required this.milestones,
-    this.attachX,
     this.frameBoundaries = const [],
   });
 
@@ -2478,9 +2465,12 @@ class _OverviewRowPainter extends CustomPainter {
   final Color color;
   final List<WaterfallSubEntry> subEntries;
   final double pixelsPerMs;
+  /// Phase start offset in milliseconds since load. Bar x-positions are
+  /// computed as `(startMs - phaseStartMs) * pixelsPerMs` so the chart's
+  /// origin is the phase start. Flame-chart callers pass 0.0 because their
+  /// local coordinate system already starts at 0.
   final double phaseStartMs;
   final bool hasDrillDown;
-  final double? attachX;
   final List<_SpanSegment>? spanSegments;
 
   _OverviewRowPainter({
@@ -2491,32 +2481,11 @@ class _OverviewRowPainter extends CustomPainter {
     required this.pixelsPerMs,
     required this.phaseStartMs,
     required this.hasDrillDown,
-    this.attachX,
     this.spanSegments,
   });
 
   @override
   void paint(Canvas canvas, Size size) {
-    // Draw stage background shading
-    if (attachX != null) {
-      // Preload/prerender region — subtle amber tint
-      canvas.drawRect(
-        Rect.fromLTWH(0, 0, attachX!, size.height),
-        Paint()..color = const Color(0x0AFFB74D),
-      );
-      // Display region — subtle green tint
-      canvas.drawRect(
-        Rect.fromLTWH(attachX!, 0, size.width - attachX!, size.height),
-        Paint()..color = const Color(0x0A4CAF50),
-      );
-      // Divider line
-      final divPaint = Paint()
-        ..color = const Color(0x60FFB74D)
-        ..strokeWidth = 1.5;
-      canvas.drawLine(
-          Offset(attachX!, 0), Offset(attachX!, size.height), divPaint);
-    }
-
     final barTop = 3.0;
     final barHeight = size.height - 6.0;
 
@@ -2594,7 +2563,6 @@ class _OverviewRowPainter extends CustomPainter {
       old.pixelsPerMs != pixelsPerMs ||
       old.phaseStartMs != phaseStartMs ||
       old.hasDrillDown != hasDrillDown ||
-      old.attachX != attachX ||
       old.subEntries.length != subEntries.length;
 }
 
@@ -2830,6 +2798,9 @@ class _JSFlameChartPainter extends CustomPainter {
 class _FrameBoundaryPainter extends CustomPainter {
   final List<Duration> frameBoundaries;
   final double pixelsPerMs;
+  /// Phase start offset in milliseconds since load. Frame boundary lines are
+  /// positioned relative to the phase origin (x = (frameMs - phaseStartMs) *
+  /// pixelsPerMs). Flame-chart callers pass 0.0 for local coordinates.
   final double phaseStartMs;
 
   _FrameBoundaryPainter({
