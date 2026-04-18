@@ -20,27 +20,52 @@ import 'package:webf/bridge.dart';
 import 'package:webf/src/bridge/to_native.dart' as to_native;
 
 /// Represents a single performance span in the rendering pipeline.
+///
+/// Primary timestamps are `startOffsetUs` / `endOffsetUs` — microseconds
+/// from the [PerformanceTracker] session start, captured from a monotonic
+/// stopwatch. `startTime`/`endTime` remain as derived `DateTime` values for
+/// API compatibility with existing consumers.
 class PerformanceSpan {
   final String category;
   final String name;
-  final DateTime startTime;
-  DateTime? endTime;
+
+  /// Monotonic offset from session start, in microseconds.
+  final int startOffsetUs;
+
+  /// Monotonic offset at span end. Null while the span is still open.
+  int? endOffsetUs;
+
   final int depth;
   final PerformanceSpan? parent;
   final List<PerformanceSpan> children = [];
   Map<String, dynamic>? metadata;
 
+  /// Wall-clock anchor used to derive [startTime] / [endTime]. Captured at
+  /// [PerformanceTracker.sessionStart].
+  final DateTime _sessionAnchor;
+
   PerformanceSpan({
     required this.category,
     required this.name,
-    required this.startTime,
+    required this.startOffsetUs,
     required this.depth,
+    required DateTime sessionAnchor,
     this.parent,
     this.metadata,
-  });
+  }) : _sessionAnchor = sessionAnchor;
 
-  Duration get duration =>
-      endTime != null ? endTime!.difference(startTime) : Duration.zero;
+  /// Derived wall-clock start time (anchor + offset).
+  DateTime get startTime =>
+      _sessionAnchor.add(Duration(microseconds: startOffsetUs));
+
+  /// Derived wall-clock end time, or null if span still open.
+  DateTime? get endTime => endOffsetUs == null
+      ? null
+      : _sessionAnchor.add(Duration(microseconds: endOffsetUs!));
+
+  Duration get duration => endOffsetUs != null
+      ? Duration(microseconds: endOffsetUs! - startOffsetUs)
+      : Duration.zero;
 
   /// Time spent in this span excluding children.
   Duration get selfDuration {
@@ -50,7 +75,7 @@ class PerformanceSpan {
     return d.isNegative ? Duration.zero : d;
   }
 
-  bool get isComplete => endTime != null;
+  bool get isComplete => endOffsetUs != null;
 
   /// Total number of spans in this subtree (including self).
   int get subtreeCount {
@@ -91,8 +116,8 @@ class PerformanceSpan {
   Map<String, dynamic> toJson() => {
         'category': category,
         'name': name,
-        'startTime': startTime.microsecondsSinceEpoch,
-        'endTime': endTime?.microsecondsSinceEpoch,
+        'startOffsetUs': startOffsetUs,
+        'endOffsetUs': endOffsetUs,
         'depth': depth,
         if (metadata != null && metadata!.isNotEmpty) 'metadata': metadata,
         if (children.isNotEmpty)
@@ -100,27 +125,26 @@ class PerformanceSpan {
       };
 
   static PerformanceSpan fromJson(Map<String, dynamic> json,
-      {PerformanceSpan? parent}) {
+      {PerformanceSpan? parent, required DateTime sessionAnchor}) {
     final span = PerformanceSpan(
       category: json['category'] as String,
       name: json['name'] as String,
-      startTime:
-          DateTime.fromMicrosecondsSinceEpoch(json['startTime'] as int),
+      startOffsetUs: json['startOffsetUs'] as int,
       depth: json['depth'] as int,
+      sessionAnchor: sessionAnchor,
       parent: parent,
       metadata: json['metadata'] != null
           ? Map<String, dynamic>.from(json['metadata'] as Map)
           : null,
     );
-    if (json['endTime'] != null) {
-      span.endTime =
-          DateTime.fromMicrosecondsSinceEpoch(json['endTime'] as int);
-    }
+    span.endOffsetUs = json['endOffsetUs'] as int?;
     if (json['children'] != null) {
       for (final childJson in json['children'] as List) {
-        span.children
-            .add(PerformanceSpan.fromJson(childJson as Map<String, dynamic>,
-                parent: span));
+        span.children.add(PerformanceSpan.fromJson(
+          childJson as Map<String, dynamic>,
+          parent: span,
+          sessionAnchor: sessionAnchor,
+        ));
       }
     }
     return span;
@@ -136,7 +160,7 @@ class PerformanceSpanHandle {
 
   /// End this span and pop back to the parent span.
   void end({Map<String, dynamic>? metadata}) {
-    _span.endTime = DateTime.now();
+    _span.endOffsetUs = _tracker.nowOffsetUs();
     if (metadata != null) {
       _span.metadata = (_span.metadata ?? {})..addAll(metadata);
     }
@@ -155,7 +179,7 @@ class AsyncPerformanceSpanHandle {
   AsyncPerformanceSpanHandle._(this._span);
 
   void end({Map<String, dynamic>? metadata}) {
-    _span.endTime = DateTime.now();
+    _span.endOffsetUs = PerformanceTracker.instance.nowOffsetUs();
     if (metadata != null) {
       _span.metadata = (_span.metadata ?? {})..addAll(metadata);
     }
@@ -187,9 +211,6 @@ class PerformanceTracker {
 
   /// JS thread spans collected from the C++ profiler.
   final List<JSThreadSpan> jsThreadSpans = [];
-
-  /// Dart session start time, used for JS span clock reference.
-  DateTime? _dartSessionStart;
 
   /// Monotonic clock source. A fresh instance is created on every
   /// [startSession] call and used for all timing within that session.
@@ -235,7 +256,6 @@ class PerformanceTracker {
   /// Start a new recording session. Clears all previous spans.
   void startSession() {
     sessionStart = DateTime.now();
-    _dartSessionStart = sessionStart;
     rootSpans.clear();
     jsThreadSpans.clear();
     _currentSpan = null;
@@ -265,17 +285,23 @@ class PerformanceTracker {
     drainJSThreadSpans();
     // Disable C++ JS thread profiling
     to_native.setJSThreadProfilingEnabled(false);
-    // Close any unclosed spans
+    // Close any unclosed spans using the monotonic clock.
+    final nowUs = nowOffsetUs();
     while (_currentSpan != null) {
-      _currentSpan!.endTime ??= DateTime.now();
+      _currentSpan!.endOffsetUs ??= nowUs;
       _currentSpan = _currentSpan!.parent;
     }
   }
 
   /// Drain JS thread profiling spans from the C++ ring buffer.
   /// Called during flushUICommand and at session end.
+  ///
+  /// C++ spans arrive as microsecond offsets from the C++ profiler's
+  /// `session_start_`. We shift them by [_cppToDartOffsetUs] so they land on
+  /// the shared Dart timeline (rooted at the stopwatch start).
   void drainJSThreadSpans() {
-    if (!enabled && jsThreadSpans.isEmpty && _dartSessionStart == null) return;
+    if (!enabled && jsThreadSpans.isEmpty && _stopwatch == null) return;
+    final offsetUs = _cppToDartOffsetUs ?? 0;
 
     const maxDrain = 4096;
     final buffer = calloc<NativeJSThreadSpan>(maxDrain);
@@ -288,10 +314,9 @@ class PerformanceTracker {
 
       for (int i = 0; i < count; i++) {
         final native = buffer[i];
-        // Convert C++ timestamps (µs from steady_clock session start) to
-        // offsets from Dart session start.
-        final startOffsetUs = native.startUs;
-        final endOffsetUs = native.endUs;
+        // Shift C++ offsets onto the Dart monotonic timeline.
+        final startOffsetUs = native.startUs + offsetUs;
+        final endOffsetUs = native.endUs + offsetUs;
 
         // Resolve function name from atom
         final atom = native.funcNameAtom;
@@ -314,6 +339,30 @@ class PerformanceTracker {
     }
   }
 
+  /// Test-only: inject a JS span as if it had just been drained from C++.
+  /// `startUs` and `endUs` are C++ offsets (from C++ session_start_); this
+  /// helper applies [_cppToDartOffsetUs] the same way [drainJSThreadSpans]
+  /// would, so tests exercise the real correction math.
+  @visibleForTesting
+  void debugInjectJSSpan({
+    required String category,
+    required int startUs,
+    required int endUs,
+    int funcNameAtom = 0,
+    String funcName = '',
+    int depth = 0,
+  }) {
+    final offsetUs = _cppToDartOffsetUs ?? 0;
+    jsThreadSpans.add(JSThreadSpan(
+      category: category,
+      startOffset: Duration(microseconds: startUs + offsetUs),
+      endOffset: Duration(microseconds: endUs + offsetUs),
+      funcNameAtom: funcNameAtom,
+      funcName: funcName,
+      depth: depth,
+    ));
+  }
+
   /// Begin a new performance span.
   ///
   /// If another span is currently active, the new span becomes its child.
@@ -328,12 +377,15 @@ class PerformanceTracker {
   PerformanceSpanHandle? beginSpan(String category, String name,
       {Map<String, dynamic>? metadata}) {
     if (!enabled || _totalSpanCount >= maxSpans) return null;
+    final anchor = sessionStart;
+    if (anchor == null) return null;
 
     final span = PerformanceSpan(
       category: category,
       name: name,
-      startTime: DateTime.now(),
+      startOffsetUs: nowOffsetUs(),
       depth: (_currentSpan != null) ? _currentSpan!.depth + 1 : 0,
+      sessionAnchor: anchor,
       parent: _currentSpan,
       metadata: metadata,
     );
@@ -358,12 +410,15 @@ class PerformanceTracker {
   AsyncPerformanceSpanHandle? beginAsyncSpan(String category, String name,
       {Map<String, dynamic>? metadata}) {
     if (!enabled || _totalSpanCount >= maxSpans) return null;
+    final anchor = sessionStart;
+    if (anchor == null) return null;
 
     final span = PerformanceSpan(
       category: category,
       name: name,
-      startTime: DateTime.now(),
+      startOffsetUs: nowOffsetUs(),
       depth: 0,
+      sessionAnchor: anchor,
       parent: null,
       metadata: metadata,
     );
@@ -435,10 +490,13 @@ class PerformanceTracker {
           DateTime.fromMicrosecondsSinceEpoch(data['sessionStart'] as int);
     }
 
+    final anchor = sessionStart ?? DateTime.now();
     final spans = data['rootSpans'] as List;
     for (final spanJson in spans) {
-      rootSpans
-          .add(PerformanceSpan.fromJson(spanJson as Map<String, dynamic>));
+      rootSpans.add(PerformanceSpan.fromJson(
+        spanJson as Map<String, dynamic>,
+        sessionAnchor: anchor,
+      ));
     }
     _totalSpanCount = data['totalSpanCount'] as int? ?? rootSpans.length;
 
