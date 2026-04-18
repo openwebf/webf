@@ -873,6 +873,16 @@ int getJSProfilerSessionStartUs() {
   return _getJSProfilerSessionStartUs();
 }
 
+typedef NativeGetSteadyClockNowUs = Int64 Function();
+typedef DartGetSteadyClockNowUs = int Function();
+
+final DartGetSteadyClockNowUs _getSteadyClockNowUs =
+    WebFDynamicLibrary.ref.lookup<NativeFunction<NativeGetSteadyClockNowUs>>('getSteadyClockNowUs').asFunction();
+
+int getSteadyClockNowUs() {
+  return _getSteadyClockNowUs();
+}
+
 typedef NativeDrainJSThreadProfilingSpans = Int32 Function(Pointer<Void>, Int32);
 typedef DartDrainJSThreadProfilingSpans = int Function(Pointer<Void>, int);
 
