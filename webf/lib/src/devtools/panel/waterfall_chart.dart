@@ -138,6 +138,50 @@ enum WaterfallPhase {
   attachToPaint,
 }
 
+/// Returns true if [entry] should appear in the given [phase].
+///
+/// Rule: entries are allocated by start time. When [attachOffset] is non-null,
+/// entries with `start < attachOffset` live in [WaterfallPhase.initToAttach];
+/// entries with `start >= attachOffset` live in [WaterfallPhase.attachToPaint].
+/// Cross-boundary entries are not clipped — they stay in initToAttach and
+/// their `end` is preserved even if it extends past the attach boundary.
+///
+/// When [attachOffset] is null (attach has not yet fired), all entries live
+/// in [WaterfallPhase.initToAttach] and none in [WaterfallPhase.attachToPaint].
+bool includeEntryForPhase(
+    WaterfallEntry entry, WaterfallPhase phase, Duration? attachOffset) {
+  if (attachOffset == null) {
+    return phase == WaterfallPhase.initToAttach;
+  }
+  return phase == WaterfallPhase.initToAttach
+      ? entry.start < attachOffset
+      : entry.start >= attachOffset;
+}
+
+/// Returns true if [milestone] should appear in the given [phase].
+///
+/// Same rule as [includeEntryForPhase] but keyed on `milestone.offset`.
+bool includeMilestoneForPhase(WaterfallMilestone milestone,
+    WaterfallPhase phase, Duration? attachOffset) {
+  if (attachOffset == null) {
+    return phase == WaterfallPhase.initToAttach;
+  }
+  return phase == WaterfallPhase.initToAttach
+      ? milestone.offset < attachOffset
+      : milestone.offset >= attachOffset;
+}
+
+/// Returns true if a frame boundary at [offset] should appear in the given [phase].
+bool includeFrameBoundaryForPhase(
+    Duration offset, WaterfallPhase phase, Duration? attachOffset) {
+  if (attachOffset == null) {
+    return phase == WaterfallPhase.initToAttach;
+  }
+  return phase == WaterfallPhase.initToAttach
+      ? offset < attachOffset
+      : offset >= attachOffset;
+}
+
 // ---------------------------------------------------------------------------
 // Data builder — transforms LoadingState + PerformanceTracker → WaterfallData
 // ---------------------------------------------------------------------------
