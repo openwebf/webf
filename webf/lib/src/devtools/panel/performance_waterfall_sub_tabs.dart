@@ -15,7 +15,7 @@ class PerformanceWaterfallSubTabs extends StatefulWidget {
   final LoadingState loadingState;
   final PerformanceTracker tracker;
   final Duration? attachOffset;
-  final VoidCallback? onToggleFullscreen;
+  final ValueChanged<WaterfallPhase>? onToggleFullscreen;
 
   /// Last-selected sub-tab index, persisted across widget rebuilds.
   /// Callers pass the same static int in both `initialIndex` and the
@@ -117,14 +117,18 @@ class _PerformanceWaterfallSubTabsState
                 loadingState: widget.loadingState,
                 tracker: widget.tracker,
                 phase: WaterfallPhase.initToAttach,
-                onToggleFullscreen: widget.onToggleFullscreen,
+                onToggleFullscreen: widget.onToggleFullscreen == null
+                    ? null
+                    : () => widget.onToggleFullscreen!(WaterfallPhase.initToAttach),
               ),
               paintTabEnabled
                   ? WaterfallChart(
                       loadingState: widget.loadingState,
                       tracker: widget.tracker,
                       phase: WaterfallPhase.attachToPaint,
-                      onToggleFullscreen: widget.onToggleFullscreen,
+                      onToggleFullscreen: widget.onToggleFullscreen == null
+                          ? null
+                          : () => widget.onToggleFullscreen!(WaterfallPhase.attachToPaint),
                     )
                   : const _AttachPendingPlaceholder(),
             ],

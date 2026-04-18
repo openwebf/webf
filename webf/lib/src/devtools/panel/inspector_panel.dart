@@ -2865,13 +2865,8 @@ class _WebFInspectorBottomSheetState extends State<_WebFInspectorBottomSheet> wi
       attachOffset: attachOffset,
       initialIndex: _lastSelectedPerfSubTabIndex,
       onIndexChanged: (i) => _lastSelectedPerfSubTabIndex = i,
-      onToggleFullscreen: () => _openFullscreenWaterfall(
-        context,
-        controller,
-        _lastSelectedPerfSubTabIndex == 1
-            ? WaterfallPhase.attachToPaint
-            : WaterfallPhase.initToAttach,
-      ),
+      onToggleFullscreen: (phase) =>
+          _openFullscreenWaterfall(context, controller, phase),
     );
   }
 
