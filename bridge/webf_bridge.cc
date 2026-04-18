@@ -369,6 +369,10 @@ int64_t getJSProfilerSessionStartUs() {
   return webf::JSThreadProfiler::Instance().SessionStartUs();
 }
 
+int64_t getSteadyClockNowUs() {
+  return webf::JSThreadProfiler::SteadyClockNowUs();
+}
+
 int32_t drainJSThreadProfilingSpans(void* out_spans, int32_t max_spans) {
   return webf::JSThreadProfiler::Instance().DrainSpans(
       static_cast<webf::JSThreadSpan*>(out_spans), max_spans);
