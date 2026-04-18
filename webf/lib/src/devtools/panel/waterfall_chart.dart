@@ -1367,12 +1367,16 @@ class _WaterfallChartState extends State<WaterfallChart> {
   void _exportProfile() {
     try {
       final tracker = widget.tracker;
-      // Gather phases from LoadingState for milestone reconstruction
+      // Gather phases from LoadingState for milestone reconstruction.
+      // Skip phases with null offsetUs — they were captured before the
+      // tracker's session started and have no valid monotonic representation.
+      // Coercing them to 0 would silently corrupt the export round-trip.
       final phases = widget.loadingState.phases
+          .where((p) => p.offsetUs != null)
           .map((p) => ExportablePhase(
                 name: p.name,
                 timestamp: p.timestamp,
-                offsetUs: p.offsetUs ?? 0,
+                offsetUs: p.offsetUs!,
               ))
           .toList();
       final json = tracker.exportToJson(phases: phases);

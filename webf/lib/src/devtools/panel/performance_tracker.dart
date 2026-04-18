@@ -488,6 +488,18 @@ class PerformanceTracker {
   /// Returns imported [ExportablePhase] list if present in the data.
   List<ExportablePhase> importFromJson(String jsonString) {
     final data = jsonDecode(jsonString) as Map<String, dynamic>;
+
+    // Version check BEFORE mutating state so a bad input doesn't wipe the
+    // current session. v3 and older exports used 'startTime' instead of
+    // 'offsetUs' and will cause a TypeError on deserialization if imported.
+    final version = data['version'] as int?;
+    if (version != 4) {
+      throw FormatException(
+        'Unsupported profile version: ${version ?? "missing"}. '
+        'Expected version 4 (this build of WebF DevTools).',
+      );
+    }
+
     rootSpans.clear();
     jsThreadSpans.clear();
     _currentSpan = null;

@@ -85,6 +85,60 @@ void main() {
     });
   });
 
+  group('importFromJson version guard', () {
+    setUp(() {
+      PerformanceTracker.instance.clear();
+    });
+
+    test('throws FormatException for missing version (legacy v3 export)', () {
+      final tracker = PerformanceTracker.instance;
+      expect(
+        () => tracker.importFromJson('{"rootSpans": [], "totalSpanCount": 0}'),
+        throwsA(isA<FormatException>().having(
+          (e) => e.message,
+          'message',
+          contains('missing'),
+        )),
+      );
+    });
+
+    test('throws FormatException for version != 4', () {
+      final tracker = PerformanceTracker.instance;
+      expect(
+        () => tracker.importFromJson('{"version": 3, "rootSpans": [], "totalSpanCount": 0}'),
+        throwsA(isA<FormatException>().having(
+          (e) => e.message,
+          'message',
+          contains('3'),
+        )),
+      );
+    });
+
+    test('does not clear state when import fails version check', () {
+      final tracker = PerformanceTracker.instance;
+      // Pre-populate with a span so we can verify it is NOT cleared on failure.
+      final anchor = DateTime.now();
+      final span = PerformanceSpan(
+        category: 'layout',
+        name: 'existing',
+        startOffsetUs: 100,
+        depth: 0,
+        sessionAnchor: anchor,
+      );
+      span.endOffsetUs = 200;
+      tracker.rootSpans.add(span);
+
+      expect(
+        () => tracker.importFromJson('{"version": 3, "rootSpans": [], "totalSpanCount": 0}'),
+        throwsA(isA<FormatException>()),
+      );
+
+      // State must be preserved — import failure must not wipe existing spans.
+      expect(tracker.rootSpans, hasLength(1),
+          reason: 'rootSpans must not be cleared when version check fails');
+    });
+  });
+
   group('waterfall monotonicShift alignment', () {
     // These tests exercise the shift math in buildWaterfallData WITHOUT calling
     // startSession() (which requires native FFI). They manipulate the tracker's
