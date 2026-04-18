@@ -15,6 +15,7 @@ library;
 import 'dart:convert';
 import 'dart:ffi';
 import 'package:ffi/ffi.dart';
+import 'package:meta/meta.dart';
 import 'package:webf/bridge.dart';
 import 'package:webf/src/bridge/to_native.dart' as to_native;
 
@@ -190,6 +191,23 @@ class PerformanceTracker {
   /// Dart session start time, used for JS span clock reference.
   DateTime? _dartSessionStart;
 
+  /// Monotonic clock source. Started once in [startSession].
+  Stopwatch? _stopwatch;
+
+  /// Absolute C++ steady_clock microseconds captured at the instant the Dart
+  /// stopwatch was started. Derived from `getSteadyClockNowUs()` and the
+  /// stopwatch's elapsed at that instant. Constant for the session.
+  int? _stopwatchStartAbsUs;
+
+  /// Absolute C++ steady_clock microseconds of the C++ profiler's
+  /// `session_start_`. Read via `getJSProfilerSessionStartUs()`.
+  int? _cppSessionStartAbsUs;
+
+  /// Delta to add to C++-reported JS span offsets (which are relative to
+  /// `_cppSessionStartAbsUs`) to convert them into offsets relative to
+  /// `_stopwatchStartAbsUs`. Constant for the session.
+  int? _cppToDartOffsetUs;
+
   /// Currently active span (acts as call stack via parent pointer).
   PerformanceSpan? _currentSpan;
 
@@ -201,6 +219,15 @@ class PerformanceTracker {
   /// Maximum number of spans to record per session to prevent memory issues.
   static const int maxSpans = 10000;
 
+  /// Current monotonic offset from session start, in microseconds.
+  /// Returns 0 if session has not started.
+  int nowOffsetUs() => _stopwatch?.elapsedMicroseconds ?? 0;
+
+  /// Offset to apply when converting a C++ JS span offset into a
+  /// Dart-timeline offset. Visible for testing.
+  @visibleForTesting
+  int? get cppToDartOffsetUsForTest => _cppToDartOffsetUs;
+
   /// Start a new recording session. Clears all previous spans.
   void startSession() {
     sessionStart = DateTime.now();
@@ -210,8 +237,20 @@ class PerformanceTracker {
     _currentSpan = null;
     _totalSpanCount = 0;
     enabled = true;
-    // Enable C++ JS thread profiling
+
+    // Step A: start Dart stopwatch, read C++ steady_clock, compute
+    // `_stopwatchStartAbsUs` as the absolute steady_clock microseconds at
+    // which the stopwatch started.
+    final sw = Stopwatch()..start();
+    final syncAbsUs = to_native.getSteadyClockNowUs();
+    final syncElapsedUs = sw.elapsedMicroseconds;
+    _stopwatch = sw;
+    _stopwatchStartAbsUs = syncAbsUs - syncElapsedUs;
+
+    // Step B: enable C++ profiling (this captures C++ session_start_).
     to_native.setJSThreadProfilingEnabled(true);
+    _cppSessionStartAbsUs = to_native.getJSProfilerSessionStartUs();
+    _cppToDartOffsetUs = _cppSessionStartAbsUs! - _stopwatchStartAbsUs!;
   }
 
   /// End the current recording session. Spans are preserved for reading.
