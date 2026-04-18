@@ -6,11 +6,18 @@ import 'dart:collection';
 import 'dart:async';
 import 'dart:math' as Math;
 import 'package:flutter/widgets.dart';
+import 'package:webf/src/devtools/panel/performance_tracker.dart';
 
 /// Represents a single phase in the WebFController loading lifecycle
 class LoadingPhase {
   final String name;
   final DateTime timestamp;
+
+  /// Monotonic offset from the tracker session start, in microseconds.
+  /// Null only when the phase was constructed outside a performance session
+  /// (e.g., fallback `orElse` placeholders).
+  final int? offsetUs;
+
   final Map<String, dynamic> parameters;
   final Duration? duration;
   final List<LoadingPhase> substeps = [];
@@ -19,6 +26,7 @@ class LoadingPhase {
   LoadingPhase({
     required this.name,
     required this.timestamp,
+    this.offsetUs,
     Map<String, dynamic>? parameters,
     this.duration,
     this.parentPhase,
@@ -1778,9 +1786,13 @@ class LoadingState {
     final duration =
         _lastPhaseTime != null ? now.difference(_lastPhaseTime!) : null;
 
+    final tracker = PerformanceTracker.instance;
+    final offsetUs = tracker.sessionStart != null ? tracker.nowOffsetUs() : null;
+
     final phase = LoadingPhase(
       name: phaseName,
       timestamp: now,
+      offsetUs: offsetUs,
       parameters: parameters,
       duration: duration,
       parentPhase: parentPhase,
