@@ -2846,6 +2846,7 @@ class _WebFInspectorBottomSheetState extends State<_WebFInspectorBottomSheet> wi
               ? WaterfallChart(
                   loadingState: controller.loadingState,
                   tracker: PerformanceTracker.instance,
+                  phase: WaterfallPhase.initToAttach,
                   onToggleFullscreen: () {
                     // Close the bottom sheet and open fullscreen route
                     Navigator.of(context).pop();
@@ -5996,6 +5997,7 @@ class _FullscreenWaterfallPage extends StatelessWidget {
         child: WaterfallChart(
           loadingState: loadingState,
           tracker: tracker,
+          phase: WaterfallPhase.initToAttach,
           isFullscreen: true,
           onToggleFullscreen: () {
             Navigator.of(context).pop();

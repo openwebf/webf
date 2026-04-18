@@ -127,6 +127,17 @@ class WaterfallData {
   });
 }
 
+/// Which phase of the session the chart should render.
+///
+/// Phase boundary is `WaterfallData.attachOffset`. Entries, milestones and
+/// frame boundaries are filtered by their start time vs `attachOffset`.
+enum WaterfallPhase {
+  /// `controller.load()` up to (and excluding) `attachToFlutter`.
+  initToAttach,
+  /// `attachToFlutter` onward, including FP / FCP / LCP and all post-attach work.
+  attachToPaint,
+}
+
 // ---------------------------------------------------------------------------
 // Data builder — transforms LoadingState + PerformanceTracker → WaterfallData
 // ---------------------------------------------------------------------------
@@ -786,6 +797,7 @@ enum _ChartMode { overview, flame }
 class WaterfallChart extends StatefulWidget {
   final LoadingState loadingState;
   final PerformanceTracker tracker;
+  final WaterfallPhase phase;
   final VoidCallback? onToggleFullscreen;
   final bool isFullscreen;
 
@@ -793,6 +805,7 @@ class WaterfallChart extends StatefulWidget {
     super.key,
     required this.loadingState,
     required this.tracker,
+    required this.phase,
     this.onToggleFullscreen,
     this.isFullscreen = false,
   });
