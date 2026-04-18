@@ -44,6 +44,11 @@ int64_t JSThreadProfiler::SessionStartUs() const {
   return std::chrono::duration_cast<std::chrono::microseconds>(session_start_.time_since_epoch()).count();
 }
 
+int64_t JSThreadProfiler::SteadyClockNowUs() {
+  auto now = std::chrono::steady_clock::now();
+  return std::chrono::duration_cast<std::chrono::microseconds>(now.time_since_epoch()).count();
+}
+
 bool JSThreadProfiler::TrackAtom(JSAtom atom) {
   if (atom == 0) return false;
   if (atom_to_id_.find(atom) == atom_to_id_.end()) {

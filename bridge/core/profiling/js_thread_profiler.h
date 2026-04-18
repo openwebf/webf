@@ -51,6 +51,10 @@ class JSThreadProfiler {
   int64_t NowUs() const;
   int64_t SessionStartUs() const;
 
+  // Absolute steady_clock time in microseconds (time_since_epoch).
+  // Safe to call regardless of enabled state.
+  static int64_t SteadyClockNowUs();
+
   // Called at JS function entry — returns pending stack index or -1 if disabled
   int32_t OnFunctionEntry(uint8_t category, JSAtom func_name);
   // Called at JS function exit
