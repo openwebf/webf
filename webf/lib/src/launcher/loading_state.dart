@@ -2299,6 +2299,7 @@ class LoadingState {
         },
         duration: _lastLcpCandidate!.duration,
         parentPhase: _lastLcpCandidate!.parentPhase,
+        offsetUs: _lastLcpCandidate!.offsetUs,
       );
       _phases[phaseLargestContentfulPaint] = finalLcpPhase;
 
@@ -2311,6 +2312,7 @@ class LoadingState {
         timestamp: _lastLcpCandidate!.timestamp,
         parameters: finalLcpPhase.parameters,
         duration: finalLcpPhase.duration,
+        offsetUs: _lastLcpCandidate!.offsetUs,
       );
       _dispatchPhaseEvent(finalLcpEvent);
     }
