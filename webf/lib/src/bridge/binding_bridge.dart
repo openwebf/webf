@@ -15,6 +15,8 @@ import 'package:webf/foundation.dart';
 import 'package:webf/geometry.dart';
 import 'package:webf/html.dart';
 import 'package:webf/launcher.dart';
+import 'package:webf/src/devtools/panel/performance_subtypes.dart';
+import 'package:webf/src/devtools/panel/performance_tracker.dart';
 import 'package:webf/src/geometry/dom_point.dart';
 import 'package:webf/src/html/canvas/canvas_path_2d.dart';
 
@@ -134,11 +136,22 @@ Future<void> _dispatchEventToNative(Event event, bool isCapture) async {
 
     Pointer<NativeFunction<NativeInvokeResultCallback>> resultCallback = Pointer.fromFunction(_handleDispatchResult);
 
+    // Root JS handlers fired by this dispatch under a single entry.
+    // asyncSpanning so the entry id survives the microtask-scheduled FFI
+    // call and the C++ event listener execution it triggers.
+    final entry = PerformanceTracker.instance.beginEntry(
+        kSubTypeDispatchEvent, event.type,
+        asyncSpanning: true);
+
     Future.microtask(() {
       f(pointer, contextId, method, dispatchEventArguments.length, allocatedNativeArguments, context, resultCallback);
     });
 
-    return completer.future;
+    try {
+      await completer.future;
+    } finally {
+      entry?.end();
+    }
   }
 }
 

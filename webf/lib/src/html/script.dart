@@ -10,6 +10,8 @@ import 'package:flutter/scheduler.dart';
 import 'package:webf/dom.dart';
 import 'package:webf/webf.dart';
 import 'package:webf/css.dart';
+import 'package:webf/src/devtools/panel/performance_subtypes.dart';
+import 'package:webf/src/devtools/panel/performance_tracker.dart';
 import 'package:path/path.dart';
 
 // Children of the <head> element all have display:none
@@ -188,6 +190,9 @@ class ScriptRunner {
     // Record script load start
     dumper.recordScriptElementLoadStart(scriptSource);
 
+    final loadEntry = PerformanceTracker.instance.beginEntry(
+        kSubTypeScriptLoadComplete, scriptSource,
+        asyncSpanning: true);
     try {
       await bundle.resolve(baseUrl: _document.controller.url, uriParser: _document.controller.uriParser);
       await bundle.obtainData(_contextId);
@@ -216,6 +221,7 @@ class ScriptRunner {
       }
       return;
     } finally {
+      loadEntry?.end();
       // Decrease the resolving count.
       if (!shouldAsync) {
         _resolvingCount--;

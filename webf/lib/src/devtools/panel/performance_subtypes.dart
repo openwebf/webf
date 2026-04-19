@@ -19,6 +19,7 @@ const String kSubTypeDrawFrame = 'drawFrame';
 const String kSubTypeFlushUICommand = 'flushUICommand';
 const String kSubTypeInvokeBindingMethodFromNative = 'invokeBindingMethodFromNative';
 const String kSubTypeInvokeModuleEvent = 'invokeModuleEvent';
+const String kSubTypeDispatchEvent = 'dispatchEvent';
 const String kSubTypeAsyncCallback = 'asyncCallback';
 const String kSubTypeImageLoadComplete = 'imageLoadComplete';
 const String kSubTypeFontLoadComplete = 'fontLoadComplete';

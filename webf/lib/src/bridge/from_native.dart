@@ -17,6 +17,8 @@ import 'package:webf/bridge.dart';
 import 'package:webf/foundation.dart';
 import 'package:webf/launcher.dart';
 import 'package:webf/src/devtools/panel/console_store.dart';
+import 'package:webf/src/devtools/panel/performance_subtypes.dart';
+import 'package:webf/src/devtools/panel/performance_tracker.dart';
 
 import '../../foundation.dart';
 
@@ -293,11 +295,15 @@ void _setTimeout(int newTimerId, Pointer<Void> callbackContext, double contextId
     void runCallback() {
       if (controller.view != currentView || currentView.disposed) return;
 
+      final entry = PerformanceTracker.instance.beginEntry(
+          kSubTypeJsTimer, 'setTimeout($newTimerId)');
       try {
         func(callbackContext, contextId, nullptr);
       } catch (e, stack) {
         Pointer<Utf8> nativeErrorMessage = ('Error: $e\n$stack').toNativeUtf8();
         func(callbackContext, contextId, nativeErrorMessage);
+      } finally {
+        entry?.end();
       }
     }
 
@@ -321,11 +327,15 @@ void _setInterval(int newTimerId, Pointer<Void> callbackContext, double contextI
       if (controller.view != currentView || currentView.disposed) return;
 
       DartAsyncCallback func = callback.asFunction();
+      final entry = PerformanceTracker.instance.beginEntry(
+          kSubTypeJsTimer, 'setInterval($newTimerId)');
       try {
         func(callbackContext, contextId, nullptr);
       } catch (e, stack) {
         Pointer<Utf8> nativeErrorMessage = ('Dart Error: $e\n$stack').toNativeUtf8();
         func(callbackContext, contextId, nativeErrorMessage);
+      } finally {
+        entry?.end();
       }
     }
 
@@ -357,11 +367,15 @@ void _requestAnimationFrame(int newFrameId, Pointer<Void> callbackContext, doubl
     void runCallback() {
       if (controller.view != currentView || currentView.disposed) return;
       DartRAFAsyncCallback func = callback.asFunction();
+      final entry = PerformanceTracker.instance.beginEntry(
+          kSubTypeJsRAF, 'requestAnimationFrame($newFrameId)');
       try {
         func(callbackContext, contextId, highResTimeStamp, nullptr);
       } catch (e, stack) {
         Pointer<Utf8> nativeErrorMessage = ('Error: $e\n$stack').toNativeUtf8();
         func(callbackContext, contextId, highResTimeStamp, nativeErrorMessage);
+      } finally {
+        entry?.end();
       }
     }
 

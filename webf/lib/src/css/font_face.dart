@@ -2,12 +2,15 @@
  * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
 
+import 'dart:async';
 import 'package:collection/collection.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:flutter/services.dart';
 import 'package:webf/css.dart';
 import 'package:webf/foundation.dart';
 import 'package:webf/launcher.dart';
+import 'package:webf/src/devtools/panel/performance_subtypes.dart';
+import 'package:webf/src/devtools/panel/performance_tracker.dart';
 import 'dart:convert';
 
 final List<String> supportedFonts = [
@@ -82,18 +85,27 @@ class CSSFontFace {
 
       if (targetFont == null) return;
 
+      final entry = PerformanceTracker.instance.beginEntry(
+          kSubTypeFontLoadComplete, removeQuotationMark(fontFamily),
+          asyncSpanning: true);
       try {
         if (targetFont.content.isNotEmpty) {
           Uint8List content = targetFont.content;
           Future<ByteData> bytes = Future.value(ByteData.sublistView(content));
           FontLoader loader = FontLoader(fontFamily);
-          SchedulerBinding.instance.addPostFrameCallback((timeStamp) {
+          final loaded = Completer<void>();
+          SchedulerBinding.instance.addPostFrameCallback((timeStamp) async {
             loader.addFont(bytes);
-            loader.load();
+            await loader.load();
+            loaded.complete();
           });
+          await loaded.future;
         } else {
           Uri? uri = _resolveFontSource(contextId, targetFont.src, baseHref);
-          if (uri == null) return;
+          if (uri == null) {
+            entry?.end();
+            return;
+          }
           final WebFController controller = WebFController.getControllerOfJSContextId(contextId)!;
           WebFBundle bundle = controller.getPreloadBundleFromUrl(uri.toString()) ?? WebFBundle.fromUrl(uri.toString());
           await bundle.resolve(baseUrl: controller.url, uriParser: controller.uriParser);
@@ -101,16 +113,21 @@ class CSSFontFace {
           assert(bundle.isResolved, 'Failed to obtain $url');
           FontLoader loader = FontLoader(removeQuotationMark(fontFamily));
           Future<ByteData> bytes = Future.value(bundle.data?.buffer.asByteData());
-          SchedulerBinding.instance.addPostFrameCallback((timeStamp) {
+          final loaded = Completer<void>();
+          SchedulerBinding.instance.addPostFrameCallback((timeStamp) async {
             loader.addFont(bytes);
-            loader.load();
+            await loader.load();
+            loaded.complete();
           });
+          await loaded.future;
         }
 
 
       } catch(e, stack) {
         print('$e\n$stack');
         return;
+      } finally {
+        entry?.end();
       }
     }
   }
