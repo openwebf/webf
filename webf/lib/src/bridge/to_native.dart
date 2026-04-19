@@ -883,6 +883,16 @@ int getSteadyClockNowUs() {
   return _getSteadyClockNowUs();
 }
 
+typedef NativeSetJSProfilerCurrentEntryId = Void Function(Uint32);
+typedef DartSetJSProfilerCurrentEntryId = void Function(int);
+
+final DartSetJSProfilerCurrentEntryId _setJSProfilerCurrentEntryId =
+    WebFDynamicLibrary.ref.lookup<NativeFunction<NativeSetJSProfilerCurrentEntryId>>('setJSProfilerCurrentEntryId').asFunction();
+
+void setJSProfilerCurrentEntryId(int entryId) {
+  _setJSProfilerCurrentEntryId(entryId);
+}
+
 typedef NativeDrainJSThreadProfilingSpans = Int32 Function(Pointer<Void>, Int32);
 typedef DartDrainJSThreadProfilingSpans = int Function(Pointer<Void>, int);
 
