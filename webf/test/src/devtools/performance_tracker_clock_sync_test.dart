@@ -7,9 +7,12 @@ import 'package:webf/src/devtools/panel/performance_tracker.dart';
 import 'package:webf/src/devtools/panel/waterfall_chart.dart';
 import 'package:webf/src/launcher/loading_state.dart';
 
+import '../../setup.dart';
+
 void main() {
   group('PerformanceTracker clock sync', () {
     setUp(() {
+      setupTest();
       PerformanceTracker.instance.clear();
     });
 
@@ -87,6 +90,7 @@ void main() {
 
   group('importFromJson version guard', () {
     setUp(() {
+      setupTest();
       PerformanceTracker.instance.clear();
     });
 
@@ -145,6 +149,7 @@ void main() {
     // public fields directly to simulate the recording-after-page-load scenario.
 
     setUp(() {
+      setupTest();
       PerformanceTracker.instance.clear();
       PerformanceTracker.instance.sessionStart = null;
     });

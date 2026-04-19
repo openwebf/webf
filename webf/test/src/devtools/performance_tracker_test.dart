@@ -59,11 +59,16 @@ void main() {
       entry!.end();
     });
 
-    test('beginSpan outside any entry asserts in dev', () {
-      expect(
-        () => PerformanceTracker.instance.beginSpan(kSubTypePaint, 'paint'),
-        throwsA(isA<AssertionError>()),
-      );
+    test('beginSpan outside any entry asserts in dev when opted in', () {
+      PerformanceTracker.instance.assertOnUnattributedSpan = true;
+      try {
+        expect(
+          () => PerformanceTracker.instance.beginSpan(kSubTypePaint, 'paint'),
+          throwsA(isA<AssertionError>()),
+        );
+      } finally {
+        PerformanceTracker.instance.assertOnUnattributedSpan = false;
+      }
     });
 
     test('endSession closes any unclosed entries', () {

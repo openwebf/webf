@@ -40,6 +40,7 @@ import 'package:webf/src/launcher/network_options.dart';
 
 import 'loading_state.dart';
 import 'package:webf/src/devtools/panel/performance_tracker.dart';
+import 'package:webf/src/devtools/panel/performance_subtypes.dart';
 
 // Error handler when load bundle failed.
 typedef LoadErrorHandler = void Function(FlutterError error, StackTrace stack);
@@ -1096,7 +1097,13 @@ class WebFController with Diagnosticable {
 
     view.document.preloadViewportSize = _viewportSize;
     // Manually initialize the root element and create renderObjects for each elements.
-    view.document.documentElement!.applyStyle(view.document.documentElement!.style);
+    final preloadEntry = PerformanceTracker.instance
+        .beginEntry(kSubTypeAsyncCallback, 'controllerPreload');
+    try {
+      view.document.documentElement!.applyStyle(view.document.documentElement!.style);
+    } finally {
+      preloadEntry?.end();
+    }
 
     run() async {
       bool isTimeout = false;

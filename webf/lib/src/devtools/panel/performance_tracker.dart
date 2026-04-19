@@ -213,6 +213,13 @@ class PerformanceTracker {
   /// Whether span recording is active. When false, [beginSpan] returns null immediately.
   bool enabled = false;
 
+  /// When true, [beginSpan] called outside any entry triggers an assertion.
+  /// Default false because the spec allows uninstrumented call sites
+  /// (Flutter framework callbacks like Future.then, Ticker, FutureBuilder
+  /// rebuilds) to fall through to an `unattributed` root in production.
+  /// Tests that want to verify dev-mode contract enforcement must opt in.
+  bool assertOnUnattributedSpan = false;
+
   /// Top-level spans (not children of any other span).
   final List<PerformanceSpan> rootSpans = [];
 
@@ -419,7 +426,7 @@ class PerformanceTracker {
     String effectiveCategory = category;
     String effectiveName = name;
     if (_entryStack.isEmpty) {
-      assert(false,
+      assert(!assertOnUnattributedSpan,
           'beginSpan called outside any entry: $category/$name. '
           'Wrap the call site in tracker.beginEntry(...) or use the '
           'unattributed subType explicitly.');
@@ -534,7 +541,12 @@ class PerformanceTracker {
     _entryIdToSpan.clear();
     _entryIdMap.clear();
     _nextEntryId = 1;
-    to_native.setJSProfilerCurrentEntryId(0);
+    // Only reset C++ entry id when a session is active. When no session
+    // is running, C++ profiling is disabled and the FFI sync would force
+    // libwebf load in environments (e.g. unit tests) that never opted in.
+    if (enabled) {
+      to_native.setJSProfilerCurrentEntryId(0);
+    }
   }
 
   /// Export the current session data as a JSON string.
