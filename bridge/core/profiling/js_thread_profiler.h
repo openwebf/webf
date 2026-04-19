@@ -128,6 +128,7 @@ class JSThreadProfiler {
     int64_t start_us;
     uint8_t category;
     uint32_t func_name_atom;
+    uint32_t entry_id;  // Dart entry id active at span entry — stable across mid-span Dart pushes/pops
     uint8_t depth;
     bool valid;
   };

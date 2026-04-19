@@ -119,6 +119,7 @@ int32_t JSThreadProfiler::OnFunctionEntry(uint8_t category, JSAtom func_name) {
   entry.start_us = NowUs();
   entry.category = category;
   entry.func_name_atom = func_name;
+  entry.entry_id = current_entry_id_.load(std::memory_order_relaxed);
   entry.depth = static_cast<uint8_t>(stack_depth_ < 255 ? stack_depth_ : 255);
   entry.valid = true;
 
@@ -156,7 +157,7 @@ void JSThreadProfiler::OnFunctionExit(int32_t entry_idx) {
   span.end_us = end_us;
   span.func_name_atom = entry.func_name_atom;
   span.depth = entry.depth;
-  span.entry_id = current_entry_id_.load(std::memory_order_relaxed);
+  span.entry_id = entry.entry_id;
 
   write_pos_++;
   entry.valid = false;
