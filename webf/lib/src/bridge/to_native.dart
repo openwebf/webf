@@ -14,6 +14,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:webf/webf.dart';
 import 'package:webf/src/devtools/panel/performance_tracker.dart';
+import 'package:webf/src/devtools/panel/performance_subtypes.dart';
 
 // Steps for using dart:ffi to call a C function from Dart:
 // 1. Import dart:ffi.
@@ -944,9 +945,11 @@ void flushUICommand(WebFViewController view, Pointer<NativeBindingObject> selfPo
   }
 
   List<UICommand> commands = nativeUICommandToDartFFI(view.contextId);
-  final handle = PerformanceTracker.instance.beginSpan('domConstruction', 'flushUICommand', metadata: {'commandCount': commands.length});
+  final entry = PerformanceTracker.instance.beginEntry(
+      kSubTypeFlushUICommand, 'flushUICommand',
+      metadata: {'commandCount': commands.length});
   execUICommands(view, commands);
-  handle?.end();
+  entry?.end();
   // Drain JS thread profiling spans piggy-backing on the UI command flush
   if (PerformanceTracker.instance.enabled) {
     PerformanceTracker.instance.drainJSThreadSpans();
