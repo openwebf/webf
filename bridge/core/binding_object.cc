@@ -12,6 +12,7 @@
 #include "core/dom/mutation_observer_interest_group.h"
 #include "core/executing_context.h"
 #include "core/html/canvas/canvas_rendering_context_2d.h"
+#include "core/profiling/js_thread_profiler.h"
 #include "foundation/native_string.h"
 #include "foundation/native_value_converter.h"
 #include "logging.h"
@@ -140,6 +141,15 @@ NativeValue BindingObject::InvokeBindingMethod(const AtomicString& method,
 #if ENABLE_LOG
   WEBF_LOG(INFO) << "[Dispatcher]: PostToDartSync method: InvokeBindingMethod; Call Begin";
 #endif
+
+  // Record this synchronous Dart roundtrip as a span on the JS thread so it
+  // nests inside the surrounding kJSScriptEval block in the perf timeline.
+  uint32_t name_id = 0;
+  auto& profiler = JSThreadProfiler::Instance();
+  if (profiler.enabled()) {
+    name_id = profiler.RegisterBindingName(method.ToStdString(GetExecutingContext()->ctx()));
+  }
+  JSThreadProfiler::ScopedSpan span_guard(profiler, kJSBindingSyncCall, name_id);
 
   GetDispatcher()->PostToDartSync(
       GetExecutingContext()->isDedicated(), contextId(),
