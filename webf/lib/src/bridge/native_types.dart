@@ -42,7 +42,13 @@ final class RawEvent extends Struct {
 }
 
 // Matches C++ JSThreadSpan in js_thread_profiler.h
-// Note: struct padding means category (uint8) is followed by 7 bytes padding before start_us (int64)
+// Struct layout (36 bytes total):
+//   offset  0: uint8  category
+//   offset  8: int64  startUs       (7 bytes padding before)
+//   offset 16: int64  endUs
+//   offset 24: uint32 funcNameAtom
+//   offset 28: uint8  depth
+//   offset 32: uint32 entryId       (3 bytes padding before)
 final class NativeJSThreadSpan extends Struct {
   @Uint8()
   external int category;
