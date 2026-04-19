@@ -564,13 +564,11 @@ class PerformanceTracker {
     }
 
     final data = <String, dynamic>{
-      'version': 4,
+      'version': 5,
       'exportedAt': DateTime.now().toIso8601String(),
       'sessionStart': sessionStart?.microsecondsSinceEpoch,
       'totalSpanCount': countSpans(rootSpans),
       'rootSpans': rootSpans.map((s) => s.toJson()).toList(),
-      if (jsThreadSpans.isNotEmpty)
-        'jsThreadSpans': jsThreadSpans.map((s) => s.toJson()).toList(),
     };
     if (phases != null && phases.isNotEmpty) {
       data['phases'] = phases.map((p) => p.toJson()).toList();
@@ -584,19 +582,18 @@ class PerformanceTracker {
   List<ExportablePhase> importFromJson(String jsonString) {
     final data = jsonDecode(jsonString) as Map<String, dynamic>;
 
-    // Version check BEFORE mutating state so a bad input doesn't wipe the
-    // current session. v3 and older exports used 'startTime' instead of
-    // 'offsetUs' and will cause a TypeError on deserialization if imported.
+    // Hard-reject any version other than v5. Earlier formats encoded
+    // categories as a flat enum and JS-thread spans as a parallel list,
+    // both incompatible with the entry-rooted tree.
     final version = data['version'] as int?;
-    if (version != 4) {
+    if (version != 5) {
       throw FormatException(
         'Unsupported profile version: ${version ?? "missing"}. '
-        'Expected version 4 (this build of WebF DevTools).',
+        'Expected version 5 (this build of WebF DevTools).',
       );
     }
 
     rootSpans.clear();
-    jsThreadSpans.clear();
     _currentSpan = null;
     enabled = false;
 
@@ -615,15 +612,6 @@ class PerformanceTracker {
     }
     _totalSpanCount = data['totalSpanCount'] as int? ?? rootSpans.length;
 
-    // Restore JS thread spans if present
-    final jsSpansJson = data['jsThreadSpans'] as List?;
-    if (jsSpansJson != null) {
-      for (final jsJson in jsSpansJson) {
-        jsThreadSpans.add(JSThreadSpan.fromJson(jsJson as Map<String, dynamic>));
-      }
-    }
-
-    // Restore phases if present
     final phasesJson = data['phases'] as List?;
     if (phasesJson != null) {
       return phasesJson

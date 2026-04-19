@@ -106,14 +106,14 @@ void main() {
       );
     });
 
-    test('throws FormatException for version != 4', () {
+    test('throws FormatException for version != 5', () {
       final tracker = PerformanceTracker.instance;
       expect(
-        () => tracker.importFromJson('{"version": 3, "rootSpans": [], "totalSpanCount": 0}'),
+        () => tracker.importFromJson('{"version": 4, "rootSpans": [], "totalSpanCount": 0}'),
         throwsA(isA<FormatException>().having(
           (e) => e.message,
           'message',
-          contains('3'),
+          contains('4'),
         )),
       );
     });
