@@ -20,6 +20,8 @@ import 'package:webf/rendering.dart';
 import 'package:webf/src/html/text.dart';
 import 'package:webf/webf.dart';
 import 'package:webf/src/foundation/dio_client.dart' show disposeSharedDioForContext;
+import 'package:webf/src/devtools/panel/performance_subtypes.dart';
+import 'package:webf/src/devtools/panel/performance_tracker.dart';
 
 // FFI binding for the C++ batch free function
 typedef NativeBatchFreeFunction = Void Function(Pointer<Void> pointers, Int32 count);
@@ -106,7 +108,9 @@ class WebFViewController with Diagnosticable implements WidgetsBindingObserver {
   void flushPendingCommandsPerFrame() {
     if (disposed && _isFrameBindingAttached) return;
     _isFrameBindingAttached = true;
+    final entry = PerformanceTracker.instance.beginEntry(kSubTypeDrawFrame, 'drawFrame');
     flushUICommand(this, window.pointer!);
+    entry?.end();
     SchedulerBinding.instance.addPostFrameCallback((_) => flushPendingCommandsPerFrame());
   }
 
