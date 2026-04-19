@@ -188,6 +188,29 @@ class AsyncPerformanceSpanHandle {
   }
 }
 
+/// Handle returned by [PerformanceTracker.beginEntry] to end an entry root.
+///
+/// Ending an entry pops it from the entry stack and clears (or restores)
+/// the C++ profiler's current_entry_id. Child spans opened between
+/// beginEntry/end auto-attribute to the entry via the existing _currentSpan
+/// stack.
+class EntryHandle {
+  final PerformanceSpan _root;
+  final PerformanceTracker _tracker;
+  final int _entryId;
+  final int _previousEntryId;
+
+  EntryHandle._(this._root, this._tracker, this._entryId, this._previousEntryId);
+
+  void end({Map<String, dynamic>? metadata}) {
+    _root.endOffsetUs = _tracker.nowOffsetUs();
+    if (metadata != null) {
+      _root.metadata = (_root.metadata ?? {})..addAll(metadata);
+    }
+    _tracker._popEntry(_root, _previousEntryId);
+  }
+}
+
 /// Singleton performance tracker that records hierarchical spans.
 ///
 /// The tracker uses a [_currentSpan] pointer as a call stack. When [beginSpan]
@@ -238,6 +261,19 @@ class PerformanceTracker {
   /// Currently active span (acts as call stack via parent pointer).
   PerformanceSpan? _currentSpan;
 
+  /// Stack of currently-open entry root spans. Mirrors the depth that the
+  /// C++ profiler is aware of via current_entry_id_.
+  final List<PerformanceSpan> _entryStack = [];
+
+  /// Map from entry id → root span. Entries are added on push and stay
+  /// until session reset (popping does NOT remove), so JS spans drained
+  /// after the entry has closed still graft correctly.
+  final Map<int, PerformanceSpan> _entryIdToSpan = {};
+
+  /// Monotonic entry-id allocator. Reset to 1 on session start (0 reserved
+  /// for "no entry active").
+  int _nextEntryId = 1;
+
   /// When the current recording session started.
   DateTime? sessionStart;
 
@@ -263,6 +299,10 @@ class PerformanceTracker {
     _currentSpan = null;
     _totalSpanCount = 0;
     enabled = true;
+    _entryStack.clear();
+    _entryIdToSpan.clear();
+    _nextEntryId = 1;
+    to_native.setJSProfilerCurrentEntryId(0);
 
     // Step A: start Dart stopwatch, read C++ steady_clock, compute
     // `_stopwatchStartAbsUs` as the absolute steady_clock microseconds at
@@ -283,16 +323,18 @@ class PerformanceTracker {
   /// End the current recording session. Spans are preserved for reading.
   void endSession() {
     enabled = false;
-    // Drain any remaining JS spans
+    // Drain any remaining JS spans before tearing down state
     drainJSThreadSpans();
     // Disable C++ JS thread profiling
     to_native.setJSThreadProfilingEnabled(false);
+    to_native.setJSProfilerCurrentEntryId(0);
     // Close any unclosed spans using the monotonic clock.
     final nowUs = nowOffsetUs();
     while (_currentSpan != null) {
       _currentSpan!.endOffsetUs ??= nowUs;
       _currentSpan = _currentSpan!.parent;
     }
+    _entryStack.clear();
   }
 
   /// Drain JS thread profiling spans from the C++ ring buffer.
@@ -434,6 +476,71 @@ class PerformanceTracker {
     rootSpans.add(span);
     _totalSpanCount++;
     return AsyncPerformanceSpanHandle._(span);
+  }
+
+  /// Begin a new entry root.
+  ///
+  /// Pushes a fresh root span onto [rootSpans], registers an entry id with
+  /// the C++ profiler so JS-thread spans drained later can be grafted under
+  /// this root, and sets the entry as the active call-stack head.
+  ///
+  /// Entries can nest — eg. flushUICommand inside drawFrame's build phase.
+  /// The inner becomes a child span of the outer (not a sibling root) so
+  /// that "what work did this drawFrame trigger" attribution is preserved.
+  ///
+  /// Returns null when tracking is disabled or the span limit is reached.
+  EntryHandle? beginEntry(String subType, String name,
+      {Map<String, dynamic>? metadata}) {
+    if (!enabled || _totalSpanCount >= maxSpans) return null;
+    final anchor = sessionStart;
+    if (anchor == null) return null;
+
+    final root = PerformanceSpan(
+      category: subType,
+      name: name,
+      startOffsetUs: nowOffsetUs(),
+      depth: (_currentSpan != null) ? _currentSpan!.depth + 1 : 0,
+      sessionAnchor: anchor,
+      parent: _currentSpan,
+      metadata: metadata,
+    );
+
+    if (_currentSpan != null) {
+      _currentSpan!.children.add(root);
+    } else {
+      rootSpans.add(root);
+    }
+
+    final entryId = _nextEntryId++;
+    final previousEntryId = _entryStack.isEmpty
+        ? 0
+        : _entryIdMap[_entryStack.last] ?? 0;
+    _entryIdToSpan[entryId] = root;
+    _entryIdMap[root] = entryId;
+    _entryStack.add(root);
+    _currentSpan = root;
+    _totalSpanCount++;
+
+    to_native.setJSProfilerCurrentEntryId(entryId);
+
+    return EntryHandle._(root, this, entryId, previousEntryId);
+  }
+
+  /// Reverse-lookup map: span → entry id. Used by [_popEntry] to find the
+  /// id corresponding to the parent entry being restored.
+  final Map<PerformanceSpan, int> _entryIdMap = {};
+
+  void _popEntry(PerformanceSpan root, int previousEntryId) {
+    if (_entryStack.isNotEmpty && identical(_entryStack.last, root)) {
+      _entryStack.removeLast();
+    } else {
+      // Out-of-order pop (defensive — shouldn't happen with sane handle usage).
+      _entryStack.remove(root);
+    }
+    _currentSpan = root.parent;
+    to_native.setJSProfilerCurrentEntryId(previousEntryId);
+    // Note: do NOT remove from _entryIdToSpan — JS spans drained later may
+    // still need to graft under this completed root.
   }
 
   /// Total number of spans recorded in this session.
