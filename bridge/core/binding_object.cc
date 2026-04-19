@@ -307,16 +307,22 @@ NativeValue BindingObject::InvokeBindingMethod(BindingMethodCallOperations bindi
 
   NativeValue native_method = NativeValueConverter<NativeTypeInt64>::ToNativeValue(binding_method_call_operation);
 
-  // Record sync Dart roundtrip as a profiler span. For the enum variant the
-  // name is one of two fixed strings.
+  // Record sync Dart roundtrip as a profiler span. The label embeds the
+  // property name from argv[0] (Get/SetBindingProperty pass it as the first
+  // argument) so the trace shows what the Dart side actually dispatches on,
+  // e.g. "setProperty(src)" rather than a bare "setProperty".
   uint32_t name_id = 0;
   auto& profiler = JSThreadProfiler::Instance();
   if (profiler.enabled()) {
-    const char* op_name =
-        (binding_method_call_operation == kGetProperty)
-            ? "getProperty"
-            : "setProperty";
-    name_id = profiler.RegisterBindingName(op_name);
+    const char* op_name = (binding_method_call_operation == kGetProperty) ? "getProperty" : "setProperty";
+    std::string span_name = op_name;
+    if (argc >= 1 && argv[0].tag == NativeTag::TAG_STRING) {
+      NativeValue prop_value = argv[0];
+      AtomicString prop = NativeValueConverter<NativeTypeString>::FromNativeValueShared(
+          GetExecutingContext()->ctx(), prop_value);
+      span_name.append("(").append(prop.ToStdString(GetExecutingContext()->ctx())).append(")");
+    }
+    name_id = profiler.RegisterBindingName(span_name);
   }
   JSThreadProfiler::ScopedSpan span_guard(profiler, kJSBindingSyncCall, name_id);
 
