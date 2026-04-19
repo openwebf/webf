@@ -280,7 +280,9 @@ class LinkElement extends Element {
 
         final String cssString = _cachedStyleSheetText = await resolveStringFromData(bundle.data!);
 
-        final parseHandle = PerformanceTracker.instance.beginSpan(kSubTypeCssParse, 'parseStylesheet', metadata: {'url': href});
+        final parseHandle = PerformanceTracker.instance.beginSpan(
+            kSubTypeCssParse, 'parseStylesheet',
+            metadata: {'url': href});
         _styleSheet = CSSParser(cssString, href: href).parse(
             windowWidth: windowWidth, windowHeight: windowHeight, isDarkMode: ownerView.rootController.isDarkMode);
         _styleSheet?.href = href;

@@ -482,7 +482,9 @@ class CSSStyleDeclaration extends DynamicBindingObject with StaticDefinedBinding
   }
 
   void flushPendingProperties() {
-    final handle = PerformanceTracker.instance.beginSpan(kSubTypeStyleApply, 'flushPendingProperties', metadata: {'propertyCount': _pendingProperties.length});
+    final handle = PerformanceTracker.instance.beginSpan(
+        kSubTypeStyleApply, 'flushPendingProperties',
+        metadata: {'propertyCount': _pendingProperties.length});
     Element? _target = target;
     // If style target element not exists, no need to do flush operation.
     if (_target == null) {

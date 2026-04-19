@@ -99,7 +99,9 @@ List<UICommand> nativeUICommandToDartFFI(double contextId) {
 
 void execUICommands(WebFViewController view, List<UICommand> commands) {
   Map<int, bool> pendingStylePropertiesTargets = {};
-  final handle = PerformanceTracker.instance.beginSpan(kSubTypeDomConstruction, 'execUICommands', metadata: {'commandCount': commands.length});
+  final handle = PerformanceTracker.instance.beginSpan(
+      kSubTypeDomConstruction, 'execUICommands',
+      metadata: {'commandCount': commands.length});
 
   for(UICommand command in commands) {
     UICommandType commandType = command.type;

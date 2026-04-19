@@ -607,7 +607,9 @@ class WebFState extends State<WebF> with RouteAware {
       'hasHybridRoute': initialRoute != '/',
     });
 
-    final handle = PerformanceTracker.instance.beginSpan(kSubTypeBuild, 'buildRootView', metadata: {'initialRoute': initialRoute});
+    final handle = PerformanceTracker.instance.beginSpan(
+        kSubTypeBuild, 'buildRootView',
+        metadata: {'initialRoute': initialRoute});
     try {
       if (initialRoute != '/') {
         RouterLinkElement? child = widget.controller.view.getHybridRouterView(initialRoute);
