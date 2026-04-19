@@ -282,17 +282,23 @@ class LinkElement extends Element {
 
         final String cssString = _cachedStyleSheetText = await resolveStringFromData(bundle.data!);
 
-        final parseHandle = PerformanceTracker.instance.beginSpan(
+        // Sync entry rooting parse + immediate style flush + initial
+        // recalculateStyle. fetchEntry already ended above, so without
+        // this anchor those spans would orphan to "unattributed".
+        final parseEntry = PerformanceTracker.instance.beginEntry(
             kSubTypeCssParse, 'parseStylesheet',
             metadata: {'url': href});
-        _styleSheet = CSSParser(cssString, href: href).parse(
-            windowWidth: windowWidth, windowHeight: windowHeight, isDarkMode: ownerView.rootController.isDarkMode);
-        _styleSheet?.href = href;
-        parseHandle?.end(metadata: {'ruleCount': _styleSheet?.cssRules.length ?? 0});
+        try {
+          _styleSheet = CSSParser(cssString, href: href).parse(
+              windowWidth: windowWidth, windowHeight: windowHeight, isDarkMode: ownerView.rootController.isDarkMode);
+          _styleSheet?.href = href;
 
-        ownerDocument.markElementStyleDirty(ownerDocument.documentElement!);
-        ownerDocument.styleNodeManager.appendPendingStyleSheet(_styleSheet!);
-        ownerDocument.updateStyleIfNeeded();
+          ownerDocument.markElementStyleDirty(ownerDocument.documentElement!);
+          ownerDocument.styleNodeManager.appendPendingStyleSheet(_styleSheet!);
+          ownerDocument.updateStyleIfNeeded();
+        } finally {
+          parseEntry?.end(metadata: {'ruleCount': _styleSheet?.cssRules.length ?? 0});
+        }
 
         // Successful load.
         SchedulerBinding.instance.addPostFrameCallback((_) {
