@@ -28,7 +28,7 @@ import 'package:webf/src/bridge/to_native.dart' as to_native;
 /// captured once at session start; wall-clock drift during the session
 /// (e.g. NTP adjustment) is not reflected in the derived DateTime values.
 class PerformanceSpan {
-  final String category;
+  final String subType;
   final String name;
 
   /// Monotonic offset from session start, in microseconds.
@@ -47,7 +47,7 @@ class PerformanceSpan {
   final DateTime _sessionAnchor;
 
   PerformanceSpan({
-    required this.category,
+    required this.subType,
     required this.name,
     required this.startOffsetUs,
     required this.depth,
@@ -116,7 +116,7 @@ class PerformanceSpan {
   }
 
   Map<String, dynamic> toJson() => {
-        'category': category,
+        'subType': subType,
         'name': name,
         'startOffsetUs': startOffsetUs,
         'endOffsetUs': endOffsetUs,
@@ -129,7 +129,7 @@ class PerformanceSpan {
   static PerformanceSpan fromJson(Map<String, dynamic> json,
       {PerformanceSpan? parent, required DateTime sessionAnchor}) {
     final span = PerformanceSpan(
-      category: json['category'] as String,
+      subType: json['subType'] as String,
       name: json['name'] as String,
       startOffsetUs: json['startOffsetUs'] as int,
       depth: json['depth'] as int,
@@ -435,7 +435,7 @@ class PerformanceTracker {
     }
 
     final span = PerformanceSpan(
-      category: effectiveCategory,
+      subType: effectiveCategory,
       name: effectiveName,
       startOffsetUs: nowOffsetUs(),
       depth: (_currentSpan != null) ? _currentSpan!.depth + 1 : 0,
@@ -473,7 +473,7 @@ class PerformanceTracker {
     if (anchor == null) return null;
 
     final root = PerformanceSpan(
-      category: subType,
+      subType: subType,
       name: name,
       startOffsetUs: nowOffsetUs(),
       depth: (_currentSpan != null) ? _currentSpan!.depth + 1 : 0,
@@ -526,9 +526,9 @@ class PerformanceTracker {
   /// Whether the span limit has been reached.
   bool get isAtCapacity => _totalSpanCount >= maxSpans;
 
-  /// Get all root spans of a specific category.
-  List<PerformanceSpan> rootSpansForCategory(String category) {
-    return rootSpans.where((s) => s.category == category).toList();
+  /// Get all root spans of a specific subType.
+  List<PerformanceSpan> rootSpansForSubType(String subType) {
+    return rootSpans.where((s) => s.subType == subType).toList();
   }
 
   /// Clear all recorded spans without changing the enabled state.

@@ -123,7 +123,7 @@ void main() {
       // Pre-populate with a span so we can verify it is NOT cleared on failure.
       final anchor = DateTime.now();
       final span = PerformanceSpan(
-        category: 'layout',
+        subType: 'layout',
         name: 'existing',
         startOffsetUs: 100,
         depth: 0,
@@ -178,7 +178,7 @@ void main() {
       // equal monotonicShiftUs + 500_000 µs = 2_000_000 + 500_000 = 2_500_000 µs.
 
       final span = PerformanceSpan(
-        category: 'layout',
+        subType: 'layout',
         name: 'test',
         startOffsetUs: 500000, // 0.5s after tracker.sessionStart
         depth: 0,
@@ -204,7 +204,7 @@ void main() {
       tracker.rootSpans.clear();
       final anchor = tracker.sessionStart!;
       final alignedSpan = PerformanceSpan(
-        category: 'layout',
+        subType: 'layout',
         name: 'test',
         startOffsetUs: 500000,
         depth: 0,
@@ -240,7 +240,7 @@ void main() {
 
       final anchor = tracker.sessionStart!;
       final span = PerformanceSpan(
-        category: 'layout',
+        subType: 'layout',
         name: 'test',
         startOffsetUs: 500000,
         depth: 0,

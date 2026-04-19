@@ -38,7 +38,7 @@ void main() {
           reason: 'inner entry must not appear as a sibling root');
       final outerRoot = PerformanceTracker.instance.rootSpans.first;
       expect(outerRoot.children.length, 1);
-      expect(outerRoot.children.first.category, kSubTypeFlushUICommand);
+      expect(outerRoot.children.first.subType, kSubTypeFlushUICommand);
 
       inner!.end();
       outer!.end();
@@ -53,7 +53,7 @@ void main() {
 
       final root = PerformanceTracker.instance.rootSpans.first;
       expect(root.children.length, 1);
-      expect(root.children.first.category, kSubTypePaint);
+      expect(root.children.first.subType, kSubTypePaint);
 
       child!.end();
       entry!.end();
@@ -99,7 +99,7 @@ void main() {
       final root = PerformanceTracker.instance.rootSpans.first;
       // root.children = [flushUICommand (closed), paint]
       expect(root.children.length, 2);
-      expect(root.children[1].category, kSubTypePaint);
+      expect(root.children[1].subType, kSubTypePaint);
 
       child!.end();
       outer!.end();

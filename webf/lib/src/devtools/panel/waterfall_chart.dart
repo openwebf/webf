@@ -391,7 +391,7 @@ WaterfallData _buildWaterfallDataImpl(
   final spansByCategory = <WaterfallCategory, List<PerformanceSpan>>{};
   for (final span in rootSpanSnapshot) {
     if (!span.isComplete) continue;
-    final cat = _spanCategory(span.category);
+    final cat = _spanCategory(span.subType);
     (spansByCategory[cat] ??= []).add(span);
   }
 
@@ -612,7 +612,7 @@ WaterfallData _buildWaterfallDataImpl(
   // so we cluster paint ends within 5ms and use the last end time per cluster.
   final paintEnds = <Duration>[];
   for (final span in rootSpanSnapshot) {
-    if (!span.isComplete || span.category != 'paint') continue;
+    if (!span.isComplete || span.subType != 'paint') continue;
     var boundary = shiftedOffset(span.endOffsetUs!);
     if (minStart > Duration.zero) boundary = boundary - minStart;
     paintEnds.add(boundary);
@@ -756,7 +756,7 @@ Color _categoryColor(WaterfallCategory cat) {
 }
 
 Color _flameSpanColor(PerformanceSpan span) {
-  switch (span.category) {
+  switch (span.subType) {
     case 'cssParse':
       return const Color(0xFF5C6BC0);
     case 'styleFlush':
@@ -2152,7 +2152,7 @@ class _WaterfallChartState extends State<WaterfallChart> {
                   'Total: ${_formatDuration(span.duration)}  '
                   'Self: ${_formatDuration(span.selfDuration)}  '
                   'Children: ${span.children.length}  '
-                  'Category: ${span.category}',
+                  'Category: ${span.subType}',
                   style:
                       const TextStyle(color: Colors.white54, fontSize: 10),
                 ),
