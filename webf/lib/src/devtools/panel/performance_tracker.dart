@@ -301,6 +301,7 @@ class PerformanceTracker {
     enabled = true;
     _entryStack.clear();
     _entryIdToSpan.clear();
+    _entryIdMap.clear();
     _nextEntryId = 1;
     to_native.setJSProfilerCurrentEntryId(0);
 
@@ -335,6 +336,7 @@ class PerformanceTracker {
       _currentSpan = _currentSpan!.parent;
     }
     _entryStack.clear();
+    _entryIdMap.clear();
   }
 
   /// Drain JS thread profiling spans from the C++ ring buffer.
@@ -560,6 +562,11 @@ class PerformanceTracker {
     jsThreadSpans.clear();
     _currentSpan = null;
     _totalSpanCount = 0;
+    _entryStack.clear();
+    _entryIdToSpan.clear();
+    _entryIdMap.clear();
+    _nextEntryId = 1;
+    to_native.setJSProfilerCurrentEntryId(0);
   }
 
   /// Export the current session data as a JSON string.
