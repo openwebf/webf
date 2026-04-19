@@ -104,14 +104,49 @@ class WebFViewController with Diagnosticable implements WidgetsBindingObserver {
   }
 
   bool _isFrameBindingAttached = false;
+  EntryHandle? _drawFrameEntry;
 
   void flushPendingCommandsPerFrame() {
     if (disposed && _isFrameBindingAttached) return;
     _isFrameBindingAttached = true;
-    final entry = PerformanceTracker.instance.beginEntry(kSubTypeDrawFrame, 'drawFrame');
+
+    // Initial drain: any UI commands queued before the first frame. No
+    // drawFrame entry here — no actual Flutter frame has happened yet.
     flushUICommand(this, window.pointer!);
-    entry?.end();
-    SchedulerBinding.instance.addPostFrameCallback((_) => flushPendingCommandsPerFrame());
+
+    // From here on, wrap each real Flutter frame in a drawFrame entry so
+    // build/layout/paint spans nest as children instead of orphaned roots.
+    _scheduleDrawFrameWrapping();
+  }
+
+  void _scheduleDrawFrameWrapping() {
+    if (disposed) return;
+
+    // scheduleFrameCallback fires in the transient phase, BEFORE
+    // WidgetsBinding.drawFrame runs build/layout/paint. Opening the
+    // entry here puts it on the stack so those pipeline spans nest.
+    SchedulerBinding.instance.scheduleFrameCallback((_) {
+      if (disposed) return;
+      // Defensive: close any entry leaked from a prior failed frame.
+      _drawFrameEntry?.end();
+      _drawFrameEntry =
+          PerformanceTracker.instance.beginEntry(kSubTypeDrawFrame, 'drawFrame');
+    });
+
+    // addPostFrameCallback fires AFTER paint commits. Flush queued UI
+    // commands (this becomes a child entry of drawFrame), close
+    // drawFrame, then re-register the pair for the next frame.
+    SchedulerBinding.instance.addPostFrameCallback((_) {
+      if (disposed) {
+        _drawFrameEntry?.end();
+        _drawFrameEntry = null;
+        return;
+      }
+      flushUICommand(this, window.pointer!);
+      _drawFrameEntry?.end();
+      _drawFrameEntry = null;
+      _scheduleDrawFrameWrapping();
+    });
   }
 
   final Map<String, Completer<void>> _hybridRouteLoadCompleter = {};

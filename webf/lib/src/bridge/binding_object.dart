@@ -386,8 +386,9 @@ Future<void> _invokeBindingMethodFromNativeImpl(double contextId, Pointer<Native
   // Open an entry so all Dart work below this point attributes back to the
   // call origin in the waterfall (eg. setProperty(src) → fetchImage subspan).
   final entryName = method is String ? method : 'op#$method';
-  final entry = PerformanceTracker.instance
-      .beginEntry(kSubTypeInvokeBindingMethodFromNative, entryName);
+  final entry = PerformanceTracker.instance.beginEntry(
+      kSubTypeInvokeBindingMethodFromNative, entryName,
+      asyncSpanning: true);
 
   dynamic result;
   try {

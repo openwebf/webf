@@ -659,7 +659,9 @@ class ImageElement extends Element {
     // Increment count when request.
     self.ownerDocument.incrementRequestCount();
 
-    final entry = PerformanceTracker.instance.beginEntry(kSubTypeImageLoadComplete, url.toString());
+    final entry = PerformanceTracker.instance.beginEntry(
+        kSubTypeImageLoadComplete, url.toString(),
+        asyncSpanning: true);
     final data = await request.obtainImage(self.ownerDocument.controller);
     entry?.end();
 

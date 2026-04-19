@@ -238,4 +238,87 @@ void main() {
           reason: '_attachJSSpan must drop spans once at capacity');
     });
   });
+
+  group('PerformanceTracker async-spanning entries', () {
+    setUp(() {
+      setupTest();
+      PerformanceTracker.instance.clear();
+      PerformanceTracker.instance.startSession();
+    });
+    tearDown(() {
+      PerformanceTracker.instance.endSession();
+    });
+
+    test('asyncSpanning entry does not capture concurrent sync entries',
+        () async {
+      // Open an async-spanning entry (eg. evaluateByteCode).
+      final asyncEntry = PerformanceTracker.instance.beginEntry(
+          kSubTypeEvaluateByteCode, 'evaluateByteCode',
+          asyncSpanning: true);
+
+      // Simulate the await suspension: nothing changes _currentSpan because
+      // asyncSpanning entries don't push onto the stack. While "awaiting,"
+      // an unrelated post-frame callback fires and opens a drawFrame entry.
+      final drawFrame = PerformanceTracker.instance
+          .beginEntry(kSubTypeDrawFrame, 'drawFrame');
+      drawFrame!.end();
+
+      // Now the async work completes.
+      asyncEntry!.end();
+
+      // drawFrame must be its own root, not nested under evaluateByteCode.
+      final roots = PerformanceTracker.instance.rootSpans;
+      expect(roots.length, 2,
+          reason: 'both entries must be roots when one is asyncSpanning');
+      final byType = {for (final r in roots) r.subType: r};
+      expect(byType[kSubTypeDrawFrame], isNotNull);
+      expect(byType[kSubTypeEvaluateByteCode], isNotNull);
+      expect(byType[kSubTypeDrawFrame]!.children, isEmpty,
+          reason: 'drawFrame must not contain the leaked async entry work');
+      expect(byType[kSubTypeEvaluateByteCode]!.children, isEmpty,
+          reason: 'evaluateByteCode must not capture drawFrame as a child');
+    });
+
+    test('asyncSpanning entry still grafts JS spans by entryId', () {
+      final asyncEntry = PerformanceTracker.instance.beginEntry(
+          kSubTypeEvaluateByteCode, 'evaluateByteCode',
+          asyncSpanning: true);
+
+      // First entry id is 1.
+      PerformanceTracker.instance.debugInjectJSSpan(
+        subType: kSubTypeJsFunction,
+        startUs: PerformanceTracker.instance.nowOffsetUs() - 100,
+        endUs: PerformanceTracker.instance.nowOffsetUs() - 50,
+        entryId: 1,
+        funcName: 'jsHelper',
+      );
+
+      asyncEntry!.end();
+
+      final root = PerformanceTracker.instance.rootSpans.single;
+      expect(root.subType, kSubTypeEvaluateByteCode);
+      expect(root.children.length, 1);
+      expect(root.children.first.name, 'jsHelper');
+    });
+
+    test('sync beginEntry inside asyncSpanning entry remains independent',
+        () {
+      final asyncEntry = PerformanceTracker.instance.beginEntry(
+          kSubTypeEvaluateByteCode, 'evaluateByteCode',
+          asyncSpanning: true);
+
+      // A SYNC entry opened immediately after — should still be a root,
+      // not a child, because asyncSpanning didn't push onto the stack.
+      final syncEntry = PerformanceTracker.instance
+          .beginEntry(kSubTypeFlushUICommand, 'flushUICommand');
+      syncEntry!.end();
+
+      asyncEntry!.end();
+
+      final roots = PerformanceTracker.instance.rootSpans;
+      expect(roots.length, 2);
+      expect(roots.map((r) => r.subType).toSet(),
+          {kSubTypeEvaluateByteCode, kSubTypeFlushUICommand});
+    });
+  });
 }

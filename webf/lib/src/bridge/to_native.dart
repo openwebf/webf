@@ -344,7 +344,8 @@ Future<bool> evaluateScripts(double contextId, Uint8List codeBytes,
   }
 
   final entry = PerformanceTracker.instance.beginEntry(
-      kSubTypeEvaluateScripts, url, metadata: {'size': codeBytes.length});
+      kSubTypeEvaluateScripts, url,
+      metadata: {'size': codeBytes.length}, asyncSpanning: true);
   try {
     QuickJSByteCodeCacheObject cacheObject =
         await QuickJSByteCodeCache.getCacheObject(codeBytes, cacheKey: cacheKey, loadedFromCache: loadedFromCache);
@@ -433,7 +434,8 @@ Future<bool> evaluateQuickjsByteCode(double contextId, Uint8List bytes, {ScriptE
     return false;
   }
   final entry = PerformanceTracker.instance.beginEntry(
-      kSubTypeEvaluateByteCode, 'evaluateByteCode', metadata: {'size': bytes.length});
+      kSubTypeEvaluateByteCode, 'evaluateByteCode',
+      metadata: {'size': bytes.length}, asyncSpanning: true);
   Completer<bool> completer = Completer();
   Pointer<Uint8> byteData = malloc.allocate(sizeOf<Uint8>() * bytes.length);
   byteData.asTypedList(bytes.length).setAll(0, bytes);
@@ -465,7 +467,8 @@ Future<bool> evaluateModule(double contextId, Uint8List codeBytes,
   }
 
   final entry = PerformanceTracker.instance.beginEntry(
-      kSubTypeEvaluateModule, url, metadata: {'size': codeBytes.length});
+      kSubTypeEvaluateModule, url,
+      metadata: {'size': codeBytes.length}, asyncSpanning: true);
   {
     Pointer<Utf8> urlPtr = url.toNativeUtf8();
     Pointer<Uint8> codePtr = uint8ListToPointer(codeBytes);

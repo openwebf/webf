@@ -177,20 +177,32 @@ class PerformanceSpanHandle {
 /// the C++ profiler's current_entry_id. Child spans opened between
 /// beginEntry/end auto-attribute to the entry via the existing _currentSpan
 /// stack.
+///
+/// For async-spanning entries (created with `asyncSpanning: true`), the
+/// entry is NOT pushed onto the call stack — only the C++ entry_id is
+/// stamped — so unrelated Dart work that runs while the future awaits
+/// does not get nested under this entry.
 class EntryHandle {
   final PerformanceSpan _root;
   final PerformanceTracker _tracker;
   final int _entryId;
   final int _previousEntryId;
+  final bool _asyncSpanning;
 
-  EntryHandle._(this._root, this._tracker, this._entryId, this._previousEntryId);
+  EntryHandle._(this._root, this._tracker, this._entryId, this._previousEntryId,
+      {bool asyncSpanning = false})
+      : _asyncSpanning = asyncSpanning;
 
   void end({Map<String, dynamic>? metadata}) {
     _root.endOffsetUs = _tracker.nowOffsetUs();
     if (metadata != null) {
       _root.metadata = (_root.metadata ?? {})..addAll(metadata);
     }
-    _tracker._popEntry(_root, _previousEntryId);
+    if (_asyncSpanning) {
+      _tracker._endAsyncEntry(_previousEntryId);
+    } else {
+      _tracker._popEntry(_root, _previousEntryId);
+    }
   }
 }
 
@@ -267,7 +279,12 @@ class PerformanceTracker {
   int _totalSpanCount = 0;
 
   /// Maximum number of spans to record per session to prevent memory issues.
-  static const int maxSpans = 10000;
+  ///
+  /// JS-thread spans (jsFunction, jsCFunction) dominate real recordings —
+  /// a few seconds of busy app activity can produce thousands. The cap
+  /// must be high enough that important Dart entries (drawFrame,
+  /// flushUICommand, evaluate*) are not crowded out by JS-thread fan-out.
+  static const int maxSpans = 100000;
 
   /// Current monotonic offset from session start, in microseconds.
   /// Returns 0 if session has not started.
@@ -580,24 +597,34 @@ class PerformanceTracker {
   /// that "what work did this drawFrame trigger" attribution is preserved.
   ///
   /// Returns null when tracking is disabled or the span limit is reached.
+  ///
+  /// When [asyncSpanning] is true the entry is treated as bracketing async
+  /// work (the caller will `await` between begin and end). The root span and
+  /// C++ entry_id stamping happen as usual, but the entry is NOT pushed onto
+  /// `_currentSpan` / `_entryStack`. This is critical: Dart's call-stack
+  /// nesting is synchronous, but `await` lets unrelated microtasks
+  /// (post-frame callbacks, timer ticks) run between begin and end. Without
+  /// this opt-out their `beginEntry` calls would see a leaked `_currentSpan`
+  /// and become children of an async entry they have nothing to do with.
   EntryHandle? beginEntry(String subType, String name,
-      {Map<String, dynamic>? metadata}) {
+      {Map<String, dynamic>? metadata, bool asyncSpanning = false}) {
     if (!enabled || _totalSpanCount >= maxSpans) return null;
     final anchor = sessionStart;
     if (anchor == null) return null;
 
+    final parent = asyncSpanning ? null : _currentSpan;
     final root = PerformanceSpan(
       subType: subType,
       name: name,
       startOffsetUs: nowOffsetUs(),
-      depth: (_currentSpan != null) ? _currentSpan!.depth + 1 : 0,
+      depth: (parent != null) ? parent.depth + 1 : 0,
       sessionAnchor: anchor,
-      parent: _currentSpan,
+      parent: parent,
       metadata: metadata,
     );
 
-    if (_currentSpan != null) {
-      _currentSpan!.children.add(root);
+    if (parent != null) {
+      parent.children.add(root);
     } else {
       rootSpans.add(root);
     }
@@ -607,14 +634,32 @@ class PerformanceTracker {
         ? 0
         : _entryIdMap[_entryStack.last] ?? 0;
     _entryIdToSpan[entryId] = root;
-    _entryIdMap[root] = entryId;
-    _entryStack.add(root);
-    _currentSpan = root;
     _totalSpanCount++;
+
+    if (!asyncSpanning) {
+      _entryIdMap[root] = entryId;
+      _entryStack.add(root);
+      _currentSpan = root;
+    }
 
     to_native.setJSProfilerCurrentEntryId(entryId);
 
-    return EntryHandle._(root, this, entryId, previousEntryId);
+    return EntryHandle._(root, this, entryId, previousEntryId,
+        asyncSpanning: asyncSpanning);
+  }
+
+  /// End handler for async-spanning entries.
+  ///
+  /// Async entries never pushed onto `_currentSpan` / `_entryStack`, so all
+  /// we need is to restore the C++ entry_id to whatever sync entry is
+  /// currently active (or 0). We DO NOT touch `_currentSpan` because it may
+  /// belong to a completely unrelated sync entry stack that was opened while
+  /// the async work was in flight.
+  void _endAsyncEntry(int previousEntryId) {
+    final restoredEntryId = _entryStack.isEmpty
+        ? previousEntryId
+        : _entryIdMap[_entryStack.last] ?? previousEntryId;
+    to_native.setJSProfilerCurrentEntryId(restoredEntryId);
   }
 
   /// Reverse-lookup map: span → entry id. Used by [_popEntry] to find the
