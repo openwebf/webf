@@ -156,6 +156,7 @@ void JSThreadProfiler::OnFunctionExit(int32_t entry_idx) {
   span.end_us = end_us;
   span.func_name_atom = entry.func_name_atom;
   span.depth = entry.depth;
+  span.entry_id = current_entry_id_.load(std::memory_order_relaxed);
 
   write_pos_++;
   entry.valid = false;
