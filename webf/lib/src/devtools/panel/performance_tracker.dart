@@ -555,6 +555,7 @@ class JSThreadSpan {
     'jsMicrotask',     // 7: kJSMicrotask
     'jsMutationObserver', // 8: kJSMutationObserver
     'jsFlushUICommand',   // 9: kJSFlushUICommand
+    'jsBindingSyncCall',  // 10: kJSBindingSyncCall
   ];
 
   final String category;
