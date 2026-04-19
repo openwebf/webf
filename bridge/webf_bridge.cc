@@ -386,3 +386,11 @@ const char* getJSProfilerAtomName(uint32_t atom) {
   const std::string& name = webf::JSThreadProfiler::Instance().GetAtomName(static_cast<JSAtom>(atom));
   return name.c_str();
 }
+
+void setJSProfilerCurrentEntryId(uint32_t entry_id) {
+  webf::JSThreadProfiler::Instance().SetCurrentEntryId(entry_id);
+}
+
+uint32_t getJSProfilerCurrentEntryId() {
+  return webf::JSThreadProfiler::Instance().GetCurrentEntryId();
+}

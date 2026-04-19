@@ -180,5 +180,7 @@ WEBF_EXPORT_C int64_t getSteadyClockNowUs();
 WEBF_EXPORT_C int32_t drainJSThreadProfilingSpans(void* out_spans, int32_t max_spans);
 WEBF_EXPORT_C int8_t isJSThreadProfilingEnabled();
 WEBF_EXPORT_C const char* getJSProfilerAtomName(uint32_t atom);
+WEBF_EXPORT_C void setJSProfilerCurrentEntryId(uint32_t entry_id);
+WEBF_EXPORT_C uint32_t getJSProfilerCurrentEntryId();
 
 #endif  // WEBF_BRIDGE_EXPORT_H
