@@ -405,7 +405,8 @@ class PerformanceTracker {
   /// is disabled or the span limit has been reached.
   ///
   /// [category] identifies the pipeline stage: 'cssParse', 'styleFlush',
-  /// 'styleRecalc', 'styleApply', 'layout', 'paint'.
+  /// 'styleRecalc', 'styleApply', 'layout', 'paint'. Stored as
+  /// [PerformanceSpan.subType].
   ///
   /// [name] identifies the specific operation: 'parseStylesheet', 'flushStyle',
   /// 'recalculateStyle', 'flexLayout', 'paint', etc.
@@ -420,22 +421,22 @@ class PerformanceTracker {
 
     // Dev-mode contract: every span should live under an entry. In
     // production we silently promote to root with subType `unattributed`
-    // and the original category moved into the name field, so the panel
+    // and the original subType moved into the name field, so the panel
     // stays useful while we iterate. In dev (assertions enabled) we
     // surface the missing instrumentation immediately.
-    String effectiveCategory = category;
+    String effectiveSubType = category;
     String effectiveName = name;
     if (_entryStack.isEmpty) {
       assert(!assertOnUnattributedSpan,
           'beginSpan called outside any entry: $category/$name. '
           'Wrap the call site in tracker.beginEntry(...) or use the '
           'unattributed subType explicitly.');
-      effectiveCategory = 'unattributed';
+      effectiveSubType = 'unattributed';
       effectiveName = '$category/$name';
     }
 
     final span = PerformanceSpan(
-      subType: effectiveCategory,
+      subType: effectiveSubType,
       name: effectiveName,
       startOffsetUs: nowOffsetUs(),
       depth: (_currentSpan != null) ? _currentSpan!.depth + 1 : 0,

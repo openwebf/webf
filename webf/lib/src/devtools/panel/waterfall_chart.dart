@@ -385,8 +385,8 @@ WaterfallData _buildWaterfallDataImpl(
 
   // --- Performance spans from tracker ---
   // Snapshot to avoid ConcurrentModificationException (tracker may still be recording)
-  // Group root spans by category into time-clustered aggregated entries.
-  // Spans within the same category that are close together (< 50ms gap) are merged.
+  // Group root spans by waterfall category (subType bucket) into time-clustered
+  // aggregated entries. Spans in the same bucket within < 50ms are merged.
   final rootSpanSnapshot = List.of(tracker.rootSpans);
   final spansByCategory = <WaterfallCategory, List<PerformanceSpan>>{};
   for (final span in rootSpanSnapshot) {
