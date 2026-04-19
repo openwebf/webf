@@ -21,6 +21,8 @@ void JSThreadProfiler::Enable(int64_t min_duration_us) {
   atom_to_id_.clear();
   unique_atoms_.clear();
   atom_names_.clear();
+  binding_name_to_id_.clear();
+  binding_names_.clear();
   for (int i = 0; i < kMaxDepth; i++) {
     pending_[i].valid = false;
   }
@@ -69,11 +71,26 @@ void JSThreadProfiler::RegisterAtomName(JSAtom atom, const std::string& name) {
 }
 
 const std::string& JSThreadProfiler::GetAtomName(JSAtom atom) const {
+  if ((atom & kBindingIdFlag) != 0) {
+    uint32_t idx = atom & ~kBindingIdFlag;
+    if (idx < binding_names_.size()) return binding_names_[idx];
+    return kEmptyString;
+  }
   auto it = atom_to_id_.find(atom);
   if (it != atom_to_id_.end() && it->second < static_cast<int32_t>(atom_names_.size())) {
     return atom_names_[it->second];
   }
   return kEmptyString;
+}
+
+uint32_t JSThreadProfiler::RegisterBindingName(const std::string& name) {
+  auto it = binding_name_to_id_.find(name);
+  if (it != binding_name_to_id_.end()) return it->second;
+  uint32_t idx = static_cast<uint32_t>(binding_names_.size());
+  uint32_t id = idx | kBindingIdFlag;
+  binding_name_to_id_.emplace(name, id);
+  binding_names_.push_back(name);
+  return id;
 }
 
 bool JSThreadProfiler::IsAtomKnown(JSAtom atom) const {

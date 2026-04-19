@@ -84,6 +84,12 @@ class JSThreadProfiler {
   const std::string& GetAtomName(JSAtom atom) const;
   bool IsAtomKnown(JSAtom atom) const;
 
+  // Register a human-readable name for a C++-side span (e.g., binding method
+  // names). Returns a stable ID with the high bit set so it does not collide
+  // with QuickJS JSAtoms. Use the returned ID as the `name` argument of
+  // ScopedSpan / OnFunctionEntry. GetAtomName() will resolve it.
+  uint32_t RegisterBindingName(const std::string& name);
+
  private:
   JSThreadProfiler() = default;
 
@@ -101,6 +107,12 @@ class JSThreadProfiler {
   std::vector<JSAtom> unique_atoms_;
   std::vector<std::string> atom_names_;
   static const std::string kEmptyString;
+
+  // C++-side name registry (binding methods, internal spans). IDs use the high
+  // bit to distinguish from QuickJS atoms. Cleared on Enable().
+  static constexpr uint32_t kBindingIdFlag = 0x80000000u;
+  std::unordered_map<std::string, uint32_t> binding_name_to_id_;
+  std::vector<std::string> binding_names_;  // index = id & ~kBindingIdFlag
 
   // Open span stack for depth tracking
   static constexpr int32_t kMaxDepth = 128;
