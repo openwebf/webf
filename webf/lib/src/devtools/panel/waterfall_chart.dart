@@ -18,6 +18,72 @@ import 'package:flutter/material.dart';
 import 'package:webf/launcher.dart';
 import 'package:webf/src/launcher/loading_state.dart';
 import 'package:webf/src/devtools/panel/performance_tracker.dart';
+import 'package:webf/src/devtools/panel/performance_subtypes.dart';
+
+/// Fixed row order in the waterfall. SubTypes not in this list are appended
+/// at the end (catches new entries until they're explicitly placed).
+const List<String> kWaterfallRowOrder = [
+  // Lifecycle group
+  kSubTypeDrawFrame,
+  // Dart-thread entries
+  kSubTypeFlushUICommand,
+  kSubTypeInvokeBindingMethodFromNative,
+  kSubTypeInvokeModuleEvent,
+  kSubTypeAsyncCallback,
+  kSubTypeImageLoadComplete,
+  kSubTypeFontLoadComplete,
+  kSubTypeScriptLoadComplete,
+  kSubTypeNetworkResponse,
+  kSubTypeHtmlParse,
+  kSubTypeCssParse,
+  kSubTypeEvaluateScripts,
+  kSubTypeEvaluateByteCode,
+  kSubTypeEvaluateModule,
+  // JS-thread entries
+  kSubTypeJsTimer,
+  kSubTypeJsRAF,
+  kSubTypeJsMicrotask,
+  kSubTypeJsScriptEval,
+  kSubTypeJsEvent,
+  kSubTypeJsIdle,
+  kSubTypeJsMutationObserver,
+  kSubTypeJsFlushUICommand,
+  kSubTypeJsBindingSyncCall,
+  kSubTypeJsFunction,
+  kSubTypeJsCFunction,
+  // Fallback
+  kSubTypeUnattributed,
+];
+
+/// Color for a given entry subType. Stable across sessions.
+Color colorForSubType(String subType) {
+  // Lifecycle = blue family
+  if (subType == kSubTypeDrawFrame) return const Color(0xFF1976D2);
+  if (subType == kSubTypeFlushUICommand) return const Color(0xFF42A5F5);
+  // DOM/binding = purple family
+  if (subType == kSubTypeInvokeBindingMethodFromNative) return const Color(0xFF7E57C2);
+  if (subType == kSubTypeInvokeModuleEvent) return const Color(0xFF9575CD);
+  // Loaders / network = green family
+  if (subType == kSubTypeImageLoadComplete) return const Color(0xFF66BB6A);
+  if (subType == kSubTypeFontLoadComplete) return const Color(0xFF81C784);
+  if (subType == kSubTypeScriptLoadComplete) return const Color(0xFF4CAF50);
+  if (subType == kSubTypeNetworkResponse) return const Color(0xFF26A69A);
+  if (subType == kSubTypeHtmlParse) return const Color(0xFF388E3C);
+  if (subType == kSubTypeCssParse) return const Color(0xFF2E7D32);
+  // JS evaluation = orange family
+  if (subType == kSubTypeEvaluateScripts) return const Color(0xFFFB8C00);
+  if (subType == kSubTypeEvaluateByteCode) return const Color(0xFFEF6C00);
+  if (subType == kSubTypeEvaluateModule) return const Color(0xFFE65100);
+  // JS thread origins = orange light
+  if (subType == kSubTypeJsTimer) return const Color(0xFFFFA726);
+  if (subType == kSubTypeJsRAF) return const Color(0xFFFFB74D);
+  if (subType == kSubTypeJsMicrotask) return const Color(0xFFFFCC80);
+  if (subType == kSubTypeJsScriptEval) return const Color(0xFFFFE0B2);
+  // Async/unknown
+  if (subType == kSubTypeAsyncCallback) return const Color(0xFF8D6E63);
+  if (subType == kSubTypeUnattributed) return const Color(0xFFEF5350);
+  return const Color(0xFF9E9E9E);
+}
 
 // ---------------------------------------------------------------------------
 // Data model
@@ -193,12 +259,6 @@ WaterfallData _buildWaterfallDataImpl(
         entries: [], milestones: [], totalDuration: Duration.zero);
   }
 
-  // When recording starts after page load (live profile), tracker.sessionStart
-  // is LATER than loadingState.startTime (which is sessionStart here).
-  // All monotonic offsets (PerformanceSpan.startOffsetUs, JSThreadSpan offsets,
-  // etc.) are anchored to tracker.sessionStart, so they must be shifted forward
-  // by (tracker.sessionStart − sessionStart) to align with wall-clock items on
-  // the same chart.
   final monotonicShiftUs = (importedPhases == null &&
           tracker.sessionStart != null &&
           tracker.sessionStart != sessionStart)
@@ -206,27 +266,16 @@ WaterfallData _buildWaterfallDataImpl(
       : 0;
 
   Duration offset(DateTime t) => t.difference(sessionStart);
-
-  // Prefer the monotonic offset when available; fall back to wall-clock diff.
-  // Accepts (DateTime, int?) — the int? is the monotonic offset in µs.
   Duration offsetFromPair(DateTime wallClock, int? monotonicUs) {
     if (monotonicUs != null) {
       return Duration(microseconds: monotonicUs + monotonicShiftUs);
     }
     return wallClock.difference(sessionStart);
   }
-
-  // Convert a raw monotonic microsecond value to a chart-relative Duration.
   Duration shiftedOffset(int monotonicUs) =>
       Duration(microseconds: monotonicUs + monotonicShiftUs);
 
-  // Shift a JSThreadSpan Duration (already in tracker monotonic space) to the
-  // chart's sessionStart-relative timeline.
-  Duration shiftedJsOffset(Duration d) =>
-      Duration(microseconds: d.inMicroseconds + monotonicShiftUs);
-
-  // --- Lifecycle phases ---
-  // Use imported phases if available, otherwise snapshot from LoadingState
+  // --- Lifecycle phases (unchanged) ---
   final phaseNames = <String>[];
   final phaseTimestamps = <DateTime>[];
   final phaseOffsetUs = <int?>[];
@@ -257,7 +306,6 @@ WaterfallData _buildWaterfallDataImpl(
       LoadingState.phaseWindowLoad,
       LoadingState.phaseAttachToFlutter,
     ];
-    // Build filtered list of (name, timestamp) pairs
     final relevantIndices = <int>[];
     for (int i = 0; i < phaseNames.length; i++) {
       if (lifecyclePhaseNames.contains(phaseNames[i])) {
@@ -277,7 +325,7 @@ WaterfallData _buildWaterfallDataImpl(
         ));
       }
       entries.add(WaterfallEntry(
-        category: WaterfallCategory.lifecycle,
+        subType: 'lifecycle',
         label: 'Lifecycle',
         start: offsetFromPair(
             phaseTimestamps[relevantIndices.first], phaseOffsetUs[relevantIndices.first]),
@@ -288,7 +336,7 @@ WaterfallData _buildWaterfallDataImpl(
     }
   }
 
-  // --- Network requests (skip for imported profiles) ---
+  // --- Network requests (unchanged) ---
   final networkReqs =
       importedPhases != null ? <dynamic>[] : List.of(loadingState.networkRequests);
   for (final req in networkReqs) {
@@ -299,52 +347,40 @@ WaterfallData _buildWaterfallDataImpl(
 
     if (req.dnsDuration != null && req.dnsStart != null) {
       subEntries.add(WaterfallSubEntry(
-        label: 'DNS',
-        color: const Color(0xFF4CAF50),
-        start: offset(req.dnsStart!),
-        end: offset(req.dnsEnd!),
+        label: 'DNS', color: const Color(0xFF4CAF50),
+        start: offset(req.dnsStart!), end: offset(req.dnsEnd!),
       ));
     }
     if (req.connectDuration != null && req.connectStart != null) {
       subEntries.add(WaterfallSubEntry(
-        label: 'Connect',
-        color: const Color(0xFFFF9800),
-        start: offset(req.connectStart!),
-        end: offset(req.connectEnd!),
+        label: 'Connect', color: const Color(0xFFFF9800),
+        start: offset(req.connectStart!), end: offset(req.connectEnd!),
       ));
     }
     if (req.tlsDuration != null && req.tlsStart != null) {
       subEntries.add(WaterfallSubEntry(
-        label: 'TLS',
-        color: const Color(0xFF9C27B0),
-        start: offset(req.tlsStart!),
-        end: offset(req.tlsEnd!),
+        label: 'TLS', color: const Color(0xFF9C27B0),
+        start: offset(req.tlsStart!), end: offset(req.tlsEnd!),
       ));
     }
     if (req.waitingDuration != null && req.requestStart != null) {
       subEntries.add(WaterfallSubEntry(
-        label: 'Waiting',
-        color: const Color(0xFF2196F3),
-        start: offset(req.requestStart!),
-        end: offset(req.responseStart!),
+        label: 'Waiting', color: const Color(0xFF2196F3),
+        start: offset(req.requestStart!), end: offset(req.responseStart!),
       ));
     }
     if (req.downloadDuration != null && req.responseStart != null) {
       subEntries.add(WaterfallSubEntry(
-        label: 'Download',
-        color: const Color(0xFF607D8B),
-        start: offset(req.responseStart!),
-        end: offset(req.responseEnd!),
+        label: 'Download', color: const Color(0xFF607D8B),
+        start: offset(req.responseStart!), end: offset(req.responseEnd!),
       ));
     }
 
-    // Extract meaningful part of URL for label
     var urlLabel = req.url;
     try {
       final uri = Uri.parse(urlLabel);
       urlLabel = uri.path;
       if (urlLabel.isEmpty || urlLabel == '/') urlLabel = uri.host;
-      // Strip query params for display but keep short ones
       if (uri.query.isNotEmpty && uri.query.length <= 15) {
         urlLabel = '$urlLabel?${uri.query}';
       }
@@ -354,7 +390,7 @@ WaterfallData _buildWaterfallDataImpl(
     }
 
     entries.add(WaterfallEntry(
-      category: WaterfallCategory.network,
+      subType: 'network',
       label: urlLabel,
       start: reqStart,
       end: reqEnd,
@@ -362,27 +398,27 @@ WaterfallData _buildWaterfallDataImpl(
     ));
   }
 
-  // --- Performance spans from tracker ---
-  // Snapshot to avoid ConcurrentModificationException (tracker may still be recording)
-  // Group root spans by waterfall category (subType bucket) into time-clustered
-  // aggregated entries. Spans in the same bucket within < 50ms are merged.
-  final rootSpanSnapshot = List.of(tracker.rootSpans);
-  final spansByCategory = <WaterfallCategory, List<PerformanceSpan>>{};
-  for (final span in rootSpanSnapshot) {
+  // --- Entry-rooted spans grouped by subType ---
+  // Walk root spans, group by subType, cluster consecutive same-subType
+  // spans within 50ms gap into a single entry row.
+  final rootSnapshot = List.of(tracker.rootSpans);
+  final rootsBySubType = <String, List<PerformanceSpan>>{};
+  for (final span in rootSnapshot) {
     if (!span.isComplete) continue;
-    final cat = _spanCategory(span.subType);
-    (spansByCategory[cat] ??= []).add(span);
+    (rootsBySubType[span.subType] ??= []).add(span);
   }
 
-  for (final entry in spansByCategory.entries) {
-    final cat = entry.key;
-    final spans = entry.value;
+  // Iterate in fixed kWaterfallRowOrder, then any unknown subTypes appended.
+  final orderedSubTypes = <String>[
+    ...kWaterfallRowOrder.where(rootsBySubType.containsKey),
+    ...rootsBySubType.keys.where((k) => !kWaterfallRowOrder.contains(k)),
+  ];
+
+  for (final subType in orderedSubTypes) {
+    final spans = rootsBySubType[subType]!;
     if (spans.isEmpty) continue;
+    spans.sort((a, b) => a.startOffsetUs.compareTo(b.startOffsetUs));
 
-    // Sort by start time
-    spans.sort((a, b) => a.startTime.compareTo(b.startTime));
-
-    // Cluster spans with gaps < 50ms into groups
     const clusterGap = Duration(milliseconds: 50);
     var clusterStart = shiftedOffset(spans.first.startOffsetUs);
     var clusterEnd = shiftedOffset(spans.first.endOffsetUs!);
@@ -392,11 +428,11 @@ WaterfallData _buildWaterfallDataImpl(
       final totalDuration = clusterSpans.fold<Duration>(
           Duration.zero, (sum, s) => sum + s.duration);
       final count = clusterSpans.length;
-      final catName = cat.name[0].toUpperCase() + cat.name.substring(1);
       final label = count == 1
-          ? _spanLabel(clusterSpans.first)
-          : '$catName ($count ops, ${_formatDuration(totalDuration)})';
-      // Build span segments so the painter draws each span individually
+          ? (clusterSpans.first.name.isNotEmpty
+              ? clusterSpans.first.name
+              : subType)
+          : '$subType ($count, ${_formatDuration(totalDuration)})';
       final segments = count > 1
           ? clusterSpans.map((s) => _SpanSegment(
               startMs: (s.startOffsetUs + monotonicShiftUs) / 1000.0,
@@ -404,7 +440,7 @@ WaterfallData _buildWaterfallDataImpl(
             )).toList()
           : const <_SpanSegment>[];
       entries.add(WaterfallEntry(
-        category: cat,
+        subType: subType,
         label: label,
         start: clusterStart,
         end: clusterEnd,
@@ -418,13 +454,11 @@ WaterfallData _buildWaterfallDataImpl(
       final spanStart = shiftedOffset(spans[i].startOffsetUs);
       final spanEnd = shiftedOffset(spans[i].endOffsetUs!);
       if (spanStart - clusterEnd > clusterGap) {
-        // Gap too large — flush current cluster and start new one
         flushCluster();
         clusterStart = spanStart;
         clusterEnd = spanEnd;
         clusterSpans = [spans[i]];
       } else {
-        // Extend current cluster
         if (spanEnd > clusterEnd) clusterEnd = spanEnd;
         clusterSpans.add(spans[i]);
       }
@@ -432,120 +466,30 @@ WaterfallData _buildWaterfallDataImpl(
     flushCluster();
   }
 
-  // --- JS Thread spans from profiler ---
-  // Show high-level categories (scriptEval, timer, event, microtask, etc.)
-  // as overview rows. Individual jsFunction/jsCFunction spans are attached
-  // for flame-chart drill-down.
-  final jsSpans = List.of(tracker.jsThreadSpans);
-  if (jsSpans.isNotEmpty) {
-    // Sort all spans by start time for efficient range queries
-    final allJsSorted = List.of(jsSpans)
-      ..sort((a, b) => a.startOffset.compareTo(b.startOffset));
-
-    // Collect high-level category spans (not individual function calls)
-    final highlevelCategories = {
-      'jsScriptEval', 'jsTimer', 'jsEvent', 'jsRAF', 'jsIdle',
-      'jsMicrotask', 'jsMutationObserver', 'jsFlushUICommand',
-      'jsBindingSyncCall',
-    };
-    final jsByCategory = <WaterfallCategory, List<JSThreadSpan>>{};
-    for (final js in jsSpans) {
-      if (!highlevelCategories.contains(js.category)) continue;
-      final cat = _jsSpanCategory(js.category);
-      (jsByCategory[cat] ??= []).add(js);
-    }
-    for (final mapEntry in jsByCategory.entries) {
-      final cat = mapEntry.key;
-      final spans = mapEntry.value;
-      if (spans.isEmpty) continue;
-      spans.sort((a, b) => a.startOffset.compareTo(b.startOffset));
-
-      const clusterGap = Duration(milliseconds: 50);
-      var clusterStart = shiftedJsOffset(spans.first.startOffset);
-      var clusterEnd = shiftedJsOffset(spans.first.endOffset);
-      var clusterSpans = <JSThreadSpan>[spans.first];
-
-      void flushJSCluster() {
-        final totalDuration = clusterSpans.fold<Duration>(
-            Duration.zero, (sum, s) => sum + s.duration);
-        final count = clusterSpans.length;
-        final catLabel = _categoryLabel(cat);
-        final label = count == 1
-            ? catLabel
-            : '$catLabel ($count, ${_formatDuration(totalDuration)})';
-        final segments = count > 1
-            ? clusterSpans.map((s) => _SpanSegment(
-                startMs: (s.startOffset.inMicroseconds + monotonicShiftUs) / 1000.0,
-                endMs: (s.endOffset.inMicroseconds + monotonicShiftUs) / 1000.0,
-              )).toList()
-            : const <_SpanSegment>[];
-        // Collect all JS spans (including function calls) within this cluster's time range
-        final clusterJsSpans = allJsSorted
-            .where((s) =>
-                shiftedJsOffset(s.startOffset) >= clusterStart &&
-                shiftedJsOffset(s.endOffset) <= clusterEnd)
-            .toList();
-        entries.add(WaterfallEntry(
-          category: cat,
-          label: label,
-          start: clusterStart,
-          end: clusterEnd,
-          spanSegments: segments,
-          jsSpans: clusterJsSpans,
-        ));
-      }
-
-      for (int i = 1; i < spans.length; i++) {
-        final spanStart = shiftedJsOffset(spans[i].startOffset);
-        final spanEnd = shiftedJsOffset(spans[i].endOffset);
-        if (spanStart - clusterEnd > clusterGap) {
-          flushJSCluster();
-          clusterStart = spanStart;
-          clusterEnd = spanEnd;
-          clusterSpans = [spans[i]];
-        } else {
-          if (spanEnd > clusterEnd) clusterEnd = spanEnd;
-          clusterSpans.add(spans[i]);
-        }
-      }
-      flushJSCluster();
-    }
-  }
-
-  // --- Milestones ---
+  // --- Milestones (unchanged) ---
   for (int i = 0; i < phaseNames.length; i++) {
     final name = phaseNames[i];
     final ts = phaseTimestamps[i];
     if (name == LoadingState.phaseAttachToFlutter) {
       attachOffset = offset(ts);
       milestones.add(WaterfallMilestone(
-        label: 'Attach',
-        offset: attachOffset,
-        color: const Color(0xFFFFB74D),
-        isStageDivider: true,
+        label: 'Attach', offset: attachOffset,
+        color: const Color(0xFFFFB74D), isStageDivider: true,
       ));
     } else if (name == LoadingState.phaseFirstPaint) {
       milestones.add(WaterfallMilestone(
-        label: 'FP',
-        offset: offset(ts),
-        color: const Color(0xFF4CAF50),
-      ));
+        label: 'FP', offset: offset(ts), color: const Color(0xFF4CAF50)));
     } else if (name == LoadingState.phaseFirstContentfulPaint) {
       milestones.add(WaterfallMilestone(
-        label: 'FCP',
-        offset: offset(ts),
-        color: const Color(0xFF2196F3),
-      ));
+        label: 'FCP', offset: offset(ts), color: const Color(0xFF2196F3)));
     } else if (name == LoadingState.phaseLargestContentfulPaint ||
         name == LoadingState.phaseFinalLargestContentfulPaint) {
       milestones.add(WaterfallMilestone(
-        label: 'LCP',
-        offset: offset(ts),
-        color: const Color(0xFFF44336),
-      ));
+        label: 'LCP', offset: offset(ts), color: const Color(0xFFF44336)));
     }
   }
-  // Normalize: shift all entries so the timeline starts at the earliest event
+
+  // Normalize: shift all entries so the timeline starts at the earliest event.
   var minStart = const Duration(days: 999);
   for (final e in entries) {
     if (e.start < minStart) minStart = e.start;
@@ -567,7 +511,6 @@ WaterfallData _buildWaterfallDataImpl(
     }
   }
 
-  // Calculate total duration
   var maxEnd = Duration.zero;
   for (final e in entries) {
     if (e.end > maxEnd) maxEnd = e.end;
@@ -576,77 +519,12 @@ WaterfallData _buildWaterfallDataImpl(
     if (m.offset > maxEnd) maxEnd = m.offset;
   }
 
-  // Sort entries by start time within their categories
-  // Sort all entries by start time on a single shared timeline
-  entries.sort((a, b) => a.start.compareTo(b.start));
-
-  // Normalize attachOffset along with entries/milestones
-  Duration? normalizedAttach = attachOffset;
-  if (minStart > Duration.zero && normalizedAttach != null) {
-    normalizedAttach = normalizedAttach - minStart;
-  }
-
-  // Detect frame boundaries from paint span end times.
-  // Multiple paint spans can fire within a single frame (one per render object),
-  // so we cluster paint ends within 5ms and use the last end time per cluster.
-  final paintEnds = <Duration>[];
-  for (final span in rootSpanSnapshot) {
-    if (!span.isComplete || span.subType != 'paint') continue;
-    var boundary = shiftedOffset(span.endOffsetUs!);
-    if (minStart > Duration.zero) boundary = boundary - minStart;
-    paintEnds.add(boundary);
-  }
-  paintEnds.sort();
-  final frameBoundaries = <Duration>[];
-  if (paintEnds.isNotEmpty) {
-    var clusterEnd = paintEnds.first;
-    for (int i = 1; i < paintEnds.length; i++) {
-      if ((paintEnds[i] - clusterEnd).inMilliseconds < 5) {
-        // Same frame — extend cluster
-        clusterEnd = paintEnds[i];
-      } else {
-        // New frame — flush previous cluster
-        frameBoundaries.add(clusterEnd);
-        clusterEnd = paintEnds[i];
-      }
-    }
-    frameBoundaries.add(clusterEnd);
-  }
-
   return WaterfallData(
     entries: entries,
     milestones: milestones,
-    frameBoundaries: frameBoundaries,
     totalDuration: maxEnd,
-    attachOffset: normalizedAttach,
+    attachOffset: attachOffset,
   );
-}
-
-WaterfallCategory _spanCategory(String category) {
-  switch (category) {
-    case 'cssParse':
-      return WaterfallCategory.cssParse;
-    case 'styleFlush':
-    case 'styleRecalc':
-    case 'styleApply':
-      return WaterfallCategory.style;
-    case 'layout':
-      return WaterfallCategory.layout;
-    case 'paint':
-      return WaterfallCategory.paint;
-    case 'jsEval':
-      return WaterfallCategory.jsEval;
-    case 'htmlParse':
-      return WaterfallCategory.htmlParse;
-    case 'domConstruction':
-      return WaterfallCategory.domConstruction;
-    case 'build':
-      return WaterfallCategory.build;
-    case 'network':
-      return WaterfallCategory.network;
-    default:
-      return WaterfallCategory.lifecycle;
-  }
 }
 
 String _spanLabel(PerformanceSpan span) {
@@ -656,6 +534,21 @@ String _spanLabel(PerformanceSpan span) {
     if (meta.containsKey('tagName')) return '${span.name}(${meta['tagName']})';
   }
   return span.name;
+}
+
+/// Returns true when [subType] is a JS-thread origin entry (kSubTypeJs*).
+bool _isJSThreadSubType(String subType) {
+  return subType == kSubTypeJsTimer ||
+      subType == kSubTypeJsRAF ||
+      subType == kSubTypeJsMicrotask ||
+      subType == kSubTypeJsScriptEval ||
+      subType == kSubTypeJsEvent ||
+      subType == kSubTypeJsIdle ||
+      subType == kSubTypeJsMutationObserver ||
+      subType == kSubTypeJsFlushUICommand ||
+      subType == kSubTypeJsBindingSyncCall ||
+      subType == kSubTypeJsFunction ||
+      subType == kSubTypeJsCFunction;
 }
 
 Color _lifecycleColor(String name) {
@@ -684,55 +577,8 @@ Color _lifecycleColor(String name) {
 }
 
 // ---------------------------------------------------------------------------
-// Color scheme for categories
+// Color scheme for spans
 // ---------------------------------------------------------------------------
-
-Color _categoryColor(WaterfallCategory cat) {
-  switch (cat) {
-    case WaterfallCategory.lifecycle:
-      return const Color(0xFF42A5F5);
-    case WaterfallCategory.network:
-      return const Color(0xFF66BB6A);
-    case WaterfallCategory.cssParse:
-      return const Color(0xFF5C6BC0);
-    case WaterfallCategory.style:
-      return const Color(0xFFAB47BC);
-    case WaterfallCategory.layout:
-      return const Color(0xFFFFA726);
-    case WaterfallCategory.paint:
-      return const Color(0xFFEC407A);
-    case WaterfallCategory.jsEval:
-      return const Color(0xFFEF5350);
-    case WaterfallCategory.htmlParse:
-      return const Color(0xFF26A69A);
-    case WaterfallCategory.domConstruction:
-      return const Color(0xFF78909C);
-    case WaterfallCategory.build:
-      return const Color(0xFF29B6F6);
-    // JS Thread categories — green/teal palette
-    case WaterfallCategory.jsFunction:
-      return const Color(0xFF66BB6A);
-    case WaterfallCategory.jsScriptEval:
-      return const Color(0xFF43A047);
-    case WaterfallCategory.jsTimer:
-      return const Color(0xFF66BB6A);
-    case WaterfallCategory.jsEvent:
-      return const Color(0xFF26A69A);
-    case WaterfallCategory.jsRAF:
-      return const Color(0xFF26A69A);
-    case WaterfallCategory.jsIdle:
-      return const Color(0xFF80CBC4);
-    case WaterfallCategory.jsMicrotask:
-      return const Color(0xFF81C784);
-    case WaterfallCategory.jsMutationObserver:
-      return const Color(0xFF4DB6AC);
-    case WaterfallCategory.jsFlushUICommand:
-      return const Color(0xFFFFB74D);
-    case WaterfallCategory.jsBindingSyncCall:
-      // Distinct hue from other JS categories — sync Dart roundtrip cost.
-      return const Color(0xFFFF7043);
-  }
-}
 
 Color _flameSpanColor(PerformanceSpan span) {
   switch (span.subType) {
@@ -772,92 +618,6 @@ Color _flameSpanColor(PerformanceSpan span) {
   }
 }
 
-String _categoryLabel(WaterfallCategory cat) {
-  switch (cat) {
-    case WaterfallCategory.lifecycle:
-      return 'Lifecycle';
-    case WaterfallCategory.network:
-      return 'Network';
-    case WaterfallCategory.cssParse:
-      return 'CSS Parse';
-    case WaterfallCategory.style:
-      return 'Style';
-    case WaterfallCategory.layout:
-      return 'Layout';
-    case WaterfallCategory.paint:
-      return 'Paint';
-    case WaterfallCategory.jsEval:
-      return 'JS Eval';
-    case WaterfallCategory.htmlParse:
-      return 'HTML Parse';
-    case WaterfallCategory.domConstruction:
-      return 'DOM';
-    case WaterfallCategory.build:
-      return 'Build';
-    case WaterfallCategory.jsFunction:
-      return 'JS Function';
-    case WaterfallCategory.jsScriptEval:
-      return 'JS Script Eval';
-    case WaterfallCategory.jsTimer:
-      return 'JS Timer';
-    case WaterfallCategory.jsEvent:
-      return 'JS Event';
-    case WaterfallCategory.jsRAF:
-      return 'JS rAF';
-    case WaterfallCategory.jsIdle:
-      return 'JS Idle';
-    case WaterfallCategory.jsMicrotask:
-      return 'JS Microtask';
-    case WaterfallCategory.jsMutationObserver:
-      return 'JS MutationObserver';
-    case WaterfallCategory.jsFlushUICommand:
-      return 'JS FlushUI';
-    case WaterfallCategory.jsBindingSyncCall:
-      return 'JS Binding Sync';
-  }
-}
-
-bool _isJSThreadCategory(WaterfallCategory cat) {
-  return cat == WaterfallCategory.jsFunction ||
-      cat == WaterfallCategory.jsScriptEval ||
-      cat == WaterfallCategory.jsTimer ||
-      cat == WaterfallCategory.jsEvent ||
-      cat == WaterfallCategory.jsRAF ||
-      cat == WaterfallCategory.jsIdle ||
-      cat == WaterfallCategory.jsMicrotask ||
-      cat == WaterfallCategory.jsMutationObserver ||
-      cat == WaterfallCategory.jsFlushUICommand ||
-      cat == WaterfallCategory.jsBindingSyncCall;
-}
-
-WaterfallCategory _jsSpanCategory(String category) {
-  switch (category) {
-    case 'jsFunction':
-    case 'jsCFunction':
-      return WaterfallCategory.jsFunction;
-    case 'jsScriptEval':
-      return WaterfallCategory.jsScriptEval;
-    case 'jsTimer':
-      return WaterfallCategory.jsTimer;
-    case 'jsEvent':
-      return WaterfallCategory.jsEvent;
-    case 'jsRAF':
-      return WaterfallCategory.jsRAF;
-    case 'jsIdle':
-      return WaterfallCategory.jsIdle;
-    case 'jsMicrotask':
-      return WaterfallCategory.jsMicrotask;
-    case 'jsMutationObserver':
-      return WaterfallCategory.jsMutationObserver;
-    case 'jsFlushUICommand':
-      return WaterfallCategory.jsFlushUICommand;
-    case 'jsBindingSyncCall':
-      return WaterfallCategory.jsBindingSyncCall;
-    default:
-      return WaterfallCategory.jsFunction;
-  }
-}
-
 // ---------------------------------------------------------------------------
 // WaterfallChart widget
 // ---------------------------------------------------------------------------
@@ -888,7 +648,6 @@ class _WaterfallChartState extends State<WaterfallChart> {
   _ChartMode _mode = _ChartMode.overview;
   PerformanceSpan? _selectedSpan;
   List<PerformanceSpan> _selectedSpans = const [];
-  List<JSThreadSpan> _selectedJsSpans = const [];
   double _zoom = 1.0;
   double _flameZoom = 1.0;
 
@@ -906,12 +665,13 @@ class _WaterfallChartState extends State<WaterfallChart> {
   final ScrollController _flameRulerHScrollController = ScrollController();
   final ScrollController _flameBodyHScrollController = ScrollController();
 
-  final Set<WaterfallCategory> _enabledCategories =
-      Set.from(WaterfallCategory.values);
+  /// Set of subTypes that are currently visible in the overview.
+  /// Initialised lazily to "all known subTypes from the current dataset".
+  final Set<String> _enabledSubTypes = <String>{};
+  bool _enabledSubTypesInitialised = false;
 
   // Tap detail
   PerformanceSpan? _detailSpan;
-  JSThreadSpan? _detailJsSpan;
   WaterfallEntry? _selectedEntry;
 
   bool _syncingScroll = false;
@@ -921,12 +681,11 @@ class _WaterfallChartState extends State<WaterfallChart> {
   int _cachedSpanCount = -1;
   int _cachedPhaseCount = -1;
   int _cachedNetworkCount = -1;
-  int _cachedJSSpanCount = -1;
 
   /// Imported phases from a loaded profile (null when using live data).
   List<ExportablePhase>? _importedPhases;
   List<_OverviewItem>? _cachedItems;
-  Set<WaterfallCategory>? _cachedFilterSet;
+  Set<String>? _cachedFilterSet;
   WaterfallPhase? _cachedFilterPhase;
 
   WaterfallData _getData() {
@@ -935,12 +694,10 @@ class _WaterfallChartState extends State<WaterfallChart> {
     final spanCount = tracker.totalSpanCount;
     final phaseCount = ls.phases.length;
     final networkCount = ls.networkRequests.length;
-    final jsSpanCount = tracker.jsThreadSpans.length;
     if (_cachedData != null &&
         spanCount == _cachedSpanCount &&
         phaseCount == _cachedPhaseCount &&
-        networkCount == _cachedNetworkCount &&
-        jsSpanCount == _cachedJSSpanCount) {
+        networkCount == _cachedNetworkCount) {
       return _cachedData!;
     }
     _cachedData = buildWaterfallData(ls, tracker,
@@ -948,25 +705,30 @@ class _WaterfallChartState extends State<WaterfallChart> {
     _cachedSpanCount = spanCount;
     _cachedPhaseCount = phaseCount;
     _cachedNetworkCount = networkCount;
-    _cachedJSSpanCount = jsSpanCount;
     _cachedItems = null; // invalidate derived cache
     return _cachedData!;
   }
 
   List<_OverviewItem> _getItems(WaterfallData data) {
+    // Lazy-populate the enabled set the first time we see real data so all
+    // discovered subTypes are visible by default.
+    if (!_enabledSubTypesInitialised && data.entries.isNotEmpty) {
+      _enabledSubTypes.addAll(data.entries.map((e) => e.subType));
+      _enabledSubTypesInitialised = true;
+    }
     if (_cachedItems != null &&
-        _setEquals(_cachedFilterSet, _enabledCategories) &&
+        _setEquals(_cachedFilterSet, _enabledSubTypes) &&
         _cachedFilterPhase == widget.phase) {
       return _cachedItems!;
     }
     final filtered = data.entries
-        .where((e) => _enabledCategories.contains(e.category))
+        .where((e) => _enabledSubTypes.contains(e.subType))
         .where((e) => includeEntryForPhase(e, widget.phase, data.attachOffset))
         .toList();
 
     // Separate Dart thread and JS thread entries
-    final dartEntries = filtered.where((e) => !_isJSThreadCategory(e.category)).toList();
-    final jsEntries = filtered.where((e) => _isJSThreadCategory(e.category)).toList();
+    final dartEntries = filtered.where((e) => !_isJSThreadSubType(e.subType)).toList();
+    final jsEntries = filtered.where((e) => _isJSThreadSubType(e.subType)).toList();
 
     final items = <_OverviewItem>[];
 
@@ -987,12 +749,12 @@ class _WaterfallChartState extends State<WaterfallChart> {
     }
 
     _cachedItems = items;
-    _cachedFilterSet = Set.from(_enabledCategories);
+    _cachedFilterSet = Set.from(_enabledSubTypes);
     _cachedFilterPhase = widget.phase;
     return items;
   }
 
-  static bool _setEquals(Set<WaterfallCategory>? a, Set<WaterfallCategory> b) {
+  static bool _setEquals(Set<String>? a, Set<String> b) {
     if (a == null || a.length != b.length) return false;
     return a.containsAll(b);
   }
@@ -1043,11 +805,9 @@ class _WaterfallChartState extends State<WaterfallChart> {
     setState(() {
       _selectedSpan = entry.span;
       _selectedSpans = entry.spans;
-      _selectedJsSpans = entry.jsSpans;
       _mode = _ChartMode.flame;
       _flameZoom = 1.0;
       _detailSpan = null;
-      _detailJsSpan = null;
       _selectedEntry = null;
     });
   }
@@ -1081,13 +841,6 @@ class _WaterfallChartState extends State<WaterfallChart> {
                   right: 0,
                   bottom: 0,
                   child: _buildDetailPanel(),
-                ),
-              if (_detailJsSpan != null && _mode == _ChartMode.flame)
-                Positioned(
-                  left: 0,
-                  right: 0,
-                  bottom: 0,
-                  child: _buildJsDetailPanel(),
                 ),
             ],
           ),
@@ -1155,10 +908,11 @@ class _WaterfallChartState extends State<WaterfallChart> {
               ),
             ),
             const SizedBox(width: 12),
-            // Category filters (overview mode only)
+            // SubType filters (overview mode only). The filter set is built
+            // from the current dataset's subTypes, ordered by kWaterfallRowOrder.
             if (_mode == _ChartMode.overview) ...[
-              for (final cat in WaterfallCategory.values) ...[
-                _categoryFilterChip(cat),
+              for (final subType in _filterSubTypes(data)) ...[
+                _subTypeFilterChip(subType),
                 const SizedBox(width: 2),
               ],
             ],
@@ -1202,10 +956,9 @@ class _WaterfallChartState extends State<WaterfallChart> {
         setState(() {
           _mode = mode;
           _detailSpan = null;
-          _detailJsSpan = null;
           if (mode == _ChartMode.overview) {
             _selectedSpan = null;
-            _selectedJsSpans = const [];
+            _selectedSpans = const [];
           }
         });
         // Restore scroll position of the target mode after frame renders
@@ -1245,15 +998,26 @@ class _WaterfallChartState extends State<WaterfallChart> {
     );
   }
 
-  Widget _categoryFilterChip(WaterfallCategory cat) {
-    final enabled = _enabledCategories.contains(cat);
+  /// SubTypes appearing in the current dataset, ordered by kWaterfallRowOrder
+  /// (then any unknown subTypes appended in insertion order).
+  List<String> _filterSubTypes(WaterfallData data) {
+    final present = <String>{for (final e in data.entries) e.subType};
+    return <String>[
+      ...kWaterfallRowOrder.where(present.contains),
+      ...present.where((s) => !kWaterfallRowOrder.contains(s)),
+    ];
+  }
+
+  Widget _subTypeFilterChip(String subType) {
+    final enabled = _enabledSubTypes.contains(subType);
+    final color = colorForSubType(subType);
     return GestureDetector(
       onTap: () {
         setState(() {
           if (enabled) {
-            _enabledCategories.remove(cat);
+            _enabledSubTypes.remove(subType);
           } else {
-            _enabledCategories.add(cat);
+            _enabledSubTypes.add(subType);
           }
         });
       },
@@ -1261,19 +1025,19 @@ class _WaterfallChartState extends State<WaterfallChart> {
         padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
         decoration: BoxDecoration(
           color: enabled
-              ? _categoryColor(cat).withOpacity(0.3)
+              ? color.withOpacity(0.3)
               : Colors.transparent,
           borderRadius: BorderRadius.circular(3),
           border: Border.all(
             color: enabled
-                ? _categoryColor(cat).withOpacity(0.6)
+                ? color.withOpacity(0.6)
                 : Colors.white12,
           ),
         ),
         child: Text(
-          _categoryLabel(cat),
+          subType,
           style: TextStyle(
-            color: enabled ? _categoryColor(cat) : Colors.white38,
+            color: enabled ? color : Colors.white38,
             fontSize: 9,
           ),
         ),
@@ -1688,7 +1452,7 @@ class _WaterfallChartState extends State<WaterfallChart> {
                           child: Text(
                             entry.label,
                             style: TextStyle(
-                              color: _categoryColor(entry.category),
+                              color: colorForSubType(entry.subType),
                               fontSize: 10,
                             ),
                             maxLines: 1,
@@ -1764,7 +1528,7 @@ class _WaterfallChartState extends State<WaterfallChart> {
     final durationMs = entry.duration.inMicroseconds / 1000.0;
     final barLeft = (startMs - phaseStartMs) * pixelsPerMs;
     final barWidth = math.max(durationMs * pixelsPerMs, 2.0);
-    final color = _categoryColor(entry.category);
+    final color = colorForSubType(entry.subType);
 
     return GestureDetector(
       onTap: () {
@@ -1796,12 +1560,10 @@ class _WaterfallChartState extends State<WaterfallChart> {
   // -- Flame chart mode --
 
   Widget _buildFlameChart() {
-    // JS thread span flame chart
-    if (_selectedJsSpans.isNotEmpty) {
-      return _buildJsFlameChart();
-    }
-
-    // Support both single span and multi-span aggregated entries
+    // Support both single span and multi-span aggregated entries.
+    // The entry's PerformanceSpan tree already contains any drained JS-thread
+    // spans grafted in as children, so the regular tree walk handles both
+    // Dart-thread and JS-thread drilldowns uniformly.
     final List<PerformanceSpan> rootSpans;
     if (_selectedSpan != null) {
       rootSpans = [_selectedSpan!];
@@ -1875,9 +1637,7 @@ class _WaterfallChartState extends State<WaterfallChart> {
                     _mode = _ChartMode.overview;
                     _selectedSpan = null;
                     _selectedSpans = const [];
-                    _selectedJsSpans = const [];
                     _detailSpan = null;
-                    _detailJsSpan = null;
                   });
                   // Restore scroll positions after frame renders
                   WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -2013,11 +1773,11 @@ class _WaterfallChartState extends State<WaterfallChart> {
     final entry = _selectedEntry!;
     final startMs = (entry.start.inMicroseconds / 1000.0).toStringAsFixed(2);
     final durationMs = (entry.duration.inMicroseconds / 1000.0).toStringAsFixed(2);
-    final color = _categoryColor(entry.category);
+    final color = colorForSubType(entry.subType);
 
     final details = StringBuffer();
     details.write('Start: ${startMs}ms  Duration: ${durationMs}ms  ');
-    details.write('Category: ${entry.category.name}');
+    details.write('SubType: ${entry.subType}');
     if (entry.subEntries.isNotEmpty) {
       for (final sub in entry.subEntries) {
         final subMs = (sub.duration.inMicroseconds / 1000.0).toStringAsFixed(2);
@@ -2147,215 +1907,6 @@ class _WaterfallChartState extends State<WaterfallChart> {
     );
   }
 
-  // -- JS Thread Flame Chart --
-
-  Widget _buildJsFlameChart() {
-    final jsSpans = _selectedJsSpans;
-    if (jsSpans.isEmpty) {
-      return const Center(
-        child: Text('No JS thread spans recorded.',
-            style: TextStyle(color: Colors.white38, fontSize: 12)),
-      );
-    }
-
-    // Find time bounds from JS spans
-    final earliestStart = jsSpans.map((s) => s.startOffset).reduce((a, b) => a < b ? a : b);
-    final latestEnd = jsSpans.map((s) => s.endOffset).reduce((a, b) => a > b ? a : b);
-    final totalDurationMs = (latestEnd - earliestStart).inMicroseconds / 1000.0;
-    if (totalDurationMs <= 0) {
-      return const Center(
-        child: Text('JS spans have zero duration.',
-            style: TextStyle(color: Colors.white38, fontSize: 12)),
-      );
-    }
-
-    final minDepth = jsSpans.map((s) => s.depth).reduce(math.min);
-    final maxDepth = jsSpans.map((s) => s.depth).reduce(math.max) - minDepth;
-    final pixelsPerMs = _flameZoom * 2.0;
-    final contentWidth = totalDurationMs * pixelsPerMs;
-    const rowHeight = 20.0;
-    const rulerHeight = 24.0;
-    final chartHeight = (maxDepth + 1) * rowHeight;
-
-    return LayoutBuilder(builder: (context, constraints) {
-      final chartWidth = math.max(contentWidth, constraints.maxWidth);
-
-      return Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Back button + info
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-            color: const Color(0xFF262626),
-            child: Row(
-              children: [
-                InkWell(
-                  onTap: () {
-                    _savedFlameHScrollOffset = _flameBodyHScrollController.hasClients
-                        ? _flameBodyHScrollController.offset : 0.0;
-                    setState(() {
-                      _mode = _ChartMode.overview;
-                      _selectedSpan = null;
-                      _selectedSpans = const [];
-                      _selectedJsSpans = const [];
-                      _detailSpan = null;
-                      _detailJsSpan = null;
-                    });
-                    WidgetsBinding.instance.addPostFrameCallback((_) {
-                      if (_chartHScrollController.hasClients) {
-                        _chartHScrollController.jumpTo(_savedOverviewHScrollOffset);
-                      }
-                      if (_barsVScrollController.hasClients) {
-                        _barsVScrollController.jumpTo(_savedOverviewVScrollOffset);
-                      }
-                    });
-                  },
-                  child: const Padding(
-                    padding: EdgeInsets.all(4),
-                    child: Icon(Icons.arrow_back, size: 14, color: Colors.white70),
-                  ),
-                ),
-                const SizedBox(width: 8),
-                Text(
-                  'JS Thread — ${jsSpans.length} spans — ${_formatDuration(latestEnd - earliestStart)}',
-                  style: const TextStyle(color: Colors.white, fontSize: 12),
-                ),
-                const SizedBox(width: 8),
-                Text(
-                  '(max depth ${maxDepth + 1})',
-                  style: const TextStyle(color: Colors.white38, fontSize: 10),
-                ),
-              ],
-            ),
-          ),
-          // Ruler
-          SizedBox(
-            height: rulerHeight,
-            child: SingleChildScrollView(
-              scrollDirection: Axis.horizontal,
-              physics: const ClampingScrollPhysics(),
-              controller: _flameRulerHScrollController,
-              child: CustomPaint(
-                size: Size(chartWidth, rulerHeight),
-                painter: _TimeRulerPainter(
-                  totalMs: totalDurationMs,
-                  pixelsPerMs: pixelsPerMs,
-                  phaseStartMs: 0.0,
-                  milestones: const [],
-                ),
-              ),
-            ),
-          ),
-          const Divider(height: 1, color: Colors.white12),
-          // Flame chart body
-          Expanded(
-            child: SingleChildScrollView(
-              scrollDirection: Axis.horizontal,
-              physics: const ClampingScrollPhysics(),
-              controller: _flameBodyHScrollController,
-              child: SingleChildScrollView(
-                physics: const ClampingScrollPhysics(),
-                child: GestureDetector(
-                  onTapDown: (details) {
-                    _handleJsFlameChartTap(
-                        details.localPosition, jsSpans, earliestStart,
-                        pixelsPerMs, rowHeight, minDepth);
-                  },
-                  child: CustomPaint(
-                    size: Size(chartWidth, chartHeight),
-                    painter: _JSFlameChartPainter(
-                      spans: jsSpans,
-                      rootStartOffset: earliestStart,
-                      rootDepth: minDepth,
-                      pixelsPerMs: pixelsPerMs,
-                      rowHeight: rowHeight,
-                      selectedSpan: _detailJsSpan,
-                    ),
-                  ),
-                ),
-              ),
-            ),
-          ),
-        ],
-      );
-    });
-  }
-
-  void _handleJsFlameChartTap(
-      Offset pos,
-      List<JSThreadSpan> allSpans,
-      Duration rootStartOffset,
-      double pixelsPerMs,
-      double rowHeight,
-      int rootDepth) {
-    final row = (pos.dy / rowHeight).floor();
-    final ms = pos.dx / pixelsPerMs;
-
-    JSThreadSpan? hit;
-    for (final span in allSpans) {
-      final depth = span.depth - rootDepth;
-      if (depth != row) continue;
-      final spanStartMs =
-          (span.startOffset - rootStartOffset).inMicroseconds / 1000.0;
-      final spanEndMs =
-          (span.endOffset - rootStartOffset).inMicroseconds / 1000.0;
-      if (ms >= spanStartMs && ms <= spanEndMs) {
-        hit = span;
-        break;
-      }
-    }
-    setState(() => _detailJsSpan = hit);
-  }
-
-  Widget _buildJsDetailPanel() {
-    final span = _detailJsSpan!;
-    final cat = _jsSpanCategory(span.category);
-    final color = _categoryColor(cat);
-    final durationMs = (span.duration.inMicroseconds / 1000.0).toStringAsFixed(2);
-    return Container(
-      padding: const EdgeInsets.all(8),
-      color: const Color(0xFF2A2A2A),
-      child: Row(
-        children: [
-          Container(
-            width: 4,
-            height: 36,
-            decoration: BoxDecoration(
-              color: color,
-              borderRadius: BorderRadius.circular(2),
-            ),
-          ),
-          const SizedBox(width: 8),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(
-                  span.funcName.isNotEmpty ? '${span.funcName}()' : span.category,
-                  style: const TextStyle(
-                      color: Colors.white, fontSize: 12,
-                      fontWeight: FontWeight.w500),
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  'Duration: ${durationMs}ms  '
-                  'Depth: ${span.depth}  '
-                  'Category: ${span.category}'
-                  '${span.funcName.isNotEmpty ? '  Function: ${span.funcName}' : ''}',
-                  style: const TextStyle(color: Colors.white54, fontSize: 10),
-                ),
-              ],
-            ),
-          ),
-          InkWell(
-            onTap: () => setState(() => _detailJsSpan = null),
-            child: const Icon(Icons.close, size: 14, color: Colors.white38),
-          ),
-        ],
-      ),
-    );
-  }
 }
 
 // ---------------------------------------------------------------------------
@@ -2733,95 +2284,6 @@ class _FlameChartPainter extends CustomPainter {
   bool shouldRepaint(_FlameChartPainter old) =>
       old.spans.length != spans.length ||
       old.rootStart != rootStart ||
-      old.rootDepth != rootDepth ||
-      old.pixelsPerMs != pixelsPerMs ||
-      old.rowHeight != rowHeight ||
-      !identical(old.selectedSpan, selectedSpan);
-}
-
-// ---------------------------------------------------------------------------
-class _JSFlameChartPainter extends CustomPainter {
-  final List<JSThreadSpan> spans;
-  final Duration rootStartOffset;
-  final int rootDepth;
-  final double pixelsPerMs;
-  final double rowHeight;
-  final JSThreadSpan? selectedSpan;
-
-  _JSFlameChartPainter({
-    required this.spans,
-    required this.rootStartOffset,
-    required this.rootDepth,
-    required this.pixelsPerMs,
-    required this.rowHeight,
-    this.selectedSpan,
-  });
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    for (final span in spans) {
-      final depth = span.depth - rootDepth;
-      final startMs =
-          (span.startOffset - rootStartOffset).inMicroseconds / 1000.0;
-      final durationMs = span.duration.inMicroseconds / 1000.0;
-      final x = startMs * pixelsPerMs;
-      final w = math.max(durationMs * pixelsPerMs, 1.0);
-      final y = depth * rowHeight;
-
-      final cat = _jsSpanCategory(span.category);
-      final color = _categoryColor(cat);
-      final isSelected = identical(span, selectedSpan);
-
-      final barPaint = Paint()..color = color;
-      canvas.drawRRect(
-        RRect.fromRectAndRadius(
-          Rect.fromLTWH(x, y + 1, w, rowHeight - 2),
-          const Radius.circular(2),
-        ),
-        barPaint,
-      );
-
-      // Selection highlight
-      if (isSelected) {
-        final selPaint = Paint()
-          ..color = Colors.white
-          ..style = PaintingStyle.stroke
-          ..strokeWidth = 1.5;
-        canvas.drawRRect(
-          RRect.fromRectAndRadius(
-            Rect.fromLTWH(x, y + 1, w, rowHeight - 2),
-            const Radius.circular(2),
-          ),
-          selPaint,
-        );
-      }
-
-      // Label (only if bar is wide enough)
-      if (w > 30) {
-        final label = span.funcName.isNotEmpty ? span.funcName : span.category;
-        final tp = TextPainter(
-          text: TextSpan(
-            text: w > 80
-                ? '$label ${_formatDuration(span.duration)}'
-                : label,
-            style: TextStyle(
-              color: isSelected ? Colors.white : Colors.white.withOpacity(0.9),
-              fontSize: 9,
-            ),
-          ),
-          textDirection: TextDirection.ltr,
-          maxLines: 1,
-          ellipsis: '\u2026',
-        )..layout(maxWidth: w - 4);
-        tp.paint(canvas, Offset(x + 2, y + (rowHeight - tp.height) / 2));
-      }
-    }
-  }
-
-  @override
-  bool shouldRepaint(_JSFlameChartPainter old) =>
-      old.spans.length != spans.length ||
-      old.rootStartOffset != rootStartOffset ||
       old.rootDepth != rootDepth ||
       old.pixelsPerMs != pixelsPerMs ||
       old.rowHeight != rowHeight ||
