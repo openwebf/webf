@@ -365,52 +365,72 @@ class PerformanceTracker {
             ? kJsCategorySubTypes[categoryIdx]
             : 'jsUnknown';
 
-        final root = native.entryId != 0 ? _entryIdToSpan[native.entryId] : null;
-
-        if (root != null) {
-          // Graft as child of the deepest leaf whose interval contains startOffsetUs.
-          final parent = _findInsertionParent(root, startOffsetUs);
-          final span = PerformanceSpan(
-            subType: subType,
-            name: funcName,
-            startOffsetUs: startOffsetUs,
-            depth: parent.depth + 1,
-            sessionAnchor: anchor,
-            parent: parent,
-          );
-          span.endOffsetUs = endOffsetUs;
-          parent.children.add(span);
-          _totalSpanCount++;
-        } else {
-          // Synthesize a new root for JS-originated work with no Dart parent.
-          final span = PerformanceSpan(
-            subType: subType,
-            name: funcName,
-            startOffsetUs: startOffsetUs,
-            depth: 0,
-            sessionAnchor: anchor,
-          );
-          span.endOffsetUs = endOffsetUs;
-          rootSpans.add(span);
-          _totalSpanCount++;
-        }
+        _attachJSSpan(
+          entryId: native.entryId,
+          subType: subType,
+          name: funcName,
+          startOffsetUs: startOffsetUs,
+          endOffsetUs: endOffsetUs,
+          anchor: anchor,
+        );
       }
     } finally {
       calloc.free(buffer);
     }
   }
 
+  /// Attach a drained (or test-injected) JS span to the entry-rooted tree.
+  /// If [entryId] resolves to a live entry root, graft as a child of the
+  /// deepest leaf whose interval contains [startOffsetUs]; otherwise the
+  /// span becomes a new root for JS-originated work with no Dart parent.
+  void _attachJSSpan({
+    required int entryId,
+    required String subType,
+    required String name,
+    required int startOffsetUs,
+    required int endOffsetUs,
+    required DateTime anchor,
+  }) {
+    final root = entryId != 0 ? _entryIdToSpan[entryId] : null;
+    if (root != null) {
+      final parent = _findInsertionParent(root, startOffsetUs);
+      final span = PerformanceSpan(
+        subType: subType,
+        name: name,
+        startOffsetUs: startOffsetUs,
+        depth: parent.depth + 1,
+        sessionAnchor: anchor,
+        parent: parent,
+      );
+      span.endOffsetUs = endOffsetUs;
+      parent.children.add(span);
+    } else {
+      final span = PerformanceSpan(
+        subType: subType,
+        name: name,
+        startOffsetUs: startOffsetUs,
+        depth: 0,
+        sessionAnchor: anchor,
+      );
+      span.endOffsetUs = endOffsetUs;
+      rootSpans.add(span);
+    }
+    _totalSpanCount++;
+  }
+
   /// Walks down [root] to find the deepest descendant whose interval
   /// contains [startOffsetUs]. Used to graft drained JS spans at the
-  /// correct depth in the tree.
+  /// correct depth in the tree. Open-ended children (endOffsetUs == null)
+  /// are treated as still ongoing — i.e. the interval extends to +∞ — so
+  /// a mid-session drain can attribute a JS span to an open Dart entry.
   PerformanceSpan _findInsertionParent(PerformanceSpan root, int startOffsetUs) {
     PerformanceSpan candidate = root;
     while (true) {
       PerformanceSpan? next;
       for (final child in candidate.children) {
+        if (child.startOffsetUs > startOffsetUs) continue;
         final endUs = child.endOffsetUs;
-        if (endUs == null) continue;
-        if (child.startOffsetUs <= startOffsetUs && startOffsetUs <= endUs) {
+        if (endUs == null || startOffsetUs <= endUs) {
           next = child;
           break;
         }
@@ -435,35 +455,14 @@ class PerformanceTracker {
     int depth = 0,
   }) {
     final offsetUs = _cppToDartOffsetUs ?? 0;
-    final startOffsetUs = startUs + offsetUs;
-    final endOffsetUs = endUs + offsetUs;
-    final anchor = sessionStart ?? DateTime.now();
-    final root = entryId != 0 ? _entryIdToSpan[entryId] : null;
-    if (root != null) {
-      final parent = _findInsertionParent(root, startOffsetUs);
-      final span = PerformanceSpan(
-        subType: subType,
-        name: funcName,
-        startOffsetUs: startOffsetUs,
-        depth: parent.depth + 1,
-        sessionAnchor: anchor,
-        parent: parent,
-      );
-      span.endOffsetUs = endOffsetUs;
-      parent.children.add(span);
-      _totalSpanCount++;
-    } else {
-      final span = PerformanceSpan(
-        subType: subType,
-        name: funcName,
-        startOffsetUs: startOffsetUs,
-        depth: 0,
-        sessionAnchor: anchor,
-      );
-      span.endOffsetUs = endOffsetUs;
-      rootSpans.add(span);
-      _totalSpanCount++;
-    }
+    _attachJSSpan(
+      entryId: entryId,
+      subType: subType,
+      name: funcName,
+      startOffsetUs: startUs + offsetUs,
+      endOffsetUs: endUs + offsetUs,
+      anchor: sessionStart ?? DateTime.now(),
+    );
   }
 
   /// Begin a new performance span.

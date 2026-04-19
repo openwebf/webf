@@ -10,6 +10,22 @@ import 'package:webf/src/devtools/panel/performance_subtypes.dart';
 import '../../setup.dart';
 
 void main() {
+  group('kJsCategorySubTypes invariants', () {
+    // These invariants must match the C++ JSSpanCategory enum in
+    // bridge/foundation/profiler/js_thread_profiler.h. The drain loop in
+    // PerformanceTracker.drainJSThreadSpans indexes into this list with the
+    // raw category integer from native, so a mismatch silently corrupts every
+    // drained span's subType. Re-asserted here after the deletion of the old
+    // JSThreadSpan class (which used to carry these checks).
+    test('has exactly 11 entries', () {
+      expect(kJsCategorySubTypes.length, 11);
+    });
+
+    test('index 10 is jsBindingSyncCall', () {
+      expect(kJsCategorySubTypes[10], kSubTypeJsBindingSyncCall);
+    });
+  });
+
   group('PerformanceTracker entry stack', () {
     setUp(() {
       // Each test gets a fresh session. We can't construct PerformanceTracker
