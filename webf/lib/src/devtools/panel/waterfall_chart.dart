@@ -44,6 +44,7 @@ enum WaterfallCategory {
   jsMicrotask,
   jsMutationObserver,
   jsFlushUICommand,
+  jsBindingSyncCall,
 }
 
 class _SpanSegment {
@@ -466,6 +467,7 @@ WaterfallData _buildWaterfallDataImpl(
     final highlevelCategories = {
       'jsScriptEval', 'jsTimer', 'jsEvent', 'jsRAF', 'jsIdle',
       'jsMicrotask', 'jsMutationObserver', 'jsFlushUICommand',
+      'jsBindingSyncCall',
     };
     final jsByCategory = <WaterfallCategory, List<JSThreadSpan>>{};
     for (final js in jsSpans) {
@@ -747,6 +749,9 @@ Color _categoryColor(WaterfallCategory cat) {
       return const Color(0xFF4DB6AC);
     case WaterfallCategory.jsFlushUICommand:
       return const Color(0xFFFFB74D);
+    case WaterfallCategory.jsBindingSyncCall:
+      // Distinct hue from other JS categories — sync Dart roundtrip cost.
+      return const Color(0xFFFF7043);
   }
 }
 
@@ -828,6 +833,8 @@ String _categoryLabel(WaterfallCategory cat) {
       return 'JS MutationObserver';
     case WaterfallCategory.jsFlushUICommand:
       return 'JS FlushUI';
+    case WaterfallCategory.jsBindingSyncCall:
+      return 'JS Binding Sync';
   }
 }
 
@@ -840,7 +847,8 @@ bool _isJSThreadCategory(WaterfallCategory cat) {
       cat == WaterfallCategory.jsIdle ||
       cat == WaterfallCategory.jsMicrotask ||
       cat == WaterfallCategory.jsMutationObserver ||
-      cat == WaterfallCategory.jsFlushUICommand;
+      cat == WaterfallCategory.jsFlushUICommand ||
+      cat == WaterfallCategory.jsBindingSyncCall;
 }
 
 WaterfallCategory _jsSpanCategory(String category) {
@@ -864,6 +872,8 @@ WaterfallCategory _jsSpanCategory(String category) {
       return WaterfallCategory.jsMutationObserver;
     case 'jsFlushUICommand':
       return WaterfallCategory.jsFlushUICommand;
+    case 'jsBindingSyncCall':
+      return WaterfallCategory.jsBindingSyncCall;
     default:
       return WaterfallCategory.jsFunction;
   }
