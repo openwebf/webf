@@ -554,6 +554,10 @@ class PerformanceTracker {
   ///
   /// If [phases] is provided, they are included so that lifecycle milestones
   /// (FP, FCP, LCP, Attach) can be reconstructed on import.
+  ///
+  /// JS-thread spans are intentionally not exported in v5: under the
+  /// entry-rooted model they are grafted into [rootSpans] at drain time
+  /// (see Task 3.3), so the export is already complete via [rootSpans].
   String exportToJson({List<ExportablePhase>? phases}) {
     int countSpans(List<PerformanceSpan> spans) {
       int count = 0;
@@ -594,6 +598,10 @@ class PerformanceTracker {
     }
 
     rootSpans.clear();
+    // Drop any in-memory JS-thread spans from a prior live session so the
+    // imported root tree isn't decorated with stale spans. Task 3.3 will
+    // remove this field entirely in favour of drain-time grafting.
+    jsThreadSpans.clear();
     _currentSpan = null;
     enabled = false;
 
