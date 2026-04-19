@@ -58,6 +58,9 @@ final class NativeJSThreadSpan extends Struct {
 
   @Uint8()
   external int depth;
+
+  @Uint32()
+  external int entryId;
 }
 
 final class EventDispatchResult extends Struct {
