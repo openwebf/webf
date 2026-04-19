@@ -6,10 +6,13 @@
 /// Waterfall performance chart for the WebF inspector panel.
 ///
 /// Provides two visualization modes:
-/// - **Overview**: All pipeline stages on a shared time axis (lifecycle, network,
-///   CSS parse, style, layout, paint) with milestone markers (FP, FCP, LCP).
-/// - **Flame chart**: Drill-down into recursive stages (style recalc, layout, paint)
-///   showing the full call tree with self-time vs child-time coloring.
+/// - **Overview**: One row per entry-call origin (drawFrame, flushUICommand,
+///   invokeBindingMethodFromNative, JS timers/RAF/microtasks, etc.) on a shared
+///   time axis, alongside lifecycle and network rows, with milestone markers
+///   (FP, FCP, LCP). Row order is fixed by [kWaterfallRowOrder].
+/// - **Flame chart**: Drill-down into the entry's full PerformanceSpan tree —
+///   every nested span (style recalc, layout, paint, drained JS spans, …)
+///   with self-time vs child-time coloring.
 library;
 
 import 'dart:io';
@@ -489,6 +492,16 @@ WaterfallData _buildWaterfallDataImpl(
     }
   }
 
+  // Frame boundaries: end-of-frame markers from completed drawFrame entries.
+  // The ruler & dropped-frame highlight read these.
+  final frameBoundaries = <Duration>[];
+  for (final span in rootSnapshot) {
+    if (span.subType != kSubTypeDrawFrame) continue;
+    if (!span.isComplete) continue;
+    frameBoundaries.add(shiftedOffset(span.endOffsetUs!));
+  }
+  frameBoundaries.sort();
+
   // Normalize: shift all entries so the timeline starts at the earliest event.
   var minStart = const Duration(days: 999);
   for (final e in entries) {
@@ -509,6 +522,9 @@ WaterfallData _buildWaterfallDataImpl(
     for (final m in milestones) {
       m.offset = m.offset - minStart;
     }
+    for (int i = 0; i < frameBoundaries.length; i++) {
+      frameBoundaries[i] = frameBoundaries[i] - minStart;
+    }
   }
 
   var maxEnd = Duration.zero;
@@ -522,6 +538,7 @@ WaterfallData _buildWaterfallDataImpl(
   return WaterfallData(
     entries: entries,
     milestones: milestones,
+    frameBoundaries: frameBoundaries,
     totalDuration: maxEnd,
     attachOffset: attachOffset,
   );
@@ -668,7 +685,11 @@ class _WaterfallChartState extends State<WaterfallChart> {
   /// Set of subTypes that are currently visible in the overview.
   /// Initialised lazily to "all known subTypes from the current dataset".
   final Set<String> _enabledSubTypes = <String>{};
-  bool _enabledSubTypesInitialised = false;
+  // Tracks every subType the build has emitted so far. When a new subType
+  // first appears mid-session (eg. the first navigation triggers htmlParse),
+  // it gets auto-enabled. SubTypes the user has explicitly toggled off stay
+  // off because we only auto-enable when we see them for the FIRST time.
+  final Set<String> _seenSubTypes = <String>{};
 
   // Tap detail
   PerformanceSpan? _detailSpan;
@@ -710,11 +731,13 @@ class _WaterfallChartState extends State<WaterfallChart> {
   }
 
   List<_OverviewItem> _getItems(WaterfallData data) {
-    // Lazy-populate the enabled set the first time we see real data so all
-    // discovered subTypes are visible by default.
-    if (!_enabledSubTypesInitialised && data.entries.isNotEmpty) {
-      _enabledSubTypes.addAll(data.entries.map((e) => e.subType));
-      _enabledSubTypesInitialised = true;
+    // Auto-enable any subType the first time we see it. Explicit user
+    // disables stick because the chip handler only flips _enabledSubTypes,
+    // never _seenSubTypes.
+    for (final entry in data.entries) {
+      if (_seenSubTypes.add(entry.subType)) {
+        _enabledSubTypes.add(entry.subType);
+      }
     }
     if (_cachedItems != null &&
         _setEquals(_cachedFilterSet, _enabledSubTypes) &&
@@ -1572,7 +1595,7 @@ class _WaterfallChartState extends State<WaterfallChart> {
     } else {
       return const Center(
         child: Text(
-          'Tap a Style, Layout, or Paint bar in the Overview\nto drill down into the recursive call tree.',
+          'Tap any bar in the Overview to drill down\ninto the recursive call tree.',
           textAlign: TextAlign.center,
           style: TextStyle(color: Colors.white38, fontSize: 12),
         ),
@@ -1891,7 +1914,7 @@ class _WaterfallChartState extends State<WaterfallChart> {
                   'Total: ${_formatDuration(span.duration)}  '
                   'Self: ${_formatDuration(span.selfDuration)}  '
                   'Children: ${span.children.length}  '
-                  'Category: ${span.subType}',
+                  'SubType: ${span.subType}',
                   style:
                       const TextStyle(color: Colors.white54, fontSize: 10),
                 ),

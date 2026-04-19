@@ -9,7 +9,7 @@ import 'package:webf/src/devtools/panel/waterfall_chart.dart';
 WaterfallEntry _entry(
     {required Duration start, required Duration end, String label = 'e'}) {
   return WaterfallEntry(
-    category: WaterfallCategory.lifecycle,
+    subType: 'lifecycle',
     label: label,
     start: start,
     end: end,
