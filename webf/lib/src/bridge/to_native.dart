@@ -185,8 +185,14 @@ dynamic invokeModuleEvent(double contextId, String moduleName, Event? event, ext
       return;
     }
 
-    _invokeModuleEvent(_allocatedPages[contextId]!, nativeModuleName,
-        event == null ? nullptr : event.type.toNativeUtf8(), rawEvent, extraData, callbackContext, callback);
+    final entry = PerformanceTracker.instance
+        .beginEntry(kSubTypeInvokeModuleEvent, moduleName);
+    try {
+      _invokeModuleEvent(_allocatedPages[contextId]!, nativeModuleName,
+          event == null ? nullptr : event.type.toNativeUtf8(), rawEvent, extraData, callbackContext, callback);
+    } finally {
+      entry?.end();
+    }
   });
 
   return completer.future;
