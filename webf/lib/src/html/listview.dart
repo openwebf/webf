@@ -130,6 +130,23 @@ class WebFListViewElement extends WebFListViewBindings {
     state?.requestUpdateState();
   }
 
+  bool _overlayLift = false;
+
+  bool get overlayLift => _overlayLift;
+
+  set overlayLift(value) {
+    bool next = false;
+    if (value is bool) {
+      next = value;
+    } else if (value is String) {
+      final String normalized = value.trim().toLowerCase();
+      next = normalized == 'true' || normalized == '1' || normalized == '';
+    }
+    if (_overlayLift == next) return;
+    _overlayLift = next;
+    state?.requestUpdateState();
+  }
+
   /// Returns the horizontal scroll controller if this is a horizontal list
   @override
   ScrollController? get scrollControllerX {
@@ -177,6 +194,8 @@ class WebFListViewElement extends WebFListViewBindings {
     super.attributeDidUpdate(key, value);
     if (key == 'scroll-direction' || key == 'scrollDirection') {
       _updateScrollDirectionFromValue(value);
+    } else if (key == 'overlay-lift' || key == 'overlayLift') {
+      overlayLift = value;
     }
   }
 
@@ -258,6 +277,11 @@ class WebFListViewElement extends WebFListViewBindings {
     state?._isLoading = false;
   }
 
+  String debugDumpRenderTree([String reason = '']) {
+    final String tree = state?.getRenderObjectTree() ?? '';
+    return tree;
+  }
+
   static StaticDefinedSyncBindingObjectMethodMap listViewMethods = {
     'finishRefresh': StaticDefinedSyncBindingObjectMethod(
         call: (bindingObject, args) =>
@@ -268,7 +292,13 @@ class WebFListViewElement extends WebFListViewBindings {
     'resetHeader': StaticDefinedSyncBindingObjectMethod(
         call: (bindingObject, args) => castToType<WebFListViewElement>(bindingObject).resetHeader()),
     'resetFooter': StaticDefinedSyncBindingObjectMethod(
-        call: (bindingObject, args) => castToType<WebFListViewElement>(bindingObject).resetFooter())
+        call: (bindingObject, args) => castToType<WebFListViewElement>(bindingObject).resetFooter()),
+    'debugDumpRenderTree': StaticDefinedSyncBindingObjectMethod(
+        call: (bindingObject, args) => castToType<WebFListViewElement>(bindingObject)
+            .debugDumpRenderTree(args.isNotEmpty ? '${args[0]}' : 'manual')),
+    'debugDumpPaintOrder': StaticDefinedSyncBindingObjectMethod(
+        call: (bindingObject, args) => castToType<WebFListViewElement>(bindingObject)
+            .debugDumpRenderTree(args.isNotEmpty ? '${args[0]}' : 'paint-order'))
   };
 
   static final StaticDefinedAsyncBindingObjectMethodMap listViewAsyncMethods = {
@@ -423,6 +453,21 @@ class WebFListViewState extends WebFWidgetElementState {
       // Handle scroll events from our own controller
       final position = scrollController!.position;
       widgetElement.handleScroll(position.pixels, position.axisDirection);
+      if (widgetElement.overlayLift) {
+        final List<dom.Element> lifted = _liftedOverlayElements();
+        if (lifted.isEmpty) return;
+        final double offset = position.pixels;
+        for (final dom.Element positioned in lifted) {
+          final RenderBoxModel? ro = positioned.attachedRenderer;
+          if (ro == null) continue;
+          if (widgetElement.axis == Axis.vertical) {
+            ro.additionalPaintOffsetY = -offset;
+          } else {
+            ro.additionalPaintOffsetX = -offset;
+          }
+          ro.markNeedsPaint();
+        }
+      }
     } catch (e) {
       return;
     }
@@ -439,6 +484,12 @@ class WebFListViewState extends WebFWidgetElementState {
   /// This is used to implement an automatic timeout for load operations
   /// that aren't explicitly completed by calling finishLoad()
   bool _isLoading = false;
+
+  List<dom.Element> _liftedOverlayElements() {
+    return widgetElement.outOfFlowPositionedElements
+        .where((e) => e.overlayLiftReferenceContainingBlockElement != null)
+        .toList(growable: false);
+  }
 
   final Map<int, BuildContext> _mountedItemContexts = {};
 
@@ -794,6 +845,9 @@ class WebFListViewState extends WebFWidgetElementState {
     required Header? header,
     required Footer? footer,
   }) {
+    if (widgetElement.overlayLift) {
+      return false;
+    }
     // For ordinary page-shell usage without lazy loading hooks, render the list
     // in one WebF render tree so stacking contexts, z-index and positioned
     // descendants behave like a normal overflow container.
@@ -839,6 +893,26 @@ class WebFListViewState extends WebFWidgetElementState {
     }
 
     return child;
+  }
+
+  Widget _buildOverlayLiftLayer() {
+    final List<dom.Element> lifted = _liftedOverlayElements();
+    return WebFWidgetElementChild(
+      child: WebFHTMLElement(
+        tagName: 'DIV',
+        controller: widgetElement.controller,
+        parentElement: widgetElement,
+        inlineStyle: const <String, String>{
+          'position': 'relative',
+          'overflow': 'visible',
+          'width': '100%',
+          'height': '100%',
+        },
+        children: lifted
+            .map((element) => element.toWidget())
+            .toList(growable: false),
+      ),
+    );
   }
 
   /// Builds the header widget for pull-to-refresh functionality
@@ -971,6 +1045,22 @@ class WebFListViewState extends WebFWidgetElementState {
         verticalController: widgetElement.axis == Axis.vertical ? scrollController : null,
         horizontalController: widgetElement.axis == Axis.horizontal ? scrollController : null,
         child: result,
+      );
+    }
+
+    final List<dom.Element> liftedOverlays = _liftedOverlayElements();
+    if (!useSingleTreeScrollable &&
+        widgetElement.overlayLift &&
+        liftedOverlays.isNotEmpty) {
+      final Widget overlayLayer = Positioned.fill(
+        child: _buildOverlayLiftLayer(),
+      );
+      result = Stack(
+        clipBehavior: Clip.none,
+        children: <Widget>[
+          Positioned.fill(child: result),
+          overlayLayer,
+        ],
       );
     }
 

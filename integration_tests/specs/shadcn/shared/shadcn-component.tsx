@@ -244,6 +244,171 @@ export function DropdownMenuFixture() {
   );
 }
 
+export function DropdownMenuLayerFixture() {
+  return (
+    <div className="min-h-screen bg-zinc-50 p-6">
+      <div className="mx-auto max-w-3xl rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm">
+        <h1 className="text-xl font-semibold text-zinc-950">
+          shadcn_dropdown_menu_layer
+        </h1>
+        {React.createElement(
+          'webf-listview',
+          {
+            className: 'mt-4 block h-[520px] w-full max-w-xl',
+          },
+          <section className="mb-6 grid gap-6">
+            <Card id="showcase-dropdown-menu-card">
+              <CardHeader id="showcase-dropdown-menu-card-header">
+                <CardTitle id="showcase-dropdown-menu-card-title">
+                  Dropdown Menu
+                </CardTitle>
+                <CardDescription id="showcase-dropdown-menu-card-description">
+                  官网常见的账号菜单结构，保留 label、shortcut、separator 等层级。
+                </CardDescription>
+              </CardHeader>
+              <CardContent
+                id="showcase-dropdown-menu-card-content"
+                className="grid grid-cols-1 gap-4"
+              >
+                <div id="showcase-dropdown-menu-root">
+                  <DropdownMenu>
+                    <DropdownMenuTrigger>
+                      <Button
+                        id="showcase-dropdown-menu-trigger"
+                        variant="outline"
+                        onClick={() => {
+                          const listView = document.querySelector('webf-listview') as any;
+                          setTimeout(() => {
+                            listView?.debugDumpRenderTree?.('after-dropdown-open-0');
+                            listView?.debugDumpPaintOrder?.('after-dropdown-open-0');
+                          }, 0);
+                          setTimeout(() => {
+                            listView?.debugDumpRenderTree?.('after-dropdown-open-80');
+                            listView?.debugDumpPaintOrder?.('after-dropdown-open-80');
+                          }, 80);
+                        }}
+                      >
+                        Open account menu
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent
+                      id="showcase-dropdown-menu-content"
+                      data-slot="dropdown-menu-content"
+                    >
+                      <DropdownMenuLabel id="showcase-dropdown-menu-label">
+                        my account
+                      </DropdownMenuLabel>
+                      <DropdownMenuGroup id="showcase-dropdown-menu-group">
+                        <DropdownMenuItem id="showcase-dropdown-menu-item-profile">
+                          Profile
+                          <DropdownMenuShortcut id="showcase-dropdown-menu-shortcut-profile">
+                            ⇧⌘P
+                          </DropdownMenuShortcut>
+                        </DropdownMenuItem>
+                        <DropdownMenuItem id="showcase-dropdown-menu-item-billing">
+                          Billing
+                          <DropdownMenuShortcut id="showcase-dropdown-menu-shortcut-billing">
+                            ⌘B
+                          </DropdownMenuShortcut>
+                        </DropdownMenuItem>
+                        <DropdownMenuItem id="showcase-dropdown-menu-item-settings">
+                          Settings
+                          <DropdownMenuShortcut id="showcase-dropdown-menu-shortcut-settings">
+                            ⌘S
+                          </DropdownMenuShortcut>
+                        </DropdownMenuItem>
+                      </DropdownMenuGroup>
+                      <DropdownMenuSeparator id="showcase-dropdown-menu-separator" />
+                      <DropdownMenuItem id="showcase-dropdown-menu-item-team">
+                        Team
+                        <DropdownMenuShortcut id="showcase-dropdown-menu-shortcut-team">
+                          ⌘T
+                        </DropdownMenuShortcut>
+                      </DropdownMenuItem>
+                      <DropdownMenuItem id="showcase-dropdown-menu-item-logout">
+                        Log out
+                        <DropdownMenuShortcut id="showcase-dropdown-menu-shortcut-logout">
+                          ⇧⌘Q
+                        </DropdownMenuShortcut>
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </div>
+
+                <div
+                  id="showcase-dropdown-menu-note"
+                  className="rounded-lg border border-zinc-200 bg-zinc-50 p-4"
+                >
+                  <div
+                    id="showcase-dropdown-menu-note-title"
+                    className="mb-1 text-sm font-medium text-zinc-900"
+                  >
+                    Why local ui first
+                  </div>
+                  <div
+                    id="showcase-dropdown-menu-note-body"
+                    className="text-sm text-zinc-500"
+                  >
+                    这样可以把官方 shadcn 结构直接带进 `use_cases`，后续只把真正需要的能力缺口下沉到 WebF。
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </section>,
+          <section className="grid gap-6">
+            <Card
+              id="showcase-development-plan-card"
+              data-slot="dropdown-menu-blocker"
+            >
+              <CardHeader id="showcase-development-plan-card-header">
+                <CardTitle id="showcase-development-plan-card-title">
+                  Development Plan
+                </CardTitle>
+                <CardDescription id="showcase-development-plan-card-description">
+                  当前迁移以 `use_cases` 先落地为主，CSS 能力审计和更复杂组件在后续阶段推进。
+                </CardDescription>
+              </CardHeader>
+              <CardContent
+                id="showcase-development-plan-card-content"
+                className="grid grid-cols-1 gap-3"
+              >
+                <div
+                  id="showcase-development-plan-row-0"
+                  className="rounded-lg border border-zinc-200 bg-zinc-50 p-4"
+                >
+                  <div
+                    id="showcase-development-plan-row-header-0"
+                    className="mb-1 flex items-center justify-between gap-3"
+                  >
+                    <div
+                      id="showcase-development-plan-row-title-0"
+                      className="text-sm font-semibold text-zinc-900"
+                    >
+                      Phase 1
+                    </div>
+                    <Badge
+                      id="showcase-development-plan-row-summary-0"
+                      variant="outline"
+                    >
+                      基础组件迁移
+                    </Badge>
+                  </div>
+                  <div
+                    id="showcase-development-plan-row-detail-0"
+                    className="text-sm leading-6 text-zinc-600"
+                  >
+                    Button / Input / Card / Dialog / Dropdown Menu / Table 直接在 use_cases 中按官网方式重建。
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </section>,
+        )}
+      </div>
+    </div>
+  );
+}
+
 export function TableFixture() {
   return (
     <Surface title="shadcn_table">

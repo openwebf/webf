@@ -11,7 +11,6 @@ import 'package:flutter/rendering.dart';
 import 'dart:math' as math;
 import 'package:webf/css.dart';
 import 'package:webf/dom.dart';
-import 'package:webf/foundation.dart';
 import 'package:webf/rendering.dart';
 
 // CSS Positioned Layout: https://drafts.csswg.org/css-position/
@@ -51,6 +50,16 @@ Offset _getPlaceholderToParentOffset(
 }
 
 class CSSPositionedLayout {
+  static CSSLengthValue _resolveInsetForContainingBlock(
+      CSSLengthValue inset, Axis axis, Size containingBlockSize) {
+    if (inset.type == CSSLengthType.PERCENTAGE && inset.value != null) {
+      final double basis =
+          axis == Axis.horizontal ? containingBlockSize.width : containingBlockSize.height;
+      return CSSLengthValue(inset.value! * basis, CSSLengthType.PX);
+    }
+    return inset;
+  }
+
   // Find nearest scroll container ancestor for a given node.
   // A scroll container is any RenderBoxModel with overflow not visible on either axis.
   static RenderBoxModel? _nearestScrollContainer(RenderObject start) {
@@ -202,9 +211,22 @@ class CSSPositionedLayout {
     RenderLayoutParentData childParentData =
         child.parentData as RenderLayoutParentData;
     Size size = child.boxSize!;
-    Size parentSize = parent.boxSize!;
+    final Element childElement = child.renderStyle.target;
+    final Element? refContainingBlockElement =
+        childElement.overlayLiftReferenceContainingBlockElement;
+    final RenderBoxModel? refContainingBlockRenderer =
+        refContainingBlockElement?.attachedRenderer;
+    final RenderBoxModel containingBlockForInsets =
+        (refContainingBlockRenderer != null &&
+                refContainingBlockRenderer.attached &&
+                refContainingBlockRenderer.hasSize &&
+                !identical(refContainingBlockRenderer, parent))
+            ? refContainingBlockRenderer
+            : parent;
+    final bool traceDropdownOverlay = childElement.id == 'showcase-dropdown-content';
+    Size parentSize = containingBlockForInsets.boxSize!;
 
-    RenderStyle parentRenderStyle = parent.renderStyle;
+    RenderStyle parentRenderStyle = containingBlockForInsets.renderStyle;
 
     CSSLengthValue parentBorderLeftWidth =
         parentRenderStyle.effectiveBorderLeftWidth;
@@ -237,6 +259,19 @@ class CSSPositionedLayout {
     CSSLengthValue marginRight = childRenderStyle.marginRight;
     CSSLengthValue marginTop = childRenderStyle.marginTop;
     CSSLengthValue marginBottom = childRenderStyle.marginBottom;
+    final bool hasLiftedContainingBlock = !identical(containingBlockForInsets, parent);
+    final CSSLengthValue effectiveLeft = hasLiftedContainingBlock
+        ? _resolveInsetForContainingBlock(left, Axis.horizontal, containingBlockSize)
+        : left;
+    final CSSLengthValue effectiveRight = hasLiftedContainingBlock
+        ? _resolveInsetForContainingBlock(right, Axis.horizontal, containingBlockSize)
+        : right;
+    final CSSLengthValue effectiveTop = hasLiftedContainingBlock
+        ? _resolveInsetForContainingBlock(top, Axis.vertical, containingBlockSize)
+        : top;
+    final CSSLengthValue effectiveBottom = hasLiftedContainingBlock
+        ? _resolveInsetForContainingBlock(bottom, Axis.vertical, containingBlockSize)
+        : bottom;
 
     // Fix side effects by render portal.
     if (child is RenderEventListener && child.child is RenderBoxModel) {
@@ -252,7 +287,7 @@ class CSSPositionedLayout {
     final bool excludeScrollOffset =
         child.renderStyle.position != CSSPositionType.fixed ||
             !child.isFixedToViewport;
-    Offset staticPositionOffset = _getPlaceholderToParentOffset(ph, parent,
+    Offset staticPositionOffset = _getPlaceholderToParentOffset(ph, containingBlockForInsets,
         excludeScrollOffset: excludeScrollOffset);
 
     // Ensure static position accuracy for W3C compliance
@@ -260,7 +295,7 @@ class CSSPositionedLayout {
     Offset adjustedStaticPosition = _ensureAccurateStaticPosition(
         staticPositionOffset,
         child,
-        parent,
+        containingBlockForInsets,
         left,
         right,
         top,
@@ -278,7 +313,7 @@ class CSSPositionedLayout {
     // preceding inline content per CSS static-position rules.
     // Only apply when the containing block is not the document root. Root cases are handled
     // specially below to preserve expected behavior.
-    if (!parent.isDocumentRootBox && ph != null) {
+    if (!containingBlockForInsets.isDocumentRootBox && ph != null) {
       // Find the nearest ancestor flow container that establishes an IFC.
       RenderObject? a = ph.parent;
       RenderFlowLayout? flowParent;
@@ -398,7 +433,7 @@ class CSSPositionedLayout {
     // offsets the visible content from the root. The positioned element’s static position
     // should reflect that visual start so the out-of-flow element and the following in-flow
     // element align vertically when no insets are specified.
-    if (parent.isDocumentRootBox && ph != null) {
+    if (containingBlockForInsets.isDocumentRootBox && ph != null) {
       final RenderObject? phParent = ph.parent;
       if (phParent is RenderBoxModel) {
         final RenderBoxModel phContainer = phParent;
@@ -552,7 +587,7 @@ class CSSPositionedLayout {
     // direction of the element establishing the static-position containing block
     // (typically the IFC container hosting the placeholder) when available;
     // otherwise fall back to the containing block's direction.
-    TextDirection staticContainingDir = parent.renderStyle.direction;
+    TextDirection staticContainingDir = containingBlockForInsets.renderStyle.direction;
     if (ph != null && ph.parent is RenderFlowLayout) {
       final RenderFlowLayout flowParent = ph.parent as RenderFlowLayout;
       staticContainingDir = flowParent.renderStyle.direction;
@@ -572,28 +607,54 @@ class CSSPositionedLayout {
       containingBlockSize.width,
       size.width,
       adjustedStaticPosition.dx,
-      isSticky ? CSSLengthValue.auto : left,
-      isSticky ? CSSLengthValue.auto : right,
+      isSticky ? CSSLengthValue.auto : effectiveLeft,
+      isSticky ? CSSLengthValue.auto : effectiveRight,
       marginLeft,
       marginRight,
     );
 
     double y = _computePositionedOffset(
       Axis.vertical,
-      parent.renderStyle.direction,
+      containingBlockForInsets.renderStyle.direction,
       false,
       parentBorderTopWidth,
       parentPaddingTop,
       containingBlockSize.height,
       size.height,
       adjustedStaticPosition.dy,
-      isSticky ? CSSLengthValue.auto : top,
-      isSticky ? CSSLengthValue.auto : bottom,
+      isSticky ? CSSLengthValue.auto : effectiveTop,
+      isSticky ? CSSLengthValue.auto : effectiveBottom,
       marginTop,
       marginBottom,
     );
 
-    final Offset finalOffset = Offset(x, y) - ancestorOffset;
+    Offset finalOffset = Offset(x, y) - ancestorOffset;
+    if (!identical(containingBlockForInsets, parent)) {
+      try {
+        final Offset refToLift = containingBlockForInsets.getOffsetToAncestor(
+            Offset.zero, parent,
+            excludeScrollOffset: true);
+        finalOffset = finalOffset + refToLift;
+        if (traceDropdownOverlay) {
+          print('[OverlayLift][Offset] id=${childElement.id} refToLift=$refToLift');
+        }
+      } catch (_) {
+        // Keep original offset when ancestor conversion is unavailable.
+      }
+    }
+    if (traceDropdownOverlay) {
+      print(
+          '[OverlayLift][Offset] id=${childElement.id} '
+          'parentTag=${parent.renderStyle.target.tagName.toLowerCase()} '
+          'refTag=${containingBlockForInsets.renderStyle.target.tagName.toLowerCase()} '
+          'size=${size.width}x${size.height} '
+          'parentSize=${parent.boxSize?.width}x${parent.boxSize?.height} '
+          'refSize=${containingBlockForInsets.boxSize?.width}x${containingBlockForInsets.boxSize?.height} '
+          'insets(l=${left.cssText()},r=${right.cssText()},t=${top.cssText()},b=${bottom.cssText()}) '
+          'effectiveInsets(l=${effectiveLeft.cssText()},r=${effectiveRight.cssText()},t=${effectiveTop.cssText()},b=${effectiveBottom.cssText()}) '
+          'static=$staticPositionOffset adjusted=$adjustedStaticPosition '
+          'x=$x y=$y final=$finalOffset');
+    }
     // If this positioned element is wrapped (e.g., by RenderEventListener), ensure
     // the wrapper is placed at the positioned offset so its background/border align
     // with the child content. The child uses internal offsets relative to the wrapper.

@@ -230,8 +230,12 @@ export const ShadcnShowcasePage: React.FC = () => {
 
   return (
     <div id="main" className="min-h-screen w-full bg-zinc-50">
-      <WebFListView className="mx-auto w-full max-w-6xl px-4 py-6 md:px-6">
-        <section className="mb-6 overflow-hidden rounded-3xl border border-zinc-200 bg-white shadow-sm">
+      <WebFListView
+        id="showcase-webf-listview"
+        overlayLift
+        className="mx-auto w-full max-w-6xl px-4 py-6 md:px-6"
+      >
+        {/* <section className="mb-6 overflow-hidden rounded-3xl border border-zinc-200 bg-white shadow-sm">
           <div className="grid gap-6 border-b border-zinc-100 bg-[linear-gradient(135deg,#fafafa,#f4f4f5)] px-6 py-8 md:grid-cols-[1.2fr,0.8fr]">
             <div className="grid gap-4">
               <Badge variant="secondary" className="w-fit">
@@ -278,7 +282,7 @@ export const ShadcnShowcasePage: React.FC = () => {
         </section>
 
         <section className="mb-6 grid gap-6 md:grid-cols-2 xl:grid-cols-3">
-          <Card>
+          <Card id="showcase-dropdown-card">
             <CardHeader>
               <CardTitle>Dropdown Menu</CardTitle>
               <CardDescription>
@@ -288,9 +292,9 @@ export const ShadcnShowcasePage: React.FC = () => {
             <CardContent className="grid grid-cols-1 gap-4">
               <DropdownMenu>
                 <DropdownMenuTrigger>
-                  <Button variant="outline">Open account menu</Button>
+                  <Button id="showcase-dropdown-trigger" variant="outline">Open account menu</Button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent>
+                <DropdownMenuContent id="showcase-dropdown-content">
                   <DropdownMenuLabel>my account</DropdownMenuLabel>
                   <DropdownMenuGroup>
                     <DropdownMenuItem>
@@ -329,7 +333,7 @@ export const ShadcnShowcasePage: React.FC = () => {
             </CardContent>
           </Card>
 
-          <Card>
+          <Card id="showcase-development-plan-card">
             <CardHeader>
               <CardTitle>Button</CardTitle>
               <CardDescription>
@@ -1091,10 +1095,10 @@ export const ShadcnShowcasePage: React.FC = () => {
               </div>
             </CardContent>
           </Card>
-        </section>
+        </section> */}
 
         <section className="mb-6 grid gap-6 xl:grid-cols-[1.05fr,0.95fr]">
-          <Card>
+          {/* <Card>
             <CardHeader>
               <CardTitle>Dialog</CardTitle>
               <CardDescription>
@@ -1214,7 +1218,7 @@ export const ShadcnShowcasePage: React.FC = () => {
                 </DialogContent>
               </Dialog>
             </CardContent>
-          </Card>
+          </Card> */}
 
           <Card>
             <CardHeader>
@@ -1226,9 +1230,25 @@ export const ShadcnShowcasePage: React.FC = () => {
             <CardContent className="grid grid-cols-1 gap-4">
               <DropdownMenu>
                 <DropdownMenuTrigger>
-                  <Button variant="outline">Open account menu</Button>
+                  <Button
+                    id="showcase-dropdown-trigger"
+                    variant="outline"
+                    onClick={() => {
+                      const listView = document.getElementById('showcase-webf-listview') as any;
+                      setTimeout(() => {
+                        listView?.debugDumpRenderTree?.('showcase-dropdown-open-0');
+                        listView?.debugDumpPaintOrder?.('showcase-dropdown-open-0');
+                      }, 0);
+                      setTimeout(() => {
+                        listView?.debugDumpRenderTree?.('showcase-dropdown-open-80');
+                        listView?.debugDumpPaintOrder?.('showcase-dropdown-open-80');
+                      }, 80);
+                    }}
+                  >
+                    Open account menu
+                  </Button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent>
+                <DropdownMenuContent id="showcase-dropdown-content">
                   <DropdownMenuLabel>my account</DropdownMenuLabel>
                   <DropdownMenuGroup>
                     <DropdownMenuItem>
