@@ -85,6 +85,12 @@ class JSThreadProfiler {
   const std::string& GetAtomName(JSAtom atom) const;
   bool IsAtomKnown(JSAtom atom) const;
 
+  // Set/clear the active Dart entry id. Called from Dart via FFI when an
+  // entry root is pushed/popped. Stamped into JSThreadSpan.entry_id at span
+  // exit time. id 0 means "no entry active".
+  void SetCurrentEntryId(uint32_t entry_id);
+  uint32_t GetCurrentEntryId() const;
+
   // Register a human-readable name for a C++-side span (e.g., binding method
   // names). Returns a stable ID with the high bit set so it does not collide
   // with QuickJS JSAtoms. Use the returned ID as the `name` argument of
@@ -95,6 +101,7 @@ class JSThreadProfiler {
   JSThreadProfiler() = default;
 
   std::atomic<bool> enabled_{false};
+  std::atomic<uint32_t> current_entry_id_{0};
   std::chrono::steady_clock::time_point session_start_;
 
   // Ring buffer for completed spans

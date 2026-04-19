@@ -23,6 +23,7 @@ void JSThreadProfiler::Enable(int64_t min_duration_us) {
   atom_names_.clear();
   binding_name_to_id_.clear();
   binding_names_.clear();
+  current_entry_id_.store(0, std::memory_order_relaxed);
   for (int i = 0; i < kMaxDepth; i++) {
     pending_[i].valid = false;
   }
@@ -99,6 +100,14 @@ bool JSThreadProfiler::IsAtomKnown(JSAtom atom) const {
   if (it == atom_to_id_.end()) return false;
   // Known if the name has been registered (non-empty)
   return it->second < static_cast<int32_t>(atom_names_.size()) && !atom_names_[it->second].empty();
+}
+
+void JSThreadProfiler::SetCurrentEntryId(uint32_t entry_id) {
+  current_entry_id_.store(entry_id, std::memory_order_relaxed);
+}
+
+uint32_t JSThreadProfiler::GetCurrentEntryId() const {
+  return current_entry_id_.load(std::memory_order_relaxed);
 }
 
 int32_t JSThreadProfiler::OnFunctionEntry(uint8_t category, JSAtom func_name) {
