@@ -147,5 +147,95 @@ void main() {
       expect(root.children.any((c) => c.name == 'lateArrival'), true,
           reason: '_entryIdToSpan must persist past entry close');
     });
+
+    test('entryId=0 JS span nests under containing root span', () {
+      // First inject a containing root (eg. the C++-side jsMicrotask).
+      PerformanceTracker.instance.debugInjectJSSpan(
+        subType: kSubTypeJsMicrotask,
+        startUs: 1000,
+        endUs: 2000,
+        entryId: 0,
+        funcName: 'microtaskRoot',
+      );
+      // Then inject an inner span (eg. jsFunction inside the microtask).
+      PerformanceTracker.instance.debugInjectJSSpan(
+        subType: kSubTypeJsFunction,
+        startUs: 1100,
+        endUs: 1500,
+        entryId: 0,
+        funcName: 'innerFn',
+      );
+
+      final roots = PerformanceTracker.instance.rootSpans;
+      expect(roots.length, 1,
+          reason: 'inner span must nest, not become a sibling root');
+      final outer = roots.single;
+      expect(outer.subType, kSubTypeJsMicrotask);
+      expect(outer.children.length, 1);
+      expect(outer.children.first.name, 'innerFn');
+      expect(outer.children.first.subType, kSubTypeJsFunction);
+    });
+
+    test('entryId=0 JS span deeply nests under matching descendant', () {
+      // Outer → middle → inner; all entryId=0, all should nest.
+      PerformanceTracker.instance.debugInjectJSSpan(
+        subType: kSubTypeJsMicrotask,
+        startUs: 1000,
+        endUs: 2000,
+        entryId: 0,
+        funcName: 'outer',
+      );
+      PerformanceTracker.instance.debugInjectJSSpan(
+        subType: kSubTypeJsFunction,
+        startUs: 1100,
+        endUs: 1900,
+        entryId: 0,
+        funcName: 'middle',
+      );
+      PerformanceTracker.instance.debugInjectJSSpan(
+        subType: kSubTypeJsCFunction,
+        startUs: 1200,
+        endUs: 1300,
+        entryId: 0,
+        funcName: 'inner',
+      );
+
+      final roots = PerformanceTracker.instance.rootSpans;
+      expect(roots.length, 1);
+      final outer = roots.single;
+      expect(outer.children.length, 1);
+      final middle = outer.children.single;
+      expect(middle.name, 'middle');
+      expect(middle.children.length, 1);
+      expect(middle.children.single.name, 'inner');
+    });
+
+    test('_attachJSSpan respects maxSpans cap so Dart entries do not starve',
+        () {
+      // Fill the tracker with JS spans up to maxSpans.
+      for (int i = 0; i < PerformanceTracker.maxSpans; i++) {
+        PerformanceTracker.instance.debugInjectJSSpan(
+          subType: kSubTypeJsCFunction,
+          startUs: i,
+          endUs: i + 1,
+          entryId: 0,
+          funcName: 'f$i',
+        );
+      }
+      expect(PerformanceTracker.instance.totalSpanCount,
+          PerformanceTracker.maxSpans);
+
+      // Subsequent JS span MUST be dropped (does not bump count).
+      PerformanceTracker.instance.debugInjectJSSpan(
+        subType: kSubTypeJsCFunction,
+        startUs: 9999999,
+        endUs: 10000000,
+        entryId: 0,
+        funcName: 'overflow',
+      );
+      expect(PerformanceTracker.instance.totalSpanCount,
+          PerformanceTracker.maxSpans,
+          reason: '_attachJSSpan must drop spans once at capacity');
+    });
   });
 }

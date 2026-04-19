@@ -349,7 +349,19 @@ class PerformanceTracker {
 
       final atomNameCache = <int, String>{};
 
-      for (int i = 0; i < count; i++) {
+      // Sort spans by (startUs ASC, endUs DESC) so outer spans land before
+      // their inner spans within this drain batch. This matters for the
+      // entryId == 0 nesting heuristic in [_attachJSSpan]: an inner span can
+      // only nest under an outer one that's already been registered as a root.
+      final indices = List.generate(count, (i) => i);
+      indices.sort((a, b) {
+        final sa = buffer[a].startUs;
+        final sb = buffer[b].startUs;
+        if (sa != sb) return sa.compareTo(sb);
+        return buffer[b].endUs.compareTo(buffer[a].endUs);
+      });
+
+      for (final i in indices) {
         final native = buffer[i];
         final startOffsetUs = native.startUs + offsetUs;
         final endOffsetUs = native.endUs + offsetUs;
@@ -380,9 +392,21 @@ class PerformanceTracker {
   }
 
   /// Attach a drained (or test-injected) JS span to the entry-rooted tree.
-  /// If [entryId] resolves to a live entry root, graft as a child of the
-  /// deepest leaf whose interval contains [startOffsetUs]; otherwise the
-  /// span becomes a new root for JS-originated work with no Dart parent.
+  ///
+  /// Resolution order for the parent root:
+  /// 1. [entryId] resolves to a live entry root via [_entryIdToSpan] —
+  ///    graft as a child of the deepest leaf whose interval contains
+  ///    [startOffsetUs] (Dart-entry attribution).
+  /// 2. Otherwise, search [rootSpans] for an existing root whose interval
+  ///    contains [startOffsetUs] — graft under it. This preserves the
+  ///    C++-internal JS hierarchy when entries arrive in the same drain
+  ///    batch (eg. jsMicrotask wrapping jsFunction wrapping jsCFunction)
+  ///    after the drain has been sorted outer-first.
+  /// 3. No containing root — the span becomes a new root.
+  ///
+  /// Drops the span if [_totalSpanCount] is at [maxSpans]. This matches the
+  /// cap behavior in [beginSpan] / [beginEntry] so JS-thread spans cannot
+  /// starve out Dart entries that arrive afterwards.
   void _attachJSSpan({
     required int entryId,
     required String subType,
@@ -391,7 +415,14 @@ class PerformanceTracker {
     required int endOffsetUs,
     required DateTime anchor,
   }) {
-    final root = entryId != 0 ? _entryIdToSpan[entryId] : null;
+    if (_totalSpanCount >= maxSpans) return;
+
+    PerformanceSpan? root;
+    if (entryId != 0) {
+      root = _entryIdToSpan[entryId];
+    }
+    root ??= _findContainingRoot(startOffsetUs);
+
     if (root != null) {
       final parent = _findInsertionParent(root, startOffsetUs);
       final span = PerformanceSpan(
@@ -416,6 +447,21 @@ class PerformanceTracker {
       rootSpans.add(span);
     }
     _totalSpanCount++;
+  }
+
+  /// Find an existing root span whose interval contains [startOffsetUs].
+  /// Searches from most-recently-added back so the latest matching root
+  /// (i.e. the innermost candidate at insertion time) wins.
+  PerformanceSpan? _findContainingRoot(int startOffsetUs) {
+    for (int i = rootSpans.length - 1; i >= 0; i--) {
+      final root = rootSpans[i];
+      if (root.startOffsetUs > startOffsetUs) continue;
+      final endUs = root.endOffsetUs;
+      if (endUs == null || startOffsetUs <= endUs) {
+        return root;
+      }
+    }
+    return null;
   }
 
   /// Walks down [root] to find the deepest descendant whose interval
