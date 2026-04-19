@@ -269,7 +269,8 @@ class LinkElement extends Element {
         // Increment count when request.
         ownerDocument.incrementRequestCount();
 
-        final fetchEntry = PerformanceTracker.instance.beginEntry(kSubTypeNetworkResponse, url, metadata: {'kind': 'css'});
+        final fetchEntry = PerformanceTracker.instance
+            .beginEntry(kSubTypeNetworkResponse, url, metadata: {'kind': 'css'});
         await bundle.resolve(baseUrl: ownerDocument.controller.url, uriParser: ownerDocument.controller.uriParser);
         await bundle.obtainData(ownerView.contextId);
         fetchEntry?.end();
