@@ -18,6 +18,7 @@ import 'package:ffi/ffi.dart';
 import 'package:meta/meta.dart';
 import 'package:webf/bridge.dart';
 import 'package:webf/src/bridge/to_native.dart' as to_native;
+import 'package:webf/src/devtools/panel/performance_subtypes.dart';
 
 /// Represents a single performance span in the rendering pipeline.
 ///
@@ -223,9 +224,6 @@ class PerformanceTracker {
   /// Top-level spans (not children of any other span).
   final List<PerformanceSpan> rootSpans = [];
 
-  /// JS thread spans collected from the C++ profiler.
-  final List<JSThreadSpan> jsThreadSpans = [];
-
   /// Monotonic clock source. A fresh instance is created on every
   /// [startSession] call and used for all timing within that session.
   Stopwatch? _stopwatch;
@@ -284,7 +282,6 @@ class PerformanceTracker {
   void startSession() {
     sessionStart = DateTime.now();
     rootSpans.clear();
-    jsThreadSpans.clear();
     _currentSpan = null;
     _totalSpanCount = 0;
     enabled = true;
@@ -328,15 +325,21 @@ class PerformanceTracker {
     _entryIdMap.clear();
   }
 
-  /// Drain JS thread profiling spans from the C++ ring buffer.
-  /// Called during flushUICommand and at session end.
+  /// Drain JS thread profiling spans from the C++ ring buffer and graft
+  /// each into the unified span tree.
   ///
-  /// C++ spans arrive as microsecond offsets from the C++ profiler's
-  /// `session_start_`. We shift them by [_cppToDartOffsetUs] so they land on
-  /// the shared Dart timeline (rooted at the stopwatch start).
+  /// For each drained native span:
+  /// - Look up `entry_id` in [_entryIdToSpan]. Match → the JS span is added
+  ///   as a child of the entry's deepest leaf descendant whose interval
+  ///   contains the span's start time.
+  /// - No match (`entry_id == 0` or unknown) → synthesize a new root span
+  ///   with `subType` derived from the C++ category enum
+  ///   (kJsCategorySubTypes[category]).
   void drainJSThreadSpans() {
-    if (!enabled && jsThreadSpans.isEmpty && _stopwatch == null) return;
+    if (!enabled && _stopwatch == null) return;
     final offsetUs = _cppToDartOffsetUs ?? 0;
+    final anchor = sessionStart;
+    if (anchor == null) return;
 
     const maxDrain = 4096;
     final buffer = calloc<NativeJSThreadSpan>(maxDrain);
@@ -344,33 +347,76 @@ class PerformanceTracker {
       final count = to_native.drainJSThreadProfilingSpans(buffer, maxDrain);
       if (count <= 0) return;
 
-      // Cache resolved atom names to avoid repeated FFI calls
       final atomNameCache = <int, String>{};
 
       for (int i = 0; i < count; i++) {
         final native = buffer[i];
-        // Shift C++ offsets onto the Dart monotonic timeline.
         final startOffsetUs = native.startUs + offsetUs;
         final endOffsetUs = native.endUs + offsetUs;
 
-        // Resolve function name from atom
         final atom = native.funcNameAtom;
         String funcName = '';
         if (atom != 0) {
           funcName = atomNameCache[atom] ??= to_native.getJSProfilerAtomName(atom);
         }
 
-        jsThreadSpans.add(JSThreadSpan(
-          category: JSThreadSpan.categoryFromIndex(native.category),
-          startOffset: Duration(microseconds: startOffsetUs),
-          endOffset: Duration(microseconds: endOffsetUs),
-          funcNameAtom: atom,
-          funcName: funcName,
-          depth: native.depth,
-        ));
+        final categoryIdx = native.category;
+        final subType = (categoryIdx >= 0 && categoryIdx < kJsCategorySubTypes.length)
+            ? kJsCategorySubTypes[categoryIdx]
+            : 'jsUnknown';
+
+        final root = native.entryId != 0 ? _entryIdToSpan[native.entryId] : null;
+
+        if (root != null) {
+          // Graft as child of the deepest leaf whose interval contains startOffsetUs.
+          final parent = _findInsertionParent(root, startOffsetUs);
+          final span = PerformanceSpan(
+            subType: subType,
+            name: funcName,
+            startOffsetUs: startOffsetUs,
+            depth: parent.depth + 1,
+            sessionAnchor: anchor,
+            parent: parent,
+          );
+          span.endOffsetUs = endOffsetUs;
+          parent.children.add(span);
+          _totalSpanCount++;
+        } else {
+          // Synthesize a new root for JS-originated work with no Dart parent.
+          final span = PerformanceSpan(
+            subType: subType,
+            name: funcName,
+            startOffsetUs: startOffsetUs,
+            depth: 0,
+            sessionAnchor: anchor,
+          );
+          span.endOffsetUs = endOffsetUs;
+          rootSpans.add(span);
+          _totalSpanCount++;
+        }
       }
     } finally {
       calloc.free(buffer);
+    }
+  }
+
+  /// Walks down [root] to find the deepest descendant whose interval
+  /// contains [startOffsetUs]. Used to graft drained JS spans at the
+  /// correct depth in the tree.
+  PerformanceSpan _findInsertionParent(PerformanceSpan root, int startOffsetUs) {
+    PerformanceSpan candidate = root;
+    while (true) {
+      PerformanceSpan? next;
+      for (final child in candidate.children) {
+        final endUs = child.endOffsetUs;
+        if (endUs == null) continue;
+        if (child.startOffsetUs <= startOffsetUs && startOffsetUs <= endUs) {
+          next = child;
+          break;
+        }
+      }
+      if (next == null) return candidate;
+      candidate = next;
     }
   }
 
@@ -380,22 +426,44 @@ class PerformanceTracker {
   /// would, so tests exercise the real correction math.
   @visibleForTesting
   void debugInjectJSSpan({
-    required String category,
+    required String subType,
     required int startUs,
     required int endUs,
+    int entryId = 0,
     int funcNameAtom = 0,
     String funcName = '',
     int depth = 0,
   }) {
     final offsetUs = _cppToDartOffsetUs ?? 0;
-    jsThreadSpans.add(JSThreadSpan(
-      category: category,
-      startOffset: Duration(microseconds: startUs + offsetUs),
-      endOffset: Duration(microseconds: endUs + offsetUs),
-      funcNameAtom: funcNameAtom,
-      funcName: funcName,
-      depth: depth,
-    ));
+    final startOffsetUs = startUs + offsetUs;
+    final endOffsetUs = endUs + offsetUs;
+    final anchor = sessionStart ?? DateTime.now();
+    final root = entryId != 0 ? _entryIdToSpan[entryId] : null;
+    if (root != null) {
+      final parent = _findInsertionParent(root, startOffsetUs);
+      final span = PerformanceSpan(
+        subType: subType,
+        name: funcName,
+        startOffsetUs: startOffsetUs,
+        depth: parent.depth + 1,
+        sessionAnchor: anchor,
+        parent: parent,
+      );
+      span.endOffsetUs = endOffsetUs;
+      parent.children.add(span);
+      _totalSpanCount++;
+    } else {
+      final span = PerformanceSpan(
+        subType: subType,
+        name: funcName,
+        startOffsetUs: startOffsetUs,
+        depth: 0,
+        sessionAnchor: anchor,
+      );
+      span.endOffsetUs = endOffsetUs;
+      rootSpans.add(span);
+      _totalSpanCount++;
+    }
   }
 
   /// Begin a new performance span.
@@ -535,7 +603,6 @@ class PerformanceTracker {
   /// Clear all recorded spans without changing the enabled state.
   void clear() {
     rootSpans.clear();
-    jsThreadSpans.clear();
     _currentSpan = null;
     _totalSpanCount = 0;
     _entryStack.clear();
@@ -598,10 +665,6 @@ class PerformanceTracker {
     }
 
     rootSpans.clear();
-    // Drop any in-memory JS-thread spans from a prior live session so the
-    // imported root tree isn't decorated with stale spans. Task 3.3 will
-    // remove this field entirely in favour of drain-time grafting.
-    jsThreadSpans.clear();
     _currentSpan = null;
     enabled = false;
 
@@ -630,66 +693,6 @@ class PerformanceTracker {
           .toList();
     }
     return [];
-  }
-}
-
-/// Represents a single JS thread profiling span collected from QuickJS.
-class JSThreadSpan {
-  static const List<String> categoryNames = [
-    'jsFunction',      // 0: kJSFunction
-    'jsCFunction',     // 1: kJSCFunction
-    'jsScriptEval',    // 2: kJSScriptEval
-    'jsTimer',         // 3: kJSTimer
-    'jsEvent',         // 4: kJSEvent
-    'jsRAF',           // 5: kJSRAF
-    'jsIdle',          // 6: kJSIdle
-    'jsMicrotask',     // 7: kJSMicrotask
-    'jsMutationObserver', // 8: kJSMutationObserver
-    'jsFlushUICommand',   // 9: kJSFlushUICommand
-    'jsBindingSyncCall',  // 10: kJSBindingSyncCall
-  ];
-
-  final String category;
-  final Duration startOffset;  // from Dart session start
-  final Duration endOffset;
-  final int funcNameAtom;
-  final String funcName;
-  final int depth;
-
-  JSThreadSpan({
-    required this.category,
-    required this.startOffset,
-    required this.endOffset,
-    required this.funcNameAtom,
-    this.funcName = '',
-    required this.depth,
-  });
-
-  Duration get duration => endOffset - startOffset;
-
-  static String categoryFromIndex(int index) {
-    if (index >= 0 && index < categoryNames.length) return categoryNames[index];
-    return 'jsUnknown';
-  }
-
-  Map<String, dynamic> toJson() => {
-    'category': category,
-    'startOffsetUs': startOffset.inMicroseconds,
-    'endOffsetUs': endOffset.inMicroseconds,
-    'funcNameAtom': funcNameAtom,
-    if (funcName.isNotEmpty) 'funcName': funcName,
-    'depth': depth,
-  };
-
-  static JSThreadSpan fromJson(Map<String, dynamic> json) {
-    return JSThreadSpan(
-      category: json['category'] as String,
-      startOffset: Duration(microseconds: json['startOffsetUs'] as int),
-      endOffset: Duration(microseconds: json['endOffsetUs'] as int),
-      funcNameAtom: json['funcNameAtom'] as int? ?? 0,
-      funcName: json['funcName'] as String? ?? '',
-      depth: json['depth'] as int,
-    );
   }
 }
 
