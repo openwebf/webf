@@ -53,6 +53,7 @@ int64_t JSThreadProfiler::SteadyClockNowUs() {
 
 bool JSThreadProfiler::TrackAtom(JSAtom atom) {
   if (atom == 0) return false;
+  if ((atom & kBindingIdFlag) != 0) return false;  // binding registry IDs — already resolved
   if (atom_to_id_.find(atom) == atom_to_id_.end()) {
     int32_t id = static_cast<int32_t>(unique_atoms_.size());
     atom_to_id_[atom] = id;
