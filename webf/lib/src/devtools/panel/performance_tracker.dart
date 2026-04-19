@@ -256,6 +256,12 @@ class PerformanceTracker {
   /// Top-level spans (not children of any other span).
   final List<PerformanceSpan> rootSpans = [];
 
+  /// Phases parsed from the most recent [importFromJson] call. Empty for
+  /// live sessions. Held on the tracker (rather than per-WaterfallChart)
+  /// so the inspector panel can compute attachOffset for tab gating
+  /// without depending on which sub-tab triggered the import.
+  List<ExportablePhase> importedPhases = [];
+
   /// Monotonic clock source. A fresh instance is created on every
   /// [startSession] call and used for all timing within that session.
   Stopwatch? _stopwatch;
@@ -332,6 +338,7 @@ class PerformanceTracker {
   void startSession() {
     sessionStart = DateTime.now();
     rootSpans.clear();
+    importedPhases = [];
     _currentSpan = null;
     _totalSpanCount = 0;
     enabled = true;
@@ -809,6 +816,7 @@ class PerformanceTracker {
     }
 
     rootSpans.clear();
+    importedPhases = [];
     _currentSpan = null;
     enabled = false;
 
@@ -829,12 +837,13 @@ class PerformanceTracker {
 
     final phasesJson = data['phases'] as List?;
     if (phasesJson != null) {
-      return phasesJson
+      importedPhases = phasesJson
           .map((p) => ExportablePhase.fromJson(
                 p as Map<String, dynamic>,
                 sessionAnchor: anchor,
               ))
           .toList();
+      return importedPhases;
     }
     return [];
   }

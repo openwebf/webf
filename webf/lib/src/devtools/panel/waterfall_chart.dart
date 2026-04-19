@@ -703,11 +703,10 @@ class _WaterfallChartState extends State<WaterfallChart> {
   int _cachedPhaseCount = -1;
   int _cachedNetworkCount = -1;
 
-  /// Imported phases from a loaded profile (null when using live data).
-  List<ExportablePhase>? _importedPhases;
   List<_OverviewItem>? _cachedItems;
   Set<String>? _cachedFilterSet;
   WaterfallPhase? _cachedFilterPhase;
+  int _cachedImportedPhaseCount = -1;
 
   WaterfallData _getData() {
     final tracker = widget.tracker;
@@ -715,17 +714,21 @@ class _WaterfallChartState extends State<WaterfallChart> {
     final spanCount = tracker.totalSpanCount;
     final phaseCount = ls.phases.length;
     final networkCount = ls.networkRequests.length;
+    final importedPhaseCount = tracker.importedPhases.length;
     if (_cachedData != null &&
         spanCount == _cachedSpanCount &&
         phaseCount == _cachedPhaseCount &&
-        networkCount == _cachedNetworkCount) {
+        networkCount == _cachedNetworkCount &&
+        importedPhaseCount == _cachedImportedPhaseCount) {
       return _cachedData!;
     }
-    _cachedData = buildWaterfallData(ls, tracker,
-        importedPhases: _importedPhases);
+    final imported =
+        tracker.importedPhases.isNotEmpty ? tracker.importedPhases : null;
+    _cachedData = buildWaterfallData(ls, tracker, importedPhases: imported);
     _cachedSpanCount = spanCount;
     _cachedPhaseCount = phaseCount;
     _cachedNetworkCount = networkCount;
+    _cachedImportedPhaseCount = importedPhaseCount;
     _cachedItems = null; // invalidate derived cache
     return _cachedData!;
   }
@@ -1309,11 +1312,11 @@ class _WaterfallChartState extends State<WaterfallChart> {
         return;
       }
       final content = file.readAsStringSync();
-      final phases = widget.tracker.importFromJson(content);
+      widget.tracker.importFromJson(content);
       setState(() {
-        _importedPhases = phases.isNotEmpty ? phases : null;
         _cachedData = null; // force rebuild
         _cachedSpanCount = -1;
+        _cachedImportedPhaseCount = -1;
       });
       _showResultDialog('Profile Imported', 'Loaded ${widget.tracker.totalSpanCount} spans from\n$path');
     } catch (e) {

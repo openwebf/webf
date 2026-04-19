@@ -2743,8 +2743,11 @@ class _WebFInspectorBottomSheetState extends State<_WebFInspectorBottomSheet> wi
   }
 
   Widget _buildSingleControllerPerformance(WebFController controller, String controllerName) {
+    final tracker = PerformanceTracker.instance;
+    final imported = tracker.importedPhases.isNotEmpty ? tracker.importedPhases : null;
     final waterfallData = buildWaterfallData(
-        controller.loadingState, PerformanceTracker.instance);
+        controller.loadingState, tracker,
+        importedPhases: imported);
     final attachOffset = waterfallData.attachOffset;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
