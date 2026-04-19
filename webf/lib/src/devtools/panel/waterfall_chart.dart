@@ -23,49 +23,29 @@ import 'package:webf/src/devtools/panel/performance_tracker.dart';
 // Data model
 // ---------------------------------------------------------------------------
 
-enum WaterfallCategory {
-  lifecycle,
-  network,
-  cssParse,
-  style,
-  layout,
-  paint,
-  jsEval,
-  htmlParse,
-  domConstruction,
-  build,
-  // JS Thread categories
-  jsFunction,
-  jsScriptEval,
-  jsTimer,
-  jsEvent,
-  jsRAF,
-  jsIdle,
-  jsMicrotask,
-  jsMutationObserver,
-  jsFlushUICommand,
-  jsBindingSyncCall,
-}
-
 class _SpanSegment {
   final double startMs;
   final double endMs;
   _SpanSegment({required this.startMs, required this.endMs});
 }
 
+/// One row in the waterfall, representing one entry-root span (or a cluster
+/// of consecutive same-subType roots). Drilldown opens a flame chart of
+/// the root's full subtree.
 class WaterfallEntry {
-  final WaterfallCategory category;
+  /// Canonical entry subType (eg. 'drawFrame', 'flushUICommand'). Drives
+  /// row grouping and color.
+  final String subType;
   final String label;
   Duration start;
   Duration end;
   final List<WaterfallSubEntry> subEntries;
-  final PerformanceSpan? span; // For drill-down into flame chart (single span)
-  final List<PerformanceSpan> spans; // For aggregated entries (multiple spans)
-  final List<_SpanSegment> spanSegments; // Individual span time segments for painting
-  final List<JSThreadSpan> jsSpans; // JS thread spans for drill-down flame chart
+  final PerformanceSpan? span; // single-span entry → flame-chart root
+  final List<PerformanceSpan> spans; // multi-span cluster → drilldown across all
+  final List<_SpanSegment> spanSegments;
 
   WaterfallEntry({
-    required this.category,
+    required this.subType,
     required this.label,
     required this.start,
     required this.end,
@@ -73,11 +53,10 @@ class WaterfallEntry {
     this.span,
     this.spans = const [],
     this.spanSegments = const [],
-    this.jsSpans = const [],
   });
 
   Duration get duration => end - start;
-  bool get hasDrillDown => span != null || spans.isNotEmpty || jsSpans.isNotEmpty;
+  bool get hasDrillDown => span != null || spans.isNotEmpty;
 }
 
 class WaterfallSubEntry {
