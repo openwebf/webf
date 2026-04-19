@@ -40,6 +40,7 @@ struct JSThreadSpan {
   int64_t end_us;
   uint32_t func_name_atom; // JSAtom for function name (0 = anonymous)
   uint8_t depth;
+  uint32_t entry_id;       // Dart-owned entry id active at span exit (0 = none)
 };
 
 class JSThreadProfiler {
