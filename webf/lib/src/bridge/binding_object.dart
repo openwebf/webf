@@ -11,6 +11,8 @@ import 'package:webf/bridge.dart';
 import 'package:webf/foundation.dart';
 import 'package:webf/widget.dart';
 import 'package:webf/launcher.dart';
+import 'package:webf/src/devtools/panel/performance_subtypes.dart';
+import 'package:webf/src/devtools/panel/performance_tracker.dart';
 
 typedef NativeBindingObjectAsyncCallCallback = Void Function(Pointer<Void> resolver, Pointer<NativeValue> successResult, Pointer<Utf8> errorMsg);
 typedef DartBindingObjectAsyncCallCallback = void Function(Pointer<Void> resolver, Pointer<NativeValue> successResult, Pointer<Utf8> errorMsg);
@@ -379,8 +381,13 @@ Future<void> _invokeBindingMethodFromNativeImpl(double contextId, Pointer<Native
     return fromNativeValue(controller.view, nativeValue);
   });
 
-
   BindingObject bindingObject = controller.view.getBindingObject(nativeBindingObject);
+
+  // Open an entry so all Dart work below this point attributes back to the
+  // call origin in the waterfall (eg. setProperty(src) → fetchImage subspan).
+  final entryName = method is String ? method : 'op#$method';
+  final entry = PerformanceTracker.instance
+      .beginEntry(kSubTypeInvokeBindingMethodFromNative, entryName);
 
   dynamic result;
   try {
@@ -415,6 +422,7 @@ Future<void> _invokeBindingMethodFromNativeImpl(double contextId, Pointer<Native
       result = await result;
     }
     toNativeValue(returnValue, result, bindingObject);
+    entry?.end();
   }
 }
 
