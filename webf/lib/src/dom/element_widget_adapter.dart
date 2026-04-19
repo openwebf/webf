@@ -18,6 +18,7 @@ import 'package:webf/html.dart';
 import 'package:webf/rendering.dart';
 import 'package:webf/widget.dart';
 import 'package:webf/src/devtools/panel/performance_tracker.dart';
+import 'package:webf/src/devtools/panel/performance_subtypes.dart';
 
 enum ScreenEventType { onScreen, offScreen }
 
@@ -165,7 +166,7 @@ class WebFElementWidgetState extends flutter.State<WebFElementWidget> with flutt
   @override
   flutter.Widget build(flutter.BuildContext context) {
     super.build(context);
-    final handle = PerformanceTracker.instance.beginSpan('build', 'buildElement',
+    final handle = PerformanceTracker.instance.beginSpan(kSubTypeBuild, 'buildElement',
         metadata: {'tagName': webFElement.tagName, 'id': webFElement.id});
 
     WebFState? webFState;

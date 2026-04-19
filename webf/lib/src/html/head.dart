@@ -9,6 +9,7 @@ import 'package:webf/css.dart';
 import 'package:webf/dom.dart';
 import 'package:webf/webf.dart';
 import 'package:webf/src/devtools/panel/performance_tracker.dart';
+import 'package:webf/src/devtools/panel/performance_subtypes.dart';
 
 // Children of the <head> element all have display:none
 const Map<String, dynamic> _defaultStyle = {
@@ -279,7 +280,7 @@ class LinkElement extends Element {
 
         final String cssString = _cachedStyleSheetText = await resolveStringFromData(bundle.data!);
 
-        final parseHandle = PerformanceTracker.instance.beginSpan('cssParse', 'parseStylesheet', metadata: {'url': href});
+        final parseHandle = PerformanceTracker.instance.beginSpan(kSubTypeCssParse, 'parseStylesheet', metadata: {'url': href});
         _styleSheet = CSSParser(cssString, href: href).parse(
             windowWidth: windowWidth, windowHeight: windowHeight, isDarkMode: ownerView.rootController.isDarkMode);
         _styleSheet?.href = href;
@@ -475,7 +476,7 @@ mixin StyleElementMixin on Element {
         _styleSheet!.replaceSync(text,
             windowWidth: windowWidth, windowHeight: windowHeight, isDarkMode: ownerView.rootController.isDarkMode);
       } else {
-        final handle = PerformanceTracker.instance.beginSpan('cssParse', 'parseInlineStyle');
+        final handle = PerformanceTracker.instance.beginSpan(kSubTypeCssParse, 'parseInlineStyle');
         _styleSheet = CSSParser(text).parse(
             windowWidth: windowWidth, windowHeight: windowHeight, isDarkMode: ownerView.rootController.isDarkMode);
         handle?.end();

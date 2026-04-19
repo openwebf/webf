@@ -18,6 +18,7 @@ import 'package:webf/webf.dart';
 import 'package:webf/launcher.dart';
 import 'package:webf/foundation.dart';
 import 'package:webf/src/devtools/panel/performance_tracker.dart';
+import 'package:webf/src/devtools/panel/performance_subtypes.dart';
 import 'package:path/path.dart' as path;
 
 typedef OnControllerCreated = void Function(WebFController controller);
@@ -606,7 +607,7 @@ class WebFState extends State<WebF> with RouteAware {
       'hasHybridRoute': initialRoute != '/',
     });
 
-    final handle = PerformanceTracker.instance.beginSpan('build', 'buildRootView', metadata: {'initialRoute': initialRoute});
+    final handle = PerformanceTracker.instance.beginSpan(kSubTypeBuild, 'buildRootView', metadata: {'initialRoute': initialRoute});
     try {
       if (initialRoute != '/') {
         RouterLinkElement? child = widget.controller.view.getHybridRouterView(initialRoute);

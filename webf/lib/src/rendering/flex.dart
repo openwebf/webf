@@ -13,6 +13,7 @@ import 'package:webf/rendering.dart';
 import 'package:webf/css.dart';
 import 'package:webf/src/html/text.dart';
 import 'package:webf/src/devtools/panel/performance_tracker.dart';
+import 'package:webf/src/devtools/panel/performance_subtypes.dart';
 
 // Position and size info of each run (flex line) in flex layout.
 // https://www.w3.org/TR/css-flexbox-1/#flex-lines
@@ -781,7 +782,7 @@ class RenderFlexLayout extends RenderLayoutBox {
 
   @override
   void performLayout() {
-    final handle = PerformanceTracker.instance.beginSpan('layout', 'flexLayout');
+    final handle = PerformanceTracker.instance.beginSpan(kSubTypeLayout, 'flexLayout');
     try {
       doingThisLayout = true;
 

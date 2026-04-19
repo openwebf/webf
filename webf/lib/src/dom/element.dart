@@ -19,6 +19,7 @@ import 'package:webf/bridge.dart';
 import 'package:webf/rendering.dart';
 import 'package:webf/src/svg/rendering/container.dart';
 import 'package:webf/src/devtools/panel/performance_tracker.dart';
+import 'package:webf/src/devtools/panel/performance_subtypes.dart';
 import 'package:webf/widget.dart';
 import 'package:webf/src/css/query_selector.dart' as QuerySelector;
 
@@ -1163,7 +1164,7 @@ abstract class Element extends ContainerNode
   }
 
   void applyStyle(CSSStyleDeclaration style) {
-    final handle = PerformanceTracker.instance.beginSpan('styleRecalc', 'applyStyle', metadata: {'tagName': tagName});
+    final handle = PerformanceTracker.instance.beginSpan(kSubTypeStyleRecalc, 'applyStyle', metadata: {'tagName': tagName});
     // Apply default style.
     _applyDefaultStyle(style);
     // Init display from style directly cause renderStyle is not flushed yet.
@@ -1183,7 +1184,7 @@ abstract class Element extends ContainerNode
   }
 
   void recalculateStyle({bool rebuildNested = false, bool forceRecalculate = false}) {
-    final handle = PerformanceTracker.instance.beginSpan('styleRecalc', 'recalculateStyle', metadata: {'tagName': tagName});
+    final handle = PerformanceTracker.instance.beginSpan(kSubTypeStyleRecalc, 'recalculateStyle', metadata: {'tagName': tagName});
     // Always update CSS variables even for display:none elements when rebuilding nested
     bool shouldUpdateCSSVariables = rebuildNested && renderStyle.display == CSSDisplay.none;
 

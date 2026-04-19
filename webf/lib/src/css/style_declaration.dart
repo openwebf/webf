@@ -10,6 +10,7 @@ import 'package:webf/bridge.dart';
 import 'package:webf/html.dart';
 import 'package:quiver/collection.dart';
 import 'package:webf/src/devtools/panel/performance_tracker.dart';
+import 'package:webf/src/devtools/panel/performance_subtypes.dart';
 
 typedef StyleChangeListener = void Function(String property, String? original, String present, {String? baseHref});
 typedef StyleFlushedListener = void Function(List<String> properties);
@@ -481,7 +482,7 @@ class CSSStyleDeclaration extends DynamicBindingObject with StaticDefinedBinding
   }
 
   void flushPendingProperties() {
-    final handle = PerformanceTracker.instance.beginSpan('styleApply', 'flushPendingProperties', metadata: {'propertyCount': _pendingProperties.length});
+    final handle = PerformanceTracker.instance.beginSpan(kSubTypeStyleApply, 'flushPendingProperties', metadata: {'propertyCount': _pendingProperties.length});
     Element? _target = target;
     // If style target element not exists, no need to do flush operation.
     if (_target == null) {

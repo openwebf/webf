@@ -13,6 +13,7 @@ import 'package:webf/dom.dart';
 import 'package:webf/foundation.dart';
 import 'package:webf/rendering.dart';
 import 'package:webf/src/devtools/panel/performance_tracker.dart';
+import 'package:webf/src/devtools/panel/performance_subtypes.dart';
 
 // Position and size of each run (line box) in flow layout.
 // https://www.w3.org/TR/css-inline-3/#line-boxes
@@ -202,7 +203,7 @@ class RenderFlowLayout extends RenderLayoutBox {
 
   @override
   void performLayout() {
-    final handle = PerformanceTracker.instance.beginSpan('layout', 'flowLayout');
+    final handle = PerformanceTracker.instance.beginSpan(kSubTypeLayout, 'flowLayout');
     try {
       doingThisLayout = true;
 
