@@ -159,15 +159,22 @@ class PerformanceSpanHandle {
   final PerformanceSpan _span;
   final PerformanceTracker _tracker;
 
-  PerformanceSpanHandle._(this._span, this._tracker);
+  /// Snapshot of `_tracker._currentSpan` at the moment this span was opened.
+  /// Restored on [end] so that grafted spans (whose `parent` was resolved via
+  /// [_entryIdToSpan] rather than the live `_currentSpan` pointer) do not
+  /// leave `_currentSpan` pointing at an entry root that is no longer on
+  /// the active call stack.
+  final PerformanceSpan? _previousCurrentSpan;
 
-  /// End this span and pop back to the parent span.
+  PerformanceSpanHandle._(this._span, this._tracker, this._previousCurrentSpan);
+
+  /// End this span and pop back to the previous span.
   void end({Map<String, dynamic>? metadata}) {
     _span.endOffsetUs = _tracker.nowOffsetUs();
     if (metadata != null) {
       _span.metadata = (_span.metadata ?? {})..addAll(metadata);
     }
-    _tracker._currentSpan = _span.parent;
+    _tracker._currentSpan = _previousCurrentSpan;
   }
 }
 
@@ -187,11 +194,24 @@ class EntryHandle {
   final PerformanceTracker _tracker;
   final int _entryId;
   final int _previousEntryId;
-  final bool _asyncSpanning;
+  bool _asyncSpanning;
 
   EntryHandle._(this._root, this._tracker, this._entryId, this._previousEntryId,
       {bool asyncSpanning = false})
       : _asyncSpanning = asyncSpanning;
+
+  /// Convert a sync entry into an async-spanning one. Call right before
+  /// `await`-ing so that work scheduled during the suspension does not
+  /// nest under this entry. After this call the entry is popped from the
+  /// call-stack (matching what `end()` would do for a sync entry) but
+  /// stays alive — the matching `end()` still closes the root span.
+  ///
+  /// Idempotent: calling multiple times is safe.
+  void transitionToAsync() {
+    if (_asyncSpanning) return;
+    _asyncSpanning = true;
+    _tracker._popEntry(_root, _previousEntryId);
+  }
 
   void end({Map<String, dynamic>? metadata}) {
     _root.endOffsetUs = _tracker.nowOffsetUs();
@@ -273,6 +293,19 @@ class PerformanceTracker {
   /// for "no entry active").
   int _nextEntryId = 1;
 
+  /// Mirror of the C++ `current_entry_id` for in-Dart parent lookup.
+  /// Updated in lockstep with [to_native.setJSProfilerCurrentEntryId] via
+  /// [_setCurrentEntryId]. Used by [beginSpan] to graft top-level spans
+  /// under the current entry when the local `_entryStack` is empty
+  /// (e.g. when a Dart binding callback runs inside an active JS entry but
+  /// the binding handler itself opens no entry of its own).
+  int _currentEntryId = 0;
+
+  void _setCurrentEntryId(int entryId) {
+    _currentEntryId = entryId;
+    to_native.setJSProfilerCurrentEntryId(entryId);
+  }
+
   /// When the current recording session started.
   DateTime? sessionStart;
 
@@ -306,7 +339,7 @@ class PerformanceTracker {
     _entryIdToSpan.clear();
     _entryIdMap.clear();
     _nextEntryId = 1;
-    to_native.setJSProfilerCurrentEntryId(0);
+    _setCurrentEntryId(0);
 
     // Step A: start Dart stopwatch, read C++ steady_clock, compute
     // `_stopwatchStartAbsUs` as the absolute steady_clock microseconds at
@@ -331,7 +364,7 @@ class PerformanceTracker {
     drainJSThreadSpans();
     // Disable C++ JS thread profiling
     to_native.setJSThreadProfilingEnabled(false);
-    to_native.setJSProfilerCurrentEntryId(0);
+    _setCurrentEntryId(0);
     // Close any unclosed spans using the monotonic clock.
     final nowUs = nowOffsetUs();
     while (_currentSpan != null) {
@@ -554,36 +587,55 @@ class PerformanceTracker {
     // and the original subType moved into the name field, so the panel
     // stays useful while we iterate. In dev (assertions enabled) we
     // surface the missing instrumentation immediately.
+    //
+    // Sibling-entry lookup: when the local Dart `_entryStack` is empty
+    // but the C++ profiler has a non-zero `current_entry_id`, we are
+    // running inside an entry that was opened on a different Dart
+    // call-stack (e.g. JS execution that called back into Dart via a
+    // binding handler). Graft the span under that entry's root rather
+    // than orphaning to "unattributed" — the JS spans drained later
+    // will already attribute under the same entry, so this keeps the
+    // Dart-side work (style recalc / layout / paint triggered from the
+    // binding) sibling-attached to the JS side that triggered it.
+    final previousCurrentSpan = _currentSpan;
     String effectiveSubType = category;
     String effectiveName = name;
-    if (_entryStack.isEmpty) {
-      assert(!assertOnUnattributedSpan,
-          'beginSpan called outside any entry: $category/$name. '
-          'Wrap the call site in tracker.beginEntry(...) or use the '
-          'unattributed subType explicitly.');
-      effectiveSubType = 'unattributed';
-      effectiveName = '$category/$name';
+    PerformanceSpan? parentSpan = _currentSpan;
+    if (parentSpan == null) {
+      final entryRoot = _currentEntryId != 0
+          ? _entryIdToSpan[_currentEntryId]
+          : null;
+      if (entryRoot != null) {
+        parentSpan = entryRoot;
+      } else {
+        assert(!assertOnUnattributedSpan,
+            'beginSpan called outside any entry: $category/$name. '
+            'Wrap the call site in tracker.beginEntry(...) or use the '
+            'unattributed subType explicitly.');
+        effectiveSubType = 'unattributed';
+        effectiveName = '$category/$name';
+      }
     }
 
     final span = PerformanceSpan(
       subType: effectiveSubType,
       name: effectiveName,
       startOffsetUs: nowOffsetUs(),
-      depth: (_currentSpan != null) ? _currentSpan!.depth + 1 : 0,
+      depth: (parentSpan != null) ? parentSpan.depth + 1 : 0,
       sessionAnchor: anchor,
-      parent: _currentSpan,
+      parent: parentSpan,
       metadata: metadata,
     );
 
-    if (_currentSpan != null) {
-      _currentSpan!.children.add(span);
+    if (parentSpan != null) {
+      parentSpan.children.add(span);
     } else {
       rootSpans.add(span);
     }
 
     _currentSpan = span;
     _totalSpanCount++;
-    return PerformanceSpanHandle._(span, this);
+    return PerformanceSpanHandle._(span, this, previousCurrentSpan);
   }
 
   /// Begin a new entry root.
@@ -642,7 +694,7 @@ class PerformanceTracker {
       _currentSpan = root;
     }
 
-    to_native.setJSProfilerCurrentEntryId(entryId);
+    _setCurrentEntryId(entryId);
 
     return EntryHandle._(root, this, entryId, previousEntryId,
         asyncSpanning: asyncSpanning);
@@ -659,7 +711,7 @@ class PerformanceTracker {
     final restoredEntryId = _entryStack.isEmpty
         ? previousEntryId
         : _entryIdMap[_entryStack.last] ?? previousEntryId;
-    to_native.setJSProfilerCurrentEntryId(restoredEntryId);
+    _setCurrentEntryId(restoredEntryId);
   }
 
   /// Reverse-lookup map: span → entry id. Used by [_popEntry] to find the
@@ -674,7 +726,7 @@ class PerformanceTracker {
       _entryStack.remove(root);
     }
     _currentSpan = root.parent;
-    to_native.setJSProfilerCurrentEntryId(previousEntryId);
+    _setCurrentEntryId(previousEntryId);
     // Note: do NOT remove from _entryIdToSpan — JS spans drained later may
     // still need to graft under this completed root.
   }
@@ -703,7 +755,9 @@ class PerformanceTracker {
     // is running, C++ profiling is disabled and the FFI sync would force
     // libwebf load in environments (e.g. unit tests) that never opted in.
     if (enabled) {
-      to_native.setJSProfilerCurrentEntryId(0);
+      _setCurrentEntryId(0);
+    } else {
+      _currentEntryId = 0;
     }
   }
 

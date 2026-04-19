@@ -11,8 +11,6 @@ import 'package:webf/bridge.dart';
 import 'package:webf/foundation.dart';
 import 'package:webf/widget.dart';
 import 'package:webf/launcher.dart';
-import 'package:webf/src/devtools/panel/performance_subtypes.dart';
-import 'package:webf/src/devtools/panel/performance_tracker.dart';
 
 typedef NativeBindingObjectAsyncCallCallback = Void Function(Pointer<Void> resolver, Pointer<NativeValue> successResult, Pointer<Utf8> errorMsg);
 typedef DartBindingObjectAsyncCallCallback = void Function(Pointer<Void> resolver, Pointer<NativeValue> successResult, Pointer<Utf8> errorMsg);
@@ -383,12 +381,15 @@ Future<void> _invokeBindingMethodFromNativeImpl(double contextId, Pointer<Native
 
   BindingObject bindingObject = controller.view.getBindingObject(nativeBindingObject);
 
-  // Open an entry so all Dart work below this point attributes back to the
-  // call origin in the waterfall (eg. setProperty(src) → fetchImage subspan).
-  final entryName = method is String ? method : 'op#$method';
-  final entry = PerformanceTracker.instance.beginEntry(
-      kSubTypeInvokeBindingMethodFromNative, entryName,
-      asyncSpanning: true);
+  // Intentionally no beginEntry here. The binding call originates from JS
+  // running under some other entry (eg. flushUICommand, asyncCallback),
+  // and the C++ profiler has already stamped that `current_entry_id` into
+  // the JS span chain. PerformanceTracker.beginSpan looks up the current
+  // entry id when its local stack is empty, so any child span the binding
+  // handler opens (styleRecalc, layout, paint…) attributes back to the
+  // same entry as a sibling of the JS work that triggered it. Opening a
+  // separate Dart-side entry here would force that work into a parallel
+  // root and break the "one entry per origin" view.
 
   dynamic result;
   try {
@@ -423,7 +424,6 @@ Future<void> _invokeBindingMethodFromNativeImpl(double contextId, Pointer<Native
       result = await result;
     }
     toNativeValue(returnValue, result, bindingObject);
-    entry?.end();
   }
 }
 
