@@ -429,9 +429,25 @@ class PerformanceTracker {
     final anchor = sessionStart;
     if (anchor == null) return null;
 
+    // Dev-mode contract: every span should live under an entry. In
+    // production we silently promote to root with subType `unattributed`
+    // and the original category moved into the name field, so the panel
+    // stays useful while we iterate. In dev (assertions enabled) we
+    // surface the missing instrumentation immediately.
+    String effectiveCategory = category;
+    String effectiveName = name;
+    if (_entryStack.isEmpty) {
+      assert(false,
+          'beginSpan called outside any entry: $category/$name. '
+          'Wrap the call site in tracker.beginEntry(...) or use the '
+          'unattributed subType explicitly.');
+      effectiveCategory = 'unattributed';
+      effectiveName = '$category/$name';
+    }
+
     final span = PerformanceSpan(
-      category: category,
-      name: name,
+      category: effectiveCategory,
+      name: effectiveName,
       startOffsetUs: nowOffsetUs(),
       depth: (_currentSpan != null) ? _currentSpan!.depth + 1 : 0,
       sessionAnchor: anchor,
