@@ -50,15 +50,30 @@ void MemberInstaller::InstallAttributes(ExecutingContext* context,
       JSValue getter = JS_NULL;
       JSValue setter = JS_NULL;
 
+      // Resolve the property key to a C-string so we can derive ES-spec
+      // accessor names ("get foo" / "set foo"). Mirrored onto the outer
+      // proxy wrapper so the JS profiler can identify the call.
+      const char* prop_name = JS_AtomToCString(ctx, c.key);
+      char name_buf[128];
+
       if (c.getter != nullptr) {
-        JSValue f = JS_NewCFunction(ctx, c.getter, "get", 0);
+        snprintf(name_buf, sizeof(name_buf), "get %s", prop_name ? prop_name : "");
+        JSValue f = JS_NewCFunction(ctx, c.getter, name_buf, 0);
         getter = JS_NewCFunctionData(ctx, handleCallThisOnProxy, 0, 0, 1, &f);
+        JS_DefinePropertyValueStr(ctx, getter, "name",
+                                  JS_NewString(ctx, name_buf), JS_PROP_CONFIGURABLE);
         JS_FreeValue(ctx, f);
       }
       if (c.setter != nullptr) {
-        JSValue f = JS_NewCFunction(ctx, c.setter, "set", 1);
+        snprintf(name_buf, sizeof(name_buf), "set %s", prop_name ? prop_name : "");
+        JSValue f = JS_NewCFunction(ctx, c.setter, name_buf, 1);
         setter = JS_NewCFunctionData(ctx, handleCallThisOnProxy, 1, 0, 1, &f);
+        JS_DefinePropertyValueStr(ctx, setter, "name",
+                                  JS_NewString(ctx, name_buf), JS_PROP_CONFIGURABLE);
         JS_FreeValue(ctx, f);
+      }
+      if (prop_name) {
+        JS_FreeCString(ctx, prop_name);
       }
       JS_DefinePropertyGetSet(ctx, root, c.key, getter, setter, c.flag);
     } else {
