@@ -18,6 +18,7 @@ import 'package:webf/foundation.dart';
 import 'package:webf/launcher.dart';
 import 'package:webf/painting.dart';
 import 'package:webf/rendering.dart';
+import 'package:webf/src/devtools/panel/performance_subtypes.dart';
 import 'package:webf/src/devtools/panel/performance_tracker.dart';
 import 'package:webf/widget.dart';
 import 'package:webf/src/scheduler/debounce.dart';
@@ -658,9 +659,9 @@ class ImageElement extends Element {
     // Increment count when request.
     self.ownerDocument.incrementRequestCount();
 
-    final handle = PerformanceTracker.instance.beginAsyncSpan('network', 'fetchImage', metadata: {'url': url.toString()});
+    final entry = PerformanceTracker.instance.beginEntry(kSubTypeImageLoadComplete, url.toString());
     final data = await request.obtainImage(self.ownerDocument.controller);
-    handle?.end();
+    entry?.end();
 
     // Decrement count when response.
     self.ownerDocument.decrementRequestCount();

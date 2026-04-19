@@ -170,24 +170,6 @@ class PerformanceSpanHandle {
   }
 }
 
-/// Handle for async spans that don't participate in the call-stack model.
-///
-/// Unlike [PerformanceSpanHandle], ending this span does NOT modify
-/// [PerformanceTracker._currentSpan], so synchronous spans that run
-/// during the async gap are recorded independently as root spans.
-class AsyncPerformanceSpanHandle {
-  final PerformanceSpan _span;
-
-  AsyncPerformanceSpanHandle._(this._span);
-
-  void end({Map<String, dynamic>? metadata}) {
-    _span.endOffsetUs = PerformanceTracker.instance.nowOffsetUs();
-    if (metadata != null) {
-      _span.metadata = (_span.metadata ?? {})..addAll(metadata);
-    }
-  }
-}
-
 /// Handle returned by [PerformanceTracker.beginEntry] to end an entry root.
 ///
 /// Ending an entry pops it from the entry stack and clears (or restores)
@@ -464,36 +446,6 @@ class PerformanceTracker {
     _currentSpan = span;
     _totalSpanCount++;
     return PerformanceSpanHandle._(span, this);
-  }
-
-  /// Begin an async performance span that does NOT participate in the call stack.
-  ///
-  /// Use this for operations that cross `await` boundaries (JS evaluation,
-  /// network fetches, HTML parsing). The span is always added as a root span
-  /// and does not affect [_currentSpan], so synchronous spans that run during
-  /// the async gap are recorded independently.
-  ///
-  /// Returns null when tracking is disabled, the span limit is reached, or
-  /// no session has been started.
-  AsyncPerformanceSpanHandle? beginAsyncSpan(String category, String name,
-      {Map<String, dynamic>? metadata}) {
-    if (!enabled || _totalSpanCount >= maxSpans) return null;
-    final anchor = sessionStart;
-    if (anchor == null) return null;
-
-    final span = PerformanceSpan(
-      category: category,
-      name: name,
-      startOffsetUs: nowOffsetUs(),
-      depth: 0,
-      sessionAnchor: anchor,
-      parent: null,
-      metadata: metadata,
-    );
-
-    rootSpans.add(span);
-    _totalSpanCount++;
-    return AsyncPerformanceSpanHandle._(span);
   }
 
   /// Begin a new entry root.
