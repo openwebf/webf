@@ -757,144 +757,6 @@ class WebFListViewState extends WebFWidgetElementState {
     );
   }
 
-  List<Widget> _buildSingleTreeChildren() {
-    final List<Widget> children = <Widget>[];
-    for (final Node node in widgetElement.childNodes) {
-      if (node is dom.Element) {
-        final CSSPositionType positionType = node.renderStyle.position;
-        if (positionType == CSSPositionType.absolute ||
-            positionType == CSSPositionType.sticky) {
-          if (node.holderAttachedPositionedElement != null) {
-            children.add(PositionPlaceHolder(
-                node.holderAttachedPositionedElement!, node));
-          }
-          if (positionType == CSSPositionType.sticky) {
-            children.add(node.toWidget());
-          }
-          continue;
-        } else if (positionType == CSSPositionType.fixed) {
-          if (node.holderAttachedPositionedElement != null) {
-            children.add(PositionPlaceHolder(
-                node.holderAttachedPositionedElement!, node));
-          }
-          continue;
-        }
-      }
-      children.add(node.toWidget());
-    }
-    return children;
-  }
-
-  bool _subtreeHasAbsoluteOrStickyDescendant(Node node) {
-    if (node is! dom.Element) return false;
-
-    final CSSPositionType positionType = node.renderStyle.position;
-    if (positionType == CSSPositionType.absolute ||
-        positionType == CSSPositionType.sticky) {
-      return true;
-    }
-
-    for (final Node child in node.childNodes) {
-      if (_subtreeHasAbsoluteOrStickyDescendant(child)) {
-        return true;
-      }
-    }
-    return false;
-  }
-
-  bool _subtreeHasFixedDescendant(Node node) {
-    if (node is! dom.Element) return false;
-
-    if (node.renderStyle.position == CSSPositionType.fixed) {
-      return true;
-    }
-
-    for (final Node child in node.childNodes) {
-      if (_subtreeHasFixedDescendant(child)) {
-        return true;
-      }
-    }
-    return false;
-  }
-
-  bool _shouldUseSingleTreeForPositionedOverlap() {
-    for (final Node child in widgetElement.childNodes) {
-      if (_subtreeHasFixedDescendant(child)) {
-        return false;
-      }
-
-      if (child is dom.Element) {
-        final CSSPositionType positionType = child.renderStyle.position;
-        if (positionType != CSSPositionType.absolute &&
-            positionType != CSSPositionType.sticky) {
-          for (final Node descendant in child.childNodes) {
-            if (_subtreeHasAbsoluteOrStickyDescendant(descendant)) {
-              return true;
-            }
-          }
-        }
-      }
-    }
-
-    return false;
-  }
-
-  bool _shouldUseSingleTreeScrollable({
-    required bool hasLoadListener,
-    required bool hasRefreshListener,
-    required Header? header,
-    required Footer? footer,
-  }) {
-    if (widgetElement.overlayLift) {
-      return false;
-    }
-    // For ordinary page-shell usage without lazy loading hooks, render the list
-    // in one WebF render tree so stacking contexts, z-index and positioned
-    // descendants behave like a normal overflow container.
-    return !hasLoadListener &&
-        !hasRefreshListener &&
-        header == null &&
-        footer == null &&
-        widgetElement.shrinkWrap &&
-        _shouldUseSingleTreeForPositionedOverlap();
-  }
-
-  Widget _buildSingleTreeScrollable() {
-    final Map<String, String> inlineStyle =
-        widgetElement.axis == Axis.horizontal
-            ? const <String, String>{
-                'display': 'flex',
-                'flex-direction': 'row',
-                'align-items': 'flex-start',
-              }
-            : const <String, String>{'display': 'block'};
-
-    Widget child = WebFWidgetElementChild(
-      child: WebFHTMLElement(
-        tagName: 'DIV',
-        controller: widgetElement.controller,
-        parentElement: widgetElement,
-        inlineStyle: inlineStyle,
-        children: _buildSingleTreeChildren(),
-      ),
-    );
-
-    child = SingleChildScrollView(
-      controller: scrollController,
-      scrollDirection: widgetElement.axis,
-      child: child,
-    );
-
-    if (widgetElement.axis == Axis.horizontal) {
-      child = Directionality(
-        textDirection: widgetElement.renderStyle.direction,
-        child: child,
-      );
-    }
-
-    return child;
-  }
-
   Widget _buildOverlayLiftLayer() {
     final List<dom.Element> lifted = _liftedOverlayElements();
     return WebFWidgetElementChild(
@@ -976,28 +838,20 @@ class WebFListViewState extends WebFWidgetElementState {
     final bool hasRefreshListener = widgetElement.hasEventListener('refresh');
     final Header? header = buildEasyRefreshHeader();
     final Footer? footer = buildEasyRefreshFooter();
-    final bool useSingleTreeScrollable = _shouldUseSingleTreeScrollable(
-      hasLoadListener: hasLoadListener,
-      hasRefreshListener: hasRefreshListener,
-      header: header,
-      footer: footer,
-    );
 
-    Widget listView = useSingleTreeScrollable
-        ? _buildSingleTreeScrollable()
-        : ListView.builder(
-            controller: scrollController,
-            scrollDirection: widgetElement.axis,
-            shrinkWrap: widgetElement.shrinkWrap,
-            itemCount: widgetElement.childNodes.length,
-            itemBuilder: (context, index) {
-              return buildListViewItemByIndex(index);
-            },
-          );
+    Widget listView = ListView.builder(
+      controller: scrollController,
+      scrollDirection: widgetElement.axis,
+      shrinkWrap: widgetElement.shrinkWrap,
+      itemCount: widgetElement.childNodes.length,
+      itemBuilder: (context, index) {
+        return buildListViewItemByIndex(index);
+      },
+    );
 
     // Honor CSS 'direction' for horizontal lists by providing a Directionality
     // so Flutter computes axisDirection = left for RTL and right for LTR.
-    if (widgetElement.axis == Axis.horizontal && !useSingleTreeScrollable) {
+    if (widgetElement.axis == Axis.horizontal) {
       listView = Directionality(
         textDirection: widgetElement.renderStyle.direction,
         child: listView,
@@ -1007,7 +861,7 @@ class WebFListViewState extends WebFWidgetElementState {
     // Wrap the ListView with NestedScrollCoordinator to handle incoming scroll from nested elements
     // This allows the ListView to receive scroll events from nested overflow containers or ListViews
     Widget result = listView;
-    if (scrollController != null && !useSingleTreeScrollable) {
+    if (scrollController != null) {
       result = NestedScrollCoordinator(
         axis: widgetElement.axis,
         controller: scrollController!,
@@ -1049,8 +903,7 @@ class WebFListViewState extends WebFWidgetElementState {
     }
 
     final List<dom.Element> liftedOverlays = _liftedOverlayElements();
-    if (!useSingleTreeScrollable &&
-        widgetElement.overlayLift &&
+    if (widgetElement.overlayLift &&
         liftedOverlays.isNotEmpty) {
       final Widget overlayLayer = Positioned.fill(
         child: _buildOverlayLiftLayer(),
