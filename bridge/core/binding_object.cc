@@ -306,6 +306,20 @@ NativeValue BindingObject::InvokeBindingMethod(BindingMethodCallOperations bindi
 #endif
 
   NativeValue native_method = NativeValueConverter<NativeTypeInt64>::ToNativeValue(binding_method_call_operation);
+
+  // Record sync Dart roundtrip as a profiler span. For the enum variant the
+  // name is one of two fixed strings.
+  uint32_t name_id = 0;
+  auto& profiler = JSThreadProfiler::Instance();
+  if (profiler.enabled()) {
+    const char* op_name =
+        (binding_method_call_operation == kGetProperty)
+            ? "getProperty"
+            : "setProperty";
+    name_id = profiler.RegisterBindingName(op_name);
+  }
+  JSThreadProfiler::ScopedSpan span_guard(profiler, kJSBindingSyncCall, name_id);
+
   GetDispatcher()->PostToDartSync(
       GetExecutingContext()->isDedicated(), contextId(),
       [&](bool cancel, double contextId, const NativeBindingObject* binding_object,
