@@ -530,7 +530,7 @@ WaterfallData _buildWaterfallDataImpl(
       frameBoundaries[i] = frameBoundaries[i] - minStart;
     }
     if (attachOffset != null) {
-      attachOffset = attachOffset! - minStart;
+      attachOffset = attachOffset - minStart;
     }
   }
 
@@ -702,6 +702,13 @@ class _WaterfallChartState extends State<WaterfallChart> {
   PerformanceSpan? _detailSpan;
   WaterfallEntry? _selectedEntry;
 
+  // Cluster drill-downs (e.g. 733 drawFrames merged by the 50ms-gap rule)
+  // can ingest 95k+ spans into one flame chart, making individual frames
+  // indistinguishable. When set, narrow the flame chart to a single root
+  // picked from the cluster; tapping a depth-0 root in cluster mode enters
+  // this state, the back button exits it.
+  PerformanceSpan? _focusedRoot;
+
   bool _syncingScroll = false;
 
   // --- Data cache ---
@@ -842,6 +849,7 @@ class _WaterfallChartState extends State<WaterfallChart> {
       _flameZoom = 1.0;
       _detailSpan = null;
       _selectedEntry = null;
+      _focusedRoot = null;
     });
   }
 
@@ -1608,11 +1616,11 @@ class _WaterfallChartState extends State<WaterfallChart> {
     // The entry's PerformanceSpan tree already contains any drained JS-thread
     // spans grafted in as children, so the regular tree walk handles both
     // Dart-thread and JS-thread drilldowns uniformly.
-    final List<PerformanceSpan> rootSpans;
+    final List<PerformanceSpan> allRoots;
     if (_selectedSpan != null) {
-      rootSpans = [_selectedSpan!];
+      allRoots = [_selectedSpan!];
     } else if (_selectedSpans.isNotEmpty) {
-      rootSpans = _selectedSpans;
+      allRoots = _selectedSpans;
     } else {
       return const Center(
         child: Text(
@@ -1623,10 +1631,30 @@ class _WaterfallChartState extends State<WaterfallChart> {
       );
     }
 
-    // Collect all spans, normalizing depth so root spans are at depth 0
+    // Focus mode: a cluster drill-down (e.g. 733 drawFrames merged by the
+    // 50ms-gap rule) ingests 95k+ spans and makes individual frames
+    // indistinguishable. When the user taps a depth-0 root in cluster mode,
+    // narrow the flame chart to that single root; the back button exits focus
+    // before exiting flame mode entirely.
+    final isCluster = allRoots.length > 1;
+    final focusedIndex =
+        _focusedRoot != null ? allRoots.indexOf(_focusedRoot!) : -1;
+    final isFocused = focusedIndex >= 0;
+    final rootSpans = isFocused ? [allRoots[focusedIndex]] : allRoots;
+
+    // Collect all spans, normalizing depth so root spans are at depth 0.
+    // In cluster mode without focus, skip the children — 659 drawFrames with
+    // ~130 children each pile 86k spans onto a handful of depth rows and
+    // children from different frames smear together, making individual frames
+    // indistinguishable. Strip to the roots so the user can see and tap the
+    // frame-by-frame timeline, then drill into a single frame via focus.
     final allSpans = <PerformanceSpan>[];
-    for (final rs in rootSpans) {
-      _collectSpans(rs, allSpans);
+    if (isCluster && !isFocused) {
+      allSpans.addAll(rootSpans);
+    } else {
+      for (final rs in rootSpans) {
+        _collectSpans(rs, allSpans);
+      }
     }
 
     if (allSpans.isEmpty) {
@@ -1654,12 +1682,30 @@ class _WaterfallChartState extends State<WaterfallChart> {
 
     // Find min depth among root spans for normalization
     final minDepth = rootSpans.map((s) => s.depth).reduce(math.min);
-    final maxDepth = allSpans.map((s) => s.maxDepth).reduce(math.max) - minDepth;
+    // In cluster-strip mode, allSpans are all at depth == minDepth (just the
+    // roots) so maxDepth must use `s.depth` not `s.maxDepth`; otherwise we'd
+    // reserve rows for children we chose not to render.
+    final maxDepth = (isCluster && !isFocused)
+        ? allSpans.map((s) => s.depth).reduce(math.max) - minDepth
+        : allSpans.map((s) => s.maxDepth).reduce(math.max) - minDepth;
     final pixelsPerMs = _flameZoom * 2.0;
     final contentWidth = rootDurationMs * pixelsPerMs;
     const rowHeight = 20.0;
     const rulerHeight = 24.0;
     final chartHeight = (maxDepth + 1) * rowHeight;
+
+    // Frame boundaries for dropped-frame highlighting. Use endTimes of any
+    // drawFrame roots in this drill-down, expressed as local offsets from
+    // rootStart. Overview has the same grid via data.frameBoundaries; the
+    // drill-down was rendering without them, so 45-130ms frames looked
+    // indistinguishable from in-budget ones.
+    final frameBoundariesLocal = <Duration>[];
+    for (final rs in rootSpans) {
+      if (rs.subType == kSubTypeDrawFrame && rs.isComplete) {
+        frameBoundariesLocal.add(rs.endTime!.difference(rootStart));
+      }
+    }
+    frameBoundariesLocal.sort((a, b) => a.compareTo(b));
 
     return LayoutBuilder(builder: (context, constraints) {
     final chartWidth = math.max(contentWidth, constraints.maxWidth);
@@ -1675,6 +1721,14 @@ class _WaterfallChartState extends State<WaterfallChart> {
             children: [
               InkWell(
                 onTap: () {
+                  if (isFocused) {
+                    // Exit focus first; keep the cluster flame chart visible.
+                    setState(() {
+                      _focusedRoot = null;
+                      _detailSpan = null;
+                    });
+                    return;
+                  }
                   _savedFlameHScrollOffset = _flameBodyHScrollController.hasClients
                       ? _flameBodyHScrollController.offset : 0.0;
                   setState(() {
@@ -1682,6 +1736,7 @@ class _WaterfallChartState extends State<WaterfallChart> {
                     _selectedSpan = null;
                     _selectedSpans = const [];
                     _detailSpan = null;
+                    _focusedRoot = null;
                   });
                   // Restore scroll positions after frame renders
                   WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -1701,14 +1756,20 @@ class _WaterfallChartState extends State<WaterfallChart> {
               ),
               const SizedBox(width: 8),
               Text(
-                rootSpans.length == 1
-                    ? '${_spanLabel(rootSpans.first)} — ${_formatDuration(rootSpans.first.duration)}'
-                    : '${rootSpans.length} spans — ${_formatDuration(rootEnd.difference(rootStart))}',
+                isFocused
+                    ? 'Frame ${focusedIndex + 1} of ${allRoots.length} '
+                        '— ${_spanLabel(rootSpans.first)} '
+                        '— ${_formatDuration(rootSpans.first.duration)}'
+                    : rootSpans.length == 1
+                        ? '${_spanLabel(rootSpans.first)} — ${_formatDuration(rootSpans.first.duration)}'
+                        : '${rootSpans.length} spans — ${_formatDuration(rootEnd.difference(rootStart))}',
                 style: const TextStyle(color: Colors.white, fontSize: 12),
               ),
               const SizedBox(width: 8),
               Text(
-                '(${allSpans.length} total, max depth ${maxDepth + 1})',
+                isCluster && !isFocused
+                    ? '(${allRoots.length} frames — tap one to inspect its stack)'
+                    : '(${allSpans.length} total, max depth ${maxDepth + 1})',
                 style: const TextStyle(color: Colors.white38, fontSize: 10),
               ),
             ],
@@ -1728,6 +1789,7 @@ class _WaterfallChartState extends State<WaterfallChart> {
                 pixelsPerMs: pixelsPerMs,
                 phaseStartMs: 0.0,
                 milestones: const [],
+                frameBoundaries: frameBoundariesLocal,
               ),
             ),
           ),
@@ -1745,17 +1807,35 @@ class _WaterfallChartState extends State<WaterfallChart> {
                 onTapDown: (details) {
                   _handleFlameChartTap(
                       details.localPosition, allSpans, rootStart,
-                      pixelsPerMs, rowHeight, minDepth);
+                      pixelsPerMs, rowHeight, minDepth, allRoots);
                 },
-                child: CustomPaint(
-                  size: Size(chartWidth, chartHeight),
-                  painter: _FlameChartPainter(
-                    spans: allSpans,
-                    rootStart: rootStart,
-                    rootDepth: minDepth,
-                    pixelsPerMs: pixelsPerMs,
-                    rowHeight: rowHeight,
-                    selectedSpan: _detailSpan,
+                child: SizedBox(
+                  width: chartWidth,
+                  height: chartHeight,
+                  child: Stack(
+                    children: [
+                      if (frameBoundariesLocal.isNotEmpty)
+                        Positioned.fill(
+                          child: CustomPaint(
+                            painter: _FrameBoundaryPainter(
+                              frameBoundaries: frameBoundariesLocal,
+                              pixelsPerMs: pixelsPerMs,
+                              phaseStartMs: 0.0,
+                            ),
+                          ),
+                        ),
+                      CustomPaint(
+                        size: Size(chartWidth, chartHeight),
+                        painter: _FlameChartPainter(
+                          spans: allSpans,
+                          rootStart: rootStart,
+                          rootDepth: minDepth,
+                          pixelsPerMs: pixelsPerMs,
+                          rowHeight: rowHeight,
+                          selectedSpan: _detailSpan,
+                        ),
+                      ),
+                    ],
                   ),
                 ),
               ),
@@ -1805,9 +1885,23 @@ class _WaterfallChartState extends State<WaterfallChart> {
       DateTime rootStart,
       double pixelsPerMs,
       double rowHeight,
-      int rootDepth) {
+      int rootDepth,
+      List<PerformanceSpan> allRoots) {
     final span = _hitTestFlameSpan(
         pos, allSpans, rootStart, pixelsPerMs, rowHeight, rootDepth);
+    // In cluster mode with no focus, a tap on one of the depth-0 roots enters
+    // focus on that root instead of opening the detail panel — otherwise the
+    // cluster's concatenated timeline hides per-frame boundaries.
+    if (span != null &&
+        allRoots.length > 1 &&
+        _focusedRoot == null &&
+        allRoots.contains(span)) {
+      setState(() {
+        _focusedRoot = span;
+        _detailSpan = null;
+      });
+      return;
+    }
     setState(() => _detailSpan = span);
   }
 
