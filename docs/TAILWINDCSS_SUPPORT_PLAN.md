@@ -106,9 +106,10 @@ Tailwind v3.4.18 core utilities are exposed by `corePlugins` (179 keys). Below i
 
 ### P0 — Make Tailwind CSS parse + match correctly
 1. ✅ **`@layer` support (parser + cascade order)**: implemented as Milestone M1; see `docs/CSS_CASCADE_LAYERS_PLAN.md`.
-2. **Selectors Level 4 essentials**: implement parsing + matching for `:where(<selector-list>)` and `:is(<selector-list>)` (Tailwind emits `:where` today; `:is` appears in some variants/plugins).
+2. ✅ **Selectors Level 4 essentials**: implement parsing + matching for `:where(<selector-list>)` and `:is(<selector-list>)` (Tailwind emits `:where` today; `:is` appears in some variants/plugins).
 3. **State pseudo-classes**: implement `:hover/:focus/:focus-visible/:focus-within/:active/:enabled/:disabled` and wire element state updates from Flutter events.
 4. **Media query evaluation coverage**: add Tailwind-required media features: `prefers-reduced-motion`, `orientation`, `forced-colors`, `prefers-contrast`, plus **media type `print`** handling (likely “always false” in WebF unless printing is supported).
+   - Add WPT-based integration tests for `orientation`, `forced-colors`, `prefers-contrast`, `prefers-reduced-motion`.
 5. **Regression tests**: add a minimal “Tailwind preflight can load” integration test and a few utility/variant fixtures.
 
 ### P0 Dev Plan — Interactive pseudo-classes (Dart engine)
