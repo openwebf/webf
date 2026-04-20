@@ -148,6 +148,41 @@ void main() {
           reason: '_entryIdToSpan must persist past entry close');
     });
 
+    test(
+        'entryId=0 JS span does NOT nest under a time-containing Dart root',
+        () {
+      // Open a Dart entry and leave it open so its interval is "live".
+      final entry = PerformanceTracker.instance
+          .beginEntry(kSubTypeDrawFrame, 'drawFrame');
+
+      // Inject a JS span with entryId=0 whose wall-clock window falls
+      // inside the drawFrame. This is the misleading case: autonomous
+      // JS event-loop work (timer firing) happening *concurrently* with
+      // a Dart drawFrame on the other thread. It must stay its own root
+      // in the JS lane, not silently become a child of drawFrame.
+      final now = PerformanceTracker.instance.nowOffsetUs();
+      PerformanceTracker.instance.debugInjectJSSpan(
+        subType: kSubTypeJsTimer,
+        startUs: now - 50,
+        endUs: now - 10,
+        entryId: 0,
+        funcName: 'setTimeout',
+      );
+
+      entry!.end();
+
+      final roots = PerformanceTracker.instance.rootSpans;
+      expect(roots.length, 2,
+          reason: 'timer must remain an independent root, not a drawFrame child');
+      final drawFrameRoot =
+          roots.firstWhere((r) => r.subType == kSubTypeDrawFrame);
+      final timerRoot =
+          roots.firstWhere((r) => r.subType == kSubTypeJsTimer);
+      expect(drawFrameRoot.children, isEmpty,
+          reason: 'drawFrame must not adopt concurrent JS-thread work');
+      expect(timerRoot.parent, isNull);
+    });
+
     test('entryId=0 JS span nests under containing root span', () {
       // First inject a containing root (eg. the C++-side jsMicrotask).
       PerformanceTracker.instance.debugInjectJSSpan(

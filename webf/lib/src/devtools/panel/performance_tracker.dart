@@ -454,11 +454,17 @@ class PerformanceTracker {
   /// 1. [entryId] resolves to a live entry root via [_entryIdToSpan] —
   ///    graft as a child of the deepest leaf whose interval contains
   ///    [startOffsetUs] (Dart-entry attribution).
-  /// 2. Otherwise, search [rootSpans] for an existing root whose interval
-  ///    contains [startOffsetUs] — graft under it. This preserves the
-  ///    C++-internal JS hierarchy when entries arrive in the same drain
-  ///    batch (eg. jsMicrotask wrapping jsFunction wrapping jsCFunction)
-  ///    after the drain has been sorted outer-first.
+  /// 2. Otherwise, search [rootSpans] for an existing *JS* root whose
+  ///    interval contains [startOffsetUs] — graft under it. This preserves
+  ///    the C++-internal JS hierarchy when entries arrive in the same
+  ///    drain batch (eg. jsMicrotask wrapping jsFunction wrapping
+  ///    jsCFunction) after the drain has been sorted outer-first.
+  ///    Dart roots are deliberately excluded here: `entryId == 0` means
+  ///    the Dart thread had no entry open when the JS span started, so
+  ///    the JS work is autonomous event-loop activity (timer, RAF,
+  ///    microtask, event). Nesting it under a Dart root that merely
+  ///    overlaps in wall-clock time would fabricate a causal relation
+  ///    that doesn't exist (two concurrent threads).
   /// 3. No containing root — the span becomes a new root.
   ///
   /// Drops the span if [_totalSpanCount] is at [maxSpans]. This matches the
@@ -506,12 +512,19 @@ class PerformanceTracker {
     _totalSpanCount++;
   }
 
-  /// Find an existing root span whose interval contains [startOffsetUs].
+  /// Find an existing *JS* root span whose interval contains [startOffsetUs].
   /// Searches from most-recently-added back so the latest matching root
   /// (i.e. the innermost candidate at insertion time) wins.
+  ///
+  /// Only matches roots whose [PerformanceSpan.subType] begins with `js`.
+  /// Dart roots are excluded on purpose — see the rationale in
+  /// [_attachJSSpan] rule 2: grafting an autonomous JS span under a Dart
+  /// root just because their wall-clock windows overlap would imply
+  /// causality where there is none.
   PerformanceSpan? _findContainingRoot(int startOffsetUs) {
     for (int i = rootSpans.length - 1; i >= 0; i--) {
       final root = rootSpans[i];
+      if (!root.subType.startsWith('js')) continue;
       if (root.startOffsetUs > startOffsetUs) continue;
       final endUs = root.endOffsetUs;
       if (endUs == null || startOffsetUs <= endUs) {
