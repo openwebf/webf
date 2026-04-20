@@ -94,25 +94,29 @@ void main() {
     });
 
     test('JS span with matching entryId becomes child of that root', () {
+      // Use dispatchEvent — a JS-hosting Dart entry (see
+      // [kJsHostingDartEntries]). Stamps targeting pure-Dart entries like
+      // flushUICommand are rejected; dispatchEvent legitimately calls JS
+      // listeners synchronously so its JS children nest under it.
       final entry = PerformanceTracker.instance
-          .beginEntry(kSubTypeFlushUICommand, 'flushUICommand');
+          .beginEntry(kSubTypeDispatchEvent, 'click');
 
       // Entry ids are allocated monotonically from 1. The first entry id is 1.
       PerformanceTracker.instance.debugInjectJSSpan(
-        subType: kSubTypeJsBindingSyncCall,
+        subType: kSubTypeJsFunction,
         startUs: PerformanceTracker.instance.nowOffsetUs() - 100,
         endUs: PerformanceTracker.instance.nowOffsetUs() - 50,
         entryId: 1,
-        funcName: 'getBoundingClientRect',
+        funcName: 'onClickHandler',
       );
 
       entry!.end();
 
       final root = PerformanceTracker.instance.rootSpans.first;
-      expect(root.subType, kSubTypeFlushUICommand);
+      expect(root.subType, kSubTypeDispatchEvent);
       expect(root.children.length, 1);
-      expect(root.children.first.subType, kSubTypeJsBindingSyncCall);
-      expect(root.children.first.name, 'getBoundingClientRect');
+      expect(root.children.first.subType, kSubTypeJsFunction);
+      expect(root.children.first.name, 'onClickHandler');
     });
 
     test('JS span with entryId=0 becomes a new root', () {
@@ -131,8 +135,11 @@ void main() {
     });
 
     test('JS span drained AFTER entry closes still grafts under its root', () {
+      // Use evaluateScripts — a JS-hosting Dart entry whose stamp is
+      // accepted. Pure-Dart entries like flushUICommand would reject
+      // the stamp regardless of whether the entry is still open.
       final entry = PerformanceTracker.instance
-          .beginEntry(kSubTypeFlushUICommand, 'flushUICommand');
+          .beginEntry(kSubTypeEvaluateScripts, 'bundle.js');
       entry!.end();
       // Now drain a JS span tagged with the (now-closed) entry's id.
       PerformanceTracker.instance.debugInjectJSSpan(
@@ -146,6 +153,65 @@ void main() {
       final root = PerformanceTracker.instance.rootSpans.first;
       expect(root.children.any((c) => c.name == 'lateArrival'), true,
           reason: '_entryIdToSpan must persist past entry close');
+    });
+
+    test(
+        'JS span stamped with a pure-Dart entryId does NOT nest under it',
+        () {
+      // Open drawFrame — a pure-Dart entry (NOT in kJsHostingDartEntries).
+      // This assigns it entryId=1, which the C++ profiler atomic would
+      // stamp onto any JS span that fires on the JS thread during
+      // drawFrame's wall-clock window. Those spans are concurrent
+      // JS-thread activity, not synchronous JS called from drawFrame.
+      final entry = PerformanceTracker.instance
+          .beginEntry(kSubTypeDrawFrame, 'drawFrame');
+
+      PerformanceTracker.instance.debugInjectJSSpan(
+        subType: kSubTypeJsFunction,
+        startUs: PerformanceTracker.instance.nowOffsetUs() - 100,
+        endUs: PerformanceTracker.instance.nowOffsetUs() - 50,
+        entryId: 1,
+        funcName: 'concurrentJs',
+      );
+
+      entry!.end();
+
+      final roots = PerformanceTracker.instance.rootSpans;
+      expect(roots.length, 2,
+          reason: 'JS stamped with drawFrame id must NOT nest under drawFrame');
+      final drawFrameRoot =
+          roots.firstWhere((r) => r.subType == kSubTypeDrawFrame);
+      expect(drawFrameRoot.children, isEmpty,
+          reason: 'drawFrame is not a JS-hosting entry; stamp should be rejected');
+      final jsRoot = roots.firstWhere((r) => r.subType == kSubTypeJsFunction);
+      expect(jsRoot.parent, isNull);
+    });
+
+    test(
+        'JS span stamped with a JS-hosting Dart entryId DOES nest under it',
+        () {
+      // dispatchEvent is in kJsHostingDartEntries — its entry_id stamp
+      // represents a real synchronous Dart→JS call, so JS children
+      // legitimately nest under it.
+      final entry = PerformanceTracker.instance
+          .beginEntry(kSubTypeDispatchEvent, 'click');
+
+      PerformanceTracker.instance.debugInjectJSSpan(
+        subType: kSubTypeJsFunction,
+        startUs: PerformanceTracker.instance.nowOffsetUs() - 100,
+        endUs: PerformanceTracker.instance.nowOffsetUs() - 50,
+        entryId: 1,
+        funcName: 'onClickHandler',
+      );
+
+      entry!.end();
+
+      final roots = PerformanceTracker.instance.rootSpans;
+      expect(roots.length, 1);
+      final dispatchRoot = roots.single;
+      expect(dispatchRoot.subType, kSubTypeDispatchEvent);
+      expect(dispatchRoot.children.length, 1);
+      expect(dispatchRoot.children.first.name, 'onClickHandler');
     });
 
     test(

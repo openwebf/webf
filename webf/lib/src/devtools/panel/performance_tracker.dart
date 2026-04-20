@@ -451,9 +451,14 @@ class PerformanceTracker {
   /// Attach a drained (or test-injected) JS span to the entry-rooted tree.
   ///
   /// Resolution order for the parent root:
-  /// 1. [entryId] resolves to a live entry root via [_entryIdToSpan] —
-  ///    graft as a child of the deepest leaf whose interval contains
-  ///    [startOffsetUs] (Dart-entry attribution).
+  /// 1. [entryId] resolves to a live entry root via [_entryIdToSpan] and
+  ///    that root is JS-hosting (either a `js*`-subType entry or one
+  ///    listed in [kJsHostingDartEntries]) — graft as a child of the
+  ///    deepest leaf whose interval contains [startOffsetUs]. Stamps
+  ///    pointing at pure-Dart entries (drawFrame, flushUICommand, etc.)
+  ///    are rejected and fall through to rule 2 — the JS thread was just
+  ///    running concurrently while the Dart thread happened to hold
+  ///    `current_entry_id_` for a non-JS-hosting entry.
   /// 2. Otherwise, search [rootSpans] for an existing *JS* root whose
   ///    interval contains [startOffsetUs] — graft under it. This preserves
   ///    the C++-internal JS hierarchy when entries arrive in the same
@@ -482,7 +487,19 @@ class PerformanceTracker {
 
     PerformanceSpan? root;
     if (entryId != 0) {
-      root = _entryIdToSpan[entryId];
+      final candidate = _entryIdToSpan[entryId];
+      // Reject the stamp when it resolves to a pure-Dart entry. The C++
+      // profiler samples `current_entry_id_` at JS-function entry, and
+      // the JS thread can run concurrently with a Dart entry like
+      // drawFrame — so the stamp can point at a Dart root that had no
+      // hand in producing this JS work. Only accept stamps that target
+      // an entry which legitimately hosts synchronous JS execution
+      // (see [kJsHostingDartEntries]) or a JS-side entry.
+      if (candidate != null &&
+          (candidate.subType.startsWith('js') ||
+              kJsHostingDartEntries.contains(candidate.subType))) {
+        root = candidate;
+      }
     }
     root ??= _findContainingRoot(startOffsetUs);
 

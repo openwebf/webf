@@ -57,6 +57,31 @@ const String kSubTypeLayout = 'layout';
 const String kSubTypePaint = 'paint';
 const String kSubTypeDomConstruction = 'domConstruction';
 
+/// Dart entry subTypes that legitimately host *synchronous* JS execution.
+///
+/// When a JS-thread span is drained with a stamped `entry_id`, the tracker
+/// grafts it under the Dart entry that owns that id. That's correct only
+/// when the Dart entry actually synchronously calls into JS (e.g. via
+/// `JS_Eval`, `JS_Call`, a binding dispatch, or a DOM event fired into a JS
+/// listener). If the stamp points at a pure-Dart entry (drawFrame,
+/// flushUICommand, html/css parsing, loader callbacks), the JS span is
+/// just concurrent JS-thread activity that the C++ profiler happened to
+/// sample while `current_entry_id_` was holding that pure-Dart id —
+/// grafting it under drawFrame would fabricate a causal relation.
+///
+/// This set enumerates the Dart entry subTypes where nesting JS children
+/// is legitimate. Any JS-prefix ("js*") subType is also treated as
+/// JS-hosting (those entries exist specifically to bracket JS callbacks)
+/// and does not need to be listed here.
+const Set<String> kJsHostingDartEntries = {
+  kSubTypeDispatchEvent,
+  kSubTypeEvaluateScripts,
+  kSubTypeEvaluateByteCode,
+  kSubTypeEvaluateModule,
+  kSubTypeInvokeBindingMethodFromNative,
+  kSubTypeInvokeModuleEvent,
+};
+
 /// Maps the C++ JSSpanCategory enum value (matches kJSFunction=0 ... kJSBindingSyncCall=10)
 /// to the entry subType to synthesize when a JS span has entry_id == 0.
 const List<String> kJsCategorySubTypes = [
