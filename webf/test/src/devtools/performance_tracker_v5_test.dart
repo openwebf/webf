@@ -334,6 +334,48 @@ void main() {
       }
     });
 
+    test(
+        'late-arriving outer JS span must NOT adopt still-open Dart roots',
+        () {
+      // Regression: an open Dart entry (endOffsetUs==null) used to be
+      // treated as a zero-duration point by _adoptContainedSiblings,
+      // so any JS span whose window covered the open entry's start would
+      // sweep the not-yet-complete Dart subtree into itself. When the
+      // Dart entry finally closed, its real duration extended far beyond
+      // the adopting JS span — producing child-longer-than-parent trees
+      // like `jsMicrotask(2ms) → drawFrame(14ms) → paint(…)`.
+      final dartEntry = PerformanceTracker.instance
+          .beginEntry(kSubTypeDrawFrame, 'drawFrame');
+      final dartStart = PerformanceTracker.instance.rootSpans
+          .firstWhere((r) => r.subType == kSubTypeDrawFrame)
+          .startOffsetUs;
+
+      // Outer JS span whose window covers the drawFrame's start. At this
+      // moment the drawFrame is still open (endOffsetUs==null). The JS
+      // span must NOT swallow it.
+      PerformanceTracker.instance.debugInjectJSSpan(
+        subType: kSubTypeJsMicrotask,
+        startUs: dartStart - 50,
+        endUs: dartStart + 10,
+        entryId: 0,
+        funcName: 'microtaskThatLooksContainingButIsnt',
+      );
+
+      // Close the Dart entry later — in reality it runs for much longer
+      // than the microtask window.
+      dartEntry!.end();
+
+      final roots = PerformanceTracker.instance.rootSpans;
+      // The drawFrame must remain an independent root (2 roots expected:
+      // the microtask + the drawFrame).
+      expect(roots.length, 2);
+      expect(
+          roots.any((r) =>
+              r.subType == kSubTypeDrawFrame && r.parent == null),
+          isTrue,
+          reason: 'drawFrame must stay a root; open spans are not adoptable');
+    });
+
     test('entryId=0 JS span nests under containing root span', () {
       // First inject a containing root (eg. the C++-side jsMicrotask).
       PerformanceTracker.instance.debugInjectJSSpan(

@@ -612,10 +612,20 @@ class PerformanceTracker {
     // brittle and adopted spans may themselves be the containing root for
     // other siblings (we handle by a single pass because we're re-parenting
     // a flat layer, not walking the whole tree).
+    //
+    // Skip still-open siblings outright. A Dart entry root (drawFrame,
+    // flushUICommand, …) can linger in `rootSpans` with `endOffsetUs==null`
+    // for tens of ms while its subtree is being built. If we treated an
+    // open span as a zero-duration point (start==end), any later JS span
+    // whose window covers that start would greedily adopt the whole
+    // not-yet-complete Dart subtree — moving live drawFrames under a JS
+    // microtask that had nothing to do with them and corrupting the tree
+    // in ways that only become visible once the Dart span finally closes.
     final toMove = <PerformanceSpan>[];
     for (final s in siblings) {
       if (s.startOffsetUs < startOffsetUs) continue;
-      final sEnd = s.endOffsetUs ?? s.startOffsetUs;
+      final sEnd = s.endOffsetUs;
+      if (sEnd == null) continue;
       if (sEnd > endOffsetUs) continue;
       toMove.add(s);
     }
