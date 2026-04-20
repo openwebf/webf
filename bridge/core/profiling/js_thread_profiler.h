@@ -91,6 +91,33 @@ class JSThreadProfiler {
   void SetCurrentEntryId(uint32_t entry_id);
   uint32_t GetCurrentEntryId() const;
 
+  // Push / pop a JS-thread-local "dispatch entry_id override" that takes
+  // precedence over `current_entry_id_` for the duration of a synchronous
+  // JS invocation. Used by the Dart→JS dispatch path (event listener
+  // firing, binding callbacks) to guarantee that JS function entries sampled
+  // during the invocation carry the correct entry_id even when the shared
+  // atomic has been overwritten by a later Dart-side beginEntry on another
+  // concurrent async entry. Returns the previous override value so callers
+  // can restore it on exit (nestable).
+  //
+  // Both methods MUST be called from the JS thread. The pair is exposed as
+  // an RAII guard via [ScopedDispatchEntryId] below.
+  uint32_t PushDispatchEntryId(uint32_t entry_id);
+  void PopDispatchEntryId(uint32_t previous);
+
+  // RAII guard that brackets a JS dispatch with PushDispatchEntryId /
+  // PopDispatchEntryId. Create on the JS thread right before invoking a
+  // JS listener; destruction restores the prior override.
+  struct ScopedDispatchEntryId {
+    JSThreadProfiler& profiler;
+    uint32_t prev;
+    ScopedDispatchEntryId(JSThreadProfiler& p, uint32_t entry_id)
+        : profiler(p), prev(p.PushDispatchEntryId(entry_id)) {}
+    ~ScopedDispatchEntryId() { profiler.PopDispatchEntryId(prev); }
+    ScopedDispatchEntryId(const ScopedDispatchEntryId&) = delete;
+    ScopedDispatchEntryId& operator=(const ScopedDispatchEntryId&) = delete;
+  };
+
   // Register a human-readable name for a C++-side span (e.g., binding method
   // names). Returns a stable ID with the high bit set so it does not collide
   // with QuickJS JSAtoms. Use the returned ID as the `name` argument of
@@ -102,6 +129,11 @@ class JSThreadProfiler {
 
   std::atomic<bool> enabled_{false};
   std::atomic<uint32_t> current_entry_id_{0};
+  // JS-thread-local override. Written and read only on the JS thread, so a
+  // plain uint32_t would suffice; kept atomic for uniformity with
+  // `current_entry_id_` and to keep memory-ordering semantics explicit.
+  // Non-zero means "use this instead of `current_entry_id_` at span entry".
+  std::atomic<uint32_t> dispatch_entry_id_override_{0};
   std::chrono::steady_clock::time_point session_start_;
 
   // Ring buffer for completed spans

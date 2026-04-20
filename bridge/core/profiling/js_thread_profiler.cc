@@ -24,6 +24,7 @@ void JSThreadProfiler::Enable(int64_t min_duration_us) {
   binding_name_to_id_.clear();
   binding_names_.clear();
   current_entry_id_.store(0, std::memory_order_relaxed);
+  dispatch_entry_id_override_.store(0, std::memory_order_relaxed);
   for (int i = 0; i < kMaxDepth; i++) {
     pending_[i].valid = false;
   }
@@ -110,6 +111,14 @@ uint32_t JSThreadProfiler::GetCurrentEntryId() const {
   return current_entry_id_.load(std::memory_order_relaxed);
 }
 
+uint32_t JSThreadProfiler::PushDispatchEntryId(uint32_t entry_id) {
+  return dispatch_entry_id_override_.exchange(entry_id, std::memory_order_relaxed);
+}
+
+void JSThreadProfiler::PopDispatchEntryId(uint32_t previous) {
+  dispatch_entry_id_override_.store(previous, std::memory_order_relaxed);
+}
+
 int32_t JSThreadProfiler::OnFunctionEntry(uint8_t category, JSAtom func_name) {
   if (!enabled_.load(std::memory_order_relaxed)) return -1;
   if (stack_depth_ >= kMaxDepth) return -1;
@@ -119,7 +128,14 @@ int32_t JSThreadProfiler::OnFunctionEntry(uint8_t category, JSAtom func_name) {
   entry.start_us = NowUs();
   entry.category = category;
   entry.func_name_atom = func_name;
-  entry.entry_id = current_entry_id_.load(std::memory_order_relaxed);
+  // A non-zero `dispatch_entry_id_override_` means a Dart→JS dispatch on
+  // this thread explicitly set the owning entry id for the duration of JS
+  // execution — trust that over the shared `current_entry_id_` atomic,
+  // which the Dart thread may have overwritten with a later async entry.
+  const uint32_t override_id = dispatch_entry_id_override_.load(std::memory_order_relaxed);
+  entry.entry_id = override_id != 0
+                       ? override_id
+                       : current_entry_id_.load(std::memory_order_relaxed);
   entry.depth = static_cast<uint8_t>(stack_depth_ < 255 ? stack_depth_ : 255);
   entry.valid = true;
 

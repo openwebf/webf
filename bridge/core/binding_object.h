@@ -36,6 +36,7 @@ using DartInvokeResultCallback = void (*)(Dart_Handle dart_object, NativeValue* 
 
 using InvokeBindingMethodsFromDart = void (*)(NativeBindingObject* binding_object,
                                               double context_id,
+                                              uint32_t entry_id,
                                               NativeValue* method,
                                               int32_t argc,
                                               NativeValue* argv,
@@ -49,6 +50,7 @@ struct NativeBindingObject : public DartReadable {
   static void HandleCallFromDartSide(const DartIsolateContext* dart_isolate_context,
                                      const NativeBindingObject* binding_object,
                                      double context_id,
+                                     uint32_t entry_id,
                                      const NativeValue* method,
                                      int32_t argc,
                                      const NativeValue* argv,

@@ -38,8 +38,14 @@ class PerformanceSpan {
   /// Monotonic offset at span end. Null while the span is still open.
   int? endOffsetUs;
 
-  final int depth;
-  final PerformanceSpan? parent;
+  // Mutable so that [_attachJSSpan] can re-parent a subtree when a later-
+  // draining OUTER JS span turns out to time-contain spans that were
+  // already attached as siblings. JS-thread spans exit inside-out (inner
+  // functions pop before their enclosing script eval), so by the time
+  // the outer `jsScriptEval` reaches the drain, its children are already
+  // placed — we move them under it at insertion time and adjust depths.
+  int depth;
+  PerformanceSpan? parent;
   final List<PerformanceSpan> children = [];
   Map<String, dynamic>? metadata;
 
@@ -200,6 +206,14 @@ class EntryHandle {
       {bool asyncSpanning = false})
       : _asyncSpanning = asyncSpanning;
 
+  /// The entry id stamped into the C++ profiler for this entry. Callers
+  /// that invoke Dart→JS FFIs (eg. `_dispatchEventToNative`) pass this id
+  /// into the bridge so the JS thread can override `current_entry_id_`
+  /// for the duration of the synchronous JS invocation, guaranteeing
+  /// correct attribution even when the shared atomic has since been
+  /// overwritten by other async entries opened on the Dart thread.
+  int get entryId => _entryId;
+
   /// Convert a sync entry into an async-spanning one. Call right before
   /// `await`-ing so that work scheduled during the suspension does not
   /// nest under this entry. After this call the entry is popped from the
@@ -217,6 +231,12 @@ class EntryHandle {
     _root.endOffsetUs = _tracker.nowOffsetUs();
     if (metadata != null) {
       _root.metadata = (_root.metadata ?? {})..addAll(metadata);
+    }
+    if (_tracker.debugLogJSAttachment) {
+      // ignore: avoid_print
+      print('[perf] endEntry id=$_entryId ${_root.subType}/"${_root.name}" '
+          'end=${_root.endOffsetUs}us '
+          '${_asyncSpanning ? "(asyncSpanning)" : ""}');
     }
     if (_asyncSpanning) {
       _tracker._endAsyncEntry(_previousEntryId);
@@ -252,6 +272,14 @@ class PerformanceTracker {
   /// rebuilds) to fall through to an `unattributed` root in production.
   /// Tests that want to verify dev-mode contract enforcement must opt in.
   bool assertOnUnattributedSpan = false;
+
+  /// When true, emit a line to stdout for every JS span attachment decision
+  /// (drained from C++ or test-injected) and for every entry open/close that
+  /// updates the C++ `current_entry_id_` stamp. Useful when debugging why a
+  /// JS span did/didn't nest under a specific Dart entry. Off by default;
+  /// flip at runtime via `PerformanceTracker.instance.debugLogJSAttachment = true`
+  /// or through the devtools inspector toggle.
+  bool debugLogJSAttachment = false;
 
   /// Top-level spans (not children of any other span).
   final List<PerformanceSpan> rootSpans = [];
@@ -308,6 +336,12 @@ class PerformanceTracker {
   int _currentEntryId = 0;
 
   void _setCurrentEntryId(int entryId) {
+    if (debugLogJSAttachment && _currentEntryId != entryId) {
+      final at = _stopwatch?.elapsedMicroseconds ?? 0;
+      final targetSubType = _entryIdToSpan[entryId]?.subType ?? '(none)';
+      // ignore: avoid_print
+      print('[perf] t=${at}us stamp ${_currentEntryId} → $entryId  ($targetSubType)');
+    }
     _currentEntryId = entryId;
     to_native.setJSProfilerCurrentEntryId(entryId);
   }
@@ -459,17 +493,17 @@ class PerformanceTracker {
   ///    are rejected and fall through to rule 2 — the JS thread was just
   ///    running concurrently while the Dart thread happened to hold
   ///    `current_entry_id_` for a non-JS-hosting entry.
-  /// 2. Otherwise, search [rootSpans] for an existing *JS* root whose
-  ///    interval contains [startOffsetUs] — graft under it. This preserves
-  ///    the C++-internal JS hierarchy when entries arrive in the same
-  ///    drain batch (eg. jsMicrotask wrapping jsFunction wrapping
-  ///    jsCFunction) after the drain has been sorted outer-first.
-  ///    Dart roots are deliberately excluded here: `entryId == 0` means
-  ///    the Dart thread had no entry open when the JS span started, so
-  ///    the JS work is autonomous event-loop activity (timer, RAF,
-  ///    microtask, event). Nesting it under a Dart root that merely
-  ///    overlaps in wall-clock time would fabricate a causal relation
-  ///    that doesn't exist (two concurrent threads).
+  /// 2. Otherwise, search [rootSpans] for a root whose interval contains
+  ///    [startOffsetUs] AND is JS-compatible: either a `js*`-subType root
+  ///    (preserves the C++-internal JS hierarchy when outer/inner arrive
+  ///    in the same drain batch — eg. jsMicrotask wrapping jsFunction)
+  ///    or a Dart entry listed in [kJsHostingDartEntries] (dispatchEvent,
+  ///    evaluate*, invokeBinding*, invokeModuleEvent — these are often
+  ///    opened with `asyncSpanning:true` and lose their entry_id stamp
+  ///    before JS actually runs, so we recover the nesting by time).
+  ///    Pure-Dart roots (drawFrame, flushUICommand, htmlParse, etc.) are
+  ///    excluded: wall-clock overlap with concurrent JS-thread activity
+  ///    does not imply causality.
   /// 3. No containing root — the span becomes a new root.
   ///
   /// Drops the span if [_totalSpanCount] is at [maxSpans]. This matches the
@@ -486,6 +520,7 @@ class PerformanceTracker {
     if (_totalSpanCount >= maxSpans) return;
 
     PerformanceSpan? root;
+    String? decision;
     if (entryId != 0) {
       final candidate = _entryIdToSpan[entryId];
       // Reject the stamp when it resolves to a pure-Dart entry. The C++
@@ -495,13 +530,23 @@ class PerformanceTracker {
       // hand in producing this JS work. Only accept stamps that target
       // an entry which legitimately hosts synchronous JS execution
       // (see [kJsHostingDartEntries]) or a JS-side entry.
-      if (candidate != null &&
-          (candidate.subType.startsWith('js') ||
-              kJsHostingDartEntries.contains(candidate.subType))) {
+      if (candidate == null) {
+        decision = 'stamp-miss(id=$entryId)';
+      } else if (candidate.subType.startsWith('js') ||
+          kJsHostingDartEntries.contains(candidate.subType)) {
         root = candidate;
+        decision = 'stamp-hit(id=$entryId,${candidate.subType})';
+      } else {
+        decision = 'stamp-rejected(id=$entryId,${candidate.subType})';
       }
     }
-    root ??= _findContainingRoot(startOffsetUs);
+    if (root == null) {
+      root = _findContainingRoot(startOffsetUs);
+      if (root != null) {
+        decision = '${decision == null ? "" : "$decision → "}'
+            'time-contain(${root.subType}/${root.name})';
+      }
+    }
 
     if (root != null) {
       final parent = _findInsertionParent(root, startOffsetUs);
@@ -514,7 +559,17 @@ class PerformanceTracker {
         parent: parent,
       );
       span.endOffsetUs = endOffsetUs;
+      final adopted = _adoptContainedSiblings(
+          parent.children, span, startOffsetUs, endOffsetUs);
       parent.children.add(span);
+      if (debugLogJSAttachment) {
+        // ignore: avoid_print
+        print('[perf] JS $subType/"$name" '
+            'start=${startOffsetUs}us dur=${endOffsetUs - startOffsetUs}us '
+            '→ nested under ${parent.subType}/"${parent.name}" depth=${parent.depth + 1}  '
+            '${adopted > 0 ? "(adopted $adopted prior sibling${adopted == 1 ? "" : "s"}) " : ""}'
+            '[$decision]');
+      }
     } else {
       final span = PerformanceSpan(
         subType: subType,
@@ -524,24 +579,88 @@ class PerformanceTracker {
         sessionAnchor: anchor,
       );
       span.endOffsetUs = endOffsetUs;
+      final adopted =
+          _adoptContainedSiblings(rootSpans, span, startOffsetUs, endOffsetUs);
       rootSpans.add(span);
+      if (debugLogJSAttachment) {
+        final reason = decision ?? 'entryId=0,no-containing-root';
+        // ignore: avoid_print
+        print('[perf] JS $subType/"$name" '
+            'start=${startOffsetUs}us dur=${endOffsetUs - startOffsetUs}us '
+            '→ NEW ROOT  '
+            '${adopted > 0 ? "(adopted $adopted prior root${adopted == 1 ? "" : "s"}) " : ""}'
+            '[$reason]');
+      }
     }
     _totalSpanCount++;
   }
 
-  /// Find an existing *JS* root span whose interval contains [startOffsetUs].
+  /// Move any entries in [siblings] whose interval is time-contained within
+  /// `[startOffsetUs..endOffsetUs]` to become children of [newSpan] instead,
+  /// adjusting their depth (and the depth of their descendants) to match
+  /// the new position in the tree.
+  ///
+  /// Drain batches deliver completed JS spans in function-exit order, so an
+  /// enclosing `jsScriptEval` (which exits LAST) shows up after every
+  /// function it ran has already been attached. Without this step those
+  /// inner functions would remain siblings of the script eval under the
+  /// Dart entry, flattening the JS call stack. Returns the number of spans
+  /// actually moved.
+  int _adoptContainedSiblings(List<PerformanceSpan> siblings,
+      PerformanceSpan newSpan, int startOffsetUs, int endOffsetUs) {
+    // Collect first, mutate after — modifying the list mid-iteration is
+    // brittle and adopted spans may themselves be the containing root for
+    // other siblings (we handle by a single pass because we're re-parenting
+    // a flat layer, not walking the whole tree).
+    final toMove = <PerformanceSpan>[];
+    for (final s in siblings) {
+      if (s.startOffsetUs < startOffsetUs) continue;
+      final sEnd = s.endOffsetUs ?? s.startOffsetUs;
+      if (sEnd > endOffsetUs) continue;
+      toMove.add(s);
+    }
+    if (toMove.isEmpty) return 0;
+    siblings.removeWhere(toMove.contains);
+    final newDepth = newSpan.depth + 1;
+    for (final m in toMove) {
+      m.parent = newSpan;
+      _adjustSubtreeDepth(m, newDepth);
+      newSpan.children.add(m);
+    }
+    return toMove.length;
+  }
+
+  void _adjustSubtreeDepth(PerformanceSpan span, int newDepth) {
+    span.depth = newDepth;
+    for (final c in span.children) {
+      _adjustSubtreeDepth(c, newDepth + 1);
+    }
+  }
+
+  /// Find a JS-compatible root span whose interval contains [startOffsetUs].
   /// Searches from most-recently-added back so the latest matching root
   /// (i.e. the innermost candidate at insertion time) wins.
   ///
-  /// Only matches roots whose [PerformanceSpan.subType] begins with `js`.
-  /// Dart roots are excluded on purpose — see the rationale in
-  /// [_attachJSSpan] rule 2: grafting an autonomous JS span under a Dart
-  /// root just because their wall-clock windows overlap would imply
-  /// causality where there is none.
+  /// Accepts two kinds of roots:
+  /// - `js*` subTypes — JS-thread roots that legitimately host nested JS.
+  /// - [kJsHostingDartEntries] — Dart entries whose purpose is to bracket
+  ///   synchronous JS execution (dispatchEvent, evaluate*, invokeBinding*,
+  ///   invokeModuleEvent). These are often opened with `asyncSpanning:true`
+  ///   and their `current_entry_id_` stamp can be overwritten by other
+  ///   Dart entries before JS actually runs, so the stamp-based attachment
+  ///   in [_attachJSSpan] rule 1 often misses legitimate children; falling
+  ///   through to time-containment here recovers them.
+  ///
+  /// Pure-Dart roots (drawFrame, flushUICommand, htmlParse, etc.) are
+  /// deliberately skipped: wall-clock overlap with concurrent JS-thread
+  /// activity implies no causality between them.
   PerformanceSpan? _findContainingRoot(int startOffsetUs) {
     for (int i = rootSpans.length - 1; i >= 0; i--) {
       final root = rootSpans[i];
-      if (!root.subType.startsWith('js')) continue;
+      if (!root.subType.startsWith('js') &&
+          !kJsHostingDartEntries.contains(root.subType)) {
+        continue;
+      }
       if (root.startOffsetUs > startOffsetUs) continue;
       final endUs = root.endOffsetUs;
       if (endUs == null || startOffsetUs <= endUs) {
@@ -732,6 +851,13 @@ class PerformanceTracker {
     }
 
     _setCurrentEntryId(entryId);
+
+    if (debugLogJSAttachment) {
+      // ignore: avoid_print
+      print('[perf] beginEntry id=$entryId $subType/"$name"'
+          '${asyncSpanning ? " asyncSpanning" : ""} '
+          'start=${root.startOffsetUs}us');
+    }
 
     return EntryHandle._(root, this, entryId, previousEntryId,
         asyncSpanning: asyncSpanning);

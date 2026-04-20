@@ -249,6 +249,91 @@ void main() {
       expect(timerRoot.parent, isNull);
     });
 
+    test(
+        'entryId=0 JS span DOES nest under a time-containing JS-hosting Dart root',
+        () {
+      // dispatchEvent is in kJsHostingDartEntries. It is often opened
+      // asyncSpanning:true, and by the time the JS thread actually runs
+      // the listeners, current_entry_id_ may have been overwritten — so
+      // the JS span arrives with entryId=0 (or some unrelated stamp that
+      // gets rejected). Time-containment under dispatchEvent recovers
+      // the legitimate nesting.
+      final entry = PerformanceTracker.instance
+          .beginEntry(kSubTypeDispatchEvent, 'click');
+
+      // Use a timestamp strictly after the entry's startOffsetUs — on a
+      // fast host `now - 50us` can predate the entry start.
+      final now = PerformanceTracker.instance.nowOffsetUs();
+      PerformanceTracker.instance.debugInjectJSSpan(
+        subType: kSubTypeJsFunction,
+        startUs: now + 1,
+        endUs: now + 50,
+        entryId: 0,
+        funcName: 'onClickHandler',
+      );
+
+      entry!.end();
+
+      final roots = PerformanceTracker.instance.rootSpans;
+      expect(roots.length, 1,
+          reason: 'JS listener must nest under dispatchEvent, not become a root');
+      final dispatchRoot = roots.single;
+      expect(dispatchRoot.subType, kSubTypeDispatchEvent);
+      expect(dispatchRoot.children.length, 1);
+      expect(dispatchRoot.children.first.name, 'onClickHandler');
+    });
+
+    test(
+        'late-arriving outer JS span re-parents time-contained prior siblings',
+        () {
+      // Simulates the drain ordering that happens for jsScriptEval +
+      // evaluateByteCode: inner JS functions exit first and arrive in
+      // earlier drain batches, so they're attached as siblings under the
+      // Dart entry. Later, the enclosing jsScriptEval exits and is drained
+      // — it must adopt those prior siblings, not become a sibling itself.
+      final entry = PerformanceTracker.instance
+          .beginEntry(kSubTypeEvaluateByteCode, 'evaluateByteCode');
+      final entryId = entry!.entryId;
+
+      // Inner JS calls drained first (exit first).
+      for (int i = 0; i < 3; i++) {
+        PerformanceTracker.instance.debugInjectJSSpan(
+          subType: kSubTypeJsFunction,
+          startUs: 1100 + i * 50,
+          endUs: 1120 + i * 50,
+          entryId: entryId,
+          funcName: 'inner$i',
+        );
+      }
+
+      // Outer jsScriptEval drains last; its interval covers all three inners.
+      PerformanceTracker.instance.debugInjectJSSpan(
+        subType: kSubTypeJsScriptEval,
+        startUs: 1050,
+        endUs: 1300,
+        entryId: entryId,
+        funcName: 'evalScript',
+      );
+
+      entry.end();
+
+      final root = PerformanceTracker.instance.rootSpans.single;
+      expect(root.subType, kSubTypeEvaluateByteCode);
+      // The Dart entry should now have a single JS child (the script eval)
+      // rather than four flat siblings.
+      expect(root.children.length, 1,
+          reason: 'jsScriptEval must adopt its prior siblings, not sit beside them');
+      final scriptEval = root.children.single;
+      expect(scriptEval.subType, kSubTypeJsScriptEval);
+      expect(scriptEval.children.length, 3);
+      for (int i = 0; i < 3; i++) {
+        expect(scriptEval.children[i].name, 'inner$i');
+        expect(scriptEval.children[i].depth, scriptEval.depth + 1,
+            reason: 'adopted children depth must track the new parent');
+        expect(scriptEval.children[i].parent, scriptEval);
+      }
+    });
+
     test('entryId=0 JS span nests under containing root span', () {
       // First inject a containing root (eg. the C++-side jsMicrotask).
       PerformanceTracker.instance.debugInjectJSSpan(

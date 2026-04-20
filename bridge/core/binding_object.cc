@@ -29,6 +29,7 @@ static void ReturnEventResultToDart(Dart_Handle persistent_handle,
 
 static void HandleCallFromDartSideWrapper(NativeBindingObject* binding_object,
                                           double context_id,
+                                          uint32_t entry_id,
                                           NativeValue* method,
                                           int32_t argc,
                                           NativeValue* argv,
@@ -43,7 +44,7 @@ static void HandleCallFromDartSideWrapper(NativeBindingObject* binding_object,
 
   dart_isolate->dispatcher()->PostToJs(is_dedicated, static_cast<int32_t>(context_id),
                                        NativeBindingObject::HandleCallFromDartSide, dart_isolate, binding_object,
-                                       context_id, method, argc, argv, persistent_handle, result_callback);
+                                       context_id, entry_id, method, argc, argv, persistent_handle, result_callback);
 }
 
 NativeBindingObject::NativeBindingObject(BindingObject* target)
@@ -52,6 +53,7 @@ NativeBindingObject::NativeBindingObject(BindingObject* target)
 void NativeBindingObject::HandleCallFromDartSide(const DartIsolateContext* dart_isolate_context,
                                                  const NativeBindingObject* binding_object,
                                                  double context_id,
+                                                 uint32_t entry_id,
                                                  const NativeValue* native_method,
                                                  int32_t argc,
                                                  const NativeValue* argv,
@@ -66,6 +68,15 @@ void NativeBindingObject::HandleCallFromDartSide(const DartIsolateContext* dart_
   const AtomicString method =
       AtomicString(binding_object->binding_target_->ctx(),
                    std::unique_ptr<AutoFreeNativeString>(static_cast<AutoFreeNativeString*>(native_method->u.ptr)));
+  // Runs on the JS thread. Override the dispatch entry_id for the whole
+  // synchronous scope of the binding call — this is our guaranteed
+  // attribution for JS listeners / callbacks fired by this call, regardless
+  // of what the Dart thread has done to `current_entry_id_` since the
+  // matching `beginEntry` on the Dart side. When entry_id == 0 (tracking
+  // disabled, or caller didn't provide one) the guard is effectively a
+  // no-op because `OnFunctionEntry` falls back to `current_entry_id_` when
+  // the override is zero.
+  JSThreadProfiler::ScopedDispatchEntryId dispatch_scope(JSThreadProfiler::Instance(), entry_id);
   const NativeValue result = binding_object->binding_target_->HandleCallFromDartSide(method, argc, argv, dart_object);
 
   auto* return_value = new NativeValue();

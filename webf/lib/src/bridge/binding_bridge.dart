@@ -143,8 +143,15 @@ Future<void> _dispatchEventToNative(Event event, bool isCapture) async {
         kSubTypeDispatchEvent, event.type,
         asyncSpanning: true);
 
+    // Pass the entry id into the bridge so the JS thread can override
+    // `current_entry_id_` for the synchronous scope of the listener
+    // invocation, guaranteeing correct attribution even when concurrent
+    // dispatches on the Dart thread have overwritten the shared atomic
+    // between `beginEntry` and JS actually running. 0 = tracking disabled.
+    final entryId = entry?.entryId ?? 0;
+
     Future.microtask(() {
-      f(pointer, contextId, method, dispatchEventArguments.length, allocatedNativeArguments, context, resultCallback);
+      f(pointer, contextId, entryId, method, dispatchEventArguments.length, allocatedNativeArguments, context, resultCallback);
     });
 
     try {

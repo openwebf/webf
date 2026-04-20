@@ -88,6 +88,106 @@ TEST(EntryId, CapturedAtEntryNotExit) {
   p.Disable();
 }
 
+TEST(EntryId, DispatchOverrideTakesPrecedenceOverCurrent) {
+  // The Dart→JS dispatch path sets a JS-thread-local override before
+  // invoking a listener so the JS functions stamped during that scope
+  // always carry the dispatching entry's id, even when the shared
+  // `current_entry_id_` atomic has been overwritten by a concurrent
+  // async entry that opened later on the Dart thread.
+  auto& p = JSThreadProfiler::Instance();
+  p.Enable(/*min_duration_us=*/0);
+
+  // Dart thread: opened pode (id=36), then load (id=37) raced in and
+  // overwrote the stamp before JS started running.
+  p.SetCurrentEntryId(37);
+
+  // JS thread enters pode's dispatch and activates the override guard.
+  {
+    JSThreadProfiler::ScopedDispatchEntryId scope(p, /*entry_id=*/36);
+    int32_t idx = p.OnFunctionEntry(/*category=*/0, /*func_name=*/0);
+    ASSERT_GE(idx, 0);
+    p.OnFunctionExit(idx);
+  }  // guard destructor restores override to 0
+
+  JSThreadSpan out[1];
+  int32_t count = p.DrainSpans(out, 1);
+  ASSERT_EQ(1, count);
+  EXPECT_EQ(36u, out[0].entry_id)
+      << "Override must win over current_entry_id_ during dispatch";
+
+  // After the scope exits, OnFunctionEntry falls back to the shared atomic.
+  int32_t idx2 = p.OnFunctionEntry(/*category=*/0, /*func_name=*/0);
+  ASSERT_GE(idx2, 0);
+  p.OnFunctionExit(idx2);
+
+  count = p.DrainSpans(out, 1);
+  ASSERT_EQ(1, count);
+  EXPECT_EQ(37u, out[0].entry_id)
+      << "After scope, falls back to current_entry_id_";
+
+  p.Disable();
+}
+
+TEST(EntryId, DispatchOverrideNestable) {
+  // Nested dispatches (e.g. a JS listener synchronously fires another
+  // dispatchEvent which re-enters HandleCallFromDartSide on the JS thread):
+  // inner span should carry the inner dispatch's id, outer should restore.
+  auto& p = JSThreadProfiler::Instance();
+  p.Enable(/*min_duration_us=*/0);
+  p.SetCurrentEntryId(0);
+
+  JSThreadProfiler::ScopedDispatchEntryId outer(p, /*entry_id=*/10);
+  int32_t outer_idx = p.OnFunctionEntry(/*category=*/0, /*func_name=*/0);
+  ASSERT_GE(outer_idx, 0);
+
+  {
+    JSThreadProfiler::ScopedDispatchEntryId inner(p, /*entry_id=*/20);
+    int32_t inner_idx = p.OnFunctionEntry(/*category=*/0, /*func_name=*/0);
+    ASSERT_GE(inner_idx, 0);
+    p.OnFunctionExit(inner_idx);
+  }  // inner scope restores override to 10
+
+  // After inner scope closes we should be back to the outer dispatch id.
+  int32_t after = p.OnFunctionEntry(/*category=*/0, /*func_name=*/0);
+  ASSERT_GE(after, 0);
+  p.OnFunctionExit(after);
+
+  p.OnFunctionExit(outer_idx);
+
+  JSThreadSpan out[3];
+  int32_t count = p.DrainSpans(out, 3);
+  ASSERT_EQ(3, count);
+  // Drain is in exit order: inner, after, outer.
+  EXPECT_EQ(20u, out[0].entry_id);
+  EXPECT_EQ(10u, out[1].entry_id);
+  EXPECT_EQ(10u, out[2].entry_id);
+
+  p.Disable();
+}
+
+TEST(EntryId, ZeroDispatchOverrideIsNoop) {
+  // A zero entry_id means "tracking disabled / caller has no id" — the
+  // override must NOT mask current_entry_id_ in that case, otherwise every
+  // disabled-tracker call site would accidentally erase the real stamp.
+  auto& p = JSThreadProfiler::Instance();
+  p.Enable(/*min_duration_us=*/0);
+  p.SetCurrentEntryId(55);
+
+  {
+    JSThreadProfiler::ScopedDispatchEntryId scope(p, /*entry_id=*/0);
+    int32_t idx = p.OnFunctionEntry(/*category=*/0, /*func_name=*/0);
+    ASSERT_GE(idx, 0);
+    p.OnFunctionExit(idx);
+  }
+
+  JSThreadSpan out[1];
+  int32_t count = p.DrainSpans(out, 1);
+  ASSERT_EQ(1, count);
+  EXPECT_EQ(55u, out[0].entry_id)
+      << "entry_id=0 in guard must fall through to current_entry_id_";
+  p.Disable();
+}
+
 TEST(EntryId, NestedSpansCaptureIndependently) {
   // Outer span starts under entry 100. Mid-flight, current entry switches to
   // 200; an inner span opens, closes, then outer closes. Inner should be 200,
