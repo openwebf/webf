@@ -469,26 +469,30 @@ WaterfallData _buildWaterfallDataImpl(
     flushCluster();
   }
 
-  // --- Milestones (unchanged) ---
+  // --- Milestones ---
+  // Use offsetFromPair so milestones share the same clock (monotonic when
+  // available) as root-span entries — otherwise attachOffset would drift
+  // from entry.start and phase filtering would misattribute entries.
   for (int i = 0; i < phaseNames.length; i++) {
     final name = phaseNames[i];
     final ts = phaseTimestamps[i];
+    final off = offsetFromPair(ts, phaseOffsetUs[i]);
     if (name == LoadingState.phaseAttachToFlutter) {
-      attachOffset = offset(ts);
+      attachOffset = off;
       milestones.add(WaterfallMilestone(
-        label: 'Attach', offset: attachOffset,
+        label: 'Attach', offset: off,
         color: const Color(0xFFFFB74D), isStageDivider: true,
       ));
     } else if (name == LoadingState.phaseFirstPaint) {
       milestones.add(WaterfallMilestone(
-        label: 'FP', offset: offset(ts), color: const Color(0xFF4CAF50)));
+        label: 'FP', offset: off, color: const Color(0xFF4CAF50)));
     } else if (name == LoadingState.phaseFirstContentfulPaint) {
       milestones.add(WaterfallMilestone(
-        label: 'FCP', offset: offset(ts), color: const Color(0xFF2196F3)));
+        label: 'FCP', offset: off, color: const Color(0xFF2196F3)));
     } else if (name == LoadingState.phaseLargestContentfulPaint ||
         name == LoadingState.phaseFinalLargestContentfulPaint) {
       milestones.add(WaterfallMilestone(
-        label: 'LCP', offset: offset(ts), color: const Color(0xFFF44336)));
+        label: 'LCP', offset: off, color: const Color(0xFFF44336)));
     }
   }
 
@@ -524,6 +528,9 @@ WaterfallData _buildWaterfallDataImpl(
     }
     for (int i = 0; i < frameBoundaries.length; i++) {
       frameBoundaries[i] = frameBoundaries[i] - minStart;
+    }
+    if (attachOffset != null) {
+      attachOffset = attachOffset! - minStart;
     }
   }
 
@@ -1026,7 +1033,18 @@ class _WaterfallChartState extends State<WaterfallChart> {
 
   /// SubTypes appearing in the current dataset, ordered by kWaterfallRowOrder
   /// (then any unknown subTypes appended in insertion order).
+  ///
+  /// Auto-enables any first-seen subType so the chip and the row light up on
+  /// the same frame. Toolbar builds before the body, so deferring auto-enable
+  /// to [_getItems] would leave the chip rendered as disabled while the row
+  /// still renders — and a subsequent click on the "disabled" chip would
+  /// actually toggle the subType OFF, sticking it disabled going forward.
   List<String> _filterSubTypes(WaterfallData data) {
+    for (final entry in data.entries) {
+      if (_seenSubTypes.add(entry.subType)) {
+        _enabledSubTypes.add(entry.subType);
+      }
+    }
     final present = <String>{for (final e in data.entries) e.subType};
     return <String>[
       ...kWaterfallRowOrder.where(present.contains),

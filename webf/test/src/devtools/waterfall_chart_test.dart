@@ -68,5 +68,42 @@ void main() {
       expect(colorForSubType(kSubTypeDrawFrame),
           isNot(colorForSubType(kSubTypeJsTimer)));
     });
+
+    // Regression: when LoadingState starts before the tracker (real-world
+    // order — LoadingState ctor → view init → startSession → recordPhase),
+    // the minStart shift must also apply to attachOffset. Otherwise drawFrame
+    // entries get their `start` shifted down by minStart while attachOffset
+    // stays at its unshifted value, making drawFrame.start < attachOffset
+    // and causing the attach→paint phase filter to drop the row.
+    test('drawFrame after attach is kept by attach→paint phase filter',
+        () async {
+      PerformanceTracker.instance.endSession();
+
+      final loadingState = LoadingState();
+      await Future.delayed(const Duration(milliseconds: 5));
+      PerformanceTracker.instance.startSession();
+
+      loadingState.recordPhase(LoadingState.phaseInit);
+      await Future.delayed(const Duration(milliseconds: 5));
+      loadingState.recordPhase(LoadingState.phaseAttachToFlutter);
+      await Future.delayed(const Duration(milliseconds: 1));
+
+      final draw = PerformanceTracker.instance
+          .beginEntry(kSubTypeDrawFrame, 'drawFrame');
+      draw!.end();
+
+      final data = buildWaterfallData(loadingState, PerformanceTracker.instance);
+      final drawEntry = data.entries
+          .firstWhere((e) => e.subType == kSubTypeDrawFrame);
+      expect(data.attachOffset, isNotNull);
+      expect(
+        includeEntryForPhase(
+            drawEntry, WaterfallPhase.attachToPaint, data.attachOffset),
+        isTrue,
+        reason: 'drawFrame recorded after attachToFlutter must survive the '
+            'attach→paint filter. drawEntry.start=${drawEntry.start}, '
+            'attachOffset=${data.attachOffset}',
+      );
+    });
   });
 }
