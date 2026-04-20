@@ -1582,17 +1582,53 @@ class _WaterfallChartState extends State<WaterfallChart> {
     final barWidth = math.max(durationMs * pixelsPerMs, 2.0);
     final color = colorForSubType(entry.subType);
 
+    // If the tap lands on a specific spanSegment within a multi-span cluster
+    // row, narrow selection to just that one span. Drilling into an aggregate
+    // drawFrame row of 9655 spans is almost never what the user wants — they
+    // want the frame under their cursor.
+    WaterfallEntry? resolveTappedEntry(Offset localPosition) {
+      if (entry.spans.isEmpty || entry.spanSegments.isEmpty) return entry;
+      final tapMs = localPosition.dx / pixelsPerMs + phaseStartMs;
+      for (int i = 0; i < entry.spanSegments.length; i++) {
+        final seg = entry.spanSegments[i];
+        if (tapMs >= seg.startMs && tapMs <= seg.endMs) {
+          final span = entry.spans[i];
+          final baseMs = entry.spanSegments[0].startMs;
+          final narrowStart = entry.start +
+              Duration(microseconds: ((seg.startMs - baseMs) * 1000).round());
+          final narrowDuration =
+              Duration(microseconds: ((seg.endMs - seg.startMs) * 1000).round());
+          return WaterfallEntry(
+            subType: entry.subType,
+            label: '${_spanLabel(span)} '
+                '(${i + 1}/${entry.spans.length}) — '
+                '${_formatDuration(span.duration)}',
+            start: narrowStart,
+            end: narrowStart + narrowDuration,
+            span: span,
+          );
+        }
+      }
+      return entry;
+    }
+
     return GestureDetector(
-      onTap: () {
+      onTapDown: (details) {
+        final tapped = resolveTappedEntry(details.localPosition) ?? entry;
         setState(() {
-          _selectedEntry = entry;
+          _selectedEntry = tapped;
         });
       },
-      onDoubleTap: () {
-        if (entry.hasDrillDown) {
-          _drillDownEntry(entry);
+      onDoubleTapDown: (details) {
+        final tapped = resolveTappedEntry(details.localPosition) ?? entry;
+        if (tapped.hasDrillDown) {
+          _drillDownEntry(tapped);
         }
       },
+      // onTap/onDoubleTap are no-ops; *Down variants above do the work using
+      // the tap's localPosition to hit-test spanSegments.
+      onTap: () {},
+      onDoubleTap: () {},
       child: CustomPaint(
         size: Size(chartWidth, 22),
         painter: _OverviewRowPainter(
@@ -1682,17 +1718,50 @@ class _WaterfallChartState extends State<WaterfallChart> {
 
     // Find min depth among root spans for normalization
     final minDepth = rootSpans.map((s) => s.depth).reduce(math.min);
-    // In cluster-strip mode, allSpans are all at depth == minDepth (just the
-    // roots) so maxDepth must use `s.depth` not `s.maxDepth`; otherwise we'd
-    // reserve rows for children we chose not to render.
-    final maxDepth = (isCluster && !isFocused)
-        ? allSpans.map((s) => s.depth).reduce(math.max) - minDepth
-        : allSpans.map((s) => s.maxDepth).reduce(math.max) - minDepth;
-    final pixelsPerMs = _flameZoom * 2.0;
-    final contentWidth = rootDurationMs * pixelsPerMs;
+
+    // Split spans into Dart/JS lanes. The JS profiler grafts JS-thread spans
+    // (subType prefix "js") as children of Dart spans — so they share the
+    // Dart depth namespace and used to render interleaved on the same rows.
+    // That made a "flushUICommand / execUICommands" Dart row visually next
+    // to "j / bound run" JS function frames, and users couldn't tell which
+    // thread a given bar belonged to. Stack Dart above, JS below, with a
+    // one-row gutter between them.
+    bool isJsSpan(PerformanceSpan s) => s.subType.startsWith('js');
+
+    final dartSpans = <PerformanceSpan>[];
+    final jsSpans = <PerformanceSpan>[];
+    for (final s in allSpans) {
+      if (isJsSpan(s)) {
+        jsSpans.add(s);
+      } else {
+        dartSpans.add(s);
+      }
+    }
+
+    final rowForSpan = <PerformanceSpan, int>{};
+    int dartMaxRow = -1;
+    for (final s in dartSpans) {
+      final r = s.depth - minDepth;
+      rowForSpan[s] = r;
+      if (r > dartMaxRow) dartMaxRow = r;
+    }
+    int jsMaxRow = -1;
+    if (jsSpans.isNotEmpty) {
+      final jsMinDepth = jsSpans.map((s) => s.depth).reduce(math.min);
+      final jsLaneStart = dartMaxRow + 2; // +2 = one gutter row
+      for (final s in jsSpans) {
+        final r = jsLaneStart + (s.depth - jsMinDepth);
+        rowForSpan[s] = r;
+        if (r > jsMaxRow) jsMaxRow = r;
+      }
+    }
+    final maxRow = math.max(dartMaxRow, jsMaxRow);
+    final laneDividerRow =
+        (dartSpans.isNotEmpty && jsSpans.isNotEmpty) ? dartMaxRow + 1 : -1;
+
     const rowHeight = 20.0;
     const rulerHeight = 24.0;
-    final chartHeight = (maxDepth + 1) * rowHeight;
+    final chartHeight = (maxRow + 1) * rowHeight;
 
     // Frame boundaries for dropped-frame highlighting. Use endTimes of any
     // drawFrame roots in this drill-down, expressed as local offsets from
@@ -1708,6 +1777,13 @@ class _WaterfallChartState extends State<WaterfallChart> {
     frameBoundariesLocal.sort((a, b) => a.compareTo(b));
 
     return LayoutBuilder(builder: (context, constraints) {
+    // Auto-fit the content to the viewport when it would otherwise compress
+    // to a tiny sliver (e.g. a single 44.9ms frame rendered at 2px/ms is only
+    // ~90px wide). Keep 2px/ms as the floor so large durations still scroll
+    // instead of being crushed to sub-pixel bars.
+    final fitPixelsPerMs = constraints.maxWidth / rootDurationMs;
+    final pixelsPerMs = math.max(2.0, fitPixelsPerMs) * _flameZoom;
+    final contentWidth = rootDurationMs * pixelsPerMs;
     final chartWidth = math.max(contentWidth, constraints.maxWidth);
 
     return Column(
@@ -1769,7 +1845,8 @@ class _WaterfallChartState extends State<WaterfallChart> {
               Text(
                 isCluster && !isFocused
                     ? '(${allRoots.length} frames — tap one to inspect its stack)'
-                    : '(${allSpans.length} total, max depth ${maxDepth + 1})',
+                    : '(Dart: ${dartSpans.length}, JS: ${jsSpans.length} — '
+                        'max depth ${maxRow + 1})',
                 style: const TextStyle(color: Colors.white38, fontSize: 10),
               ),
             ],
@@ -1807,7 +1884,7 @@ class _WaterfallChartState extends State<WaterfallChart> {
                 onTapDown: (details) {
                   _handleFlameChartTap(
                       details.localPosition, allSpans, rootStart,
-                      pixelsPerMs, rowHeight, minDepth, allRoots);
+                      pixelsPerMs, rowHeight, rowForSpan, allRoots);
                 },
                 child: SizedBox(
                   width: chartWidth,
@@ -1829,7 +1906,8 @@ class _WaterfallChartState extends State<WaterfallChart> {
                         painter: _FlameChartPainter(
                           spans: allSpans,
                           rootStart: rootStart,
-                          rootDepth: minDepth,
+                          rowForSpan: rowForSpan,
+                          laneDividerRow: laneDividerRow,
                           pixelsPerMs: pixelsPerMs,
                           rowHeight: rowHeight,
                           selectedSpan: _detailSpan,
@@ -1860,13 +1938,13 @@ class _WaterfallChartState extends State<WaterfallChart> {
       DateTime rootStart,
       double pixelsPerMs,
       double rowHeight,
-      int rootDepth) {
+      Map<PerformanceSpan, int> rowForSpan) {
     final row = (pos.dy / rowHeight).floor();
     final ms = pos.dx / pixelsPerMs;
 
     for (final span in allSpans) {
-      final depth = span.depth - rootDepth;
-      if (depth != row) continue;
+      final spanRow = rowForSpan[span];
+      if (spanRow != row) continue;
       final spanStartMs =
           span.startTime.difference(rootStart).inMicroseconds / 1000.0;
       final spanEndMs = span.endTime != null
@@ -1885,10 +1963,10 @@ class _WaterfallChartState extends State<WaterfallChart> {
       DateTime rootStart,
       double pixelsPerMs,
       double rowHeight,
-      int rootDepth,
+      Map<PerformanceSpan, int> rowForSpan,
       List<PerformanceSpan> allRoots) {
     final span = _hitTestFlameSpan(
-        pos, allSpans, rootStart, pixelsPerMs, rowHeight, rootDepth);
+        pos, allSpans, rootStart, pixelsPerMs, rowHeight, rowForSpan);
     // In cluster mode with no focus, a tap on one of the depth-0 roots enters
     // focus on that root instead of opening the detail panel — otherwise the
     // cluster's concatenated timeline hides per-frame boundaries.
@@ -2292,7 +2370,8 @@ class _OverviewRowPainter extends CustomPainter {
 class _FlameChartPainter extends CustomPainter {
   final List<PerformanceSpan> spans;
   final DateTime rootStart;
-  final int rootDepth;
+  final Map<PerformanceSpan, int> rowForSpan;
+  final int laneDividerRow;
   final double pixelsPerMs;
   final double rowHeight;
   final PerformanceSpan? selectedSpan;
@@ -2300,7 +2379,8 @@ class _FlameChartPainter extends CustomPainter {
   _FlameChartPainter({
     required this.spans,
     required this.rootStart,
-    required this.rootDepth,
+    required this.rowForSpan,
+    required this.laneDividerRow,
     required this.pixelsPerMs,
     required this.rowHeight,
     this.selectedSpan,
@@ -2308,16 +2388,48 @@ class _FlameChartPainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
+    // Lane divider between Dart (top) and JS (bottom) lanes. The gutter row
+    // (laneDividerRow) is deliberately kept empty of spans; fill it with a
+    // visible banner so users notice the JS lane exists below. A subtle 1px
+    // line was too easy to miss — users reported "JS stacks are all missing"
+    // when in fact the JS lane was simply below the fold.
+    if (laneDividerRow >= 0) {
+      final y = laneDividerRow * rowHeight;
+      final bandPaint = Paint()..color = const Color(0xFF3B2A12);
+      canvas.drawRect(Rect.fromLTWH(0, y, size.width, rowHeight), bandPaint);
+      final borderPaint = Paint()
+        ..color = const Color(0xFFE0A94A)
+        ..strokeWidth = 1.5;
+      canvas.drawLine(
+          Offset(0, y), Offset(size.width, y), borderPaint);
+      canvas.drawLine(Offset(0, y + rowHeight),
+          Offset(size.width, y + rowHeight), borderPaint);
+      final labelTp = TextPainter(
+        text: const TextSpan(
+          text: '▼ JS THREAD',
+          style: TextStyle(
+            color: Color(0xFFE0A94A),
+            fontSize: 10,
+            fontWeight: FontWeight.w600,
+            letterSpacing: 0.5,
+          ),
+        ),
+        textDirection: TextDirection.ltr,
+      )..layout();
+      labelTp.paint(canvas, Offset(6, y + (rowHeight - labelTp.height) / 2));
+    }
+
     for (final span in spans) {
       if (!span.isComplete) continue;
 
-      final depth = span.depth - rootDepth;
+      final row = rowForSpan[span];
+      if (row == null) continue;
       final startMs =
           span.startTime.difference(rootStart).inMicroseconds / 1000.0;
       final durationMs = span.duration.inMicroseconds / 1000.0;
       final x = startMs * pixelsPerMs;
       final w = math.max(durationMs * pixelsPerMs, 1.0);
-      final y = depth * rowHeight;
+      final y = row * rowHeight;
 
       final color = _flameSpanColor(span);
       final isSelected = identical(span, selectedSpan);
@@ -2422,10 +2534,11 @@ class _FlameChartPainter extends CustomPainter {
   bool shouldRepaint(_FlameChartPainter old) =>
       old.spans.length != spans.length ||
       old.rootStart != rootStart ||
-      old.rootDepth != rootDepth ||
+      old.laneDividerRow != laneDividerRow ||
       old.pixelsPerMs != pixelsPerMs ||
       old.rowHeight != rowHeight ||
-      !identical(old.selectedSpan, selectedSpan);
+      !identical(old.selectedSpan, selectedSpan) ||
+      !identical(old.rowForSpan, rowForSpan);
 }
 
 // ---------------------------------------------------------------------------
