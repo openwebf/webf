@@ -694,10 +694,6 @@ String _spanLabel(PerformanceSpan span) {
     if (meta.containsKey('url')) return 'parse ${meta['url']}';
     if (meta.containsKey('tagName')) return '${span.name}(${meta['tagName']})';
   }
-  // Fall back to the subType when name is empty — keeps grafted
-  // invokeModuleEvent / invokeBindingMethodFromNative bars from rendering
-  // as a bare duration string when the call site didn't pass a name.
-  if (span.name.isEmpty) return span.subType;
   return span.name;
 }
 
@@ -2112,77 +2108,6 @@ class _WaterfallChartState extends State<WaterfallChart> {
         final r = jsLaneStart + (s.depth - jsMinDepth);
         rowForSpan[s] = r;
         if (r > jsMaxRow) jsMaxRow = r;
-      }
-
-      // Graft JS→Dart cross-call subtrees so the Dart frames triggered by
-      // `__webf_invoke_module__` / other binding calls show up directly
-      // beneath the JS call that caused them instead of floating as a
-      // separate Dart root in a different part of the profile.
-      //
-      // `invokeBindingMethodFromNative` and `invokeModuleEvent` are opened
-      // on the Dart thread when a JS binding fires, and run synchronously
-      // with the calling JS span — so time-containment is a reliable
-      // "this Dart work was caused by this JS call" signal (unlike the
-      // Dart→JS direction, where asyncSpanning stamps get clobbered).
-      const dartSyncCallSubTypes = {
-        kSubTypeInvokeBindingMethodFromNative,
-        kSubTypeInvokeModuleEvent,
-        kSubTypeAsyncCallback,
-      };
-      final trackerRoots = PerformanceTracker.instance.rootSpans;
-      final graftCandidates = trackerRoots
-          .where((r) =>
-              dartSyncCallSubTypes.contains(r.subType) && r.isComplete)
-          .toList();
-      final alreadyGrafted = <PerformanceSpan>{};
-
-      // Sort JS spans deepest-first so the innermost call that contains a
-      // given Dart root wins (if two nested JS calls both brace the same
-      // Dart work, the deeper one is the real caller).
-      final jsByRowDeepestFirst = List<PerformanceSpan>.from(jsSpans)
-        ..sort((a, b) =>
-            (rowForSpan[b] ?? 0).compareTo(rowForSpan[a] ?? 0));
-
-      // Recursively graft a Dart span + its in-tree children + any other
-      // top-level Dart roots that are time-contained within it. Chain
-      // grafting handles the case where a Dart entry synchronously opens
-      // another Dart entry (e.g. invokeModuleEvent → asyncCallback →
-      // invokeBindingMethodFromNative) — each link was a separate root in
-      // `rootSpans`, so walking only `s.children` would miss them.
-      void graftDartSubtree(PerformanceSpan s, int row) {
-        rowForSpan[s] = row;
-        allSpans.add(s);
-        dartSpans.add(s);
-        if (row > jsMaxRow) jsMaxRow = row;
-        // In-tree children of this grafted Dart span.
-        for (final c in s.children) {
-          graftDartSubtree(c, row + 1);
-        }
-        // Other Dart roots whose window is contained in this one.
-        final sEnd = s.endOffsetUs;
-        if (sEnd == null) return;
-        for (final other in graftCandidates) {
-          if (alreadyGrafted.contains(other)) continue;
-          if (other.startOffsetUs < s.startOffsetUs) continue;
-          final oe = other.endOffsetUs;
-          if (oe == null || oe > sEnd) continue;
-          alreadyGrafted.add(other);
-          graftDartSubtree(other, row + 1);
-        }
-      }
-
-      for (final js in jsByRowDeepestFirst) {
-        final jsStart = js.startOffsetUs;
-        final jsEnd = js.endOffsetUs;
-        if (jsEnd == null) continue;
-        for (final dartRoot in graftCandidates) {
-          if (alreadyGrafted.contains(dartRoot)) continue;
-          if (dartRoot.startOffsetUs < jsStart) continue;
-          final dartEnd = dartRoot.endOffsetUs;
-          if (dartEnd == null || dartEnd > jsEnd) continue;
-          alreadyGrafted.add(dartRoot);
-          graftDartSubtree(dartRoot, (rowForSpan[js] ?? 0) + 1);
-        }
       }
     }
     final maxRow = math.max(dartMaxRow, jsMaxRow);
