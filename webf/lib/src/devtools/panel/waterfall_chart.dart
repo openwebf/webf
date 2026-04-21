@@ -23,6 +23,21 @@ import 'package:webf/src/launcher/loading_state.dart';
 import 'package:webf/src/devtools/panel/performance_tracker.dart';
 import 'package:webf/src/devtools/panel/performance_subtypes.dart';
 
+/// SubTypes that render one row per root in the overview instead of
+/// clustering consecutive roots into a single merged row.
+///
+/// Use this for subTypes whose per-root identity is meaningful — image
+/// loads and script fetches each have a distinct URL, load times vary
+/// widely, and they often fire concurrently. Clustering hides both the
+/// individual URLs and the overlap. Everything else (drawFrame,
+/// flushUICommand, …) still clusters by the 50ms-gap rule.
+const Set<String> kWaterfallPerRootSubTypes = {
+  kSubTypeImageLoadComplete,
+  kSubTypeFontLoadComplete,
+  kSubTypeScriptLoadComplete,
+  kSubTypeNetworkResponse,
+};
+
 /// Fixed row order in the waterfall. SubTypes not in this list are appended
 /// at the end (catches new entries until they're explicitly placed).
 const List<String> kWaterfallRowOrder = [
@@ -421,6 +436,27 @@ WaterfallData _buildWaterfallDataImpl(
     final spans = rootsBySubType[subType]!;
     if (spans.isEmpty) continue;
     spans.sort((a, b) => a.startOffsetUs.compareTo(b.startOffsetUs));
+
+    // Per-root subTypes (image loads, network, etc.) get one entry per
+    // span so each URL is its own row — clustering would lose the
+    // individual names and hide concurrent overlaps.
+    if (kWaterfallPerRootSubTypes.contains(subType)) {
+      for (final s in spans) {
+        final start = shiftedOffset(s.startOffsetUs);
+        final end = shiftedOffset(s.endOffsetUs!);
+        final label = s.name.isNotEmpty ? s.name : subType;
+        entries.add(WaterfallEntry(
+          subType: subType,
+          label: label,
+          start: start,
+          end: end,
+          span: s,
+          spans: const [],
+          spanSegments: const [],
+        ));
+      }
+      continue;
+    }
 
     const clusterGap = Duration(milliseconds: 50);
     var clusterStart = shiftedOffset(spans.first.startOffsetUs);
