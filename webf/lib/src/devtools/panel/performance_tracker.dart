@@ -12,6 +12,7 @@
 /// Zero-cost when [enabled] is false (single boolean check per call).
 library;
 
+import 'dart:async';
 import 'dart:convert';
 import 'dart:ffi';
 import 'package:ffi/ffi.dart';
@@ -329,6 +330,27 @@ class PerformanceTracker {
   /// the binding handler itself opens no entry of its own).
   int _currentEntryId = 0;
 
+  /// Periodic drain of the C++ JS span ring buffer.
+  ///
+  /// The primary drain is piggy-backed on `flushUICommand`, which runs at
+  /// the end of every frame that actually has UI work. But a long JS-only
+  /// burst — e.g. Vite evaluating `import` statements for 1+s of module
+  /// resolution with no DOM output — produces zero UI commands, so
+  /// `flushUICommand` short-circuits, `scheduleFrame()` stops recurring,
+  /// and the frame loop stalls. Meanwhile the JS thread keeps firing
+  /// function entries/exits into the 8192-slot C++ ring buffer, which
+  /// overflows and silently drops the oldest spans. By the time React
+  /// finally renders and UI commands resume, only the last ~10% of the
+  /// JS history survives — which was the "1.1s of untracked idle"
+  /// reported on the evaluateModule drilldown.
+  ///
+  /// Schedule a short-period Timer that drains independently of the
+  /// frame loop while a session is active. 10ms pacing gives us a
+  /// worst-case window of ~81 spans/ms * 10ms ≈ 810 spans per drain,
+  /// well under the 8192 ring size even for spike activity.
+  Timer? _periodicDrainTimer;
+  static const Duration _periodicDrainInterval = Duration(milliseconds: 10);
+
   void _setCurrentEntryId(int entryId) {
     _currentEntryId = entryId;
     to_native.setJSProfilerCurrentEntryId(entryId);
@@ -384,11 +406,23 @@ class PerformanceTracker {
     final cppSessionStartAbsUs = to_native.getJSProfilerSessionStartUs();
     _cppSessionStartAbsUs = cppSessionStartAbsUs;
     _cppToDartOffsetUs = cppSessionStartAbsUs - _stopwatchStartAbsUs!;
+
+    // Step C: start the periodic JS-span drainer so JS activity that
+    // doesn't produce UI commands (module loading, pure computation,
+    // idle callbacks) still makes it out of the C++ ring buffer before
+    // it wraps and loses history.
+    _periodicDrainTimer?.cancel();
+    _periodicDrainTimer = Timer.periodic(_periodicDrainInterval, (_) {
+      if (!enabled) return;
+      drainJSThreadSpans();
+    });
   }
 
   /// End the current recording session. Spans are preserved for reading.
   void endSession() {
     enabled = false;
+    _periodicDrainTimer?.cancel();
+    _periodicDrainTimer = null;
     // Drain any remaining JS spans before tearing down state
     drainJSThreadSpans();
     // Disable C++ JS thread profiling
