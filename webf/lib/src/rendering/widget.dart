@@ -425,28 +425,6 @@ class RenderWidget extends RenderBoxModel
     ordered.addAll(normal);
     ordered.addAll(positionedAutoOrZero.cast<RenderBox>());
     ordered.addAll(positives.cast<RenderBox>());
-    final String containerId = renderStyle.target.id ?? '';
-    final String containerClass = renderStyle.target.className;
-    final bool shouldTracePaintOrder =
-        containerId.isNotEmpty ||
-            containerClass.contains('dropdown') ||
-            containerClass.contains('menu') ||
-            renderStyle.target.tagName == 'WEBF-LISTVIEW';
-    if (shouldTracePaintOrder) {
-      final List<String> lines = <String>[];
-      for (int i = 0; i < ordered.length; i++) {
-        final RenderBox child = ordered[i];
-        if (child is RenderBoxModel) {
-          final Element target = child.renderStyle.target;
-          lines.add(
-              '$i:${target.tagName.toLowerCase()}#${target.id ?? ''} pos=${child.renderStyle.position} '
-              'z=${child.renderStyle.zIndex?.toString() ?? 'auto'} ro=${child.runtimeType}');
-        } else {
-          lines.add('$i:${child.runtimeType}');
-        }
-      }
-      print('[PaintOrder][RenderWidget ${renderStyle.target.tagName.toLowerCase()}#${containerId}] ${lines.join(' | ')}');
-    }
     return ordered;
   }
 

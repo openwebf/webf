@@ -10,17 +10,6 @@ import 'package:webf/css.dart';
 import 'package:webf/dom.dart';
 import 'package:webf/rendering.dart';
 
-const Set<String> _kPaintOrderTraceIds = <String>{
-  'showcase-webf-listview',
-  'showcase-dropdown-card',
-  'showcase-dropdown-trigger',
-  'showcase-dropdown-content',
-  'showcase-dropdown-menu-card',
-  'showcase-dropdown-menu-trigger',
-  'showcase-dropdown-menu-content',
-  'showcase-development-plan-card',
-};
-
 abstract class RenderLayoutBox extends RenderBoxModel
     with
         ContainerRenderObjectMixin<RenderBox,
@@ -571,43 +560,6 @@ abstract class RenderLayoutBox extends RenderBoxModel
       ordered.addAll(normalFlow);
       ordered.addAll(positionedAutoOrZero.cast<RenderBox>());
       ordered.addAll(positives.cast<RenderBox>());
-
-      bool shouldTrace = false;
-      String? containerId;
-      if (this is RenderBoxModel) {
-        containerId = (this as RenderBoxModel).renderStyle.target.id;
-        if (containerId != null && _kPaintOrderTraceIds.contains(containerId)) {
-          shouldTrace = true;
-        }
-      }
-      if (!shouldTrace) {
-        for (final RenderBox child in ordered) {
-          if (child is! RenderBoxModel) continue;
-          final String? childId = child.renderStyle.target.id;
-          if (childId != null && _kPaintOrderTraceIds.contains(childId)) {
-            shouldTrace = true;
-            break;
-          }
-        }
-      }
-      if (shouldTrace) {
-        final String containerLabel = containerId == null
-            ? runtimeType.toString()
-            : '${runtimeType.toString()}#$containerId';
-        final List<String> lines = <String>[];
-        for (int i = 0; i < ordered.length; i++) {
-          final RenderBox child = ordered[i];
-          if (child is RenderBoxModel) {
-            final Element target = child.renderStyle.target;
-            lines.add(
-                '$i:${target.tagName.toLowerCase()}#${target.id ?? ''} pos=${child.renderStyle.position} '
-                'z=${child.renderStyle.zIndex?.toString() ?? 'auto'} ro=${child.runtimeType}');
-          } else {
-            lines.add('$i:${child.runtimeType}');
-          }
-        }
-        print('[PaintOrder][$containerLabel] ${lines.join(' | ')}');
-      }
 
       return ordered;
     }
