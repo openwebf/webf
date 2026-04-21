@@ -491,6 +491,19 @@ WaterfallData _buildWaterfallDataImpl(
     if (spans.isEmpty) continue;
     spans.sort((a, b) => a.startOffsetUs.compareTo(b.startOffsetUs));
 
+    // `invokeBindingMethodFromNative` is the Dart tail of a JS→Dart
+    // binding call (document.getElementById, setProperty, …). It never
+    // originates on the Dart thread independently — there's always a
+    // calling JS frame whose wall-clock duration dwarfs the Dart
+    // handler's. Showing it as a standalone overview row is misleading:
+    // the user sees "getElementById 425µs" and thinks Dart did a quick
+    // lookup, when in reality the JS caller spent 940ms on that same
+    // operation (937ms of it waiting for a UI command flush). Suppress
+    // these from the overview. They still appear inside a JS drilldown
+    // via the JS→Dart graft, where the bridge JS span gives them the
+    // causal context they need.
+    if (subType == kSubTypeInvokeBindingMethodFromNative) continue;
+
     // Per-root subTypes (image loads, network, etc.) get one entry per
     // span so each URL is its own row — clustering would lose the
     // individual names and hide concurrent overlaps.
