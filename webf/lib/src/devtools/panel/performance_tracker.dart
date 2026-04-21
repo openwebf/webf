@@ -15,6 +15,7 @@ library;
 import 'dart:async';
 import 'dart:convert';
 import 'dart:ffi';
+import 'dart:math' as math;
 import 'package:ffi/ffi.dart';
 import 'package:meta/meta.dart';
 import 'package:webf/bridge.dart';
@@ -698,13 +699,28 @@ class PerformanceTracker {
   /// fully contains `[startOffsetUs..endOffsetUs]`. Used to graft drained
   /// JS spans at the correct depth in the tree.
   ///
-  /// A child is eligible only when the new span's interval fits entirely
-  /// inside the child's own interval. Checking only the start (as an
-  /// earlier version did) nests a later-ending span under a shorter
-  /// sibling that simply started first — the new span then extends past
-  /// its parent, producing child-longer-than-parent tree violations
-  /// observed in real profiles (eg. a 5ms jsMicrotask grafted into a
-  /// 1µs jsFunction "s" because its start fell within the "s" window).
+  /// A child is eligible when the new span's interval fits inside the
+  /// child's own interval. Checking only the start (as the original
+  /// version did) nests a later-ending span under a shorter sibling
+  /// that simply started first — the new span then extends past its
+  /// parent, producing child-longer-than-parent tree violations like
+  /// the earlier 5130µs jsMicrotask grafted into a 100µs jsFunction "s".
+  ///
+  /// However, a strict end-containment check is TOO strict: the C++
+  /// profiler records `OnFunctionEntry` / `OnFunctionExit` timestamps at
+  /// slightly different points than the logical JS call stack
+  /// enter/exit, so an inner function's `end_us` can legitimately land
+  /// a few µs past its parent's recorded `end_us` (observed: a 106.97ms
+  /// `jsFunction "w"` ending 40µs — 0.03% of the parent's duration —
+  /// past its `jsMicrotask` parent). Rejecting that case kicks `w` out
+  /// into becoming a same-depth sibling of the microtask, so the flame
+  /// chart paints both at the same row and the bars overlap visually.
+  ///
+  /// Allow a small tolerance: accept nesting when the overflow is
+  /// <5% of the candidate's duration AND <1ms absolute. Both bounds
+  /// matter — the percentage catches small absolute overflows in short
+  /// spans; the absolute cap prevents a huge span from swallowing a
+  /// meaningfully-overflowing child.
   ///
   /// Open-ended children (endOffsetUs == null) are treated as still
   /// ongoing — their interval extends to +∞ — so a mid-session drain
@@ -717,8 +733,21 @@ class PerformanceTracker {
       for (final child in candidate.children) {
         if (child.startOffsetUs > startOffsetUs) continue;
         final childEnd = child.endOffsetUs;
-        if (childEnd == null ||
-            (startOffsetUs <= childEnd && endOffsetUs <= childEnd)) {
+        if (childEnd == null) {
+          next = child;
+          break;
+        }
+        if (startOffsetUs > childEnd) continue;
+        if (endOffsetUs <= childEnd) {
+          next = child;
+          break;
+        }
+        // End overflows. Accept if small enough to be profiler noise.
+        final overflow = endOffsetUs - childEnd;
+        final childDur = childEnd - child.startOffsetUs;
+        final tolerance =
+            math.min(1000, (childDur * 0.05).round()); // 5% or 1ms, whichever smaller
+        if (overflow <= tolerance) {
           next = child;
           break;
         }

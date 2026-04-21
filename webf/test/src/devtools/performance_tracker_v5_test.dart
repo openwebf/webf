@@ -513,6 +513,51 @@ void main() {
     });
 
     test(
+        'sub-ms end overflow nests under candidate (profiler timestamp jitter)',
+        () {
+      // Regression: the C++ profiler records OnFunctionEntry/Exit
+      // timestamps with slight jitter, so an inner function can exit a
+      // few µs past its logical parent's exit. A real profile had a
+      // 106.97ms jsFunction "w" ending 40µs past its jsMicrotask
+      // parent. The strict end-containment check rejected the nesting
+      // and promoted "w" to a sibling of the microtask — both at the
+      // same flame-chart depth, so their bars overlapped visually.
+      //
+      // Tolerance: accept overflows under 5% of the candidate's
+      // duration AND under 1ms absolute. 40µs / 130ms = 0.03% — well
+      // within.
+      PerformanceTracker.instance.debugInjectJSSpan(
+        subType: kSubTypeJsFunction,
+        startUs: 1000,
+        endUs: 2000,
+        entryId: 0,
+        funcName: 'outer',
+      );
+      PerformanceTracker.instance.debugInjectJSSpan(
+        subType: kSubTypeJsMicrotask,
+        startUs: 1100,
+        endUs: 1800,
+        entryId: 0,
+        funcName: 'mt',
+      );
+      // Start inside 'mt', end 20µs past 'mt' — small overflow, should
+      // nest under 'mt' via tolerance.
+      PerformanceTracker.instance.debugInjectJSSpan(
+        subType: kSubTypeJsFunction,
+        startUs: 1200,
+        endUs: 1820,
+        entryId: 0,
+        funcName: 'innerJitter',
+      );
+
+      final outer = PerformanceTracker.instance.rootSpans
+          .firstWhere((r) => r.name == 'outer');
+      final mt = outer.children.firstWhere((c) => c.name == 'mt');
+      expect(mt.children.any((c) => c.name == 'innerJitter'), isTrue,
+          reason: 'sub-ms overflow must nest via tolerance, not sibling-out');
+    });
+
+    test(
         'JS span whose end exceeds a short sibling must not nest under it',
         () {
       // Regression: a short jsFunction "s" (ends early) used to swallow
