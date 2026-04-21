@@ -694,6 +694,10 @@ String _spanLabel(PerformanceSpan span) {
     if (meta.containsKey('url')) return 'parse ${meta['url']}';
     if (meta.containsKey('tagName')) return '${span.name}(${meta['tagName']})';
   }
+  // Fall back to subType when name is empty so grafted Dart cross-call
+  // bars (some of which don't set a name) render something readable
+  // instead of a bare duration string.
+  if (span.name.isEmpty) return span.subType;
   return span.name;
 }
 
@@ -2108,6 +2112,77 @@ class _WaterfallChartState extends State<WaterfallChart> {
         final r = jsLaneStart + (s.depth - jsMinDepth);
         rowForSpan[s] = r;
         if (r > jsMaxRow) jsMaxRow = r;
+      }
+
+      // Graft JS→Dart cross-call stacks beneath the explicit bridge span.
+      // A `jsBindingSyncCall` is emitted by the C++ profiler exactly when
+      // the JS thread blocks on a synchronous Dart call; the matching
+      // Dart work (`invokeBindingMethodFromNative` / `invokeModuleEvent`
+      // / `asyncCallback`) runs inside that call's time window as its own
+      // top-level root in `tracker.rootSpans`. Pull those Dart subtrees
+      // into the bridge span's stack so the user sees the full cross-
+      // language flow in one drilldown, without the grafted spans
+      // cluttering the chart for normal JS frames that never entered
+      // Dart. This is a display-only transform — the stored tree and
+      // exported JSON are unchanged.
+      const dartSyncCallSubTypes = {
+        kSubTypeInvokeBindingMethodFromNative,
+        kSubTypeInvokeModuleEvent,
+        kSubTypeAsyncCallback,
+      };
+      final bridgeJsSpans = jsSpans
+          .where((s) => s.subType == kSubTypeJsBindingSyncCall)
+          .toList();
+      if (bridgeJsSpans.isNotEmpty) {
+        final trackerRoots = PerformanceTracker.instance.rootSpans;
+        final graftCandidates = trackerRoots
+            .where((r) =>
+                dartSyncCallSubTypes.contains(r.subType) && r.isComplete)
+            .toList();
+        final alreadyGrafted = <PerformanceSpan>{};
+
+        // Deepest-first so when nested bridge spans both contain the same
+        // Dart root, the innermost caller (the real trigger) wins.
+        bridgeJsSpans.sort((a, b) =>
+            (rowForSpan[b] ?? 0).compareTo(rowForSpan[a] ?? 0));
+
+        void graftDartSubtree(PerformanceSpan s, int row) {
+          rowForSpan[s] = row;
+          allSpans.add(s);
+          dartSpans.add(s);
+          if (row > jsMaxRow) jsMaxRow = row;
+          for (final c in s.children) {
+            graftDartSubtree(c, row + 1);
+          }
+          // Chain graft: another Dart root synchronously opened inside
+          // this one (eg. invokeBindingMethodFromNative → asyncCallback)
+          // is its own root in `rootSpans`, so walking only `s.children`
+          // would miss it. Include by time-containment check.
+          final sEnd = s.endOffsetUs;
+          if (sEnd == null) return;
+          for (final other in graftCandidates) {
+            if (alreadyGrafted.contains(other)) continue;
+            if (other.startOffsetUs < s.startOffsetUs) continue;
+            final oe = other.endOffsetUs;
+            if (oe == null || oe > sEnd) continue;
+            alreadyGrafted.add(other);
+            graftDartSubtree(other, row + 1);
+          }
+        }
+
+        for (final bridge in bridgeJsSpans) {
+          final bStart = bridge.startOffsetUs;
+          final bEnd = bridge.endOffsetUs;
+          if (bEnd == null) continue;
+          for (final dartRoot in graftCandidates) {
+            if (alreadyGrafted.contains(dartRoot)) continue;
+            if (dartRoot.startOffsetUs < bStart) continue;
+            final dartEnd = dartRoot.endOffsetUs;
+            if (dartEnd == null || dartEnd > bEnd) continue;
+            alreadyGrafted.add(dartRoot);
+            graftDartSubtree(dartRoot, (rowForSpan[bridge] ?? 0) + 1);
+          }
+        }
       }
     }
     final maxRow = math.max(dartMaxRow, jsMaxRow);
