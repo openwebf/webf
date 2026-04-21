@@ -8,6 +8,7 @@ export 'src/devtools/cdp_service/module.dart';
 export 'src/devtools/cdp_service/overlay.dart';
 export 'src/devtools/cdp_service/inspector.dart';
 export 'src/devtools/panel/inspector_panel.dart';
+export 'src/devtools/panel/performance_tracker.dart';
 
 // DevTools Modules
 export 'src/devtools/cdp_service/modules/css.dart';
