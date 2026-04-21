@@ -857,6 +857,54 @@ class _WaterfallChartState extends State<WaterfallChart> {
     });
   }
 
+  /// Back-button header used by the flame chart's empty-state return so
+  /// the user isn't trapped when a drilldown target has no inner spans to
+  /// render. The full flame chart builds its own richer header inline;
+  /// this one carries only the essentials (arrow + title + subtitle).
+  Widget _buildFlameHeaderBar(
+      {required String title, required String subtitle}) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      color: const Color(0xFF262626),
+      child: Row(
+        children: [
+          InkWell(
+            onTap: () {
+              _savedFlameHScrollOffset = _flameBodyHScrollController.hasClients
+                  ? _flameBodyHScrollController.offset
+                  : 0.0;
+              setState(() {
+                _mode = _ChartMode.overview;
+                _selectedSpan = null;
+                _selectedSpans = const [];
+                _detailSpan = null;
+                _focusedRoot = null;
+              });
+              WidgetsBinding.instance.addPostFrameCallback((_) {
+                if (_chartHScrollController.hasClients) {
+                  _chartHScrollController.jumpTo(_savedOverviewHScrollOffset);
+                }
+                if (_barsVScrollController.hasClients) {
+                  _barsVScrollController.jumpTo(_savedOverviewVScrollOffset);
+                }
+              });
+            },
+            child: const Padding(
+              padding: EdgeInsets.all(4),
+              child: Icon(Icons.arrow_back, size: 14, color: Colors.white70),
+            ),
+          ),
+          const SizedBox(width: 8),
+          Text(title,
+              style: const TextStyle(color: Colors.white, fontSize: 12)),
+          const SizedBox(width: 8),
+          Text(subtitle,
+              style: const TextStyle(color: Colors.white38, fontSize: 10)),
+        ],
+      ),
+    );
+  }
+
   /// One-shot diagnostic dump for a drill-down target. Prints the span's
   /// own window, subtree size, tree-integrity violations (children whose
   /// interval escapes the parent — typically a sign that `_attachJSSpan`
@@ -1810,31 +1858,36 @@ class _WaterfallChartState extends State<WaterfallChart> {
         rootSpans.first.children.isEmpty) {
       final only = rootSpans.first;
       final durMs = only.duration.inMicroseconds / 1000.0;
-      return Center(
-        child: Padding(
-          padding: const EdgeInsets.all(24),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text('${only.subType} — ${durMs.toStringAsFixed(1)}ms',
-                  style: const TextStyle(
-                      color: Colors.white70, fontSize: 13,
-                      fontWeight: FontWeight.w600)),
-              const SizedBox(height: 8),
-              const Text(
-                'No inner spans tracked for this entry.',
-                style: TextStyle(color: Colors.white54, fontSize: 12),
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _buildFlameHeaderBar(
+              title: '${only.subType}${only.name.isEmpty ? "" : " — ${only.name}"}',
+              subtitle: '${durMs.toStringAsFixed(1)}ms'),
+          Expanded(
+            child: Center(
+              child: Padding(
+                padding: const EdgeInsets.all(24),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: const [
+                    Text(
+                      'No inner spans tracked for this entry.',
+                      style: TextStyle(color: Colors.white54, fontSize: 12),
+                    ),
+                    SizedBox(height: 4),
+                    Text(
+                      'This entry wraps an uninstrumented async operation —\n'
+                      'the work inside is not broken down into spans.',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(color: Colors.white38, fontSize: 11),
+                    ),
+                  ],
+                ),
               ),
-              const SizedBox(height: 4),
-              const Text(
-                'This entry wraps an uninstrumented async operation —\n'
-                'the work inside is not broken down into spans.',
-                textAlign: TextAlign.center,
-                style: TextStyle(color: Colors.white38, fontSize: 11),
-              ),
-            ],
+            ),
           ),
-        ),
+        ],
       );
     }
 
