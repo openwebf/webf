@@ -2187,9 +2187,19 @@ class _WaterfallChartState extends State<WaterfallChart> {
         kSubTypeInvokeBindingMethodFromNative,
         kSubTypeInvokeModuleEvent,
         kSubTypeAsyncCallback,
+        kSubTypeFlushUICommand,
       };
+      // `jsBindingSyncCall` wraps a sync Dart FFI call (setProperty,
+      // querySelector, …). `jsFlushUICommand` wraps a sync wait for
+      // Dart to drain the UI command queue — the matching Dart work is
+      // a top-level `flushUICommand` entry whose entire pipeline
+      // (styleRecalc / styleApply / layout / paint) is the thing the
+      // JS thread was stalled for. Both qualify as "JS blocked on
+      // Dart" bridges.
       final bridgeJsSpans = jsSpans
-          .where((s) => s.subType == kSubTypeJsBindingSyncCall)
+          .where((s) =>
+              s.subType == kSubTypeJsBindingSyncCall ||
+              s.subType == kSubTypeJsFlushUICommand)
           .toList();
       if (bridgeJsSpans.isNotEmpty) {
         final trackerRoots = PerformanceTracker.instance.rootSpans;

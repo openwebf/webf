@@ -440,6 +440,37 @@ void main() {
     });
 
     test(
+        '_popEntry restores _currentSpan from the live stack top, not root.parent',
+        () {
+      // Regression: `_popEntry` used `root.parent` to restore
+      // `_currentSpan`, which is correct at push time but stale after the
+      // parent entry has already been popped (common under multi-view /
+      // frame-callback races). That stale pointer caused the NEXT
+      // `beginEntry` to nest under a long-dead span, producing chains
+      // like `drawFrame → drawFrame → drawFrame → ...` 200 levels deep
+      // and burying `flushUICommand`'s subtree.
+      //
+      // Simulate the race: open A, open B nested under A, pop A first
+      // (before B), pop B, then open C. Expected: C must be a root, not
+      // nested under A via A.parent lookup.
+      final a = PerformanceTracker.instance
+          .beginEntry(kSubTypeDrawFrame, 'A');
+      final b = PerformanceTracker.instance
+          .beginEntry(kSubTypeFlushUICommand, 'B');
+      a!.end(); // out-of-order: A popped before B
+      b!.end();
+      final c = PerformanceTracker.instance
+          .beginEntry(kSubTypeDrawFrame, 'C');
+      c!.end();
+
+      final roots = PerformanceTracker.instance.rootSpans;
+      final cRoot = roots.firstWhere((r) => r.name == 'C');
+      expect(cRoot.parent, isNull,
+          reason: 'C must be a root, not nested under a stale parent pointer');
+      expect(roots.map((r) => r.name), containsAll(['A', 'C']));
+    });
+
+    test(
         'stamp resolution rejects entries that have ended before the new span',
         () {
       // Regression: a real profile had a 208ms `renderRootSync` JS span

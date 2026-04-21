@@ -917,7 +917,17 @@ class PerformanceTracker {
       // Out-of-order pop (defensive — shouldn't happen with sane handle usage).
       _entryStack.remove(root);
     }
-    _currentSpan = root.parent;
+    // Restore `_currentSpan` to whatever entry is STILL on the stack, not
+    // to `root.parent`. `root.parent` was correct at the moment root was
+    // pushed, but by the time we pop, it may have been a long-dead span
+    // from an earlier frame that has no bearing on the current active
+    // stack. If we resurrect it here, the next `beginEntry` will nest
+    // under it — observed in multi-view / frame-callback races where 200+
+    // consecutive `drawFrame` roots chained themselves under each other's
+    // parent pointers, burying `flushUICommand` and its entire style/
+    // paint subtree 200 levels deep. Using the live stack top keeps
+    // `_currentSpan` honest regardless of `parent` staleness.
+    _currentSpan = _entryStack.isEmpty ? null : _entryStack.last;
     _setCurrentEntryId(previousEntryId);
     // Note: do NOT remove from _entryIdToSpan — JS spans drained later may
     // still need to graft under this completed root.
