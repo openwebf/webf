@@ -802,23 +802,47 @@ class _WaterfallChartState extends State<WaterfallChart> {
         .where((e) => includeEntryForPhase(e, widget.phase, data.attachOffset))
         .toList();
 
-    // Separate Dart thread and JS thread entries
-    final dartEntries = filtered.where((e) => !_isJSThreadSubType(e.subType)).toList();
-    final jsEntries = filtered.where((e) => _isJSThreadSubType(e.subType)).toList();
+    // Split into three groups so the overview reads top-down as network
+    // fetches (image/script/font/xhr) → Dart-thread work → JS-thread work.
+    // `kWaterfallPerRootSubTypes` happens to list exactly the network-ish
+    // subTypes today — keep the overview's grouping aligned with the
+    // per-root rendering rule so the user sees them as one semantic block.
+    final networkEntries = filtered
+        .where((e) => kWaterfallPerRootSubTypes.contains(e.subType))
+        .toList();
+    final dartEntries = filtered
+        .where((e) =>
+            !kWaterfallPerRootSubTypes.contains(e.subType) &&
+            !_isJSThreadSubType(e.subType))
+        .toList();
+    final jsEntries =
+        filtered.where((e) => _isJSThreadSubType(e.subType)).toList();
 
     final items = <_OverviewItem>[];
 
-    // Dart thread entries
+    // Network / loader fetches — green (matches loader span colors)
+    if (networkEntries.isNotEmpty) {
+      items.add(_OverviewItem.header('Network',
+          headerColor: const Color(0xFF4CAF50)));
+      for (final entry in networkEntries) {
+        items.add(_OverviewItem.entry(entry));
+      }
+    }
+
+    // Dart thread entries (drawFrame, flushUICommand, dispatchEvent, ...)
+    // — blue (matches drawFrame / flushUICommand colors)
     if (dartEntries.isNotEmpty) {
-      items.add(_OverviewItem.header('Dart Thread'));
+      items.add(_OverviewItem.header('Dart Thread',
+          headerColor: const Color(0xFF42A5F5)));
       for (final entry in dartEntries) {
         items.add(_OverviewItem.entry(entry));
       }
     }
 
-    // JS thread entries
+    // JS thread entries — orange (matches jsTimer / jsMicrotask colors)
     if (jsEntries.isNotEmpty) {
-      items.add(_OverviewItem.header('JS Thread'));
+      items.add(_OverviewItem.header('JS Thread',
+          headerColor: const Color(0xFFFFA726)));
       for (final entry in jsEntries) {
         items.add(_OverviewItem.entry(entry));
       }
@@ -1647,14 +1671,15 @@ class _WaterfallChartState extends State<WaterfallChart> {
                     itemBuilder: (ctx, i) {
                       final item = items[i];
                       if (item.isHeader) {
+                        final hc = item.headerColor ?? const Color(0xFF4CAF50);
                         return Container(
                           padding: const EdgeInsets.symmetric(horizontal: 4),
                           alignment: Alignment.centerLeft,
-                          color: const Color(0x204CAF50),
+                          color: hc.withAlpha(0x20),
                           child: Text(
                             item.headerText!,
-                            style: const TextStyle(
-                              color: Color(0xCC4CAF50),
+                            style: TextStyle(
+                              color: hc.withAlpha(0xCC),
                               fontSize: 10,
                               fontWeight: FontWeight.w600,
                             ),
@@ -1732,8 +1757,10 @@ class _WaterfallChartState extends State<WaterfallChart> {
                             itemBuilder: (ctx, i) {
                               final item = items[i];
                               if (item.isHeader) {
+                                final hc = item.headerColor ??
+                                    const Color(0xFF4CAF50);
                                 return Container(
-                                  color: const Color(0x204CAF50),
+                                  color: hc.withAlpha(0x20),
                                 );
                               }
                               return _buildOverviewRow(
@@ -2822,15 +2849,17 @@ class _FrameBoundaryPainter extends CustomPainter {
 class _OverviewItem {
   final bool isHeader;
   final String? headerText;
+  final Color? headerColor;
   final WaterfallEntry? entry;
 
-  _OverviewItem.header(this.headerText)
+  _OverviewItem.header(this.headerText, {this.headerColor})
       : isHeader = true,
         entry = null;
 
   _OverviewItem.entry(this.entry)
       : isHeader = false,
-        headerText = null;
+        headerText = null,
+        headerColor = null;
 }
 
 // ---------------------------------------------------------------------------
