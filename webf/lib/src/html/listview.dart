@@ -943,6 +943,9 @@ class _RenderWebFSliverList extends RenderSliverList {
   }
 
   int _childPaintGroup(RenderBox child) {
+    // Mirror CSS stacking phases for direct list children so abs-pos overlays
+    // can paint above later siblings: negative z-index, normal flow, positioned
+    // with auto/0 z-index, then positive z-index.
     final CSSRenderStyle? style = _resolveChildRenderStyle(child);
     if (style == null) {
       return 1;
