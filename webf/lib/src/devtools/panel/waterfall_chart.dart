@@ -747,6 +747,7 @@ Color _lifecycleColor(String name) {
 
 Color _flameSpanColor(PerformanceSpan span) {
   switch (span.subType) {
+    // Dart drawFrame pipeline stages
     case 'cssParse':
       return const Color(0xFF5C6BC0);
     case 'styleFlush':
@@ -768,8 +769,6 @@ Color _flameSpanColor(PerformanceSpan span) {
       }
     case 'paint':
       return const Color(0xFFEC407A);
-    case 'jsEval':
-      return const Color(0xFFEF5350);
     case 'htmlParse':
       return const Color(0xFF26A69A);
     case 'domConstruction':
@@ -778,6 +777,65 @@ Color _flameSpanColor(PerformanceSpan span) {
       return const Color(0xFF29B6F6);
     case 'network':
       return const Color(0xFF66BB6A);
+    // Dart lifecycle entries (the top of most drilldowns)
+    case 'drawFrame':
+      return const Color(0xFF1976D2);
+    case 'flushUICommand':
+      return const Color(0xFF42A5F5);
+    // Dart JS-hosting entries — purple family so it's clear they're
+    // Dart bridges leading into JS.
+    case 'dispatchEvent':
+      return const Color(0xFF9575CD);
+    case 'invokeBindingMethodFromNative':
+      return const Color(0xFF7E57C2);
+    case 'invokeModuleEvent':
+      return const Color(0xFF673AB7);
+    case 'evaluateScripts':
+      return const Color(0xFFFB8C00);
+    case 'evaluateByteCode':
+      return const Color(0xFFEF6C00);
+    case 'evaluateModule':
+      return const Color(0xFFE65100);
+    case 'asyncCallback':
+      return const Color(0xFF8D6E63);
+    // Dart loader entries — green family (match the overview's
+    // Network section palette).
+    case 'imageLoadComplete':
+      return const Color(0xFF66BB6A);
+    case 'fontLoadComplete':
+      return const Color(0xFF81C784);
+    case 'scriptLoadComplete':
+      return const Color(0xFF4CAF50);
+    case 'networkResponse':
+      return const Color(0xFF26A69A);
+    // JS-thread spans — warm orange/yellow family so they stand out
+    // against the purple/blue Dart frames in a drilldown.
+    case 'jsScriptEval':
+      return const Color(0xFFFFCA28); // amber — the outer eval bar
+    case 'jsFunction':
+      return const Color(0xFFFFE082); // light amber — typical JS calls
+    case 'jsCFunction':
+      return const Color(0xFFFFB74D); // warm orange — C bindings
+    case 'jsBindingSyncCall':
+      return const Color(0xFFFF7043); // orange-red — explicit bridge
+    case 'jsMicrotask':
+      return const Color(0xFFFF8A65);
+    case 'jsTimer':
+      return const Color(0xFFFFA726);
+    case 'jsRAF':
+      return const Color(0xFFFFB74D);
+    case 'jsIdle':
+      return const Color(0xFFFFCC80);
+    case 'jsEvent':
+      return const Color(0xFFFFAB91);
+    case 'jsMutationObserver':
+      return const Color(0xFFFFCCBC);
+    case 'jsFlushUICommand':
+      return const Color(0xFFFFE0B2);
+    case 'jsEval':
+      return const Color(0xFFEF5350);
+    case 'unattributed':
+      return const Color(0xFFEF5350);
     default:
       return const Color(0xFF90A4AE);
   }
