@@ -2229,9 +2229,19 @@ class _WaterfallChartState extends State<WaterfallChart> {
             concurrent.add(r);
           }
           if (concurrent.isNotEmpty) {
-            // Separate lane: two-row gap below JS lane.
-            final concurrentLaneStart = jsMaxRow + 2;
-            void placeConcurrent(PerformanceSpan s, int row) {
+            // Each concurrent root gets its OWN row range so overlapping
+            // siblings don't stack on top of each other. Track max row
+            // used so far and place each root's subtree immediately
+            // below the previous one's last row.
+            //
+            // Sort by start time so earliest-starting roots appear at
+            // the top of the concurrent lane — reading top-to-bottom
+            // matches chronological order in the rendered chart.
+            concurrent.sort((a, b) =>
+                a.startOffsetUs.compareTo(b.startOffsetUs));
+            // Two-row gap after the main JS lane to visually separate.
+            int nextRow = jsMaxRow + 2;
+            int placeConcurrent(PerformanceSpan s, int row) {
               rowForSpan[s] = row;
               allSpans.add(s);
               if (isJsSpan(s)) {
@@ -2240,12 +2250,16 @@ class _WaterfallChartState extends State<WaterfallChart> {
                 dartSpans.add(s);
               }
               if (row > jsMaxRow) jsMaxRow = row;
+              int maxRow = row;
               for (final c in s.children) {
-                placeConcurrent(c, row + 1);
+                final childMax = placeConcurrent(c, row + 1);
+                if (childMax > maxRow) maxRow = childMax;
               }
+              return maxRow;
             }
             for (final r in concurrent) {
-              placeConcurrent(r, concurrentLaneStart);
+              final rootMax = placeConcurrent(r, nextRow);
+              nextRow = rootMax + 1;
             }
           }
         }
