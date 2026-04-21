@@ -2265,12 +2265,21 @@ class _WaterfallChartState extends State<WaterfallChart> {
     frameBoundariesLocal.sort((a, b) => a.compareTo(b));
 
     return LayoutBuilder(builder: (context, constraints) {
-    // Auto-fit the content to the viewport when it would otherwise compress
-    // to a tiny sliver (e.g. a single 44.9ms frame rendered at 2px/ms is only
-    // ~90px wide). Keep 2px/ms as the floor so large durations still scroll
-    // instead of being crushed to sub-pixel bars.
+    // Fit the full drilldown duration into the viewport at zoom 1.0 so
+    // nothing is scrolled off-screen by default. Users zoom in with the
+    // toolbar when they want to inspect detail.
+    //
+    // Previously `pixelsPerMs` was clamped to at least 2.0, which made a
+    // 1.4s evaluateModule render at 2800px in a 1400px viewport — every
+    // inner JS call past the 700ms mark fell off the right edge and the
+    // drilldown looked like "just an evaluateModule bar on top of an
+    // empty jsScriptEval" unless the user scrolled horizontally.
+    //
+    // The painter already applies `math.max(w, 1.0)` per bar, so
+    // microsecond-scale spans stay visible as 1px slivers even when
+    // `pixelsPerMs` is sub-1.
     final fitPixelsPerMs = constraints.maxWidth / rootDurationMs;
-    final pixelsPerMs = math.max(2.0, fitPixelsPerMs) * _flameZoom;
+    final pixelsPerMs = fitPixelsPerMs * _flameZoom;
     final contentWidth = rootDurationMs * pixelsPerMs;
     final chartWidth = math.max(contentWidth, constraints.maxWidth);
 
