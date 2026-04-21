@@ -1797,6 +1797,47 @@ class _WaterfallChartState extends State<WaterfallChart> {
       );
     }
 
+    // Explain dead-end drilldowns instead of rendering a single lone bar
+    // over a large empty canvas. Entries like `imageLoadComplete` wrap an
+    // uninstrumented async op (`await request.obtainImage(...)`) and have
+    // no inner spans by construction — there's nothing for the flame chart
+    // to decompose. Only applies when we're expanded into one root's
+    // subtree; cluster overview of multiple same-subType roots is still
+    // informative and stays as-is.
+    final expanded = !isCluster || isFocused;
+    if (expanded &&
+        rootSpans.length == 1 &&
+        rootSpans.first.children.isEmpty) {
+      final only = rootSpans.first;
+      final durMs = only.duration.inMicroseconds / 1000.0;
+      return Center(
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text('${only.subType} — ${durMs.toStringAsFixed(1)}ms',
+                  style: const TextStyle(
+                      color: Colors.white70, fontSize: 13,
+                      fontWeight: FontWeight.w600)),
+              const SizedBox(height: 8),
+              const Text(
+                'No inner spans tracked for this entry.',
+                style: TextStyle(color: Colors.white54, fontSize: 12),
+              ),
+              const SizedBox(height: 4),
+              const Text(
+                'This entry wraps an uninstrumented async operation —\n'
+                'the work inside is not broken down into spans.',
+                textAlign: TextAlign.center,
+                style: TextStyle(color: Colors.white38, fontSize: 11),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
     // Use earliest root start and latest root end
     final rootStart = rootSpans
         .map((s) => s.startTime)
