@@ -694,6 +694,10 @@ String _spanLabel(PerformanceSpan span) {
     if (meta.containsKey('url')) return 'parse ${meta['url']}';
     if (meta.containsKey('tagName')) return '${span.name}(${meta['tagName']})';
   }
+  // Fall back to the subType when name is empty — keeps grafted
+  // invokeModuleEvent / invokeBindingMethodFromNative bars from rendering
+  // as a bare duration string when the call site didn't pass a name.
+  if (span.name.isEmpty) return span.subType;
   return span.name;
 }
 
@@ -2123,6 +2127,7 @@ class _WaterfallChartState extends State<WaterfallChart> {
       const dartSyncCallSubTypes = {
         kSubTypeInvokeBindingMethodFromNative,
         kSubTypeInvokeModuleEvent,
+        kSubTypeAsyncCallback,
       };
       final trackerRoots = PerformanceTracker.instance.rootSpans;
       final graftCandidates = trackerRoots
@@ -2138,13 +2143,31 @@ class _WaterfallChartState extends State<WaterfallChart> {
         ..sort((a, b) =>
             (rowForSpan[b] ?? 0).compareTo(rowForSpan[a] ?? 0));
 
+      // Recursively graft a Dart span + its in-tree children + any other
+      // top-level Dart roots that are time-contained within it. Chain
+      // grafting handles the case where a Dart entry synchronously opens
+      // another Dart entry (e.g. invokeModuleEvent → asyncCallback →
+      // invokeBindingMethodFromNative) — each link was a separate root in
+      // `rootSpans`, so walking only `s.children` would miss them.
       void graftDartSubtree(PerformanceSpan s, int row) {
         rowForSpan[s] = row;
         allSpans.add(s);
         dartSpans.add(s);
         if (row > jsMaxRow) jsMaxRow = row;
+        // In-tree children of this grafted Dart span.
         for (final c in s.children) {
           graftDartSubtree(c, row + 1);
+        }
+        // Other Dart roots whose window is contained in this one.
+        final sEnd = s.endOffsetUs;
+        if (sEnd == null) return;
+        for (final other in graftCandidates) {
+          if (alreadyGrafted.contains(other)) continue;
+          if (other.startOffsetUs < s.startOffsetUs) continue;
+          final oe = other.endOffsetUs;
+          if (oe == null || oe > sEnd) continue;
+          alreadyGrafted.add(other);
+          graftDartSubtree(other, row + 1);
         }
       }
 
