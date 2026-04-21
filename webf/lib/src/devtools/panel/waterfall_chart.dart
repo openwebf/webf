@@ -104,6 +104,16 @@ Color colorForSubType(String subType) {
   if (subType == kSubTypeJsRAF) return const Color(0xFFFFB74D);
   if (subType == kSubTypeJsMicrotask) return const Color(0xFFFFCC80);
   if (subType == kSubTypeJsScriptEval) return const Color(0xFFFFE0B2);
+  // drawFrame pipeline stages (surfaced as sibling overview rows beneath
+  // the drawFrame row). Colors match the flame chart's `_flameSpanColor`
+  // so drilldown and overview read consistently.
+  if (subType == 'domConstruction') return const Color(0xFF78909C);
+  if (subType == 'build') return const Color(0xFF29B6F6);
+  if (subType == 'styleFlush') return const Color(0xFFAB47BC);
+  if (subType == 'styleRecalc') return const Color(0xFFCE93D8);
+  if (subType == 'styleApply') return const Color(0xFFE1BEE7);
+  if (subType == 'layout') return const Color(0xFFFFA726);
+  if (subType == 'paint') return const Color(0xFFEC407A);
   // Async/unknown
   if (subType == kSubTypeAsyncCallback) return const Color(0xFF8D6E63);
   if (subType == kSubTypeUnattributed) return const Color(0xFFEF5350);
@@ -117,34 +127,12 @@ Color colorForSubType(String subType) {
 class _SpanSegment {
   final double startMs;
   final double endMs;
-  _SpanSegment({
-    required this.startMs,
-    required this.endMs,
-    this.stages = const [],
-  });
-
-  /// Colored sub-regions within this segment's interval — used for
-  /// drawFrame segments to reveal the internal pipeline stages (build,
-  /// styleRecalc, layout, paint, …) directly on the overview instead of
-  /// hiding them behind a drilldown.
-  final List<_StageSlice> stages;
+  _SpanSegment({required this.startMs, required this.endMs});
 }
 
-class _StageSlice {
-  final double startMs;
-  final double endMs;
-  final Color color;
-  const _StageSlice({
-    required this.startMs,
-    required this.endMs,
-    required this.color,
-  });
-}
-
-/// Top-level pipeline-stage subTypes inside a drawFrame. When we see one
-/// of these under a drawFrame we emit a colored slice on the overview bar
-/// so the user can see "where did this frame spend its time" without
-/// drilling in.
+/// Top-level pipeline-stage subTypes inside a drawFrame. These are emitted
+/// as their own overview rows immediately below the drawFrame row so the
+/// per-stage timeline is visible without drilling in.
 const Set<String> kDrawFrameStageSubTypes = {
   'domConstruction',
   'build',
@@ -155,28 +143,19 @@ const Set<String> kDrawFrameStageSubTypes = {
   'paint',
 };
 
-List<_StageSlice> _collectStageSlices(PerformanceSpan drawFrame, int shiftUs) {
-  final slices = <_StageSlice>[];
-  void walk(PerformanceSpan s) {
-    if (kDrawFrameStageSubTypes.contains(s.subType) &&
-        s.endOffsetUs != null) {
-      slices.add(_StageSlice(
-        startMs: (s.startOffsetUs + shiftUs) / 1000.0,
-        endMs: (s.endOffsetUs! + shiftUs) / 1000.0,
-        color: _flameSpanColor(s),
-      ));
-      // Don't recurse into a stage's subtree — a nested layout-inside-
-      // layout is noise at the overview zoom level. One slice per
-      // top-level stage is enough to show the phase breakdown.
-      return;
-    }
-    for (final c in s.children) {
-      walk(c);
-    }
-  }
-  walk(drawFrame);
-  return slices;
-}
+/// Pipeline order used when rendering stage rows beneath drawFrame. The
+/// chronological order of a drawFrame — domConstruction / build first,
+/// then the style pipeline, then layout, then paint — so scanning down
+/// the overview reads the same direction as the frame actually executes.
+const List<String> kDrawFrameStageOrder = [
+  'domConstruction',
+  'build',
+  'styleFlush',
+  'styleRecalc',
+  'styleApply',
+  'layout',
+  'paint',
+];
 
 /// One row in the waterfall, representing one entry-root span (or a cluster
 /// of consecutive same-subType roots). Drilldown opens a flame chart of
@@ -541,12 +520,6 @@ WaterfallData _buildWaterfallDataImpl(
     var clusterEnd = shiftedOffset(spans.first.endOffsetUs!);
     var clusterSpans = <PerformanceSpan>[spans.first];
 
-    // drawFrame rows surface their internal pipeline stages (build,
-    // styleRecalc, layout, paint, …) directly on the overview bar so the
-    // user can see where a frame's time went without drilling in. Other
-    // subTypes keep the legacy uniform-color rendering.
-    final isDrawFrame = subType == kSubTypeDrawFrame;
-
     void flushCluster() {
       final totalDuration = clusterSpans.fold<Duration>(
           Duration.zero, (sum, s) => sum + s.duration);
@@ -560,25 +533,8 @@ WaterfallData _buildWaterfallDataImpl(
           ? clusterSpans.map((s) => _SpanSegment(
               startMs: (s.startOffsetUs + monotonicShiftUs) / 1000.0,
               endMs: (s.endOffsetUs! + monotonicShiftUs) / 1000.0,
-              stages: isDrawFrame
-                  ? _collectStageSlices(s, monotonicShiftUs)
-                  : const [],
             )).toList()
           : const <_SpanSegment>[];
-      // For single-span drawFrame rows, populate subEntries with stage
-      // slices — that's the path the painter uses when spanSegments is
-      // empty, and it gives the same colored-stages look as the cluster
-      // segments.
-      final stageSubEntries = (isDrawFrame && count == 1)
-          ? _collectStageSlices(clusterSpans.first, monotonicShiftUs)
-              .map((slice) => WaterfallSubEntry(
-                    label: '',
-                    color: slice.color,
-                    start: Duration(microseconds: (slice.startMs * 1000).round()),
-                    end: Duration(microseconds: (slice.endMs * 1000).round()),
-                  ))
-              .toList()
-          : const <WaterfallSubEntry>[];
       entries.add(WaterfallEntry(
         subType: subType,
         label: label,
@@ -587,7 +543,6 @@ WaterfallData _buildWaterfallDataImpl(
         span: count == 1 ? clusterSpans.first : null,
         spans: count > 1 ? List.of(clusterSpans) : const [],
         spanSegments: segments,
-        subEntries: stageSubEntries,
       ));
     }
 
@@ -605,6 +560,50 @@ WaterfallData _buildWaterfallDataImpl(
       }
     }
     flushCluster();
+
+    // drawFrame pipeline stages get their own sibling rows directly below
+    // the drawFrame row so the build / styleRecalc / layout / paint
+    // timelines are visible without a drilldown. Collect top-level stage
+    // children across every drawFrame in this subType pass, group by
+    // stage subType, and emit one cluster-style row per stage in the
+    // fixed pipeline order so the visual flow reads top-to-bottom.
+    if (subType == kSubTypeDrawFrame) {
+      final stageSpansByType = <String, List<PerformanceSpan>>{};
+      for (final frame in spans) {
+        for (final child in frame.children) {
+          if (!kDrawFrameStageSubTypes.contains(child.subType)) continue;
+          if (!child.isComplete) continue;
+          (stageSpansByType[child.subType] ??= []).add(child);
+        }
+      }
+      for (final stageSubType in kDrawFrameStageOrder) {
+        final stageSpans = stageSpansByType[stageSubType];
+        if (stageSpans == null || stageSpans.isEmpty) continue;
+        stageSpans
+            .sort((a, b) => a.startOffsetUs.compareTo(b.startOffsetUs));
+
+        final stageStart = shiftedOffset(stageSpans.first.startOffsetUs);
+        final stageEnd = shiftedOffset(stageSpans.last.endOffsetUs!);
+        final stageSegments = stageSpans
+            .map((s) => _SpanSegment(
+                  startMs: (s.startOffsetUs + monotonicShiftUs) / 1000.0,
+                  endMs: (s.endOffsetUs! + monotonicShiftUs) / 1000.0,
+                ))
+            .toList();
+        final totalStageDur = stageSpans.fold<Duration>(
+            Duration.zero, (sum, s) => sum + s.duration);
+        entries.add(WaterfallEntry(
+          subType: stageSubType,
+          label: '  $stageSubType '
+              '(${stageSpans.length}, ${_formatDuration(totalStageDur)})',
+          start: stageStart,
+          end: stageEnd,
+          span: stageSpans.length == 1 ? stageSpans.first : null,
+          spans: stageSpans.length > 1 ? List.of(stageSpans) : const [],
+          spanSegments: stageSegments,
+        ));
+      }
+    }
   }
 
   // --- Milestones ---
@@ -2674,32 +2673,10 @@ class _OverviewRowPainter extends CustomPainter {
       for (final seg in spanSegments!) {
         final segLeft = (seg.startMs - phaseStartMs) * pixelsPerMs;
         final segWidth = math.max((seg.endMs - seg.startMs) * pixelsPerMs, 1.5);
-        // If the segment carries a stage breakdown (drawFrame), paint each
-        // stage in its own color so the pipeline is visible at a glance.
-        // Otherwise fall through to the uniform segment fill.
-        if (seg.stages.isNotEmpty) {
-          // Base layer: the segment's overall color as background so any
-          // gaps between stages (drawFrame overhead not accounted for by
-          // any tracked stage) still read as drawFrame-owned time.
-          canvas.drawRect(
-            Rect.fromLTWH(segLeft, barTop, segWidth, barHeight),
-            segPaint,
-          );
-          for (final stage in seg.stages) {
-            final stageLeft = (stage.startMs - phaseStartMs) * pixelsPerMs;
-            final stageWidth =
-                math.max((stage.endMs - stage.startMs) * pixelsPerMs, 1.0);
-            canvas.drawRect(
-              Rect.fromLTWH(stageLeft, barTop, stageWidth, barHeight),
-              Paint()..color = stage.color,
-            );
-          }
-        } else {
-          canvas.drawRect(
-            Rect.fromLTWH(segLeft, barTop, segWidth, barHeight),
-            segPaint,
-          );
-        }
+        canvas.drawRect(
+          Rect.fromLTWH(segLeft, barTop, segWidth, barHeight),
+          segPaint,
+        );
       }
     } else if (subEntries.isEmpty) {
       // Simple solid bar (single span or lifecycle)
