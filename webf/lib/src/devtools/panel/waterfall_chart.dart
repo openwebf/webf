@@ -2185,6 +2185,72 @@ class _WaterfallChartState extends State<WaterfallChart> {
         if (r > jsMaxRow) jsMaxRow = r;
       }
 
+      // Graft concurrent cross-tree JS activity. An async JS function
+      // like O might yield via `await`, during which the JS thread
+      // services other work — microtask drains at the end of Dart→JS
+      // sync calls, timer callbacks, etc. — that ends up in completely
+      // separate root trees (dispatchEvent / jsTimer / jsMicrotask
+      // roots) despite running on the same JS thread during the
+      // drilldown target's window. Without this, drilling into O shows
+      // a big empty gap mid-span that's actually full of JS work, just
+      // in a different tree.
+      //
+      // Pull in every root-level span whose interval is fully contained
+      // inside the drilldown target's window, IF it's a JS-thread root
+      // OR a Dart entry that specifically drives JS (dispatchEvent,
+      // evaluate*, invoke*, asyncCallback). Render their subtrees in a
+      // dedicated "Concurrent" lane below the main JS lane so the user
+      // can see what the thread was doing during the gap.
+      if (expanded && rootSpans.length == 1) {
+        final target = rootSpans.first;
+        final tStart = target.startOffsetUs;
+        final tEnd = target.endOffsetUs;
+        if (tEnd != null) {
+          const concurrentRootKinds = {
+            kSubTypeDispatchEvent,
+            kSubTypeEvaluateScripts,
+            kSubTypeEvaluateByteCode,
+            kSubTypeEvaluateModule,
+            kSubTypeInvokeModuleEvent,
+            kSubTypeAsyncCallback,
+            kSubTypeJsTimer,
+            kSubTypeJsRAF,
+            kSubTypeJsMicrotask,
+            kSubTypeJsEvent,
+          };
+          final trackerRoots = PerformanceTracker.instance.rootSpans;
+          final concurrent = <PerformanceSpan>[];
+          for (final r in trackerRoots) {
+            if (identical(r, target)) continue;
+            if (!concurrentRootKinds.contains(r.subType)) continue;
+            if (r.startOffsetUs < tStart) continue;
+            final rEnd = r.endOffsetUs;
+            if (rEnd == null || rEnd > tEnd) continue;
+            concurrent.add(r);
+          }
+          if (concurrent.isNotEmpty) {
+            // Separate lane: two-row gap below JS lane.
+            final concurrentLaneStart = jsMaxRow + 2;
+            void placeConcurrent(PerformanceSpan s, int row) {
+              rowForSpan[s] = row;
+              allSpans.add(s);
+              if (isJsSpan(s)) {
+                jsSpans.add(s);
+              } else {
+                dartSpans.add(s);
+              }
+              if (row > jsMaxRow) jsMaxRow = row;
+              for (final c in s.children) {
+                placeConcurrent(c, row + 1);
+              }
+            }
+            for (final r in concurrent) {
+              placeConcurrent(r, concurrentLaneStart);
+            }
+          }
+        }
+      }
+
       // Graft JS→Dart cross-call stacks beneath the explicit bridge span.
       // A `jsBindingSyncCall` is emitted by the C++ profiler exactly when
       // the JS thread blocks on a synchronous Dart call; the matching
