@@ -1286,9 +1286,9 @@ class _WaterfallChartState extends State<WaterfallChart> {
             InkWell(
               onTap: () => setState(() {
                 if (_mode == _ChartMode.flame) {
-                  _flameZoom = (_flameZoom / 1.5).clamp(0.25, 64);
+                  _flameZoom = (_flameZoom / 1.5).clamp(0.25, 1024);
                 } else {
-                  _zoom = (_zoom / 1.5).clamp(0.25, 64);
+                  _zoom = (_zoom / 1.5).clamp(0.25, 1024);
                 }
               }),
               child: const Padding(
@@ -1306,9 +1306,9 @@ class _WaterfallChartState extends State<WaterfallChart> {
             InkWell(
               onTap: () => setState(() {
                 if (_mode == _ChartMode.flame) {
-                  _flameZoom = (_flameZoom * 1.5).clamp(0.25, 64);
+                  _flameZoom = (_flameZoom * 1.5).clamp(0.25, 1024);
                 } else {
-                  _zoom = (_zoom * 1.5).clamp(0.25, 64);
+                  _zoom = (_zoom * 1.5).clamp(0.25, 1024);
                 }
               }),
               child: const Padding(
