@@ -526,7 +526,8 @@ class PerformanceTracker {
     root ??= _findContainingRoot(startOffsetUs);
 
     if (root != null) {
-      final parent = _findInsertionParent(root, startOffsetUs);
+      final parent =
+          _findInsertionParent(root, startOffsetUs, endOffsetUs);
       final span = PerformanceSpan(
         subType: subType,
         name: name,
@@ -648,18 +649,30 @@ class PerformanceTracker {
   }
 
   /// Walks down [root] to find the deepest descendant whose interval
-  /// contains [startOffsetUs]. Used to graft drained JS spans at the
-  /// correct depth in the tree. Open-ended children (endOffsetUs == null)
-  /// are treated as still ongoing — i.e. the interval extends to +∞ — so
-  /// a mid-session drain can attribute a JS span to an open Dart entry.
-  PerformanceSpan _findInsertionParent(PerformanceSpan root, int startOffsetUs) {
+  /// fully contains `[startOffsetUs..endOffsetUs]`. Used to graft drained
+  /// JS spans at the correct depth in the tree.
+  ///
+  /// A child is eligible only when the new span's interval fits entirely
+  /// inside the child's own interval. Checking only the start (as an
+  /// earlier version did) nests a later-ending span under a shorter
+  /// sibling that simply started first — the new span then extends past
+  /// its parent, producing child-longer-than-parent tree violations
+  /// observed in real profiles (eg. a 5ms jsMicrotask grafted into a
+  /// 1µs jsFunction "s" because its start fell within the "s" window).
+  ///
+  /// Open-ended children (endOffsetUs == null) are treated as still
+  /// ongoing — their interval extends to +∞ — so a mid-session drain
+  /// can attribute a JS span to an open Dart entry.
+  PerformanceSpan _findInsertionParent(
+      PerformanceSpan root, int startOffsetUs, int endOffsetUs) {
     PerformanceSpan candidate = root;
     while (true) {
       PerformanceSpan? next;
       for (final child in candidate.children) {
         if (child.startOffsetUs > startOffsetUs) continue;
-        final endUs = child.endOffsetUs;
-        if (endUs == null || startOffsetUs <= endUs) {
+        final childEnd = child.endOffsetUs;
+        if (childEnd == null ||
+            (startOffsetUs <= childEnd && endOffsetUs <= childEnd)) {
           next = child;
           break;
         }

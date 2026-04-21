@@ -431,6 +431,75 @@ void main() {
       expect(df2.parent, isNull);
     });
 
+    test(
+        'JS span whose end exceeds a short sibling must not nest under it',
+        () {
+      // Regression: a short jsFunction "s" (ends early) used to swallow
+      // a later-ending jsMicrotask as a child because the microtask's
+      // start fell inside "s"'s window. _findInsertionParent only
+      // checked containment of the start, producing a tree where the
+      // child's interval escaped the parent's end (22 such violations
+      // observed in a real profile). The parent search must require the
+      // full [start..end] interval to fit inside the candidate parent.
+
+      // Inject with entryId=0 so all spans flow through time-containment
+      // and become roots / sibling / nested by the tree builder's own
+      // rules — exercising _findInsertionParent directly.
+      // Outer JS span [1000..2000]; becomes a root.
+      PerformanceTracker.instance.debugInjectJSSpan(
+        subType: kSubTypeJsFunction,
+        startUs: 1000,
+        endUs: 2000,
+        entryId: 0,
+        funcName: 'outer',
+      );
+      // Short sibling inside outer [1100..1200]; nests under outer.
+      PerformanceTracker.instance.debugInjectJSSpan(
+        subType: kSubTypeJsFunction,
+        startUs: 1100,
+        endUs: 1200,
+        entryId: 0,
+        funcName: 's',
+      );
+      // New span starts at 1150 (inside "s") but ends at 1500 (past "s").
+      // It must nest under `outer`, not under `s`.
+      PerformanceTracker.instance.debugInjectJSSpan(
+        subType: kSubTypeJsMicrotask,
+        startUs: 1150,
+        endUs: 1500,
+        entryId: 0,
+        funcName: 'overflow',
+      );
+
+      // Walk the tree and assert no child extends past its parent.
+      final violations = <String>[];
+      void walk(PerformanceSpan span) {
+        for (final c in span.children) {
+          final cEnd = c.endOffsetUs;
+          final pEnd = span.endOffsetUs;
+          if (cEnd != null && pEnd != null && cEnd > pEnd) {
+            violations.add('${c.subType}/"${c.name}" '
+                'end=$cEnd > ${span.subType}/"${span.name}" end=$pEnd');
+          }
+          walk(c);
+        }
+      }
+      for (final r in PerformanceTracker.instance.rootSpans) {
+        walk(r);
+      }
+      expect(violations, isEmpty,
+          reason: 'no child may extend past its parent');
+
+      // And verify the overflow span landed under outer, not s.
+      final outer = PerformanceTracker.instance.rootSpans
+          .firstWhere((r) => r.name == 'outer');
+      expect(outer.children.map((c) => c.name),
+          containsAll(['s', 'overflow']));
+      final sNode = outer.children.firstWhere((c) => c.name == 's');
+      expect(sNode.children.any((c) => c.name == 'overflow'), isFalse,
+          reason: 'overflow must not nest under the shorter sibling "s"');
+    });
+
     test('entryId=0 JS span nests under containing root span', () {
       // First inject a containing root (eg. the C++-side jsMicrotask).
       PerformanceTracker.instance.debugInjectJSSpan(
