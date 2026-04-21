@@ -572,16 +572,24 @@ class PerformanceTracker {
     // other siblings (we handle by a single pass because we're re-parenting
     // a flat layer, not walking the whole tree).
     //
-    // Skip still-open siblings outright. A Dart entry root (drawFrame,
-    // flushUICommand, …) can linger in `rootSpans` with `endOffsetUs==null`
-    // for tens of ms while its subtree is being built. If we treated an
-    // open span as a zero-duration point (start==end), any later JS span
-    // whose window covers that start would greedily adopt the whole
-    // not-yet-complete Dart subtree — moving live drawFrames under a JS
-    // microtask that had nothing to do with them and corrupting the tree
-    // in ways that only become visible once the Dart span finally closes.
+    // Only adopt JS-thread spans. Adoption exists specifically to recover
+    // JS nesting when a late-draining outer JS span (typically jsScriptEval)
+    // turns out to enclose js* children that arrived in earlier drain
+    // batches. Pure-Dart entries (drawFrame, imageLoadComplete, etc.) run
+    // on a separate thread and only time-overlap JS by coincidence — the
+    // JS work didn't "cause" them, so they must never be swept into a JS
+    // subtree. Skipping non-js* siblings here prevents a long-running JS
+    // function from hoarding concurrent Dart entries that happened to open
+    // and close during its window.
+    //
+    // Also skip still-open siblings: a Dart entry root can linger in
+    // `rootSpans` with `endOffsetUs==null` for tens of ms while its subtree
+    // is being built, and if we treated an open span as a zero-duration
+    // point (start==end), adoption would later pull the not-yet-complete
+    // subtree into a span that had nothing to do with it.
     final toMove = <PerformanceSpan>[];
     for (final s in siblings) {
+      if (!s.subType.startsWith('js')) continue;
       if (s.startOffsetUs < startOffsetUs) continue;
       final sEnd = s.endOffsetUs;
       if (sEnd == null) continue;

@@ -376,6 +376,61 @@ void main() {
           reason: 'drawFrame must stay a root; open spans are not adoptable');
     });
 
+    test(
+        'JS root span must NOT adopt closed pure-Dart entries it overlaps',
+        () {
+      // Regression: a long-running JS function ran for 723ms on the JS
+      // thread while many short drawFrame entries completed on the Dart
+      // thread inside that window. When the JS function was eventually
+      // drained and became a new root, adoption swept up the closed
+      // drawFrames into its subtree, producing a bogus
+      // jsFunction → drawFrame → paint hierarchy across threads that
+      // share no causal relationship.
+      final dart1 = PerformanceTracker.instance
+          .beginEntry(kSubTypeDrawFrame, 'frame1');
+      dart1!.end();
+      final dart2 = PerformanceTracker.instance
+          .beginEntry(kSubTypeDrawFrame, 'frame2');
+      dart2!.end();
+
+      // Grab the real offsets we just recorded so the injection truly
+      // brackets both closed drawFrames.
+      final df1 = PerformanceTracker.instance.rootSpans
+          .firstWhere((r) => r.name == 'frame1');
+      final df2 = PerformanceTracker.instance.rootSpans
+          .firstWhere((r) => r.name == 'frame2');
+      final envStart = df1.startOffsetUs - 5;
+      final envEnd = df2.endOffsetUs! + 5;
+
+      // A long-running JS span whose window strictly contains both
+      // drawFrames. It must become a root on its own, and the drawFrames
+      // must remain independent roots (not get hoisted under the JS span).
+      PerformanceTracker.instance.debugInjectJSSpan(
+        subType: kSubTypeJsFunction,
+        startUs: envStart,
+        endUs: envEnd,
+        entryId: 0,
+        funcName: 'longRunningJs',
+      );
+
+      final rootSubTypes = PerformanceTracker.instance.rootSpans
+          .map((r) => r.subType)
+          .toList();
+      expect(rootSubTypes, containsAll([
+        kSubTypeDrawFrame,
+        kSubTypeDrawFrame,
+        kSubTypeJsFunction,
+      ]));
+      final jsRoot = PerformanceTracker.instance.rootSpans
+          .firstWhere((r) => r.subType == kSubTypeJsFunction);
+      expect(jsRoot.children, isEmpty,
+          reason:
+              'JS span must not adopt closed pure-Dart entries from rootSpans');
+      // Dart entries still at root level, parent-less.
+      expect(df1.parent, isNull);
+      expect(df2.parent, isNull);
+    });
+
     test('entryId=0 JS span nests under containing root span', () {
       // First inject a containing root (eg. the C++-side jsMicrotask).
       PerformanceTracker.instance.debugInjectJSSpan(
