@@ -140,12 +140,20 @@ void main() {
       // the stamp regardless of whether the entry is still open.
       final entry = PerformanceTracker.instance
           .beginEntry(kSubTypeEvaluateScripts, 'bundle.js');
+      final entryStart = PerformanceTracker.instance.rootSpans
+          .firstWhere((r) => r.subType == kSubTypeEvaluateScripts)
+          .startOffsetUs;
       entry!.end();
-      // Now drain a JS span tagged with the (now-closed) entry's id.
+      // Drain a JS span tagged with the (now-closed) entry's id, with a
+      // window strictly inside the entry's [start..end]. `_attachJSSpan`
+      // rejects stamps whose resolved entry has already ended BEFORE the
+      // new span's end — that catches the "JS function kept running past
+      // its stamped entry" case — so we deliberately stay inside the
+      // entry's window here to exercise the persistence-past-close path.
       PerformanceTracker.instance.debugInjectJSSpan(
         subType: kSubTypeJsCFunction,
-        startUs: 0,
-        endUs: 100,
+        startUs: entryStart + 1,
+        endUs: entryStart + 2,
         entryId: 1,
         funcName: 'lateArrival',
       );
@@ -429,6 +437,48 @@ void main() {
       // Dart entries still at root level, parent-less.
       expect(df1.parent, isNull);
       expect(df2.parent, isNull);
+    });
+
+    test(
+        'stamp resolution rejects entries that have ended before the new span',
+        () {
+      // Regression: a real profile had a 208ms `renderRootSync` JS span
+      // stamped with an evaluateModule entry_id that had already closed
+      // 8µs before the span started. The stamp resolution accepted the
+      // match blindly, grafting renderRootSync under evaluateModule and
+      // overflowing the Dart entry's end by 208ms. When the resolved
+      // entry's endOffsetUs predates the new span's end, the stamp is
+      // stale — fall through to time-containment or root creation.
+      final entry = PerformanceTracker.instance
+          .beginEntry(kSubTypeEvaluateModule, 'bundle.mjs');
+      final entryStart = PerformanceTracker.instance.rootSpans
+          .firstWhere((r) => r.subType == kSubTypeEvaluateModule)
+          .startOffsetUs;
+      entry!.end();
+      final entryEnd = PerformanceTracker.instance.rootSpans
+          .firstWhere((r) => r.subType == kSubTypeEvaluateModule)
+          .endOffsetUs!;
+
+      // JS span whose end is well past the entry's close — even though
+      // stamped with this entry's id.
+      PerformanceTracker.instance.debugInjectJSSpan(
+        subType: kSubTypeJsFunction,
+        startUs: entryStart + 1,
+        endUs: entryEnd + 5000,
+        entryId: 1,
+        funcName: 'renderRootSync',
+      );
+
+      // Must NOT have been nested under evaluateModule (that would
+      // produce a child-longer-than-parent violation).
+      final moduleRoot = PerformanceTracker.instance.rootSpans
+          .firstWhere((r) => r.subType == kSubTypeEvaluateModule);
+      final nestedOverflow = moduleRoot.children.any((c) =>
+          c.name == 'renderRootSync' &&
+          (c.endOffsetUs ?? 0) > entryEnd);
+      expect(nestedOverflow, isFalse,
+          reason:
+              'stale entry_id stamps must not nest a span that overflows the entry');
     });
 
     test(

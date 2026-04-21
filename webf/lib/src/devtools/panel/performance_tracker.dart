@@ -516,14 +516,22 @@ class PerformanceTracker {
       // drawFrame — so the stamp can point at a Dart root that had no
       // hand in producing this JS work. Only accept stamps that target
       // an entry which legitimately hosts synchronous JS execution
-      // (see [kJsHostingDartEntries]) or a JS-side entry.
+      // (see [kJsHostingDartEntries]) or a JS-side entry. Also reject
+      // stamps whose resolved entry has already closed BEFORE the new
+      // span ends — the JS function was stamped at entry with an entry
+      // that had just a few µs left and then kept running past it; it
+      // isn't really hosted by that entry any more (observed: a 208ms
+      // `renderRootSync` kept running past evaluateModule's close).
       if (candidate != null &&
           (candidate.subType.startsWith('js') ||
               kJsHostingDartEntries.contains(candidate.subType))) {
-        root = candidate;
+        final cEnd = candidate.endOffsetUs;
+        if (cEnd == null || endOffsetUs <= cEnd) {
+          root = candidate;
+        }
       }
     }
-    root ??= _findContainingRoot(startOffsetUs);
+    root ??= _findContainingRoot(startOffsetUs, endOffsetUs);
 
     if (root != null) {
       final parent =
@@ -632,7 +640,7 @@ class PerformanceTracker {
   /// Pure-Dart roots (drawFrame, flushUICommand, htmlParse, etc.) are
   /// deliberately skipped: wall-clock overlap with concurrent JS-thread
   /// activity implies no causality between them.
-  PerformanceSpan? _findContainingRoot(int startOffsetUs) {
+  PerformanceSpan? _findContainingRoot(int startOffsetUs, int endOffsetUs) {
     for (int i = rootSpans.length - 1; i >= 0; i--) {
       final root = rootSpans[i];
       if (!root.subType.startsWith('js') &&
@@ -641,7 +649,11 @@ class PerformanceTracker {
       }
       if (root.startOffsetUs > startOffsetUs) continue;
       final endUs = root.endOffsetUs;
-      if (endUs == null || startOffsetUs <= endUs) {
+      // Require full [start..end] containment; partial overlap means the
+      // new span extends past the root, so it isn't truly "inside" and
+      // nesting it would produce a child-longer-than-parent violation.
+      if (endUs == null ||
+          (startOffsetUs <= endUs && endOffsetUs <= endUs)) {
         return root;
       }
     }
