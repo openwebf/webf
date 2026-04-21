@@ -232,12 +232,6 @@ class EntryHandle {
     if (metadata != null) {
       _root.metadata = (_root.metadata ?? {})..addAll(metadata);
     }
-    if (_tracker.debugLogJSAttachment) {
-      // ignore: avoid_print
-      print('[perf] endEntry id=$_entryId ${_root.subType}/"${_root.name}" '
-          'end=${_root.endOffsetUs}us '
-          '${_asyncSpanning ? "(asyncSpanning)" : ""}');
-    }
     if (_asyncSpanning) {
       _tracker._endAsyncEntry(_previousEntryId);
     } else {
@@ -273,13 +267,13 @@ class PerformanceTracker {
   /// Tests that want to verify dev-mode contract enforcement must opt in.
   bool assertOnUnattributedSpan = false;
 
-  /// When true, emit a line to stdout for every JS span attachment decision
-  /// (drained from C++ or test-injected) and for every entry open/close that
-  /// updates the C++ `current_entry_id_` stamp. Useful when debugging why a
-  /// JS span did/didn't nest under a specific Dart entry. Off by default;
-  /// flip at runtime via `PerformanceTracker.instance.debugLogJSAttachment = true`
-  /// or through the devtools inspector toggle.
-  bool debugLogJSAttachment = false;
+  /// When true, emit a single-line summary on every waterfall drill-down
+  /// — the target span's time window, subtree size, tree-integrity
+  /// violations (children whose interval escapes the parent), and a sample
+  /// of direct children. Used to diagnose wrong drilldown rendering. Off
+  /// by default; flip at runtime via
+  /// `PerformanceTracker.instance.debugLogDrilldown = true`.
+  bool debugLogDrilldown = false;
 
   /// Top-level spans (not children of any other span).
   final List<PerformanceSpan> rootSpans = [];
@@ -336,12 +330,6 @@ class PerformanceTracker {
   int _currentEntryId = 0;
 
   void _setCurrentEntryId(int entryId) {
-    if (debugLogJSAttachment && _currentEntryId != entryId) {
-      final at = _stopwatch?.elapsedMicroseconds ?? 0;
-      final targetSubType = _entryIdToSpan[entryId]?.subType ?? '(none)';
-      // ignore: avoid_print
-      print('[perf] t=${at}us stamp ${_currentEntryId} → $entryId  ($targetSubType)');
-    }
     _currentEntryId = entryId;
     to_native.setJSProfilerCurrentEntryId(entryId);
   }
@@ -520,7 +508,6 @@ class PerformanceTracker {
     if (_totalSpanCount >= maxSpans) return;
 
     PerformanceSpan? root;
-    String? decision;
     if (entryId != 0) {
       final candidate = _entryIdToSpan[entryId];
       // Reject the stamp when it resolves to a pure-Dart entry. The C++
@@ -530,23 +517,13 @@ class PerformanceTracker {
       // hand in producing this JS work. Only accept stamps that target
       // an entry which legitimately hosts synchronous JS execution
       // (see [kJsHostingDartEntries]) or a JS-side entry.
-      if (candidate == null) {
-        decision = 'stamp-miss(id=$entryId)';
-      } else if (candidate.subType.startsWith('js') ||
-          kJsHostingDartEntries.contains(candidate.subType)) {
+      if (candidate != null &&
+          (candidate.subType.startsWith('js') ||
+              kJsHostingDartEntries.contains(candidate.subType))) {
         root = candidate;
-        decision = 'stamp-hit(id=$entryId,${candidate.subType})';
-      } else {
-        decision = 'stamp-rejected(id=$entryId,${candidate.subType})';
       }
     }
-    if (root == null) {
-      root = _findContainingRoot(startOffsetUs);
-      if (root != null) {
-        decision = '${decision == null ? "" : "$decision → "}'
-            'time-contain(${root.subType}/${root.name})';
-      }
-    }
+    root ??= _findContainingRoot(startOffsetUs);
 
     if (root != null) {
       final parent = _findInsertionParent(root, startOffsetUs);
@@ -559,17 +536,9 @@ class PerformanceTracker {
         parent: parent,
       );
       span.endOffsetUs = endOffsetUs;
-      final adopted = _adoptContainedSiblings(
+      _adoptContainedSiblings(
           parent.children, span, startOffsetUs, endOffsetUs);
       parent.children.add(span);
-      if (debugLogJSAttachment) {
-        // ignore: avoid_print
-        print('[perf] JS $subType/"$name" '
-            'start=${startOffsetUs}us dur=${endOffsetUs - startOffsetUs}us '
-            '→ nested under ${parent.subType}/"${parent.name}" depth=${parent.depth + 1}  '
-            '${adopted > 0 ? "(adopted $adopted prior sibling${adopted == 1 ? "" : "s"}) " : ""}'
-            '[$decision]');
-      }
     } else {
       final span = PerformanceSpan(
         subType: subType,
@@ -579,18 +548,8 @@ class PerformanceTracker {
         sessionAnchor: anchor,
       );
       span.endOffsetUs = endOffsetUs;
-      final adopted =
-          _adoptContainedSiblings(rootSpans, span, startOffsetUs, endOffsetUs);
+      _adoptContainedSiblings(rootSpans, span, startOffsetUs, endOffsetUs);
       rootSpans.add(span);
-      if (debugLogJSAttachment) {
-        final reason = decision ?? 'entryId=0,no-containing-root';
-        // ignore: avoid_print
-        print('[perf] JS $subType/"$name" '
-            'start=${startOffsetUs}us dur=${endOffsetUs - startOffsetUs}us '
-            '→ NEW ROOT  '
-            '${adopted > 0 ? "(adopted $adopted prior root${adopted == 1 ? "" : "s"}) " : ""}'
-            '[$reason]');
-      }
     }
     _totalSpanCount++;
   }
@@ -861,13 +820,6 @@ class PerformanceTracker {
     }
 
     _setCurrentEntryId(entryId);
-
-    if (debugLogJSAttachment) {
-      // ignore: avoid_print
-      print('[perf] beginEntry id=$entryId $subType/"$name"'
-          '${asyncSpanning ? " asyncSpanning" : ""} '
-          'start=${root.startOffsetUs}us');
-    }
 
     return EntryHandle._(root, this, entryId, previousEntryId,
         asyncSpanning: asyncSpanning);

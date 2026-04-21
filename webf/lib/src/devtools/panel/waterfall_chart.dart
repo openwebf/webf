@@ -842,6 +842,10 @@ class _WaterfallChartState extends State<WaterfallChart> {
     _savedOverviewVScrollOffset = _barsVScrollController.hasClients
         ? _barsVScrollController.offset : 0.0;
 
+    if (PerformanceTracker.instance.debugLogDrilldown) {
+      _logDrilldownTarget(entry);
+    }
+
     setState(() {
       _selectedSpan = entry.span;
       _selectedSpans = entry.spans;
@@ -851,6 +855,99 @@ class _WaterfallChartState extends State<WaterfallChart> {
       _selectedEntry = null;
       _focusedRoot = null;
     });
+  }
+
+  /// One-shot diagnostic dump for a drill-down target. Prints the span's
+  /// own window, subtree size, tree-integrity violations (children whose
+  /// interval escapes the parent — typically a sign that `_attachJSSpan`
+  /// placed them under the wrong parent), and a small sample of direct
+  /// children. Written to stdout so it lands in the Flutter console
+  /// alongside the app log.
+  void _logDrilldownTarget(WaterfallEntry entry) {
+    final spans = entry.spans.isNotEmpty
+        ? entry.spans
+        : (entry.span != null ? [entry.span!] : const <PerformanceSpan>[]);
+    if (spans.isEmpty) {
+      // ignore: avoid_print
+      print('[drilldown] entry has no underlying spans');
+      return;
+    }
+    final isCluster = spans.length > 1;
+    final label = isCluster
+        ? 'CLUSTER ${spans.length}×${spans.first.subType}'
+        : '${spans.first.subType}/"${spans.first.name}"';
+    // ignore: avoid_print
+    print('[drilldown] ─── $label ───');
+
+    int totalSubtree = 0;
+    int totalViolations = 0;
+    int totalOpen = 0;
+    int maxDepth = 0;
+    for (final s in spans) {
+      final stats = _spanStats(s);
+      totalSubtree += stats.subtreeCount;
+      totalViolations += stats.violations;
+      totalOpen += stats.openChildren;
+      if (stats.maxDepth > maxDepth) maxDepth = stats.maxDepth;
+    }
+
+    for (final s in spans.take(3)) {
+      final start = s.startOffsetUs;
+      final end = s.endOffsetUs;
+      final dur = (end ?? start) - start;
+      final kids = s.children.length;
+      // ignore: avoid_print
+      print('[drilldown]   root: ${s.subType}/"${s.name}" '
+          '[$start..${end ?? "(open)"}] dur=${dur}us '
+          'direct=$kids depth=${s.depth}');
+      for (final c in s.children.take(5)) {
+        final cStart = c.startOffsetUs;
+        final cEnd = c.endOffsetUs;
+        final cDur = (cEnd ?? cStart) - cStart;
+        final overflow = (cEnd != null && end != null && cEnd > end)
+            ? ' !!overflow by ${cEnd - end}us'
+            : '';
+        // ignore: avoid_print
+        print('[drilldown]     child: ${c.subType}/"${c.name}" '
+            '[$cStart..${cEnd ?? "(open)"}] dur=${cDur}us '
+            'kids=${c.children.length}$overflow');
+      }
+      if (s.children.length > 5) {
+        // ignore: avoid_print
+        print('[drilldown]     … ${s.children.length - 5} more children');
+      }
+    }
+    if (spans.length > 3) {
+      // ignore: avoid_print
+      print('[drilldown]   … ${spans.length - 3} more cluster roots');
+    }
+    // ignore: avoid_print
+    print('[drilldown]   subtree total: $totalSubtree spans, '
+        'maxDepth=$maxDepth, '
+        'integrity-violations=$totalViolations, '
+        'still-open=$totalOpen');
+  }
+
+  _SpanStats _spanStats(PerformanceSpan s) {
+    int count = 0;
+    int maxDepth = s.depth;
+    int violations = 0;
+    int open = 0;
+    void walk(PerformanceSpan n) {
+      count++;
+      if (n.depth > maxDepth) maxDepth = n.depth;
+      if (n.endOffsetUs == null) open++;
+      final parent = n.parent;
+      if (parent != null && n.endOffsetUs != null && parent.endOffsetUs != null
+          && n.endOffsetUs! > parent.endOffsetUs!) {
+        violations++;
+      }
+      for (final c in n.children) {
+        walk(c);
+      }
+    }
+    walk(s);
+    return _SpanStats(count, maxDepth, violations, open);
   }
 
   @override
@@ -2615,4 +2712,13 @@ String _formatDuration(Duration d) {
   if (us >= 1000000) return '${(us / 1000000).toStringAsFixed(1)}s';
   if (us >= 1000) return '${(us / 1000).toStringAsFixed(1)}ms';
   return '$us µs';
+}
+
+class _SpanStats {
+  final int subtreeCount;
+  final int maxDepth;
+  final int violations;
+  final int openChildren;
+  const _SpanStats(
+      this.subtreeCount, this.maxDepth, this.violations, this.openChildren);
 }
