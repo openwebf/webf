@@ -130,7 +130,7 @@ class WebFListViewElement extends WebFListViewBindings {
     state?.requestUpdateState();
   }
 
-  bool _overlayLift = false;
+  bool _overlayLift = true;
 
   bool get overlayLift => _overlayLift;
 
@@ -757,26 +757,6 @@ class WebFListViewState extends WebFWidgetElementState {
     );
   }
 
-  Widget _buildOverlayLiftLayer() {
-    final List<dom.Element> lifted = _liftedOverlayElements();
-    return WebFWidgetElementChild(
-      child: WebFHTMLElement(
-        tagName: 'DIV',
-        controller: widgetElement.controller,
-        parentElement: widgetElement,
-        inlineStyle: const <String, String>{
-          'position': 'relative',
-          'overflow': 'visible',
-          'width': '100%',
-          'height': '100%',
-        },
-        children: lifted
-            .map((element) => element.toWidget())
-            .toList(growable: false),
-      ),
-    );
-  }
-
   /// Builds the header widget for pull-to-refresh functionality
   ///
   /// This method can be overridden by subclasses to customize the pull-to-refresh header.
@@ -899,21 +879,6 @@ class WebFListViewState extends WebFWidgetElementState {
         verticalController: widgetElement.axis == Axis.vertical ? scrollController : null,
         horizontalController: widgetElement.axis == Axis.horizontal ? scrollController : null,
         child: result,
-      );
-    }
-
-    final List<dom.Element> liftedOverlays = _liftedOverlayElements();
-    if (widgetElement.overlayLift &&
-        liftedOverlays.isNotEmpty) {
-      final Widget overlayLayer = Positioned.fill(
-        child: _buildOverlayLiftLayer(),
-      );
-      result = Stack(
-        clipBehavior: Clip.none,
-        children: <Widget>[
-          Positioned.fill(child: result),
-          overlayLayer,
-        ],
       );
     }
 

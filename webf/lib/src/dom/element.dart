@@ -1605,23 +1605,34 @@ abstract class Element extends ContainerNode
 
   bool _isOverlayLiftListView(Element element) {
     if (!_isListViewElement(element)) return false;
-    final String? liftAttr =
-        element.getAttribute('overlay-lift') ?? element.getAttribute('overlayLift');
-    if (liftAttr != null) {
-      final String normalized = liftAttr.trim().toLowerCase();
+    bool? parseOverlayLiftValue(String? raw) {
+      if (raw == null) return null;
+      final String normalized = raw.trim().toLowerCase();
       if (normalized == '' || normalized == 'true' || normalized == '1') {
         return true;
       }
+      if (normalized == 'false' || normalized == '0') {
+        return false;
+      }
+      return null;
+    }
+
+    final String? liftAttr =
+        element.getAttribute('overlay-lift') ?? element.getAttribute('overlayLift');
+    final bool? parsedAttr = parseOverlayLiftValue(liftAttr);
+    if (parsedAttr != null) {
+      return parsedAttr;
     }
     try {
       final dynamic runtimeLift = (element as dynamic).overlayLift;
       if (runtimeLift is bool) return runtimeLift;
       if (runtimeLift is String) {
-        final String normalized = runtimeLift.trim().toLowerCase();
-        return normalized == '' || normalized == 'true' || normalized == '1';
+        final bool? parsedRuntime = parseOverlayLiftValue(runtimeLift);
+        if (parsedRuntime != null) return parsedRuntime;
       }
     } catch (_) {}
-    return false;
+    // Keep listview overlay lifting enabled by default unless explicitly disabled.
+    return true;
   }
 
   Element? _nearestOverlayLiftListViewAncestor() {
@@ -1951,6 +1962,7 @@ abstract class Element extends ContainerNode
       case OVERFLOW_X:
       case OVERFLOW_Y:
       case POSITION:
+      case Z_INDEX:
         oldValue = renderStyle.getProperty(name);
         break;
     }

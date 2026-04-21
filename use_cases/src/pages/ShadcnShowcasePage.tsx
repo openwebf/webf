@@ -232,7 +232,6 @@ export const ShadcnShowcasePage: React.FC = () => {
     <div id="main" className="min-h-screen w-full bg-zinc-50">
       <WebFListView
         id="showcase-webf-listview"
-        overlayLift
         className="mx-auto w-full max-w-6xl px-4 py-6 md:px-6"
       >
         {/* <section className="mb-6 overflow-hidden rounded-3xl border border-zinc-200 bg-white shadow-sm">
