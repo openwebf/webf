@@ -8,6 +8,7 @@ import 'dart:math' as math;
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:flutter/widgets.dart';
 import 'package:meta/meta.dart';
@@ -819,14 +820,18 @@ class WebFListViewState extends WebFWidgetElementState {
     final Header? header = buildEasyRefreshHeader();
     final Footer? footer = buildEasyRefreshFooter();
 
-    Widget listView = ListView.builder(
+    Widget listView = CustomScrollView(
       controller: scrollController,
       scrollDirection: widgetElement.axis,
       shrinkWrap: widgetElement.shrinkWrap,
-      itemCount: widgetElement.childNodes.length,
-      itemBuilder: (context, index) {
-        return buildListViewItemByIndex(index);
-      },
+      slivers: <Widget>[
+        _WebFSliverList(
+          delegate: SliverChildBuilderDelegate(
+            (context, index) => buildListViewItemByIndex(index),
+            childCount: widgetElement.childNodes.length,
+          ),
+        ),
+      ],
     );
 
     // Honor CSS 'direction' for horizontal lists by providing a Directionality
@@ -892,6 +897,202 @@ int? _coerceInt(dynamic value) {
   if (value is num) return value.toInt();
   if (value is String) return int.tryParse(value);
   return null;
+}
+
+class _WebFSliverList extends SliverMultiBoxAdaptorWidget {
+  const _WebFSliverList({required super.delegate});
+
+  @override
+  RenderSliverMultiBoxAdaptor createRenderObject(BuildContext context) {
+    return _RenderWebFSliverList(childManager: context as SliverMultiBoxAdaptorElement);
+  }
+}
+
+class _RenderWebFSliverList extends RenderSliverList {
+  _RenderWebFSliverList({required super.childManager});
+
+  CSSRenderStyle? _resolveChildRenderStyle(RenderObject root) {
+    RenderObject? current = root;
+    int depth = 0;
+    while (current != null && depth < 32) {
+      if (current is RenderBoxModel) {
+        return current.renderStyle;
+      }
+      if (current is RenderPositionPlaceholder) {
+        return current.positioned?.renderStyle;
+      }
+      if (current is RenderProxyBox) {
+        current = current.child;
+        depth++;
+        continue;
+      }
+      if (current is RenderShiftedBox) {
+        current = current.child;
+        depth++;
+        continue;
+      }
+      break;
+    }
+    return null;
+  }
+
+  bool _isVisibleForPaint(RenderBox child) {
+    final double mainAxisDelta = childMainAxisPosition(child);
+    return mainAxisDelta < constraints.remainingPaintExtent &&
+        mainAxisDelta + paintExtentOf(child) > 0;
+  }
+
+  int _childPaintGroup(RenderBox child) {
+    final CSSRenderStyle? style = _resolveChildRenderStyle(child);
+    if (style == null) {
+      return 1;
+    }
+    final CSSPositionType position = style.position;
+    if (position == CSSPositionType.static) {
+      return 1;
+    }
+    final int? zIndex = style.zIndex;
+    if (zIndex != null && zIndex < 0) {
+      return 0;
+    }
+    if (zIndex == null || zIndex == 0) {
+      return 2;
+    }
+    return 3;
+  }
+
+  List<RenderBox> _collectChildrenInPaintOrder({required bool visibleOnly}) {
+    final List<RenderBox> negative = <RenderBox>[];
+    final List<RenderBox> nonPositioned = <RenderBox>[];
+    final List<RenderBox> positionedAutoOrZero = <RenderBox>[];
+    final List<RenderBox> positive = <RenderBox>[];
+
+    RenderBox? child = firstChild;
+    while (child != null) {
+      if (!visibleOnly || _isVisibleForPaint(child)) {
+        final int group = _childPaintGroup(child);
+        if (group == 0) {
+          negative.add(child);
+        } else if (group == 1) {
+          nonPositioned.add(child);
+        } else if (group == 2) {
+          positionedAutoOrZero.add(child);
+        } else {
+          positive.add(child);
+        }
+      }
+      child = childAfter(child);
+    }
+
+    return <RenderBox>[
+      ...negative,
+      ...nonPositioned,
+      ...positionedAutoOrZero,
+      ...positive,
+    ];
+  }
+
+  ({
+    Offset originOffset,
+    Offset mainAxisUnit,
+    Offset crossAxisUnit,
+    bool addExtent,
+  }) _paintBasis(Offset offset) {
+    final AxisDirection direction = applyGrowthDirectionToAxisDirection(
+      constraints.axisDirection,
+      constraints.growthDirection,
+    );
+    switch (direction) {
+      case AxisDirection.up:
+        return (
+          originOffset: offset + Offset(0.0, geometry!.paintExtent),
+          mainAxisUnit: const Offset(0.0, -1.0),
+          crossAxisUnit: const Offset(1.0, 0.0),
+          addExtent: true,
+        );
+      case AxisDirection.right:
+        return (
+          originOffset: offset,
+          mainAxisUnit: const Offset(1.0, 0.0),
+          crossAxisUnit: const Offset(0.0, 1.0),
+          addExtent: false,
+        );
+      case AxisDirection.down:
+        return (
+          originOffset: offset,
+          mainAxisUnit: const Offset(0.0, 1.0),
+          crossAxisUnit: const Offset(1.0, 0.0),
+          addExtent: false,
+        );
+      case AxisDirection.left:
+        return (
+          originOffset: offset + Offset(geometry!.paintExtent, 0.0),
+          mainAxisUnit: const Offset(-1.0, 0.0),
+          crossAxisUnit: const Offset(0.0, 1.0),
+          addExtent: true,
+        );
+    }
+  }
+
+  Offset _childPaintOffset(
+    RenderBox child, {
+    required Offset originOffset,
+    required Offset mainAxisUnit,
+    required Offset crossAxisUnit,
+    required bool addExtent,
+  }) {
+    final double mainAxisDelta = childMainAxisPosition(child);
+    final double crossAxisDelta = childCrossAxisPosition(child);
+    Offset childOffset = Offset(
+      originOffset.dx + mainAxisUnit.dx * mainAxisDelta + crossAxisUnit.dx * crossAxisDelta,
+      originOffset.dy + mainAxisUnit.dy * mainAxisDelta + crossAxisUnit.dy * crossAxisDelta,
+    );
+    if (addExtent) {
+      childOffset += mainAxisUnit * paintExtentOf(child);
+    }
+    return childOffset;
+  }
+
+  @override
+  void paint(PaintingContext context, Offset offset) {
+    if (firstChild == null) {
+      return;
+    }
+
+    final basis = _paintBasis(offset);
+    final List<RenderBox> orderedChildren = _collectChildrenInPaintOrder(visibleOnly: true);
+    for (final RenderBox child in orderedChildren) {
+      final Offset childOffset = _childPaintOffset(
+        child,
+        originOffset: basis.originOffset,
+        mainAxisUnit: basis.mainAxisUnit,
+        crossAxisUnit: basis.crossAxisUnit,
+        addExtent: basis.addExtent,
+      );
+      context.paintChild(child, childOffset);
+    }
+  }
+
+  @override
+  bool hitTestChildren(
+    SliverHitTestResult result, {
+    required double mainAxisPosition,
+    required double crossAxisPosition,
+  }) {
+    final List<RenderBox> orderedChildren = _collectChildrenInPaintOrder(visibleOnly: false);
+    final BoxHitTestResult boxResult = BoxHitTestResult.wrap(result);
+    for (int i = orderedChildren.length - 1; i >= 0; i--) {
+      if (hitTestBoxChild(
+        boxResult,
+        orderedChildren[i],
+        mainAxisPosition: mainAxisPosition,
+        crossAxisPosition: crossAxisPosition,
+      )) {
+        return true;
+      }
+    }
+    return false;
+  }
 }
 
 class _WebFListViewIndexMarker extends StatefulWidget {

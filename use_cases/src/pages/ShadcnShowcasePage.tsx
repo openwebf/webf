@@ -234,7 +234,7 @@ export const ShadcnShowcasePage: React.FC = () => {
         id="showcase-webf-listview"
         className="mx-auto w-full max-w-6xl px-4 py-6 md:px-6"
       >
-        {/* <section className="mb-6 overflow-hidden rounded-3xl border border-zinc-200 bg-white shadow-sm">
+        <section className="mb-6 overflow-hidden rounded-3xl border border-zinc-200 bg-white shadow-sm">
           <div className="grid gap-6 border-b border-zinc-100 bg-[linear-gradient(135deg,#fafafa,#f4f4f5)] px-6 py-8 md:grid-cols-[1.2fr,0.8fr]">
             <div className="grid gap-4">
               <Badge variant="secondary" className="w-fit">
@@ -1094,10 +1094,10 @@ export const ShadcnShowcasePage: React.FC = () => {
               </div>
             </CardContent>
           </Card>
-        </section> */}
+        </section>
 
         <section className="mb-6 grid gap-6 xl:grid-cols-[1.05fr,0.95fr]">
-          {/* <Card>
+          <Card>
             <CardHeader>
               <CardTitle>Dialog</CardTitle>
               <CardDescription>
@@ -1217,7 +1217,7 @@ export const ShadcnShowcasePage: React.FC = () => {
                 </DialogContent>
               </Dialog>
             </CardContent>
-          </Card> */}
+          </Card>
 
           <Card>
             <CardHeader>

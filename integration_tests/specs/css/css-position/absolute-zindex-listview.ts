@@ -10,6 +10,7 @@ describe('absolute positioned z-index inside webf-listview', () => {
     const firstItem = document.createElement('div');
     firstItem.style.position = 'relative';
     firstItem.style.height = '72px';
+    firstItem.style.boxSizing = 'border-box';
     firstItem.style.padding = '12px';
     firstItem.style.backgroundColor = '#f4f4f5';
     firstItem.textContent = 'Account menu trigger';
@@ -34,6 +35,7 @@ describe('absolute positioned z-index inside webf-listview', () => {
     const secondItem = document.createElement('div');
     secondItem.id = 'listview-following-card';
     secondItem.style.height = '180px';
+    secondItem.style.boxSizing = 'border-box';
     secondItem.style.marginTop = '-56px';
     secondItem.style.padding = '16px';
     secondItem.style.backgroundColor = 'rgba(59, 130, 246, 0.96)';
@@ -44,8 +46,15 @@ describe('absolute positioned z-index inside webf-listview', () => {
     await waitForOnScreen(listview);
     await snapshot();
 
+    const firstRect = firstItem.getBoundingClientRect();
     const overlayRect = overlay.getBoundingClientRect();
     const secondRect = secondItem.getBoundingClientRect();
+
+    expect(Math.abs(firstRect.height - 72)).toBeLessThanOrEqual(1);
+    expect(Math.abs(secondRect.height - 180)).toBeLessThanOrEqual(1);
+    expect(Math.abs(secondRect.top - firstRect.top - 16)).toBeLessThanOrEqual(1);
+    expect(Math.abs(overlayRect.top - firstRect.top - 40)).toBeLessThanOrEqual(1);
+
     const left = Math.max(overlayRect.left, secondRect.left);
     const right = Math.min(overlayRect.right, secondRect.right);
     const top = Math.max(overlayRect.top, secondRect.top);
