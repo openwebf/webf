@@ -24,18 +24,25 @@ import 'package:webf/src/devtools/panel/performance_tracker.dart';
 import 'package:webf/src/devtools/panel/performance_subtypes.dart';
 
 /// SubTypes that render one row per root in the overview instead of
-/// clustering consecutive roots into a single merged row.
+/// clustering consecutive roots into a single merged row, and that also
+/// get grouped under the "Network" section separator above Dart/JS work.
 ///
 /// Use this for subTypes whose per-root identity is meaningful — image
-/// loads and script fetches each have a distinct URL, load times vary
-/// widely, and they often fire concurrently. Clustering hides both the
-/// individual URLs and the overlap. Everything else (drawFrame,
-/// flushUICommand, …) still clusters by the 50ms-gap rule.
+/// loads, script fetches, and raw HTTP requests each have a distinct
+/// URL, load times vary widely, and they often fire concurrently.
+/// Clustering hides both the individual URLs and the overlap.
+///
+/// `'network'` (note: bare string, not `kSubTypeNetworkResponse`) is the
+/// subType assigned to HTTP-request rows synthesized from the network
+/// panel's request log in `_buildWaterfallData`. It's a different code
+/// path from entry-rooted subTypes, but belongs in the same visual
+/// section as the loader entries from the user's perspective.
 const Set<String> kWaterfallPerRootSubTypes = {
   kSubTypeImageLoadComplete,
   kSubTypeFontLoadComplete,
   kSubTypeScriptLoadComplete,
   kSubTypeNetworkResponse,
+  'network',
 };
 
 /// Fixed row order in the waterfall. SubTypes not in this list are appended
