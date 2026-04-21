@@ -2109,6 +2109,58 @@ class _WaterfallChartState extends State<WaterfallChart> {
         rowForSpan[s] = r;
         if (r > jsMaxRow) jsMaxRow = r;
       }
+
+      // Graft JS→Dart cross-call subtrees so the Dart frames triggered by
+      // `__webf_invoke_module__` / other binding calls show up directly
+      // beneath the JS call that caused them instead of floating as a
+      // separate Dart root in a different part of the profile.
+      //
+      // `invokeBindingMethodFromNative` and `invokeModuleEvent` are opened
+      // on the Dart thread when a JS binding fires, and run synchronously
+      // with the calling JS span — so time-containment is a reliable
+      // "this Dart work was caused by this JS call" signal (unlike the
+      // Dart→JS direction, where asyncSpanning stamps get clobbered).
+      const dartSyncCallSubTypes = {
+        kSubTypeInvokeBindingMethodFromNative,
+        kSubTypeInvokeModuleEvent,
+      };
+      final trackerRoots = PerformanceTracker.instance.rootSpans;
+      final graftCandidates = trackerRoots
+          .where((r) =>
+              dartSyncCallSubTypes.contains(r.subType) && r.isComplete)
+          .toList();
+      final alreadyGrafted = <PerformanceSpan>{};
+
+      // Sort JS spans deepest-first so the innermost call that contains a
+      // given Dart root wins (if two nested JS calls both brace the same
+      // Dart work, the deeper one is the real caller).
+      final jsByRowDeepestFirst = List<PerformanceSpan>.from(jsSpans)
+        ..sort((a, b) =>
+            (rowForSpan[b] ?? 0).compareTo(rowForSpan[a] ?? 0));
+
+      void graftDartSubtree(PerformanceSpan s, int row) {
+        rowForSpan[s] = row;
+        allSpans.add(s);
+        dartSpans.add(s);
+        if (row > jsMaxRow) jsMaxRow = row;
+        for (final c in s.children) {
+          graftDartSubtree(c, row + 1);
+        }
+      }
+
+      for (final js in jsByRowDeepestFirst) {
+        final jsStart = js.startOffsetUs;
+        final jsEnd = js.endOffsetUs;
+        if (jsEnd == null) continue;
+        for (final dartRoot in graftCandidates) {
+          if (alreadyGrafted.contains(dartRoot)) continue;
+          if (dartRoot.startOffsetUs < jsStart) continue;
+          final dartEnd = dartRoot.endOffsetUs;
+          if (dartEnd == null || dartEnd > jsEnd) continue;
+          alreadyGrafted.add(dartRoot);
+          graftDartSubtree(dartRoot, (rowForSpan[js] ?? 0) + 1);
+        }
+      }
     }
     final maxRow = math.max(dartMaxRow, jsMaxRow);
     final laneDividerRow =
