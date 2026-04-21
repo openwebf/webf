@@ -1,3 +1,49 @@
+## 0.22.23
+
+### Features
+
+- Rework the DevTools performance tracker around an entry-rooted span model: every span now belongs to a top-level entry (`drawFrame`, `flushUICommand`, `dispatchEvent`, `evaluateModule`, `invokeBindingMethodFromNative`, `invokeModuleEvent`, `asyncCallback`, `imageLoadComplete`, `scriptLoadComplete`, `networkResponse`, `htmlParse`, `cssParse`) so a span's origin is structural instead of guessed by time overlap.
+- Stamp `current_entry_id` into every C++ `JSThreadSpan` at function entry so JS-thread spans graft under the matching Dart entry deterministically on drain, instead of relying on wall-clock containment.
+- Add `ScopedDispatchEntryId` in the C++ profiler plus a JS-thread-local override field so Dart→JS sync dispatches (`dispatchEvent`, `evaluateModule/ByteCode/Scripts`, `invokeBindingMethodFromNative`, `invokeModuleEvent`) keep correct JS-span attribution even when concurrent async Dart entries overwrite the shared `current_entry_id_` atomic before JS runs.
+- Graft JS→Dart cross-call stacks inside the flame drilldown: a `jsBindingSyncCall` or `jsFlushUICommand` span now shows the matching Dart subtree (`invokeBindingMethodFromNative`, `flushUICommand`, etc.) nested directly beneath it, with chain-grafting for further sync calls.
+- Graft concurrent same-thread JS activity into a drilldown's "Concurrent" lane when the target is async: root-level spans whose window fits inside the drilldown target (dispatchEvent, jsMicrotask, jsTimer, jsRAF, jsEvent, evaluate*, invoke*, asyncCallback) render below the target's own subtree so the microtask drains servicing `await` gaps become visible.
+- Switch `PerformanceSpan` timing to monotonic `offsetUs` with a stopwatch + C++ `steady_clock` synchronised at session start, eliminating JS-span drift from wall-clock skew.
+- Bump the profile JSON format to v5: `jsThreadSpans` is no longer a separate array — JS spans are grafted into the main tree at drain time. v4 imports are rejected with a clear error.
+- Add waterfall phase sub-tabs that split the timeline into an init-to-attach and attach-to-paint view, with a phase filter applied to entries, milestones, and frame boundaries.
+- Add cluster focus mode to the flame chart so tapping a depth-0 bar in a multi-root cluster (e.g. 700+ drawFrames merged by the 50ms-gap rule) narrows the flame chart to that single root; the back button exits focus before exiting flame mode.
+- Split the waterfall overview into Network / Dart Thread / JS Thread sections with color-coded headers (green / blue / orange) matching the underlying bar colors.
+- Render image, font, script, and network requests as one row per request in the Network section (labelled with each URL) instead of clustering them into a single merged bar.
+- Deduplicate loader roots against raw HTTP request rows in the Network section — each fetch shows up once with its DNS/Connect/TLS/Waiting/Download breakdown.
+- Split `drawFrame` into one overview row per pipeline stage (domConstruction, build, styleFlush, styleRecalc, styleApply, layout, paint) directly below the drawFrame row, colour-matched to the flame chart.
+- Add distinct flame-chart colours for every span subType (Dart lifecycle, Dart bridges, Dart loaders, JS-thread categories) so cross-language stacks read at a glance instead of every frame appearing in the same grey-blue default.
+- Raise the flame/overview zoom ceiling from 6400% to 102400% for inspecting µs-scale spans inside long drilldowns.
+- Auto-fit the full drilldown duration to the viewport at zoom 1.0 (dropping the prior 2px/ms floor) so nothing is scrolled off-screen by default on long drilldowns.
+- Render a "no inner spans tracked" panel with a back button when drilling into a leaf entry (e.g. `imageLoadComplete` wrapping an uninstrumented `await`), instead of a lone bar over empty canvas.
+- Drain the C++ JS span ring buffer on a 10ms periodic timer while a session is active, not just during `flushUICommand` — prevents span loss during long JS-only bursts (module loads, heavy compute) with no UI activity.
+- Add a `jsBindingSyncCall` span category, a binding name registry, and property accessor name hints (`get foo` / `set foo`) so sync binding calls show the real method name in the flame chart.
+- Add a `debugLogDrilldown` tracker flag that logs a concise target summary (time window, subtree size, integrity-violation count, first N children) each time the user drills into a span.
+- Expose `setJSProfilerCurrentEntryId` / `getJSProfilerCurrentEntryId` / `getSteadyClockNowUs` on the Dart FFI and C bridge for tracker integration.
+
+### Fixes
+
+- Fix `_popEntry` restoring `_currentSpan` from the live entry stack (rather than the popped span's stale `parent` pointer) — eliminates 200-deep `drawFrame → drawFrame → drawFrame` chains observed under multi-view / frame-callback races that buried `flushUICommand` and its style/layout/paint subtree.
+- Require full `[start..end]` containment (with a sub-millisecond tolerance for profiler timestamp jitter) when picking an insertion parent, so a late-ending span no longer nests under a shorter sibling and overflows its parent's end.
+- Reject stale `entry_id` stamps whose resolved entry has already closed before the new span's end, preventing 200ms+ JS spans from being falsely nested under short-lived Dart entries.
+- Reject `entry_id` stamps that resolve to pure-Dart entries (drawFrame, flushUICommand, htmlParse, imageLoadComplete, cssParse): concurrent JS-thread activity no longer false-parents under a coincidentally-matching Dart window.
+- Restrict JS-span adoption to JS-thread siblings only; a long-running JS function no longer adopts closed `drawFrame`, `imageLoadComplete`, and `invokeBindingMethodFromNative` entries that happened to overlap its window.
+- Skip still-open siblings during adoption so a long-running `drawFrame` (`endOffsetUs == null`) isn't treated as a zero-duration point and swallowed into a later JS span.
+- Don't adopt autonomous JS spans (entry_id=0 timers / microtasks / events) under a time-overlapping Dart root — they run on a different thread and share no causal relation with Dart work.
+- Capture `entry_id` at JS span entry instead of exit so a span ending after an unrelated Dart entry has been pushed doesn't inherit the new id.
+- Hide `invokeBindingMethodFromNative` from the overview's Dart Thread rows (it's the Dart tail of a JS-initiated call, not a standalone entry); it still appears grafted under its calling `jsBindingSyncCall` inside drilldowns.
+- Group raw HTTP request rows under the Network section header (was leaking into Dart Thread because the subType string was `'network'` rather than `kSubTypeNetworkResponse`).
+- Fix duplicate time-ruler labels at sub-second tick intervals (e.g. `3.2s / 3.3s / 3.3s / 3.4s / 3.4s`) by scaling label precision with the interval.
+- Restore the back button on the empty-state flame chart drilldown — leaf entries no longer leave the user stranded with no way to return to the overview.
+- Give each concurrent-lane root its own row range so multiple overlapping `dispatchEvent` subtrees in an async drilldown don't stack on the same rows.
+- Align monotonic spans with the wall-clock timeline in the waterfall (was drifting for JS spans captured before the C++ clock was synchronised).
+- Shift `attachOffset` with the session's minimum start so drawFrame survives the attach→paint phase filter even when the first span doesn't start at t=0.
+- Hoist `importedPhases` onto the tracker so post-attach sub-tab unlocks correctly after a profile is imported.
+- Extend the CSS load entry over its post-fetch parse-and-flush phase so the entry's duration matches the actual CSS work (was closing at fetch completion).
+
 ## 0.22.22
 
 ### Features
