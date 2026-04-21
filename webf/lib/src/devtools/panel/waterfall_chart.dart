@@ -2118,74 +2118,19 @@ class _WaterfallChartState extends State<WaterfallChart> {
     }
 
     // Use earliest root start and latest root end
-    final fullRootStart = rootSpans
+    final rootStart = rootSpans
         .map((s) => s.startTime)
         .reduce((a, b) => a.isBefore(b) ? a : b);
-    final fullRootEnd = rootSpans
+    final rootEnd = rootSpans
         .map((s) => s.endTime!)
         .reduce((a, b) => a.isAfter(b) ? a : b);
-    final fullRootDurationMs =
-        fullRootEnd.difference(fullRootStart).inMicroseconds / 1000.0;
-    if (fullRootDurationMs <= 0) {
+    final rootDurationMs =
+        rootEnd.difference(rootStart).inMicroseconds / 1000.0;
+    if (rootDurationMs <= 0) {
       return const Center(
         child: Text('Span has zero duration.',
             style: TextStyle(color: Colors.white38, fontSize: 12)),
       );
-    }
-
-    // Auto-trim idle lead-in / trail-out when the actual tracked work
-    // occupies only a small fraction of the drilldown's total window.
-    // A 1.4s evaluateModule whose jsScriptEval child runs for 1.1s with
-    // no inner spans, then bursts 400+ calls in the last 270ms, would
-    // otherwise render with the entire left 80% of the chart empty and
-    // all the interesting work compressed into the rightmost strip.
-    //
-    // Find the tightest [start..end] window that contains every *non-
-    // container* span — i.e., everything except the drilldown target
-    // itself and any single-child wrapper (jsScriptEval / evaluateModule
-    // whose only job is to bracket the whole duration). If that window
-    // is significantly tighter than the full range, use it as the
-    // effective chart window.
-    DateTime rootStart = fullRootStart;
-    DateTime rootEnd = fullRootEnd;
-    double rootDurationMs = fullRootDurationMs;
-    if (allSpans.length > 2) {
-      int? busyStartUs, busyEndUs;
-      for (final s in allSpans) {
-        if (rootSpans.contains(s)) continue;
-        // Wrapper spans with exactly one child that spans nearly the same
-        // window are bracketing the whole drilldown; skip them so the
-        // busy window is derived from actually-tracked work.
-        if (s.children.length == 1 && s.endOffsetUs != null) {
-          final child = s.children.single;
-          final childEnd = child.endOffsetUs;
-          if (childEnd != null) {
-            final sDur = s.endOffsetUs! - s.startOffsetUs;
-            final cDur = childEnd - child.startOffsetUs;
-            if (sDur > 0 && cDur / sDur > 0.99) continue;
-          }
-        }
-        final sStart = s.startOffsetUs;
-        final sEnd = s.endOffsetUs ?? sStart;
-        if (busyStartUs == null || sStart < busyStartUs) busyStartUs = sStart;
-        if (busyEndUs == null || sEnd > busyEndUs) busyEndUs = sEnd;
-      }
-      if (busyStartUs != null && busyEndUs != null) {
-        final busyDurUs = busyEndUs - busyStartUs;
-        final fullDurUs = (fullRootDurationMs * 1000).round();
-        // Only activate when the idle padding is substantial — a 10%
-        // difference isn't worth skewing the chart origin for.
-        if (busyDurUs > 0 && busyDurUs < fullDurUs * 0.6) {
-          // Keep a small pre/post pad so the outer wrapper's leading
-          // and trailing edges are still visible for context.
-          final padUs = (busyDurUs * 0.05).clamp(500, 50000).toInt();
-          final startUs = math.max(0, busyStartUs - padUs);
-          final endUs = busyEndUs + padUs;
-          rootStart = fullRootStart.add(Duration(microseconds: startUs));
-          rootEnd = fullRootStart.add(Duration(microseconds: endUs));
-          rootDurationMs = (endUs - startUs) / 1000.0;
-        }
-      }
     }
 
     // Find min depth among root spans for normalization
