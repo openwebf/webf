@@ -2443,7 +2443,7 @@ class _TimeRulerPainter extends CustomPainter {
 
       final tp = TextPainter(
         text: TextSpan(
-          text: _formatMs(phaseStartMs + ms),
+          text: _formatMs(phaseStartMs + ms, interval),
           style: const TextStyle(color: Color(0xFF888888), fontSize: 9),
         ),
         textDirection: TextDirection.ltr,
@@ -2527,9 +2527,23 @@ class _TimeRulerPainter extends CustomPainter {
     return 1000;
   }
 
-  String _formatMs(double ms) {
-    if (ms >= 1000) return '${(ms / 1000).toStringAsFixed(1)}s';
-    if (ms >= 1) return '${ms.toStringAsFixed(0)}ms';
+  /// Scale label precision with the tick interval so adjacent ticks never
+  /// round to the same label. With a 50ms interval the seconds-level
+  /// `toStringAsFixed(1)` was rounding both 3250ms and 3300ms to `"3.3s"`
+  /// (and 3350/3400ms to `"3.4s"`), producing the duplicated ruler labels
+  /// reported by users.
+  String _formatMs(double ms, double intervalMs) {
+    if (ms >= 1000) {
+      final sec = ms / 1000;
+      if (intervalMs < 10) return '${sec.toStringAsFixed(3)}s';
+      if (intervalMs < 100) return '${sec.toStringAsFixed(2)}s';
+      if (intervalMs < 1000) return '${sec.toStringAsFixed(1)}s';
+      return '${sec.toStringAsFixed(0)}s';
+    }
+    if (ms >= 1) {
+      if (intervalMs < 1) return '${ms.toStringAsFixed(1)}ms';
+      return '${ms.toStringAsFixed(0)}ms';
+    }
     return '${(ms * 1000).toStringAsFixed(0)}µs';
   }
 }
