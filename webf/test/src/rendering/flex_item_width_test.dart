@@ -171,5 +171,54 @@ void main() {
       expect(relative.scrollWidth, moreOrLessEquals(200, epsilon: 1));
       expect(transform.scrollWidth, moreOrLessEquals(200, epsilon: 1));
     });
+
+    testWidgets(
+        'column flex scroll range should not double count trailing item margins',
+        (WidgetTester tester) async {
+      final prepared = await WebFWidgetTestUtils.prepareWidgetTest(
+        tester: tester,
+        controllerName:
+            'flex-column-scroll-margin-${DateTime.now().millisecondsSinceEpoch}',
+        html: '''
+          <html>
+            <body style="margin: 0; padding: 0;">
+              <div id="chat" style="display: flex; flex-direction: column; height: 320px; width: 320px;">
+                <div style="padding: 10px 20px; background: #333; color: #fff;">Header</div>
+                <div id="list" style="display: flex; flex-direction: column; justify-content: center; align-items: center; flex-grow: 1; overflow: scroll; background: #f1f1f1; padding: 20px;">
+                  <div class="item" style="margin: 10px; padding: 10px; border: 1px solid #ccc; background: #fff; width: 100%; max-width: 240px; box-sizing: border-box;">Item 1</div>
+                  <div class="item" style="margin: 10px; padding: 10px; border: 1px solid #ccc; background: #fff; width: 100%; max-width: 240px; box-sizing: border-box;">Item 2</div>
+                  <div class="item" style="margin: 10px; padding: 10px; border: 1px solid #ccc; background: #fff; width: 100%; max-width: 240px; box-sizing: border-box;">Item 3</div>
+                  <div class="item" style="margin: 10px; padding: 10px; border: 1px solid #ccc; background: #fff; width: 100%; max-width: 240px; box-sizing: border-box;">Item 4</div>
+                  <div class="item" style="margin: 10px; padding: 10px; border: 1px solid #ccc; background: #fff; width: 100%; max-width: 240px; box-sizing: border-box;">Item 5</div>
+                  <div id="last" class="item" style="margin: 10px; padding: 10px; border: 1px solid #ccc; background: #fff; width: 100%; max-width: 240px; box-sizing: border-box;">Item 6</div>
+                </div>
+                <div style="padding: 10px 20px; background: #333; color: #fff;">Footer</div>
+              </div>
+            </body>
+          </html>
+        ''',
+        viewportWidth: 320,
+        viewportHeight: 320,
+      );
+
+      await tester.pump();
+
+      final list = prepared.getElementById('list');
+      final last = prepared.getElementById('last');
+      final listRect = list.getBoundingClientRect();
+      final lastRect = last.getBoundingClientRect();
+      final itemStyle = prepared.controller.view.window.getComputedStyle(last);
+      final listStyle = prepared.controller.view.window.getComputedStyle(list);
+      final double bottomOverflowAtTop = lastRect.bottom - listRect.bottom;
+      double parsePx(String value) => double.parse(value.replaceFirst('px', ''));
+      final double expectedScrollGap = bottomOverflowAtTop +
+          parsePx(itemStyle.getPropertyValue('margin-bottom')) +
+          parsePx(listStyle.getPropertyValue('padding-bottom'));
+
+      expect(
+        list.scrollHeight - list.clientHeight,
+        moreOrLessEquals(expectedScrollGap, epsilon: 1),
+      );
+    });
   });
 }

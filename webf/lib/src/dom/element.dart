@@ -1598,6 +1598,63 @@ abstract class Element extends ContainerNode
     return getRootViewport()?.firstChild as RenderBoxModel?;
   }
 
+  bool _isListViewElement(Element element) {
+    final String tag = element.tagName.toUpperCase();
+    return tag == 'LISTVIEW' || tag == 'WEBF-LISTVIEW' || tag == 'WEBF-LIST-VIEW';
+  }
+
+  bool _isOverlayLiftListView(Element element) {
+    if (!_isListViewElement(element)) return false;
+    bool? parseOverlayLiftValue(String? raw) {
+      if (raw == null) return null;
+      final String normalized = raw.trim().toLowerCase();
+      if (normalized == '' || normalized == 'true' || normalized == '1') {
+        return true;
+      }
+      if (normalized == 'false' || normalized == '0') {
+        return false;
+      }
+      return null;
+    }
+
+    final String? liftAttr =
+        element.getAttribute('overlay-lift') ?? element.getAttribute('overlayLift');
+    final bool? parsedAttr = parseOverlayLiftValue(liftAttr);
+    if (parsedAttr != null) {
+      return parsedAttr;
+    }
+    try {
+      final dynamic runtimeLift = (element as dynamic).overlayLift;
+      if (runtimeLift is bool) return runtimeLift;
+      if (runtimeLift is String) {
+        final bool? parsedRuntime = parseOverlayLiftValue(runtimeLift);
+        if (parsedRuntime != null) return parsedRuntime;
+      }
+    } catch (_) {}
+    // Keep listview overlay lifting enabled by default unless explicitly disabled.
+    return true;
+  }
+
+  Element? _nearestOverlayLiftListViewAncestor() {
+    Element? current = parentElement;
+    while (current != null) {
+      if (_isOverlayLiftListView(current)) {
+        return current;
+      }
+      current = current.parentElement;
+    }
+    return null;
+  }
+
+  bool _isDescendantOf(Element? node, Element ancestor) {
+    Element? current = node;
+    while (current != null) {
+      if (identical(current, ancestor)) return true;
+      current = current.parentElement;
+    }
+    return false;
+  }
+
   Element? getContainingBlockElement({CSSPositionType? positionType}) {
     Element? containingBlockElement;
     positionType ??= renderStyle.position;
@@ -1606,6 +1663,7 @@ abstract class Element extends ContainerNode
       case CSSPositionType.relative:
       case CSSPositionType.static:
       case CSSPositionType.sticky:
+        overlayLiftReferenceContainingBlockElement = null;
         containingBlockElement = parentElement;
         break;
       case CSSPositionType.absolute:
@@ -1618,8 +1676,23 @@ abstract class Element extends ContainerNode
         //    In CSS 2.1, if the inline element is split across multiple lines, the containing block is undefined.
         //  2. Otherwise, the containing block is formed by the padding edge of the ancestor.
         containingBlockElement = _findContainingBlock(this, viewportElement);
+        final Element? overlayLiftHost = _nearestOverlayLiftListViewAncestor();
+        final Element? liftHost = overlayLiftHost;
+        if (liftHost != null &&
+            renderStyle.zIndex != null &&
+            renderStyle.zIndex! > 0 &&
+            containingBlockElement != null &&
+            containingBlockElement != viewportElement &&
+            !identical(containingBlockElement, liftHost) &&
+            _isDescendantOf(containingBlockElement, liftHost)) {
+          overlayLiftReferenceContainingBlockElement = containingBlockElement;
+          containingBlockElement = liftHost;
+        } else {
+          overlayLiftReferenceContainingBlockElement = null;
+        }
         break;
       case CSSPositionType.fixed:
+        overlayLiftReferenceContainingBlockElement = null;
         Element viewportElement = ownerDocument.documentElement!;
 
         // For fixed positioning, the containing block is the viewport unless an
@@ -1889,6 +1962,7 @@ abstract class Element extends ContainerNode
       case OVERFLOW_X:
       case OVERFLOW_Y:
       case POSITION:
+      case Z_INDEX:
         oldValue = renderStyle.getProperty(name);
         break;
     }

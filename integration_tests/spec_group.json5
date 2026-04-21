@@ -148,6 +148,12 @@
       "specs/rendering/**/*.{js,jsx,ts,tsx,html}"
     ]
   },
+  {
+    "name": "Shadcn",
+    "specs": [
+      "specs/shadcn/**/*.{js,jsx,ts,tsx,html}"
+    ]
+  },
   // {
   //   "name": "SVG",
   //   "specs": [

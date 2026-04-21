@@ -263,6 +263,6 @@ describe('css selector :placeholder-shown', () => {
     `;
     document.body.appendChild(container);
 
-    await snapshot();
+    await snapshot(1);
   });
 });

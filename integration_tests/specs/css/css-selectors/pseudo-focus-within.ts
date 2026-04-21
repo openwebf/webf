@@ -183,7 +183,6 @@ describe('css selector :focus-within', () => {
         border: 3px solid gray;
         padding: 15px;
         margin: 10px;
-        transition: border-color 0.2s;
       }
       .card:hover {
         border-color: blue;
@@ -211,12 +210,31 @@ describe('css selector :focus-within', () => {
     `;
     document.body.appendChild(card);
 
+    await waitForFrame();
     await snapshot();
 
-    // Focus the input
+    const cardRect = card.getBoundingClientRect();
+    const cardX = cardRect.left + cardRect.width / 2;
+    const cardY = cardRect.top + cardRect.height / 2;
+
+    // Hover only.
+    await simulateHover(cardX, cardY);
+    await waitForFrame();
+    await snapshot();
+
+    // Focus-only.
+    await simulateHover(1, 1);
     const input = document.getElementById('card-input') as HTMLInputElement;
     input.focus();
+    await waitForFrame();
+    await snapshot();
 
+    // Hover + focus-within.
+    const inputRect = input.getBoundingClientRect();
+    const inputX = inputRect.left + inputRect.width / 2;
+    const inputY = inputRect.top + inputRect.height / 2;
+    await simulateHover(inputX, inputY);
+    await waitForFrame();
     await snapshot();
   });
 

@@ -172,11 +172,16 @@ module.exports = {
   output: {
     path: buildPath,
     filename: '[name].build.js',
+    publicPath: '',
   },
   resolve: {
     extensions: ['.js', '.jsx', '.json', '.ts', '.tsx'],
     alias: {
-      '@vanilla-jsx': runtimePath
+      '@vanilla-jsx': runtimePath,
+      react: path.dirname(require.resolve('react/package.json')),
+      'react-dom': path.dirname(require.resolve('react-dom/package.json')),
+      'react/jsx-runtime': require.resolve('react/jsx-runtime'),
+      'react/jsx-dev-runtime': require.resolve('react/jsx-dev-runtime'),
     }
   },
   module: {
@@ -226,8 +231,50 @@ module.exports = {
         ]
       },
       {
-        test: /\.(jsx?|tsx?)$/i,
+        test: /\.(png|jpe?g|gif|webp)$/i,
         exclude: /node_modules/,
+        type: 'asset/resource',
+      },
+      {
+        test: /\.(jsx?|tsx?)$/i,
+        include: [path.join(__dirname, '../use_cases/src')],
+        use: [{
+          loader: 'babel-loader',
+          options: {
+            presets: [
+              [
+                '@babel/preset-env',
+                {
+                  targets: {
+                    chrome: 76,
+                  },
+                  useBuiltIns: 'usage',
+                  corejs: 3,
+                }
+              ],
+              [
+                '@babel/preset-react',
+                {
+                  runtime: 'automatic',
+                }
+              ],
+              [
+                '@babel/preset-typescript',
+                {
+                  isTSX: true,
+                  allExtensions: true
+                }
+              ]
+            ]
+          }
+        }]
+      },
+      {
+        test: /\.(jsx?|tsx?)$/i,
+        exclude: [
+          /node_modules/,
+          path.join(__dirname, '../use_cases/src'),
+        ],
         use: [{
           loader: 'babel-loader',
           options: {

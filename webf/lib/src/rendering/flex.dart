@@ -1317,6 +1317,8 @@ class RenderFlexLayout extends RenderLayoutBox {
     }
 
     final bool mainAxisIsHorizontal = _isHorizontalFlexDirection;
+    final bool isWrap = renderStyle.flexWrap == FlexWrap.wrap ||
+        renderStyle.flexWrap == FlexWrap.wrapReverse;
     final double gap =
         _intrinsicMainAxisGap(mainAxisIsHorizontal: mainAxisIsHorizontal);
 
@@ -1330,7 +1332,16 @@ class RenderFlexLayout extends RenderLayoutBox {
         final double w =
             child.getMinIntrinsicWidth(height) + _childMarginHorizontal(child);
         if (mainAxisIsHorizontal) {
-          if (w.isFinite) contentWidth += w;
+          if (w.isFinite) {
+            if (isWrap) {
+              // A wrapping row flex container can always move items onto separate lines.
+              // Its min-content width is therefore bounded by the widest item, not the
+              // sum of every item on one line.
+              contentWidth = math.max(contentWidth, w);
+            } else {
+              contentWidth += w;
+            }
+          }
         } else {
           if (w.isFinite) contentWidth = math.max(contentWidth, w);
         }
@@ -1339,7 +1350,7 @@ class RenderFlexLayout extends RenderLayoutBox {
       child = childParentData.nextSibling;
     }
 
-    if (mainAxisIsHorizontal && count > 1) {
+    if (mainAxisIsHorizontal && !isWrap && count > 1) {
       contentWidth += gap * (count - 1);
     }
     return contentWidth + _intrinsicPaddingBorderHorizontal();
@@ -1387,6 +1398,8 @@ class RenderFlexLayout extends RenderLayoutBox {
     }
 
     final bool mainAxisIsHorizontal = _isHorizontalFlexDirection;
+    final bool isWrap = renderStyle.flexWrap == FlexWrap.wrap ||
+        renderStyle.flexWrap == FlexWrap.wrapReverse;
     final double gap =
         _intrinsicMainAxisGap(mainAxisIsHorizontal: !mainAxisIsHorizontal);
 
@@ -1400,7 +1413,13 @@ class RenderFlexLayout extends RenderLayoutBox {
         final double h =
             child.getMinIntrinsicHeight(width) + _childMarginVertical(child);
         if (!mainAxisIsHorizontal) {
-          if (h.isFinite) contentHeight += h;
+          if (h.isFinite) {
+            if (isWrap) {
+              contentHeight = math.max(contentHeight, h);
+            } else {
+              contentHeight += h;
+            }
+          }
         } else {
           if (h.isFinite) contentHeight = math.max(contentHeight, h);
         }
@@ -1409,7 +1428,7 @@ class RenderFlexLayout extends RenderLayoutBox {
       child = childParentData.nextSibling;
     }
 
-    if (!mainAxisIsHorizontal && count > 1) {
+    if (!mainAxisIsHorizontal && !isWrap && count > 1) {
       contentHeight += gap * (count - 1);
     }
     return contentHeight + _intrinsicPaddingBorderVertical();
@@ -7842,7 +7861,8 @@ class RenderFlexLayout extends RenderLayoutBox {
         Size childScrollableSize = _getChildSize(child)!;
         double childOffsetX = 0;
         double childOffsetY = 0;
-        double childTransformMainOffset = 0;
+        double childMainVisualOffset = 0;
+        double childTransformMainOverflow = 0;
 
         if (child is RenderBoxModel) {
           final RenderStyle childRenderStyle = child.renderStyle;
@@ -7871,6 +7891,7 @@ class RenderFlexLayout extends RenderLayoutBox {
           if (relativeOffset != null) {
             childOffsetX += relativeOffset.dx;
             childOffsetY += relativeOffset.dy;
+            childMainVisualOffset += _isHorizontalFlexDirection ? relativeOffset.dx : relativeOffset.dy;
           }
 
           // Add offset of transform.
@@ -7879,9 +7900,11 @@ class RenderFlexLayout extends RenderLayoutBox {
           if (transformOffset != null) {
             childOffsetX += transformOffset.dx;
             childOffsetY += transformOffset.dy;
-            childTransformMainOffset = _isHorizontalFlexDirection
-                ? transformOffset.dx
-                : transformOffset.dy;
+            childMainVisualOffset += _isHorizontalFlexDirection ? transformOffset.dx : transformOffset.dy;
+            childTransformMainOverflow = math.max(
+              0,
+              _isHorizontalFlexDirection ? transformOffset.dx : transformOffset.dy,
+            );
           }
         }
 
@@ -7911,18 +7934,19 @@ class RenderFlexLayout extends RenderLayoutBox {
               : child.renderStyle.marginBottom.computedValue;
         }
 
-        // Use the actual laid-out main-axis position so scrollable overflow follows
-        // post-alignment geometry (e.g. justify-content:center on overflowing columns)
-        // instead of the pre-alignment stacked size. This prevents blank trailing
-        // scroll range after children are shifted by negative leading space.
-        final double childScrollableMain = math.max(
-          0,
-          childMainPosition -
-              physicalMainAxisStartBorder +
-              childTransformMainOffset +
-              math.max(childBoxMainSize, childScrollableMainExtent) +
-              childPhysicalMainEndMargin,
-        );
+        // Use the actual painted main-axis start/end so relative/transform offsets
+        // that move a child back toward the start edge do not leave a phantom
+        // trailing scroll range behind the original flow position.
+        // The layout offset already incorporates the item's main-axis start margin,
+        // so only visual offsets that move the painted box should affect scrollable
+        // main-axis bounds here. Re-adding margins inflates trailing scroll range.
+        final double childMainOffset = childMainVisualOffset;
+        final double childScrollableMainStart =
+            childMainPosition + childMainOffset - physicalMainAxisStartBorder;
+        final double childScrollableMainEnd =
+            childScrollableMainStart + math.max(childBoxMainSize, childScrollableMainExtent);
+        final double childScrollableMain =
+            math.max(0, childScrollableMainEnd) + childPhysicalMainEndMargin;
         final double childScrollableCross = math.max(
             childBoxCrossSize + childCrossOffset, childScrollableCrossExtent);
 

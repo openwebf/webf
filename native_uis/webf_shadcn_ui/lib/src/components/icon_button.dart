@@ -102,12 +102,12 @@ IconData? _getLucideIcon(String? name) {
     case 'x-circle': return LucideIcons.circleX;
 
     // Social & brand
-    case 'github': return LucideIcons.github;
-    case 'twitter': return LucideIcons.twitter;
-    case 'facebook': return LucideIcons.facebook;
-    case 'instagram': return LucideIcons.instagram;
-    case 'linkedin': return LucideIcons.linkedin;
-    case 'youtube': return LucideIcons.youtube;
+    case 'github': return LucideIcons.code;
+    case 'twitter': return LucideIcons.atSign;
+    case 'facebook': return LucideIcons.users;
+    case 'instagram': return LucideIcons.camera;
+    case 'linkedin': return LucideIcons.briefcase;
+    case 'youtube': return LucideIcons.play;
 
     // Formatting
     case 'bold': return LucideIcons.bold;

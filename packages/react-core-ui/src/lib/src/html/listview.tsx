@@ -13,6 +13,11 @@ export interface WebFListViewProps {
    */
   scrollDirection?: 'horizontal' | 'vertical';
   /**
+   * Promote positioned overlays to listview level for cross-item z-index ordering.
+   * @default false
+   */
+  overlayLift?: boolean;
+  /**
    * Fired when pull-to-refresh is triggered
    */
   onRefresh?: (event: Event) => void;
@@ -107,6 +112,14 @@ export interface WebFListViewElement extends WebFElementWithMethods<{
       alignment?: number;
     } | boolean | number
   ): Promise<boolean>;
+  /**
+   * Debug helper to dump current listview RenderObject tree.
+   */
+  debugDumpRenderTree(reason?: string): string;
+  /**
+   * Debug helper alias for paint-order investigation.
+   */
+  debugDumpPaintOrder(reason?: string): string;
 }> {}
 /**
  * A custom element that renders a Flutter ListView in WebF
@@ -143,11 +156,13 @@ export const WebFListView = createWebFComponent<WebFListViewElement, WebFListVie
   attributeProps: [
     'shrinkWrap',
     'scrollDirection',
+    'overlayLift',
   ],
   // Convert prop names to attribute names if needed
   attributeMap: {
     shrinkWrap: 'shrink-wrap',
     scrollDirection: 'scroll-direction',
+    overlayLift: 'overlay-lift',
   },
   // Event handlers
   events: [

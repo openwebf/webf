@@ -12,6 +12,7 @@ import 'package:webf/html.dart';
 import 'package:webf/bridge.dart';
 import 'package:webf/dom.dart';
 import 'package:webf/css.dart';
+import 'dart:math' as math;
 
 import 'base_input.dart';
 
@@ -129,23 +130,299 @@ class FlutterTextAreaElement extends WidgetElement with BaseInputElement {
 class FlutterTextAreaElementState extends FlutterInputElementState {
   FlutterTextAreaElementState(super.widgetElement);
 
+  static const double _kGripVisualFontScale = 0.55;
+  static const double _kGripHitScale = 2.0;
+  static const double _kGripMinVisualSize = 7;
+  static const double _kGripMaxVisualSize = 10;
+  static const double _kGripStrokeScale = 0.12;
+  static const int _kGripLineCount = 2;
+
+  Size? _resizeStartSize;
+  Size? _resizeMinimumSize;
+  double? _dragWidth;
+  double? _dragHeight;
+  double? _committedWidth;
+  double? _committedHeight;
+
+  String get _resizeMode {
+    final String specified = widgetElement.style
+        .getPropertyValue('resize')
+        .trim()
+        .toLowerCase();
+    return specified.isEmpty ? 'both' : specified;
+  }
+
+  bool get _allowHorizontalResize =>
+      _resizeMode == 'both' || _resizeMode == 'horizontal';
+
+  bool get _allowVerticalResize =>
+      _resizeMode == 'both' || _resizeMode == 'vertical';
+
+  bool get _showResizeHandle =>
+      !widgetElement.disabled &&
+      !widgetElement.readonly &&
+      (_allowHorizontalResize || _allowVerticalResize) &&
+      _resizeMode != 'none';
+
+  double? get _effectiveWidth => _dragWidth ?? _committedWidth;
+
+  double? get _effectiveHeight => _dragHeight ?? _committedHeight;
+
+  double get _lineExtent {
+    return widgetElement.lineHeight > 0
+        ? widgetElement.lineHeight
+        : math.max(widgetElement.fontSize * 1.2, 1.0);
+  }
+
+  int get _preferredRows {
+    final String? rowsAttr = widgetElement.getAttribute('rows');
+    if (rowsAttr == null) return 2;
+    final int? parsed = int.tryParse(rowsAttr);
+    return parsed != null && parsed > 0 ? parsed : 2;
+  }
+
+  double _clampDouble(double value, double lower, double upper) {
+    return value.clamp(lower, upper).toDouble();
+  }
+
+  _TextareaResizeGripGeometry get _gripGeometry {
+    final double visualSize = _clampDouble(
+      math.max(widgetElement.fontSize, _lineExtent) * _kGripVisualFontScale,
+      _kGripMinVisualSize,
+      _kGripMaxVisualSize,
+    );
+    return _TextareaResizeGripGeometry(
+      visualSize: visualSize,
+      hitSize: visualSize * _kGripHitScale,
+      strokeWidth: math.max(1.0, visualSize * _kGripStrokeScale),
+      lineCount: _kGripLineCount,
+    );
+  }
+
+  Size _resolveMinimumResizeSize(_TextareaResizeGripGeometry gripGeometry) {
+    final RenderStyle renderStyle = widgetElement.renderStyle;
+    final double cssMinWidth = renderStyle.minWidth.isNotAuto ? renderStyle.minWidth.computedValue : 0;
+    final double cssMinHeight = renderStyle.minHeight.isNotAuto ? renderStyle.minHeight.computedValue : 0;
+    final double paddingWidth = renderStyle.padding.horizontal + renderStyle.border.horizontal;
+    final double paddingHeight = renderStyle.padding.vertical + renderStyle.border.vertical;
+    final double textWidthFloor = math.max(widgetElement.fontSize * 3, _lineExtent * 2);
+    final double textHeightFloor = _lineExtent;
+
+    return Size(
+      math.max(cssMinWidth, paddingWidth + textWidthFloor + gripGeometry.hitSize),
+      math.max(cssMinHeight, paddingHeight + textHeightFloor + gripGeometry.hitSize * 0.5),
+    );
+  }
+
+  void _applyResizeStyles({double? width, double? height}) {
+    if (_allowHorizontalResize && width != null) {
+      widgetElement.style.setProperty(WIDTH, '${width.round()}px');
+    }
+    if (_allowVerticalResize && height != null) {
+      widgetElement.style.setProperty(HEIGHT, '${height.round()}px');
+    }
+    widgetElement.ownerDocument.updateStyleIfNeeded();
+    widgetElement.renderStyle.markNeedsLayout();
+  }
+
+  int _rowsForHeight(double height) {
+    return math.max(1, (height / _lineExtent).floor());
+  }
+
+  void _handleResizeStart(DragStartDetails details) {
+    final RenderBox? box = context.findRenderObject() as RenderBox?;
+    if (box == null) return;
+    _resizeStartSize = box.size;
+    _dragWidth = box.size.width;
+    _dragHeight = box.size.height;
+    _resizeMinimumSize = _resolveMinimumResizeSize(_gripGeometry);
+  }
+
+  void _handleResizeUpdate(DragUpdateDetails details) {
+    final Size? resizeStartSize = _resizeStartSize;
+    if (resizeStartSize == null) return;
+    final Size minimumSize = _resizeMinimumSize ?? _resolveMinimumResizeSize(_gripGeometry);
+    final double nextWidth = _allowHorizontalResize
+        ? math.max(
+            minimumSize.width,
+            (_dragWidth ?? resizeStartSize.width) + details.delta.dx,
+          )
+        : (_dragWidth ?? resizeStartSize.width);
+    final double nextHeight = _allowVerticalResize
+        ? math.max(
+            minimumSize.height,
+            (_dragHeight ?? resizeStartSize.height) + details.delta.dy,
+          )
+        : (_dragHeight ?? resizeStartSize.height);
+
+    setState(() {
+      if (_allowHorizontalResize) {
+        _dragWidth = nextWidth;
+      }
+      if (_allowVerticalResize) {
+        _dragHeight = nextHeight;
+      }
+    });
+    _applyResizeStyles(width: nextWidth, height: nextHeight);
+  }
+
+  void _commitResize() {
+    final double? width = _dragWidth;
+    final double? height = _dragHeight;
+
+    if (width == null && height == null) return;
+
+    if (_allowHorizontalResize && width != null) {
+      _committedWidth = width;
+    }
+    if (_allowVerticalResize && height != null) {
+      _committedHeight = height;
+    }
+
+    _dragWidth = null;
+    _dragHeight = null;
+    _resizeStartSize = null;
+    _resizeMinimumSize = null;
+    _applyResizeStyles(width: width, height: height);
+  }
+
+  void _cancelResize() {
+    setState(() {
+      _dragWidth = null;
+      _dragHeight = null;
+      _resizeStartSize = null;
+      _resizeMinimumSize = null;
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
-    // Honor the `rows` attribute when height is not explicitly set.
-    int? rows;
-    final String? rowsAttr = widgetElement.getAttribute('rows');
-    if (rowsAttr != null) {
-      final int? parsed = int.tryParse(rowsAttr);
-      if (parsed != null && parsed > 0) rows = parsed;
-    }
-
     final bool isAutoHeight = widgetElement.renderStyle.height.isAuto;
-    if (rows != null && isAutoHeight) {
-      // Fix the visible rows by setting both min and max lines.
-      return createInput(context, minLines: rows, maxLines: rows);
+    final double? resizedHeight = _effectiveHeight;
+    final double? resizedWidth = _effectiveWidth;
+    final _TextareaResizeGripGeometry gripGeometry = _gripGeometry;
+
+    Widget input;
+    if (resizedHeight != null) {
+      final int resizedRows = _rowsForHeight(resizedHeight);
+      input = createInput(context, minLines: resizedRows, maxLines: resizedRows);
+    } else if (isAutoHeight) {
+      input = createInput(context, minLines: _preferredRows, maxLines: _preferredRows);
+    } else {
+      input = createInput(context, minLines: 3, maxLines: 5);
     }
 
-    // Fallback defaults when no rows provided or height is explicitly set.
-    return createInput(context, minLines: 3, maxLines: 5);
+    if (resizedWidth != null || resizedHeight != null) {
+      input = SizedBox(
+        width: resizedWidth,
+        height: resizedHeight,
+        child: input,
+      );
+    }
+
+    if (!_showResizeHandle) {
+      return input;
+    }
+
+    return Directionality(
+      textDirection: widgetElement.renderStyle.direction,
+      child: Stack(
+        key: const ValueKey('webf-textarea-resize-shell'),
+        clipBehavior: Clip.none,
+        children: [
+          input,
+          PositionedDirectional(
+            end: 0,
+            bottom: 0,
+            child: GestureDetector(
+              behavior: HitTestBehavior.translucent,
+              onPanStart: _handleResizeStart,
+              onPanUpdate: _handleResizeUpdate,
+              onPanEnd: (_) => setState(_commitResize),
+              onPanCancel: _cancelResize,
+              child: SizedBox(
+                key: const ValueKey('webf-textarea-resize-handle'),
+                width: gripGeometry.hitSize,
+                height: gripGeometry.hitSize,
+                child: Align(
+                  alignment: Alignment.bottomRight,
+                  child: SizedBox(
+                    width: gripGeometry.visualSize,
+                    height: gripGeometry.visualSize,
+                    child: CustomPaint(
+                      painter: _TextareaResizeHandlePainter(
+                        color: Color.lerp(
+                          widgetElement.renderStyle.borderRightColor.value,
+                          widgetElement.renderStyle.color.value,
+                          0.32,
+                        )!,
+                        geometry: gripGeometry,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
   }
+}
+
+class _TextareaResizeHandlePainter extends CustomPainter {
+  const _TextareaResizeHandlePainter({required this.color, required this.geometry});
+
+  final Color color;
+  final _TextareaResizeGripGeometry geometry;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final Paint paint = Paint()
+      ..color = color.withOpacity(0.7)
+      ..strokeWidth = geometry.strokeWidth
+      ..strokeCap = StrokeCap.square;
+
+    final double step = size.shortestSide / (geometry.lineCount + 1);
+    for (int index = 1; index <= geometry.lineCount; index++) {
+      final double offset = step * index;
+      canvas.drawLine(
+        Offset(size.width - offset, size.height),
+        Offset(size.width, size.height - offset),
+        paint,
+      );
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant _TextareaResizeHandlePainter oldDelegate) {
+    return oldDelegate.color != color || oldDelegate.geometry != geometry;
+  }
+}
+
+class _TextareaResizeGripGeometry {
+  const _TextareaResizeGripGeometry({
+    required this.visualSize,
+    required this.hitSize,
+    required this.strokeWidth,
+    required this.lineCount,
+  });
+
+  final double visualSize;
+  final double hitSize;
+  final double strokeWidth;
+  final int lineCount;
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) return true;
+    return other is _TextareaResizeGripGeometry &&
+        other.visualSize == visualSize &&
+        other.hitSize == hitSize &&
+        other.strokeWidth == strokeWidth &&
+        other.lineCount == lineCount;
+  }
+
+  @override
+  int get hashCode => Object.hash(visualSize, hitSize, strokeWidth, lineCount);
 }

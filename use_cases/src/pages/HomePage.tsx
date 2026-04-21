@@ -148,6 +148,18 @@ const quickStart: QuickStartItem[] = [
 
 export const HomePage: React.FC = () => {
   const go = (path: string) => WebFRouter.pushState({}, path);
+  const quickStartItems = import.meta.env.DEV
+    ? [
+        ...quickStart,
+        {
+          title: 'Shadcn UI',
+          desc: 'Docs-aligned showcase',
+          to: '/shadcn-showcase',  // '/shadcn-grid-probe'
+          icon: LucideIcons.layoutGrid,
+          gradient: 'linear-gradient(135deg, #18181b, #52525b)',
+        },
+      ]
+    : quickStart;
 
   const QuickStartCard = ({ item }: { item: QuickStartItem }) => (
     <div
@@ -352,7 +364,7 @@ export const HomePage: React.FC = () => {
             display: 'flex',
             gap: '12px',
           }}>
-            {quickStart.map((qs) => (
+            {quickStartItems.map((qs) => (
               <QuickStartCard key={qs.to} item={qs} />
             ))}
           </div>

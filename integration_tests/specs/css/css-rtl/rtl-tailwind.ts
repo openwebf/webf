@@ -293,10 +293,10 @@ describe('RTL Tailwind CSS', () => {
       const ltrGrid = document.createElement('div');
       ltrGrid.className = 'grid grid-cols-3 gap-2';
 
-      ['1', '2', '3'].forEach((num, i) => {
+      ['bg-blue-300', 'bg-blue-400', 'bg-blue-500'].forEach((color, i) => {
         const item = document.createElement('div');
-        item.className = `h-10 flex items-center justify-center text-white text-sm font-medium bg-blue-${(i + 3) * 100}`;
-        item.textContent = num;
+        item.className = `h-10 flex items-center justify-center text-white text-sm font-medium ${color}`;
+        item.textContent = String(i + 1);
         ltrGrid.appendChild(item);
       });
 
@@ -316,10 +316,10 @@ describe('RTL Tailwind CSS', () => {
       const rtlGrid = document.createElement('div');
       rtlGrid.className = 'grid grid-cols-3 gap-2';
 
-      ['1', '2', '3'].forEach((num, i) => {
+      ['bg-green-300', 'bg-green-400', 'bg-green-500'].forEach((color, i) => {
         const item = document.createElement('div');
-        item.className = `h-10 flex items-center justify-center text-white text-sm font-medium bg-green-${(i + 3) * 100}`;
-        item.textContent = num;
+        item.className = `h-10 flex items-center justify-center text-white text-sm font-medium ${color}`;
+        item.textContent = String(i + 1);
         rtlGrid.appendChild(item);
       });
 

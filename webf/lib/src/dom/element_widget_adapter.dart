@@ -89,6 +89,10 @@ mixin ElementAdapterMixin on ElementBase {
   // Rendering this element as an RenderPositionHolder
   Element? holderAttachedPositionedElement;
   Element? holderAttachedContainingBlockElement;
+  // When an abspos overlay is lifted to listview for cross-item painting,
+  // keep the original containing block so positioned layout can preserve
+  // anchor/inset calculations.
+  Element? overlayLiftReferenceContainingBlockElement;
 
   flutter.ScrollController? get scrollControllerX {
     flutter.ScrollController? controller;

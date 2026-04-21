@@ -4,6 +4,7 @@
  */
 
 import 'dart:math' as math;
+import 'package:flutter/foundation.dart';
 import 'package:flutter/rendering.dart';
 import 'package:webf/css.dart';
 import 'package:webf/dom.dart';
