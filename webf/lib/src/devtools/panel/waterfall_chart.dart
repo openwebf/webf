@@ -362,10 +362,20 @@ WaterfallData _buildWaterfallDataImpl(
   }
 
   // --- Network requests (unchanged) ---
+  // Track every URL that produced a raw HTTP request entry so we can
+  // later suppress the matching `imageLoadComplete` / `scriptLoadComplete`
+  // / `fontLoadComplete` / `networkResponse` loader roots — those are the
+  // outer-async wrappers of the same fetch, and the HTTP entry carries
+  // richer detail (DNS / Connect / TLS / Waiting / Download sub-entries).
+  // Loader roots whose URL isn't in this set (typically `data:` URIs or
+  // cache hits that skipped the request log) are still rendered, so we
+  // don't drop real signal.
+  final networkRequestUrls = <String>{};
   final networkReqs =
       importedPhases != null ? <dynamic>[] : List.of(loadingState.networkRequests);
   for (final req in networkReqs) {
     if (!req.isComplete) continue;
+    networkRequestUrls.add(req.url);
     final subEntries = <WaterfallSubEntry>[];
     final reqStart = offset(req.startTime);
     final reqEnd = offset(req.endTime!);
@@ -449,6 +459,9 @@ WaterfallData _buildWaterfallDataImpl(
     // individual names and hide concurrent overlaps.
     if (kWaterfallPerRootSubTypes.contains(subType)) {
       for (final s in spans) {
+        // Skip loader roots whose URL already shows up as an HTTP request
+        // row — they'd duplicate the same fetch with less information.
+        if (networkRequestUrls.contains(s.name)) continue;
         final start = shiftedOffset(s.startOffsetUs);
         final end = shiftedOffset(s.endOffsetUs!);
         final label = s.name.isNotEmpty ? s.name : subType;
