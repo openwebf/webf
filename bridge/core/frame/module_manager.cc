@@ -3,6 +3,8 @@
  * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
 #include "module_manager.h"
+#include <string>
+#include <unordered_set>
 #include "core/executing_context.h"
 #include "core/frame/window.h"
 #include "foundation/logging.h"
@@ -177,7 +179,15 @@ NativeValue* ModuleManager::__webf_invoke_module__(ExecutingContext* context,
     return nullptr;
   }
 
-  context->FlushUICommand(context->window(), FlushUICommandReason::kDependentsAll);
+  // Modules that do not read DOM state can skip FlushUICommand, avoiding a
+  // PostToDartSync round-trip on every call. Add module names here when the
+  // module is purely network/storage/device and never inspects the DOM tree.
+  static const std::unordered_set<std::string> kNoFlushModules = {
+      "Fetch", "AsyncStorage", "LocalStorage", "SessionStorage", "Clipboard", "TextCodec", "Navigator",
+  };
+  if (kNoFlushModules.find(module_name.ToStdString(context->ctx())) == kNoFlushModules.end()) {
+    context->FlushUICommand(context->window(), FlushUICommandReason::kDependentsAll);
+  }
 
   NativeValue* result;
   auto module_name_string = module_name.ToNativeString(context->ctx());
