@@ -141,11 +141,6 @@ export class WebSocket extends EventTarget implements WebSocketInterface {
     initPropertyHandlersForEventTargets(this, builtInEvents$1);
   }
 
-  addEventListener(type: string, callback: EventListener | EventListenerObject) {
-    webf.invokeModule('WebSocket', 'addEvent', this.id, type);
-    super.addEventListener(type, callback);
-  }
-
   // TODO add blob arrayBuffer ArrayBufferView format support
   send(message: string) {
     webf.invokeModule('WebSocket', 'send', this.id, message);

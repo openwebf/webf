@@ -145,5 +145,11 @@
     "specs": [
       "specs/rust/**/*.{js,jsx,ts,tsx,html}"
     ]
+  },
+  {
+    "name": "WebSocket",
+    "specs": [
+      "specs/websocket/**/*.{js,jsx,ts,tsx,html}"
+    ]
   }
 ]

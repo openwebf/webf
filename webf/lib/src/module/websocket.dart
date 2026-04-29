@@ -24,7 +24,6 @@ class WebSocketModule extends BaseModule {
   String get name => 'WebSocket';
 
   final Map<String, IOWebSocketChannel> _clientMap = {};
-  final Map<String?, Map<String?, bool>> _listenMap = {};
   final Map<String?, _WebSocketState> _stateMap = {};
   int _clientId = 0;
 
@@ -37,8 +36,6 @@ class WebSocketModule extends BaseModule {
       return init(params[0], (String id, Event event) {
         moduleManager!.emitModuleEvent(name, event: event, data: id);
       }, protocols: protocols);
-    } else if (method == 'addEvent') {
-      addEvent(params[0], params[1]);
     } else if (method == 'send') {
       send(params[0], params[1]);
     } else if (method == 'close') {
@@ -53,7 +50,6 @@ class WebSocketModule extends BaseModule {
       socket.sink.close();
     });
     _clientMap.clear();
-    _listenMap.clear();
     _stateMap.clear();
   }
 
@@ -74,17 +70,15 @@ class WebSocketModule extends BaseModule {
         return;
       }
       _clientMap[id] = client;
-      // Listen all event
+      // Listen all events
       _listen(id, callback);
-      if (_hasListener(id, EVENT_OPEN)) {
-        Event event = Event(EVENT_OPEN);
-        callback(id, event);
-      }
+      // Unconditionally fire open event; JS-side EventTarget will dispatch
+      // only if a listener is registered (no need for a Dart-side gate).
+      callback(id, Event(EVENT_OPEN));
     }).catchError((e, stack) {
       // print connection error internally and trigger error event.
       print(e);
-      Event event = Event(EVENT_ERROR);
-      callback(id, event);
+      callback(id, Event(EVENT_ERROR));
     });
 
     return id;
@@ -117,50 +111,23 @@ class WebSocketModule extends BaseModule {
     client.sink.close(closeCode, closeReason);
   }
 
-  bool _hasListener(String id, String type) {
-    if (!_listenMap.containsKey(id)) return false;
-    var listeners = _listenMap[id]!;
-    return listeners.containsKey(type);
-  }
-
   void _listen(String id, WebSocketEventCallback callback) {
     IOWebSocketChannel client = _clientMap[id]!;
 
     client.stream.listen((message) {
-      if (!_hasListener(id, EVENT_MESSAGE)) return;
-      MessageEvent event = MessageEvent(message);
-      callback(id, event);
+      callback(id, MessageEvent(message));
     }, onError: (error) {
-      if (!_hasListener(id, EVENT_ERROR)) return;
       // print error internally and trigger error event;
       print(error);
-      Event event = Event(EVENT_ERROR);
-      callback(id, event);
+      callback(id, Event(EVENT_ERROR));
     }, onDone: () {
       if (moduleManager?.disposed == true) return;
 
-      if (_hasListener(id, EVENT_CLOSE)) {
-        // CloseEvent https://developer.mozilla.org/en-US/docs/Web/API/CloseEvent/CloseEvent
-        CloseEvent event = CloseEvent(client.closeCode!, client.closeReason ?? '', false);
-        callback(id, event);
-      }
+      // CloseEvent https://developer.mozilla.org/en-US/docs/Web/API/CloseEvent/CloseEvent
+      callback(id, CloseEvent(client.closeCode ?? 1000, client.closeReason ?? '', false));
       // Clear instance after close
-      _listenMap.remove(id);
       _clientMap.remove(id);
       _stateMap.remove(id);
     });
-  }
-
-  void addEvent(String? id, String? type) {
-    if (moduleManager?.disposed == true) return;
-
-    if (!_listenMap.containsKey(id)) {
-      // Init listener map
-      _listenMap[id] = {};
-    }
-
-    // Mark event type listened
-    var listeners = _listenMap[id]!;
-    listeners[type] = true;
   }
 }
