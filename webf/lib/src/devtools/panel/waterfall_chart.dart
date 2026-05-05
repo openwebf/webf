@@ -54,6 +54,7 @@ const List<String> kWaterfallRowOrder = [
   kSubTypeFlushUICommand,
   kSubTypeInvokeBindingMethodFromNative,
   kSubTypeInvokeModuleEvent,
+  kSubTypeInvokeModule,
   kSubTypeAsyncCallback,
   kSubTypeImageLoadComplete,
   kSubTypeFontLoadComplete,
@@ -88,6 +89,7 @@ Color colorForSubType(String subType) {
   // DOM/binding = purple family
   if (subType == kSubTypeInvokeBindingMethodFromNative) return const Color(0xFF7E57C2);
   if (subType == kSubTypeInvokeModuleEvent) return const Color(0xFF9575CD);
+  if (subType == kSubTypeInvokeModule) return const Color(0xFF5E35B1);
   // Loaders / network = green family
   if (subType == kSubTypeImageLoadComplete) return const Color(0xFF66BB6A);
   if (subType == kSubTypeFontLoadComplete) return const Color(0xFF81C784);
@@ -480,6 +482,39 @@ WaterfallData _buildWaterfallDataImpl(
     (rootsBySubType[span.subType] ??= []).add(span);
   }
 
+  // Compute which `invokeModule` Dart roots are time-contained inside a JS
+  // `__webf_invoke_module__` bridge span — those will be grafted under the
+  // bridge in the flame drilldown, so the overview can suppress them. Roots
+  // that overflow (typically async invokes — Fetch, AsyncStorage — whose
+  // Dart entry stays open until the network/IO response arrives long after
+  // the JS bridge call returned) cannot graft and must remain visible in
+  // the overview, otherwise the user loses end-to-end latency for them.
+  final graftedInvokeModuleRoots = <PerformanceSpan>{};
+  final invokeModuleRoots = rootsBySubType[kSubTypeInvokeModule];
+  if (invokeModuleRoots != null && invokeModuleRoots.isNotEmpty) {
+    final wmiWindows = <PerformanceSpan>[];
+    void collectWmi(PerformanceSpan s) {
+      if (s.subType == kSubTypeJsCFunction && s.name == '__webf_invoke_module__'
+          && s.isComplete) {
+        wmiWindows.add(s);
+      }
+      for (final c in s.children) collectWmi(c);
+    }
+    for (final r in rootSnapshot) collectWmi(r);
+    for (final im in invokeModuleRoots) {
+      final imEnd = im.endOffsetUs;
+      if (imEnd == null) continue;
+      for (final w in wmiWindows) {
+        final wEnd = w.endOffsetUs;
+        if (wEnd == null) continue;
+        if (im.startOffsetUs >= w.startOffsetUs && imEnd <= wEnd) {
+          graftedInvokeModuleRoots.add(im);
+          break;
+        }
+      }
+    }
+  }
+
   // Iterate in fixed kWaterfallRowOrder, then any unknown subTypes appended.
   final orderedSubTypes = <String>[
     ...kWaterfallRowOrder.where(rootsBySubType.containsKey),
@@ -503,6 +538,18 @@ WaterfallData _buildWaterfallDataImpl(
     // via the JS→Dart graft, where the bridge JS span gives them the
     // causal context they need.
     if (subType == kSubTypeInvokeBindingMethodFromNative) continue;
+    // `invokeModule` follows the same shape: each entry is the Dart-side
+    // execution of a JS `__webf_invoke_module__` bridge call. For sync
+    // invokes the Dart entry fits inside the JS bridge window and the
+    // flame-chart graft attaches it there — hide the duplicate. For async
+    // invokes (Fetch, AsyncStorage…) the Dart entry outlives its JS
+    // bridge span (it stays open until the I/O completes, long after the
+    // bridge returned), so the graft can't attach it; keep those visible
+    // in the overview so end-to-end latency is preserved.
+    if (subType == kSubTypeInvokeModule) {
+      spans.retainWhere((s) => !graftedInvokeModuleRoots.contains(s));
+      if (spans.isEmpty) continue;
+    }
 
     // Per-root subTypes (image loads, network, etc.) get one entry per
     // span so each URL is its own row — clustering would lose the
@@ -803,6 +850,8 @@ Color _flameSpanColor(PerformanceSpan span) {
       return const Color(0xFF7E57C2);
     case 'invokeModuleEvent':
       return const Color(0xFF673AB7);
+    case 'invokeModule':
+      return const Color(0xFF5E35B1);
     case 'evaluateScripts':
       return const Color(0xFFFB8C00);
     case 'evaluateByteCode':
@@ -2279,6 +2328,7 @@ class _WaterfallChartState extends State<WaterfallChart> {
       const dartSyncCallSubTypes = {
         kSubTypeInvokeBindingMethodFromNative,
         kSubTypeInvokeModuleEvent,
+        kSubTypeInvokeModule,
         kSubTypeAsyncCallback,
         kSubTypeFlushUICommand,
       };
@@ -2287,12 +2337,17 @@ class _WaterfallChartState extends State<WaterfallChart> {
       // Dart to drain the UI command queue — the matching Dart work is
       // a top-level `flushUICommand` entry whose entire pipeline
       // (styleRecalc / styleApply / layout / paint) is the thing the
-      // JS thread was stalled for. Both qualify as "JS blocked on
-      // Dart" bridges.
+      // JS thread was stalled for. `__webf_invoke_module__` (a
+      // jsCFunction span) is the C bridge entry that calls into Dart's
+      // ModuleManager — the matching Dart `invokeModule` entry runs
+      // inside it (after the implicit jsFlushUICommand finishes). All
+      // three qualify as "JS blocked on Dart" bridges.
       final bridgeJsSpans = jsSpans
           .where((s) =>
               s.subType == kSubTypeJsBindingSyncCall ||
-              s.subType == kSubTypeJsFlushUICommand)
+              s.subType == kSubTypeJsFlushUICommand ||
+              (s.subType == kSubTypeJsCFunction &&
+                  s.name == '__webf_invoke_module__'))
           .toList();
       if (bridgeJsSpans.isNotEmpty) {
         final trackerRoots = PerformanceTracker.instance.rootSpans;

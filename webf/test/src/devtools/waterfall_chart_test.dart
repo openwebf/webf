@@ -69,6 +69,101 @@ void main() {
           isNot(colorForSubType(kSubTypeJsTimer)));
     });
 
+    test('invokeModule has its own color distinct from related subtypes', () {
+      expect(colorForSubType(kSubTypeInvokeModule),
+          isNot(colorForSubType(kSubTypeInvokeModuleEvent)));
+      expect(colorForSubType(kSubTypeInvokeModule),
+          isNot(colorForSubType(kSubTypeInvokeBindingMethodFromNative)));
+    });
+
+    test(
+        'sync invokeModule (graftable) is suppressed; '
+        'async invokeModule (overflow) stays visible', () {
+      // Sync invoke pattern: the Dart `invokeModule` entry is fully
+      // time-contained inside a JS `__webf_invoke_module__` bridge span
+      // — the flame drilldown grafts it under the bridge so the overview
+      // can suppress it.
+      final dispatchEntry = PerformanceTracker.instance
+          .beginEntry(kSubTypeDispatchEvent, 'click');
+      final syncInvoke = PerformanceTracker.instance
+          .beginEntry(kSubTypeInvokeModule, 'LocalStorage.getItem');
+      syncInvoke!.end();
+      // Look up the just-closed sync invoke span via the dispatch root's
+      // children, then inject a narrow JS bridge window that brackets it.
+      // Bracket = [syncSpan.start - 1 .. syncSpan.end + 1] so the sync
+      // invoke is fully contained; dispatchEntry closes strictly after,
+      // so the bridge window also fits inside the dispatch.
+      final dispatchRoot = PerformanceTracker.instance.rootSpans
+          .firstWhere((r) => r.subType == kSubTypeDispatchEvent);
+      final syncSpan = dispatchRoot.children
+          .firstWhere((c) => c.name == 'LocalStorage.getItem');
+      PerformanceTracker.instance.debugInjectJSSpan(
+        subType: kSubTypeJsCFunction,
+        funcName: '__webf_invoke_module__',
+        startUs: syncSpan.startOffsetUs - 1,
+        endUs: syncSpan.endOffsetUs! + 1,
+        entryId: dispatchEntry!.entryId,
+      );
+      dispatchEntry.end();
+
+      // Async invoke pattern: standalone Dart entry that opens AFTER the
+      // dispatch (and its JS bridge) has fully closed — there is no
+      // `__webf_invoke_module__` span enclosing this window, so the graft
+      // can't attach it. It must stay in the overview.
+      final asyncInvoke = PerformanceTracker.instance.beginEntry(
+          kSubTypeInvokeModule, 'Fetch.https://example.com/api',
+          asyncSpanning: true);
+      asyncInvoke!.end();
+
+      final loadingState = LoadingState();
+      final data =
+          buildWaterfallData(loadingState, PerformanceTracker.instance);
+      final overviewLabels = data.entries
+          .where((e) => e.subType == kSubTypeInvokeModule)
+          .map((e) => e.label)
+          .toList();
+      expect(overviewLabels, contains('Fetch.https://example.com/api'),
+          reason: 'async invokeModule whose Dart entry overflows the JS '
+              'bridge window cannot be grafted, so it must remain in the '
+              'overview to preserve end-to-end latency visibility');
+      expect(overviewLabels, isNot(contains('LocalStorage.getItem')),
+          reason: 'sync invokeModule that fits inside a __webf_invoke_module__ '
+              'JS bridge span must be suppressed from the overview — the '
+              'flame drilldown grafts it under the bridge');
+    });
+
+    test('invokeModule entry tracks sync and async semantics', () {
+      // Sync: closes synchronously after end().
+      final sync = PerformanceTracker.instance
+          .beginEntry(kSubTypeInvokeModule, 'Navigator.userAgent');
+      sync!.end();
+      expect(sync.entryId, greaterThan(0));
+
+      // Async-spanning: stays open across the begin/end (no _currentSpan
+      // leaked to subsequent unrelated entries).
+      final async_ = PerformanceTracker.instance.beginEntry(
+          kSubTypeInvokeModule, 'Fetch.fetch',
+          asyncSpanning: true);
+      // While async entry is in flight, a sibling sync entry must not nest
+      // under it (asyncSpanning entries are not pushed onto _currentSpan).
+      final sibling = PerformanceTracker.instance
+          .beginEntry(kSubTypeDrawFrame, 'drawFrame');
+      sibling!.end();
+      async_!.end();
+
+      // Verify both async invokeModule and sibling drawFrame are roots,
+      // not nested.
+      final roots = PerformanceTracker.instance.rootSpans;
+      final asyncRoot = roots.firstWhere(
+          (r) => r.subType == kSubTypeInvokeModule && r.name == 'Fetch.fetch');
+      final siblingRoot = roots.firstWhere(
+          (r) => r.subType == kSubTypeDrawFrame && r.name == 'drawFrame');
+      expect(siblingRoot.parent, isNull,
+          reason: 'sibling drawFrame must remain a root, not nest under '
+              'the async-spanning invokeModule entry');
+      expect(asyncRoot.parent, isNull);
+    });
+
     // Regression: when LoadingState starts before the tracker (real-world
     // order — LoadingState ctor → view init → startSession → recordPhase),
     // the minStart shift must also apply to attachOffset. Otherwise drawFrame

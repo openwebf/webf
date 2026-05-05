@@ -30,6 +30,7 @@ const String kSubTypeCssParse = 'cssParse';
 const String kSubTypeEvaluateScripts = 'evaluateScripts';
 const String kSubTypeEvaluateByteCode = 'evaluateByteCode';
 const String kSubTypeEvaluateModule = 'evaluateModule';
+const String kSubTypeInvokeModule = 'invokeModule';
 
 // JS-thread origins (synthesized at drain time when no Dart parent)
 const String kSubTypeJsTimer = 'jsTimer';

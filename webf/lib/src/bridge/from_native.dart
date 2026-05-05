@@ -156,8 +156,29 @@ dynamic invokeModule(Pointer<Void> callbackContext, WebFController controller, S
     stopwatch = Stopwatch()..start();
   }
 
+  // Track Dart-side module execution so the waterfall can graft it under the
+  // JS-side __webf_invoke_module__ span. Sync invokes (no JS callback) close
+  // on synchronous return; async invokes (with JS callback) stay open until
+  // the module delivers its result via invokeModuleCallback.
+  final bool isAsyncInvoke = callback != nullptr;
+  final EntryHandle? trackerEntry = PerformanceTracker.instance.enabled
+      ? PerformanceTracker.instance.beginEntry(
+          kSubTypeInvokeModule, '$moduleName.$method',
+          asyncSpanning: isAsyncInvoke)
+      : null;
+  bool trackerEntryClosed = false;
+  void closeTrackerEntry() {
+    if (trackerEntryClosed) return;
+    trackerEntryClosed = true;
+    trackerEntry?.end();
+  }
+
   try {
     Future<dynamic> invokeModuleCallback({String? error, data}) {
+      // First result delivery from the module — close the tracker entry now
+      // so the entry duration reflects when work finished, not when the JS
+      // promise resolution microtask runs.
+      closeTrackerEntry();
       Completer<dynamic> completer = Completer();
       // To make sure Promise then() and catch() executed before Promise callback called at JavaScript side.
       // We should make callback always async.
@@ -195,7 +216,14 @@ dynamic invokeModule(Pointer<Void> callbackContext, WebFController controller, S
     }
 
     result = controller.module.moduleManager.invokeModule(moduleName, method, params, invokeModuleCallback);
+
+    // Sync module — `result` is the value returned synchronously and the
+    // callback was never invoked. Close the entry now.
+    if (!isAsyncInvoke) {
+      closeTrackerEntry();
+    }
   } catch (e, stack) {
+    closeTrackerEntry();
     if (enableWebFCommandLog) {
       bridgeLogger.severe('Invoke module failed', e, stack);
     }
