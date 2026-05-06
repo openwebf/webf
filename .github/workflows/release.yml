@@ -9,6 +9,11 @@ jobs:
   build-windows:
     name: Build Windows Bridge
     runs-on: windows-latest
+    # Temporarily disabled — downstream restoration steps already tolerate
+    # missing Windows artifacts (see "Windows binaries not found" fallbacks
+    # in collect-debug-symbols and prepare-and-publish). Re-enable by
+    # removing this `if: false` once the Windows build is healthy again.
+    if: false
 
     env:
       nodeVersion: "22"
@@ -514,7 +519,7 @@ jobs:
     name: Collect and Upload Debug Symbols to LFS
     runs-on: ubuntu-latest
     # Wait for all bridge builds to complete
-    needs: [build-windows, build-linux, build-macos, build-ios, build-android]
+    needs: [build-linux, build-macos, build-ios, build-android]
 
     permissions:
       contents: write
@@ -661,7 +666,7 @@ jobs:
     name: Prepare and Publish WebF Package
     runs-on: ubuntu-latest
     # Wait for all bridge builds and debug symbol collection
-    needs: [build-windows, build-linux, build-macos, build-ios, build-android, collect-debug-symbols]
+    needs: [build-linux, build-macos, build-ios, build-android, collect-debug-symbols]
 
     permissions:
       contents: write
