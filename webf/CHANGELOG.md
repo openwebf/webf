@@ -11,7 +11,6 @@
 
 ### Maintenance
 
-- Add bridge unit coverage for the module-manager no-flush optimization, including whitelisted module calls and non-whitelisted fallback behavior.
 - Add waterfall test coverage for `invokeModule` tracking — a distinct flame color, sync-vs-async semantics, and the conditional overview-suppression rule that keeps async entries visible when the graft can't attach them.
 - Add compressed Android and macOS debug symbols for the 0.22.23 build artifacts.
 
