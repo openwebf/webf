@@ -1,3 +1,20 @@
+## 0.22.24
+
+### Features
+
+- Track Dart-side `invokeModule` calls in the DevTools performance waterfall and graft them under the JS-side `__webf_invoke_module__` bridge span. Sync invokes close on synchronous return; async invokes (Fetch, AsyncStorage, …) use `asyncSpanning` and close when the module delivers its result via `invokeModuleCallback`, so the entry's wall-clock duration captures end-to-end latency. Graftable entries are hidden from the overview while async entries that overflow their JS bridge window stay visible as Dart Thread rows so latency information is preserved.
+
+### Performance
+
+- Skip `FlushUICommand` before invoking DOM-independent modules (`Fetch`, `AsyncStorage`, `LocalStorage`, `SessionStorage`, `Clipboard`, `TextCodec`, and `Navigator`), avoiding an unnecessary synchronous JS-to-Dart round trip for common network, storage, codec, clipboard, and navigator calls.
+- Remove the Dart-side WebSocket listener gate so WebSocket events no longer require extra synchronous `invokeModule` checks before dispatch.
+
+### Maintenance
+
+- Add bridge unit coverage for the module-manager no-flush optimization, including whitelisted module calls and non-whitelisted fallback behavior.
+- Add waterfall test coverage for `invokeModule` tracking — a distinct flame color, sync-vs-async semantics, and the conditional overview-suppression rule that keeps async entries visible when the graft can't attach them.
+- Add compressed Android and macOS debug symbols for the 0.22.23 build artifacts.
+
 ## 0.22.23
 
 ### Features
