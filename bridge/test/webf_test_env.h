@@ -25,6 +25,11 @@ struct UnitTestEnv {
 
 namespace webf {
 
+// Counter incremented each time the mock flushUICommand is called.
+// Tests can reset this to zero before invoking JS and then check the value
+// afterwards to verify whether FlushUICommand was (or was not) triggered.
+extern int g_flush_ui_command_call_count;
+
 class WebFTestEnv {
  public:
   WebFTestEnv(DartIsolateContext* owner_isolate_context, webf::WebFPage* page);
