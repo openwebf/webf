@@ -718,13 +718,15 @@ jobs:
           RESTORE_FAILED=false
 
           # Restore Windows binaries (maintaining path structure from bridge/build/windows/)
+          # Windows is currently non-fatal — the build-windows job is
+          # disabled (`if: false` upstream), so missing binaries are
+          # expected and must NOT trip RESTORE_FAILED.
           if [ -d "artifacts/windows-binaries" ]; then
             mkdir -p bridge/build/windows
             cp -r artifacts/windows-binaries/* bridge/build/windows/
             echo "✅ Windows binaries restored"
           else
-            echo "⚠️ Windows binaries not found"
-            RESTORE_FAILED=true
+            echo "⚠️ Windows binaries not found (build-windows is disabled)"
           fi
 
           # Restore Linux binaries (maintaining path structure from bridge/build/linux/)
