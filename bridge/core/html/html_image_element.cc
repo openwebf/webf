@@ -34,8 +34,26 @@ AtomicString HTMLImageElement::src() const {
 }
 
 void HTMLImageElement::setSrc(const AtomicString& value, ExceptionState& exception_state) {
-  SetBindingProperty(binding_call_methods::ksrc, NativeValueConverter<NativeTypeString>::ToNativeValue(ctx(), value),
-                     exception_state);
+  // Queue a UI command rather than going through the sync bridge path:
+  //
+  //   * `src` is fire-and-forget — JS never reads anything synchronously
+  //     out of the setter, the actual network load is async on Dart, and
+  //     any subsequent `img.src` getter / `getProperty` call calls
+  //     `FlushUICommand` internally before its sync read so it still sees
+  //     the value just written.
+  //   * The sync path forced a per-write FlushUICommand, which during
+  //     React commit + image-load swap bursts triggered cascading
+  //     styleRecalc walks (~2k recalcs per insert in profiles). Folding
+  //     these writes into the next natural flush eliminates the
+  //     amplification.
+  //
+  // The HTMLImageElement attribute mirror is unchanged: `attributes_` is
+  // only kept in sync for `WidgetElement`, and the WidgetElement-only
+  // branch in `BindingObject::SetBindingProperty` is preserved by the
+  // remaining sync setters that need it.
+  SetBindingPropertyAsync(binding_call_methods::ksrc,
+                          NativeValueConverter<NativeTypeString>::ToNativeValue(ctx(), value),
+                          exception_state);
   if (!value.IsEmpty() && !keep_alive) {
     KeepAlive();
     keep_alive = true;
