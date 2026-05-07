@@ -205,6 +205,36 @@ class WebFViewController with Diagnosticable implements WidgetsBindingObserver {
 
   final Map<String, WidgetElement> _hybridRouterViews = {};
 
+  // Global root element for rendering content outside of hybrid routes.
+  WidgetElement? _globalRootElement;
+  final List<VoidCallback> _globalRootListeners = [];
+
+  WidgetElement? get globalRoot => _globalRootElement;
+
+  void setGlobalRoot(WidgetElement element) {
+    _globalRootElement = element;
+    for (final listener in _globalRootListeners) {
+      listener();
+    }
+  }
+
+  void removeGlobalRoot(WidgetElement element) {
+    if (_globalRootElement == element) {
+      _globalRootElement = null;
+      for (final listener in _globalRootListeners) {
+        listener();
+      }
+    }
+  }
+
+  void addGlobalRootListener(VoidCallback listener) {
+    _globalRootListeners.add(listener);
+  }
+
+  void removeGlobalRootListener(VoidCallback listener) {
+    _globalRootListeners.remove(listener);
+  }
+
   void setHybridRouterView(String path, WidgetElement root) {
     _hybridRouterViews[path] = root;
 

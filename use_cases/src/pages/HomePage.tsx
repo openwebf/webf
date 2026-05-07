@@ -21,6 +21,7 @@ const sections: Section[] = [
       { label: 'WebFListView', path: '/listview' },
       { label: 'Draggable List', path: '/dragable-list' },
       { label: 'Routing', path: '/routing' },
+      { label: 'Global Modal', path: '/global-modal' },
     ],
   },
   {

@@ -28,6 +28,7 @@ export 'src/html/touch_area.dart';
 export 'src/html/sections.dart';
 export 'src/html/semantics_text.dart';
 export 'src/html/router_link.dart';
+export 'src/html/global_root.dart';
 export 'src/html/template.dart';
 export 'src/html/form/textarea.dart';
 export 'src/html/pseudo.dart';
