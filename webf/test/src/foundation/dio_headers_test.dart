@@ -10,6 +10,8 @@ import 'package:webf/src/foundation/cookie_jar/file_storage.dart';
 import 'package:webf/src/foundation/cookie_jar.dart';
 import 'package:webf/src/foundation/http_cache.dart';
 
+import '../../setup.dart';
+
 class _CaptureOptionsInterceptor extends InterceptorsWrapper {
   _CaptureOptionsInterceptor(this._onRequest);
   final void Function(RequestOptions) _onRequest;
@@ -27,6 +29,17 @@ class _CaptureOptionsInterceptor extends InterceptorsWrapper {
 }
 
 void main() {
+  // dio_client constructs URLSessionConfiguration eagerly on iOS/macOS,
+  // which calls into the objective_c plugin and is not available under
+  // `flutter test`.
+  final macOSSkip = (Platform.isIOS || Platform.isMacOS)
+      ? 'dio_client uses cupertino URLSession on iOS/macOS which requires native plugins'
+      : null;
+
+  setUp(() {
+    setupTest();
+  });
+
   setUpAll(() async {
     // Disable cache to avoid platform channel for temporary directory
     HttpCacheController.mode = HttpCacheMode.NO_CACHE;
@@ -39,7 +52,7 @@ void main() {
   group('WebF Dio headers', () {
     test('injects x-context and referer for GET', () async {
       const ctx = 7.0;
-      final dio = await getOrCreateWebFDio(contextId: ctx);
+      final dio = await getOrCreateWebFDio(contextId: ctx, uri: Uri.parse('https://example.com/'));
       RequestOptions? seen;
       dio.interceptors.add(_CaptureOptionsInterceptor((opts) => seen = opts));
 
@@ -51,11 +64,11 @@ void main() {
       expect(seen!.headers['referer'], expectedRef);
       // For GET, origin should be absent
       expect(seen!.headers['origin'], isNull);
-    });
+    }, skip: macOSSkip);
 
     test('injects origin for non-GET', () async {
       const ctx = 8.0;
-      final dio = await getOrCreateWebFDio(contextId: ctx);
+      final dio = await getOrCreateWebFDio(contextId: ctx, uri: Uri.parse('https://example.com/'));
       RequestOptions? seen;
       dio.interceptors.add(_CaptureOptionsInterceptor((opts) => seen = opts));
 
@@ -66,11 +79,11 @@ void main() {
       final ref = getEntrypointUri(ctx);
       final expectedOrigin = getOrigin(ref);
       expect(seen!.headers['origin'], expectedOrigin);
-    });
+    }, skip: macOSSkip);
 
     test('preserves X-WebF-Request-Type from caller', () async {
       const ctx = 9.0;
-      final dio = await getOrCreateWebFDio(contextId: ctx);
+      final dio = await getOrCreateWebFDio(contextId: ctx, uri: Uri.parse('https://example.com/'));
       RequestOptions? seen;
       dio.interceptors.add(_CaptureOptionsInterceptor((opts) => seen = opts));
 
@@ -81,7 +94,7 @@ void main() {
 
       expect(seen, isNotNull);
       expect(seen!.headers['X-WebF-Request-Type'], 'fetch');
-    });
+    }, skip: macOSSkip);
   });
 }
 

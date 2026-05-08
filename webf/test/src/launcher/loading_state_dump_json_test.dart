@@ -48,7 +48,9 @@ void main() {
       expect(json['phases'].length, equals(5));
       expect(json['phases'][0]['name'], equals(LoadingState.phaseConstructor));
       expect(json['phases'][0]['timestamp'], isA<String>());
-      expect(json['phases'][0]['elapsed'], equals(0));
+      // elapsed is measured from LoadingState() construction, so the first
+      // recorded phase is typically 0ms but can be 1ms+ under scheduler jitter.
+      expect(json['phases'][0]['elapsed'], lessThan(50));
 
       // Verify arrays exist
       expect(json['networkRequests'], isA<List>());

@@ -48,8 +48,8 @@ void main() {
       expect(await testCacheFile2.exists(), false);
       expect(await testCacheBlobFile.exists(), false);
 
-      // Verify cache directory is recreated
-      expect(await cacheDirectory.exists(), true);
+      // Cache directory itself is removed by clearAllCaches.
+      expect(await cacheDirectory.exists(), false);
     });
 
     test('should clear all memory caches', () async {
@@ -61,17 +61,18 @@ void main() {
       final Uri uri1 = Uri.parse('https://example.com/test.js');
       final Uri uri2 = Uri.parse('https://test.com/style.css');
 
-      final String cacheDir = (await HttpCacheController.getCacheDirectory()).path;
+      final String cacheDir1 = await HttpCacheController.getCacheDirectory(uri1);
+      final String cacheDir2 = await HttpCacheController.getCacheDirectory(uri2);
 
       final HttpCacheObject cacheObject1 = HttpCacheObject(
         HttpCacheController.getCacheKey(uri1),
-        cacheDir,
+        cacheDir1,
         contentLength: 100,
       );
 
       final HttpCacheObject cacheObject2 = HttpCacheObject(
         HttpCacheController.getCacheKey(uri2),
-        cacheDir,
+        cacheDir2,
         contentLength: 200,
       );
 
@@ -143,10 +144,8 @@ void main() {
       // All operations should complete without error
       await expectLater(Future.wait(futures), completes);
 
-      // Verify cache directory exists and is empty
-      expect(await cacheDirectory.exists(), true);
-      final List<FileSystemEntity> files = cacheDirectory.listSync();
-      expect(files.isEmpty, true);
+      // Cache directory itself is removed by clearAllCaches.
+      expect(await cacheDirectory.exists(), false);
     });
 
     test('should work correctly after clearing caches', () async {
@@ -156,7 +155,7 @@ void main() {
       // Create a new cache object and verify it works
       final HttpCacheController controller = HttpCacheController.instance('https://example.com');
       final Uri uri = Uri.parse('https://example.com/new.js');
-      final String cacheDir = (await HttpCacheController.getCacheDirectory()).path;
+      final String cacheDir = await HttpCacheController.getCacheDirectory(uri);
 
       final HttpCacheObject cacheObject = HttpCacheObject(
         HttpCacheController.getCacheKey(uri),
@@ -289,8 +288,8 @@ void main() {
       expect(await httpCacheFile.exists(), false);
       expect(await bytecodeCacheFile.exists(), false);
 
-      // HTTP cache directory should be recreated, bytecode cache directory should not
-      expect(await httpCacheDir.exists(), true);
+      // clearAllCaches removes both directories outright.
+      expect(await httpCacheDir.exists(), false);
       expect(await bytecodeCacheDir.exists(), false);
     });
   });

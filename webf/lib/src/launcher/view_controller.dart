@@ -105,6 +105,7 @@ class WebFViewController with Diagnosticable implements WidgetsBindingObserver {
 
   bool _isFrameBindingAttached = false;
   EntryHandle? _drawFrameEntry;
+  int? _pendingFrameCallbackId;
 
   void flushPendingCommandsPerFrame() {
     if (disposed && _isFrameBindingAttached) return;
@@ -125,7 +126,11 @@ class WebFViewController with Diagnosticable implements WidgetsBindingObserver {
     // scheduleFrameCallback fires in the transient phase, BEFORE
     // WidgetsBinding.drawFrame runs build/layout/paint. Opening the
     // entry here puts it on the stack so those pipeline spans nest.
-    SchedulerBinding.instance.scheduleFrameCallback((_) {
+    // Track the id so dispose() can cancel any leftover transient
+    // callback — otherwise the test framework reports it as a leaked
+    // animation when the widget tree is torn down between frames.
+    _pendingFrameCallbackId = SchedulerBinding.instance.scheduleFrameCallback((_) {
+      _pendingFrameCallbackId = null;
       if (disposed) return;
       // Defensive: close any entry leaked from a prior failed frame.
       _drawFrameEntry?.end();
@@ -137,7 +142,12 @@ class WebFViewController with Diagnosticable implements WidgetsBindingObserver {
     // commands (this becomes a child entry of drawFrame), close
     // drawFrame, then re-register the pair for the next frame.
     SchedulerBinding.instance.addPostFrameCallback((_) {
-      if (disposed) {
+      // Stop the self-rescheduling loop once the controller is
+      // disposed or detached from Flutter — otherwise a post-frame
+      // callback that fires during the framework's teardown pump()
+      // would register a fresh transient frame callback and the
+      // test framework would flag it as a leaked animation.
+      if (disposed || !_isFrameBindingAttached) {
         _drawFrameEntry?.end();
         _drawFrameEntry = null;
         return;
@@ -147,6 +157,14 @@ class WebFViewController with Diagnosticable implements WidgetsBindingObserver {
       _drawFrameEntry = null;
       _scheduleDrawFrameWrapping();
     });
+  }
+
+  void _cancelPendingFrameCallback() {
+    final id = _pendingFrameCallbackId;
+    if (id != null) {
+      SchedulerBinding.instance.cancelFrameCallbackWithId(id);
+      _pendingFrameCallbackId = null;
+    }
   }
 
   final Map<String, Completer<void>> _hybridRouteLoadCompleter = {};
@@ -276,6 +294,13 @@ class WebFViewController with Diagnosticable implements WidgetsBindingObserver {
     _unregisterPlatformBrightnessChange();
     // Pause animation timeline to prevent ticker from running when detached
     document.animationTimeline.pause();
+    // Cancel the pending transient frame callback and stop the
+    // drawFrame self-rescheduling loop so the widget tree disposal
+    // does not leave an orphaned transient callback registered.
+    _cancelPendingFrameCallback();
+    _drawFrameEntry?.end();
+    _drawFrameEntry = null;
+    _isFrameBindingAttached = false;
     viewport = null;
   }
 
@@ -318,6 +343,13 @@ class WebFViewController with Diagnosticable implements WidgetsBindingObserver {
     _disposed = true;
     debugDOMTreeChanged = null;
     _hybridRouteLoadCompleter.clear();
+
+    // Cancel any transient frame callback registered by drawFrame
+    // wrapping so the test framework does not see it as a leaked
+    // animation when the widget tree is torn down between frames.
+    _cancelPendingFrameCallback();
+    _drawFrameEntry?.end();
+    _drawFrameEntry = null;
 
     _teardownObserver();
     _unregisterPlatformBrightnessChange();

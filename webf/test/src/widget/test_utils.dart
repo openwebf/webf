@@ -2,6 +2,8 @@
  * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
 
+import 'dart:ui';
+
 import 'package:flutter_test/flutter_test.dart';
 import 'package:webf/webf.dart';
 import 'package:webf/foundation.dart';
@@ -36,6 +38,13 @@ class WebFWidgetTestUtils {
   }) async {
     final name = controllerName ?? 'test-${DateTime.now().millisecondsSinceEpoch}';
     WebFController? controller;
+
+    // Match the test surface to the WebF viewport so child layout that
+    // expands to fill the parent (e.g. flex containers) measures the
+    // intended viewport width rather than the default 800x600 surface.
+    final dpr = tester.view.devicePixelRatio;
+    tester.view.physicalSize = Size(viewportWidth * dpr, viewportHeight * dpr);
+    addTearDown(tester.view.resetPhysicalSize);
 
     await tester.runAsync(() async {
       controller = await WebFControllerManager.instance.addWithPreload(

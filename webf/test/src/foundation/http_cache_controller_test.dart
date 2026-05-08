@@ -36,9 +36,10 @@ void main() {
 
   group('HttpCacheController basics', () {
     test('getCacheDirectory uses HttpCaches under temp', () async {
-      final dir = await HttpCacheController.getCacheDirectory();
-      expect(dir.path, '${tmp.path}/HttpCaches');
-      expect(await dir.exists(), isTrue);
+      final uri = Uri.parse('https://example/test');
+      final dirPath = await HttpCacheController.getCacheDirectory(uri);
+      expect(dirPath, '${tmp.path}/HttpCaches_${HttpCacheController.getCacheKey(uri)}');
+      expect(await Directory(dirPath).exists(), isTrue);
     });
 
     test('instance returns same controller per origin', () async {
@@ -52,7 +53,7 @@ void main() {
     test('putObject/getCacheObject returns in-memory object', () async {
       final controller = HttpCacheController.instance('https://example');
       final uri = Uri.parse('https://example/path.txt');
-      final cacheDir = (await HttpCacheController.getCacheDirectory()).path;
+      final cacheDir = await HttpCacheController.getCacheDirectory(uri);
       final obj = HttpCacheObject(HttpCacheController.getCacheKey(uri), cacheDir, contentLength: 5);
       controller.putObject(uri, obj);
 
@@ -71,7 +72,7 @@ void main() {
     test('interceptResponse serves 304 from cache', () async {
       final controller = HttpCacheController.instance('https://origin');
       final uri = Uri.parse('https://origin/asset.js');
-      final cacheDir = (await HttpCacheController.getCacheDirectory()).path;
+      final cacheDir = await HttpCacheController.getCacheDirectory(uri);
       final obj = HttpCacheObject(HttpCacheController.getCacheKey(uri), cacheDir,
           headers: 'content-type: application/javascript\n', contentLength: 5);
 
