@@ -17,6 +17,11 @@ const demos: DemoItem[] = [
     description: 'Demonstrates Flutter Cupertino modal popup integration with React',
     path: '/modal-popup-demo'
   },
+  {
+    title: 'Async img.src Demo',
+    description: '验证 img.src 异步优化效果：批量赋值 20 张图片，JS 线程不阻塞，耗时接近 0ms',
+    path: '/async-img-src-demo'
+  },
   // Add more demos here as needed
 ];
 

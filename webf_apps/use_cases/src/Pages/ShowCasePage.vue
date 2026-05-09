@@ -263,6 +263,27 @@
             </div>
           </div>
 
+          <!-- Async img.src Demo -->
+          <div class="component-item">
+            <div class="item-label">Async img.src Test</div>
+            <div class="item-desc">Batch-set img.src on 20 images at once. If async works correctly, the JS thread should not block and all images should load without triggering per-write FlushUICommand.</div>
+            <div class="button-group">
+              <div id="btn-batch-load" @click="startAsyncImgTest">Batch Load 20 Images</div>
+              <div id="btn-clear" @click="clearAsyncImgTest">Clear</div>
+            </div>
+            <div class="async-img-status">{{ asyncImgStatus }}</div>
+            <div class="async-img-grid" ref="imgGrid">
+              <img
+                v-for="(item, index) in imgList"
+                :key="index"
+                ref="imgs"
+                class="async-img-item"
+                @load="onImgLoad(index)"
+                @error="onImgError(index)"
+              />
+            </div>
+          </div>
+
           <!-- Button Event Control -->
           <div class="component-item">
             <div class="item-label">Button Event Control</div>
@@ -301,9 +322,83 @@
 </template>
 
 <script>
+// dummyimage.com returns PNG directly without redirects, safe for WebF.
+const COLORS = ['1677ff','ff4d4f','52c41a','fa8c16','722ed1','13c2c2','eb2f96','faad14','a0d911','1890ff','f5222d','fa541c','fadb14','52c41a','2f54eb','722ed1','eb2f96','13c2c2','096dd9','d4380d'];
+const DEMO_IMAGES = COLORS.map(c => `https://dummyimage.com/120x80/${c}/fff.png`);
+
 export default {
   name: 'HighlightPage',
+  data() {
+    return {
+      // imgList drives v-for; each entry tracks load state
+      imgList: Array.from({ length: 20 }, (_, i) => ({ id: i, loaded: false, error: false })),
+      asyncImgStatus: 'Press "Batch Load 20 Images" to start the test.',
+    };
+  },
+  created() {
+    // Non-reactive counters — not prefixed with _ to avoid vue/no-reserved-keys
+    this.loadedCount = 0;
+    this.errorCount = 0;
+    this.startTime = 0;
+  },
   methods: {
+    // ── Async img.src demo ──────────────────────────────────────────────
+    startAsyncImgTest() {
+      // Reset counters
+      this.loadedCount = 0;
+      this.errorCount = 0;
+      this.imgList = Array.from({ length: 20 }, (_, i) => ({ id: i, loaded: false, error: false }));
+      this.asyncImgStatus = 'Setting src on 20 <img> elements…';
+
+      // Record time before the batch assignment
+      this.startTime = Date.now();
+
+      // Batch-assign src to all 20 img elements in one synchronous loop.
+      // With the async path each write just enqueues a UICommand; the JS
+      // thread is never blocked waiting for a FlushUICommand round-trip.
+      for (let i = 0; i < 20; i++) {
+        const el = this.$refs.imgs[i];
+        if (el) {
+          el.src = DEMO_IMAGES[i];
+        }
+      }
+
+      const elapsed = Date.now() - this.startTime;
+      this.asyncImgStatus = `src assigned to 20 imgs in ${elapsed}ms (JS thread not blocked). Waiting for images to load…`;
+    },
+
+    clearAsyncImgTest() {
+      this.loadedCount = 0;
+      this.errorCount = 0;
+      // Don't set src='' while images may still be loading — that disposes
+      // the native codec mid-decode and triggers a Flutter Bad state error.
+      // Just reset the status text and counters instead.
+      this.imgList = Array.from({ length: 20 }, (_, i) => ({ id: i, loaded: false, error: false }));
+      this.asyncImgStatus = 'Cleared. Press "Batch Load 20 Images" to start again.';
+    },
+
+    onImgLoad(index) {
+      this.loadedCount++;
+      this.imgList[index].loaded = true;
+      const total = this.loadedCount + this.errorCount;
+      const elapsed = Date.now() - this.startTime;
+      this.asyncImgStatus = `Loaded ${this.loadedCount} / 20  (${this.errorCount} errors) — ${elapsed}ms since batch-assign`;
+      if (total === 20) {
+        this.asyncImgStatus = `✅ All 20 images finished (${this.loadedCount} ok, ${this.errorCount} errors) in ${elapsed}ms`;
+      }
+    },
+
+    onImgError(index) {
+      this.errorCount++;
+      this.imgList[index].error = true;
+      const total = this.loadedCount + this.errorCount;
+      const elapsed = Date.now() - this.startTime;
+      this.asyncImgStatus = `Loaded ${this.loadedCount} / 20  (${this.errorCount} errors) — ${elapsed}ms since batch-assign`;
+      if (total === 20) {
+        this.asyncImgStatus = `⚠️ All 20 images finished (${this.loadedCount} ok, ${this.errorCount} errors) in ${elapsed}ms`;
+      }
+    },
+    // ── end async img.src demo ──────────────────────────────────────────
     startBasicShowcase() {
       console.log('startBasicShowcase', this.$refs.basicShowcase.start);
       this.$refs.basicShowcase.start();
@@ -586,5 +681,91 @@ h3 {
 
 .button-demo-container {
   min-width: 250px;
+}
+
+/* ── Async img.src demo ── */
+.async-img-status {
+  font-size: 13px;
+  color: var(--font-color-secondary);
+  margin: 10px 0 14px;
+  min-height: 18px;
+}
+
+.async-img-grid {
+  display: flex;
+  flex-wrap: wrap;
+  flex-direction: row;
+}
+
+.async-img-item {
+  width: 120px;
+  height: 80px;
+  border-radius: 6px;
+  background-color: #e8e8e8;
+  margin-right: 8px;
+  margin-bottom: 8px;
+  object-fit: cover;
+}
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 8px 16px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  color: #ffffff;
+  cursor: pointer;
+}
+
+.btn-primary {
+  background-color: #1677ff;
+}
+
+.btn-danger {
+  background-color: #ff4d4f;
+}
+
+.demo-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 8px 16px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  color: #ffffff;
+}
+
+.demo-btn-blue {
+  background-color: #1677ff;
+}
+
+.demo-btn-red {
+  background-color: #ff4d4f;
+}
+#btn-batch-load {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 8px 20px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  color: #ffffff;
+  background-color: #1677ff;
+}
+
+#btn-clear {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 8px 20px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  color: #ffffff;
+  background-color: #ff4d4f;
 }
 </style>

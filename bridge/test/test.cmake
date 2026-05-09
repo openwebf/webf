@@ -32,6 +32,7 @@ list(APPEND WEBF_UNIT_TEST_SOURCE
   ./core/frame/window_test.cc
   ./core/css/inline_css_style_declaration_test.cc
   ./core/html/html_element_test.cc
+  ./core/html/html_image_element_test.cc
   ./core/html/custom/widget_element_test.cc
   ./core/profiling/binding_name_registry_test.cc
   ./core/profiling/entry_id_test.cc

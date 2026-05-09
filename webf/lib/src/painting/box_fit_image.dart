@@ -116,6 +116,11 @@ class BoxFitImage extends ImageProvider<BoxFitImageKey> {
       final ImmutableBuffer buffer = await ImmutableBuffer.fromUint8List(bytes);
       final ImageDescriptor descriptor = await ImageDescriptor.encoded(buffer);
 
+      // Extract dimensions before any await so the values are available after
+      // descriptor is disposed. descriptor.width/height are cheap int reads.
+      final int naturalWidth = descriptor.width;
+      final int naturalHeight = descriptor.height;
+
       int? preferredWidth;
       int? preferredHeight;
       if (key.configuration?.size != null) {
@@ -130,13 +135,19 @@ class BoxFitImage extends ImageProvider<BoxFitImageKey> {
         preferredHeight: preferredHeight,
       );
 
+      // descriptor's native peer is no longer needed once the codec is created.
+      // Dispose it explicitly here instead of relying on GC, which could
+      // collect it at an unpredictable time and cause a "native peer collected"
+      // crash inside MultiFrameImageStreamCompleter._decodeNextFrameAndSchedule.
+      descriptor.dispose();
+
       // Fire image on load after codec created.
       scheduleMicrotask(() {
         if (!controller.disposed && onImageLoad != null && controller.view.getBindingObject(targetElementPtr) != null) {
-          onImageLoad!(controller.view.getBindingObject<Element>(targetElementPtr)!, descriptor.width, descriptor.height,
+          onImageLoad!(controller.view.getBindingObject<Element>(targetElementPtr)!, naturalWidth, naturalHeight,
               codec.frameCount);
         }
-        _imageStreamCompleter!.setDimension(Dimension(descriptor.width, descriptor.height, codec.frameCount));
+        _imageStreamCompleter!.setDimension(Dimension(naturalWidth, naturalHeight, codec.frameCount));
       });
       return codec;
     } on FlutterError {

@@ -4,6 +4,7 @@ import { Routes, Route } from '@openwebf/react-router';
 import LandingPage from './Pages/LandingPage';
 import ArrayBufferDemo from './Pages/ArrayBufferDemo';
 import ModalPopupDemo from './Pages/ModalPopupDemo';
+import AsyncImgSrcDemo from './Pages/AsyncImgSrcDemo';
 import Home from './Home';
 
 function App() {
@@ -11,7 +12,8 @@ function App() {
   return (
     <div className="App">
       <Routes>
-        <Route path="/" element={<Home />}></Route>
+        {/* <Route path="/" element={<Home />}></Route> */}
+        <Route path="/" element={<AsyncImgSrcDemo />} />
         {/* <Route path="/array-buffer-demo" element={<ArrayBufferDemo />}></Route>
         <Route path="/modal-popup-demo" element={<ModalPopupDemo />} /> */}
       </Routes>
