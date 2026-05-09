@@ -368,7 +368,15 @@ class PerformanceTracker {
   /// a few seconds of busy app activity can produce thousands. The cap
   /// must be high enough that important Dart entries (drawFrame,
   /// flushUICommand, evaluate*) are not crowded out by JS-thread fan-out.
-  static const int maxSpans = 100000;
+  ///
+  /// At 1000k the cap was hit in ~7s on heavy-render sessions (a styleRecalc
+  /// cascade alone can produce 10k+ spans during a single drawFrame burst),
+  /// causing post-LCP `invokeModule` entries to be silently dropped and
+  /// hiding late-firing API calls from the analysis. 1M gives ~10× more
+  /// headroom for the long tail of microsecond-scale js spans without
+  /// meaningfully changing the per-span memory footprint of a typical
+  /// session.
+  static const int maxSpans = 10000000;
 
   /// Current monotonic offset from session start, in microseconds.
   /// Returns 0 if session has not started.

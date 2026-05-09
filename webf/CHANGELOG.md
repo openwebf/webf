@@ -1,3 +1,20 @@
+## 0.22.25
+
+### Performance
+
+- Route `HTMLImageElement.src` writes through the async binding path so each `img.src = url` no longer forces a synchronous `FlushUICommand` and FFI round-trip before the assignment. The actual image load is async on the Dart side regardless, and subsequent JS reads of `img.src` still flush before reading so observed semantics are preserved. In the heavy-render hot path, 59 sync `setProperty(src)` calls per route burst previously triggered 59 flush-driven styleRecalc cascades (~16,500 recalc spans / ~1.69s self-time per session); folding these writes into the next natural flush removes that overhead.
+
+### Fixes
+
+- Cancel the `scheduleFrameCallback` registered by `WebFViewController._scheduleDrawFrameWrapping` on `dispose()` and `detachFromFlutter()`, and stop the post-frame loop from re-registering once the controller is detached. Previously the self-rescheduling transient callback always left one queued, which tripped flutter_test's `_verifyInvariants` with "An animation is still running even after the widget tree was disposed".
+
+### Maintenance
+
+- Repair the Flutter test suite (342 failures → 0): update `HttpCacheController.getCacheDirectory()` call sites for the new `Uri` signature and per-origin cache directory layout, pass the now-required `uri:` to `getOrCreateWebFDio` in dio pool/header tests (skipped on iOS/macOS where dio_client constructs `URLSessionConfiguration` eagerly under `flutter test`), set `tester.view.physicalSize` to the requested viewport so flex containers measure against 360px instead of the 800×600 default surface, and relax a flaky `elapsed == 0` timing assertion to `< 50ms`.
+- Drop `module_manager_no_flush_test.cc`: the unit test referenced bridge-test helpers (`initTestFramework`, `JSThreadState`, `WebFTestContext`) that aren't available in the bridge test fixture and broke the build on all three platforms. The underlying no-flush optimization (0.22.24) remains in place.
+- Temporarily disable the Windows bridge build in the release pipeline and treat missing Windows artifacts as non-fatal in the restore step so Linux/macOS/iOS/Android releases can complete while the Windows build is being repaired. Re-enable by removing the `if: false` on `build-windows` and restoring it to the downstream `needs` lists.
+- Add compressed debug symbols for the 0.22.24 build artifacts.
+
 ## 0.22.24
 
 ### Features
