@@ -247,6 +247,7 @@ NativeValue ScriptValue::ToNative(JSContext* ctx, ExceptionState& exception_stat
       return Native_NewInt64(v);
     }
     case JS_TAG_STRING:
+    case JS_TAG_STRING_ROPE:
       // NativeString owned by NativeValue will be freed by users.
       return NativeValueConverter<NativeTypeString>::ToNativeValue(ctx, ToString(ctx));
     case JS_TAG_OBJECT: {
