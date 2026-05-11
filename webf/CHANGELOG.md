@@ -1,3 +1,19 @@
+## 0.22.26
+
+### Features
+
+- Track DOM node lifecycle in the DevTools performance tracker to detect wasted DOM work during init. Every `domConstruction` span now carries per-batch tallies as metadata (`created` / `inserted` / `removed` / `disposed` / `setAttribute` / `setStyle` / `setProperty` / `event` / `cloneNode` / `ephemeralInBatch`), and the exported profile JSON gains a top-level `domLifecycle` summary with session-wide aggregates: `orphans` (created → never inserted → disposed), `ephemerals` (created → inserted → removed), `stillborn` (created → never inserted → still pending), and a per-tag breakdown for each category. Identity is keyed on the C++ `NativeBindingObject` pointer; the map is capped at 200k entries with a `capacityReached`/`droppedCreates` flag in the export so the analysis script knows when the picture is partial. The new `DomLifecycleTracker` auto-resets on each new profiling session by observing `PerformanceTracker.sessionStart`, avoiding an import cycle with the tracker itself.
+
+### Performance
+
+- Skip the DevTools profiler entirely in release builds. The Dart-side `PerformanceTracker.startSession()` call inside `WebFController.initialize()` is now gated on `!kReleaseMode`, so release builds never enable the tracker, never install the C++ `JSThreadProfiler` hooks, never allocate the 10M-span Dart list, and never run the periodic 10ms drain timer. Profiling still runs automatically in debug AND profile builds (`flutter run --profile`) so DevTools-attached performance measurement works as expected. Host apps can still opt in to profiling a release build by calling `PerformanceTracker.instance.startSession()` manually after WebF init.
+- Short-circuit per-batch DOM tallies and `DomLifecycleTracker` calls in `execUICommands` when the profiler is disabled: snapshot `PerformanceTracker.instance.enabled` once at the top of the batch and gate every counter increment, set add, lifecycle record, and the trailing metadata payload on that flag. Reduces per-command release overhead to a single bool read with no Set allocations, no map writes, and no span object.
+
+### Fixes
+
+- Handle `JS_TAG_STRING_ROPE` in `ScriptValue::ToNative` so route parameters whose values are QuickJS rope strings (created when concatenating short strings) are converted to `NativeString` instead of falling through to the default branch and arriving on the Dart side as undefined / empty.
+- Use the inserted child pointer (`nativePtr2`) — not the parent target (`nativePtr`) — when recording `insertAdjacentNode` in the DOM lifecycle tracker. Previously the tracker keyed on the parent's address, which silently failed to pair with the corresponding `create` event and inflated the `stillborn` and `orphans` counts by the depth of the parent stack. Also start tallying `createDocument` and `createWindow` so the document / window roots are accounted for in the session totals.
+
 ## 0.22.25
 
 ### Performance
