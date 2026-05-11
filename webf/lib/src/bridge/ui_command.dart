@@ -101,13 +101,17 @@ List<UICommand> nativeUICommandToDartFFI(double contextId) {
 void execUICommands(WebFViewController view, List<UICommand> commands) {
   Map<int, bool> pendingStylePropertiesTargets = {};
 
-  // Per-batch operation tallies. Surfaced as metadata on the
-  // `domConstruction` span so the analysis script can detect wasted DOM
-  // work without engine-side element-identity tracking.
+  // Profiler-gated state. When the tracker is disabled (the default in
+  // release / profile builds) we skip ALL tally bookkeeping so production
+  // sessions pay zero overhead for diagnostic-only data — no Set allocs,
+  // no int increments, no map writes, no span object.
   //
-  // Cross-batch lifecycle (orphan / ephemeral detection) is also recorded
-  // on the session-wide `DomLifecycleTracker` so the JSON export carries
-  // an aggregate summary at session end.
+  // Per-batch operation tallies are surfaced as metadata on the
+  // `domConstruction` span so the analysis script can detect wasted DOM
+  // work without engine-side element-identity tracking. Cross-batch
+  // lifecycle (orphan / ephemeral detection) is also recorded on the
+  // session-wide `DomLifecycleTracker` for the JSON export summary.
+  final bool tracking = PerformanceTracker.instance.enabled;
   int createCount = 0;
   int insertCount = 0;
   int removeCount = 0;
@@ -120,15 +124,19 @@ void execUICommands(WebFViewController view, List<UICommand> commands) {
 
   // Pointers created in THIS batch — used to detect ephemerals (a node
   // created and removed/disposed before the batch closes never lives long
-  // enough to be painted).
+  // enough to be painted). Per-case code only writes to these when
+  // `tracking` is on; in release the sets stay empty and the allocation
+  // cost is a single empty-Set per execUICommands call (negligible).
   final Set<int> createdInBatch = {};
   final Set<int> insertedInBatch = {};
   final Set<int> removedInBatch = {};
 
   final lifecycle = DomLifecycleTracker.instance;
-  final handle = PerformanceTracker.instance.beginSpan(
-      kSubTypeDomConstruction, 'execUICommands',
-      metadata: {'commandCount': commands.length});
+  final handle = tracking
+      ? PerformanceTracker.instance.beginSpan(
+          kSubTypeDomConstruction, 'execUICommands',
+          metadata: {'commandCount': commands.length})
+      : null;
 
   for(UICommand command in commands) {
     UICommandType commandType = command.type;
@@ -160,74 +168,92 @@ void execUICommands(WebFViewController view, List<UICommand> commands) {
       switch (commandType) {
         case UICommandType.createElement:
           view.createElement(nativePtr.cast<NativeBindingObject>(), command.args);
-          createCount++;
-          createdInBatch.add(ptrAddr);
-          lifecycle.recordCreate(ptrAddr, command.args);
+          if (tracking) {
+            createCount++;
+            createdInBatch.add(ptrAddr);
+            lifecycle.recordCreate(ptrAddr, command.args);
+          }
           break;
         case UICommandType.createDocument:
           view.initDocument(view, nativePtr.cast<NativeBindingObject>());
-          createCount++;
-          createdInBatch.add(ptrAddr);
-          lifecycle.recordCreate(ptrAddr, '#document');
+          if (tracking) {
+            createCount++;
+            createdInBatch.add(ptrAddr);
+            lifecycle.recordCreate(ptrAddr, '#document');
+          }
           break;
         case UICommandType.createWindow:
           view.initWindow(view, nativePtr.cast<NativeBindingObject>());
-          createCount++;
-          createdInBatch.add(ptrAddr);
-          lifecycle.recordCreate(ptrAddr, '#window');
+          if (tracking) {
+            createCount++;
+            createdInBatch.add(ptrAddr);
+            lifecycle.recordCreate(ptrAddr, '#window');
+          }
           break;
         case UICommandType.createTextNode:
           view.createTextNode(nativePtr.cast<NativeBindingObject>(), command.args);
-          createCount++;
-          createdInBatch.add(ptrAddr);
-          lifecycle.recordCreate(ptrAddr, '#text');
+          if (tracking) {
+            createCount++;
+            createdInBatch.add(ptrAddr);
+            lifecycle.recordCreate(ptrAddr, '#text');
+          }
           break;
         case UICommandType.createComment:
           view.createComment(nativePtr.cast<NativeBindingObject>());
-          createCount++;
-          createdInBatch.add(ptrAddr);
-          lifecycle.recordCreate(ptrAddr, '#comment');
+          if (tracking) {
+            createCount++;
+            createdInBatch.add(ptrAddr);
+            lifecycle.recordCreate(ptrAddr, '#comment');
+          }
           break;
         case UICommandType.disposeBindingObject:
           WebFViewController.disposeBindingObject(view, nativePtr.cast<NativeBindingObject>());
-          disposeCount++;
-          lifecycle.recordDispose(ptrAddr);
+          if (tracking) {
+            disposeCount++;
+            lifecycle.recordDispose(ptrAddr);
+          }
           break;
         case UICommandType.addEvent:
           Pointer<AddEventListenerOptions> eventListenerOptions = command.nativePtr2.cast<AddEventListenerOptions>();
           view.addEvent(nativePtr.cast<NativeBindingObject>(), command.args,
               addEventListenerOptions: eventListenerOptions);
-          eventCount++;
+          if (tracking) eventCount++;
           break;
         case UICommandType.removeEvent:
           bool isCapture = command.nativePtr2.address == 1;
           view.removeEvent(nativePtr.cast<NativeBindingObject>(), command.args, isCapture: isCapture);
-          eventCount++;
+          if (tracking) eventCount++;
           break;
         case UICommandType.insertAdjacentNode:
           view.insertAdjacentNode(
               nativePtr.cast<NativeBindingObject>(), command.args, command.nativePtr2.cast<NativeBindingObject>());
-          insertCount++;
-          // For insertAdjacentNode, `nativePtr` is the parent target and
-          // `nativePtr2` is the new child being inserted into the tree.
-          // The lifecycle tracker keys on the child's identity — that's
-          // the node whose "did it ever get used" we want to answer.
-          final childAddr = command.nativePtr2.address;
-          insertedInBatch.add(childAddr);
-          lifecycle.recordInsert(childAddr);
+          if (tracking) {
+            insertCount++;
+            // For insertAdjacentNode, `nativePtr` is the parent target
+            // and `nativePtr2` is the new child being inserted. The
+            // lifecycle tracker keys on the child's identity — that's
+            // the node whose "did it ever get used" we want to answer.
+            final childAddr = command.nativePtr2.address;
+            insertedInBatch.add(childAddr);
+            lifecycle.recordInsert(childAddr);
+          }
           break;
         case UICommandType.removeNode:
           view.removeNode(nativePtr.cast<NativeBindingObject>());
-          removeCount++;
-          removedInBatch.add(ptrAddr);
-          lifecycle.recordRemove(ptrAddr);
+          if (tracking) {
+            removeCount++;
+            removedInBatch.add(ptrAddr);
+            lifecycle.recordRemove(ptrAddr);
+          }
           break;
         case UICommandType.cloneNode:
           view.cloneNode(nativePtr.cast<NativeBindingObject>(), command.nativePtr2.cast<NativeBindingObject>());
-          cloneCount++;
-          createCount++;
-          createdInBatch.add(command.nativePtr2.address);
-          lifecycle.recordCreate(command.nativePtr2.address, 'cloneNode');
+          if (tracking) {
+            cloneCount++;
+            createCount++;
+            createdInBatch.add(command.nativePtr2.address);
+            lifecycle.recordCreate(command.nativePtr2.address, 'cloneNode');
+          }
           break;
         case UICommandType.setStyle:
           String value;
@@ -240,19 +266,19 @@ void execUICommands(WebFViewController view, List<UICommand> commands) {
           }
           view.setInlineStyle(nativePtr, command.args, value);
           pendingStylePropertiesTargets[nativePtr.address] = true;
-          setStyleCount++;
+          if (tracking) setStyleCount++;
           break;
         case UICommandType.clearStyle:
           view.clearInlineStyle(nativePtr);
           pendingStylePropertiesTargets[nativePtr.address] = true;
-          setStyleCount++;
+          if (tracking) setStyleCount++;
           break;
         case UICommandType.setAttribute:
           Pointer<NativeString> nativeKey = command.nativePtr2.cast<NativeString>();
           String key = nativeStringToString(nativeKey);
           freeNativeString(nativeKey);
           view.setAttribute(nativePtr.cast<NativeBindingObject>(), key, command.args);
-          setAttrCount++;
+          if (tracking) setAttrCount++;
           break;
         case UICommandType.setProperty:
           BindingObject? target = view.getBindingObject<BindingObject>(nativePtr.cast<NativeBindingObject>());
@@ -262,24 +288,28 @@ void execUICommands(WebFViewController view, List<UICommand> commands) {
 
           List<dynamic> args = [command.args, fromNativeValue(view, command.nativePtr2.cast<NativeValue>())];
           setterBindingCall(target, args);
-          setPropCount++;
+          if (tracking) setPropCount++;
           break;
         case UICommandType.removeAttribute:
           String key = command.args;
           view.removeAttribute(nativePtr, key);
-          setAttrCount++;
+          if (tracking) setAttrCount++;
           break;
         case UICommandType.createDocumentFragment:
           view.createDocumentFragment(nativePtr.cast<NativeBindingObject>());
-          createCount++;
-          createdInBatch.add(ptrAddr);
-          lifecycle.recordCreate(ptrAddr, '#fragment');
+          if (tracking) {
+            createCount++;
+            createdInBatch.add(ptrAddr);
+            lifecycle.recordCreate(ptrAddr, '#fragment');
+          }
           break;
         case UICommandType.createSVGElement:
           view.createElementNS(nativePtr.cast<NativeBindingObject>(), SVG_ELEMENT_URI, command.args);
-          createCount++;
-          createdInBatch.add(ptrAddr);
-          lifecycle.recordCreate(ptrAddr, command.args);
+          if (tracking) {
+            createCount++;
+            createdInBatch.add(ptrAddr);
+            lifecycle.recordCreate(ptrAddr, command.args);
+          }
           break;
         case UICommandType.createElementNS:
           Pointer<NativeString> nativeNameSpaceUri = command.nativePtr2.cast<NativeString>();
@@ -287,9 +317,11 @@ void execUICommands(WebFViewController view, List<UICommand> commands) {
           freeNativeString(nativeNameSpaceUri);
 
           view.createElementNS(nativePtr.cast<NativeBindingObject>(), namespaceUri, command.args);
-          createCount++;
-          createdInBatch.add(ptrAddr);
-          lifecycle.recordCreate(ptrAddr, command.args);
+          if (tracking) {
+            createCount++;
+            createdInBatch.add(ptrAddr);
+            lifecycle.recordCreate(ptrAddr, command.args);
+          }
           break;
         case UICommandType.asyncCaller:
           Pointer<BindingObjectAsyncCallContext> asyncCallContext =
@@ -317,21 +349,24 @@ void execUICommands(WebFViewController view, List<UICommand> commands) {
   }
   pendingStylePropertiesTargets.clear();
 
-  // Ephemeral pointers within this batch — created and removed/disposed
-  // before the batch even closed. These nodes will never be painted.
-  final ephemeralInBatch =
-      createdInBatch.intersection(removedInBatch).length;
+  if (tracking) {
+    // Ephemeral pointers within this batch — created and removed/disposed
+    // before the batch even closed. These nodes never lived long enough to
+    // be painted.
+    final ephemeralInBatch =
+        createdInBatch.intersection(removedInBatch).length;
 
-  handle?.end(metadata: {
-    'created': createCount,
-    'inserted': insertCount,
-    'removed': removeCount,
-    'disposed': disposeCount,
-    'setAttribute': setAttrCount,
-    'setStyle': setStyleCount,
-    'setProperty': setPropCount,
-    'event': eventCount,
-    'cloneNode': cloneCount,
-    'ephemeralInBatch': ephemeralInBatch,
-  });
+    handle?.end(metadata: {
+      'created': createCount,
+      'inserted': insertCount,
+      'removed': removeCount,
+      'disposed': disposeCount,
+      'setAttribute': setAttrCount,
+      'setStyle': setStyleCount,
+      'setProperty': setPropCount,
+      'event': eventCount,
+      'cloneNode': cloneCount,
+      'ephemeralInBatch': ephemeralInBatch,
+    });
+  }
 }
