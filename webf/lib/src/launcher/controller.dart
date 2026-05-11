@@ -823,13 +823,16 @@ class WebFController with Diagnosticable {
         initialCookies: initialCookies);
 
     _view!.initialize().then((_) async {
-      // Only auto-start the profiler in debug builds. In release / profile
-      // builds the C++ JSThreadProfiler ring buffer + Dart-side span list
-      // (up to 10M entries) would run unconditionally and consume memory
-      // for no end-user benefit. Host apps that want profiling in a
-      // release build can manually call `PerformanceTracker.instance
-      // .startSession()` themselves after WebF is initialized.
-      if (kDebugMode && !PerformanceTracker.instance.enabled) {
+      // Auto-start the profiler in debug AND profile builds — `flutter
+      // run --profile` is the standard way to measure release-like
+      // performance with DevTools attached, so the tracker needs to be
+      // live there too. Skip in release builds, where the C++
+      // JSThreadProfiler ring buffer and Dart-side span list (up to 10M
+      // entries) would consume memory for no end-user benefit. Host
+      // apps can still call `PerformanceTracker.instance.startSession()`
+      // manually after WebF init if they need profiling in a release
+      // build for a specific investigation.
+      if (!kReleaseMode && !PerformanceTracker.instance.enabled) {
         PerformanceTracker.instance.startSession();
       }
       _loadingState.recordPhase(LoadingState.phaseInit, parameters: {
