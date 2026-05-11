@@ -1008,7 +1008,10 @@ class PerformanceTracker {
   /// JS-thread spans are intentionally not exported in v5: under the
   /// entry-rooted model they are grafted into [rootSpans] at drain time
   /// (see Task 3.3), so the export is already complete via [rootSpans].
-  String exportToJson({List<ExportablePhase>? phases}) {
+  String exportToJson({
+    List<ExportablePhase>? phases,
+    Map<String, dynamic>? domLifecycle,
+  }) {
     int countSpans(List<PerformanceSpan> spans) {
       int count = 0;
       for (final s in spans) {
@@ -1026,6 +1029,9 @@ class PerformanceTracker {
     };
     if (phases != null && phases.isNotEmpty) {
       data['phases'] = phases.map((p) => p.toJson()).toList();
+    }
+    if (domLifecycle != null && domLifecycle.isNotEmpty) {
+      data['domLifecycle'] = domLifecycle;
     }
     return const JsonEncoder.withIndent('  ').convert(data);
   }

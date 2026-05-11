@@ -22,6 +22,7 @@ import 'package:webf/launcher.dart';
 import 'package:webf/src/launcher/loading_state.dart';
 import 'package:webf/src/devtools/panel/performance_tracker.dart';
 import 'package:webf/src/devtools/panel/performance_subtypes.dart';
+import 'package:webf/src/bridge/dom_lifecycle_tracker.dart';
 
 /// SubTypes that render one row per root in the overview instead of
 /// clustering consecutive roots into a single merged row, and that also
@@ -1614,7 +1615,10 @@ class _WaterfallChartState extends State<WaterfallChart> {
                 offsetUs: p.offsetUs!,
               ))
           .toList();
-      final json = tracker.exportToJson(phases: phases);
+      final json = tracker.exportToJson(
+        phases: phases,
+        domLifecycle: DomLifecycleTracker.instance.toSummary(),
+      );
 
       // Write to temp directory with timestamp
       final ts = DateTime.now()
