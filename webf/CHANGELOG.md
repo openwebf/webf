@@ -1,3 +1,13 @@
+## 0.22.27
+
+### Fixes
+
+- Fix iOS pod compile failure introduced when the C++ JS profiler hooks landed. `quickjs.c` now unconditionally `#include`s `js_profiler_hooks.h`, but the iOS `webf.podspec` `HEADER_SEARCH_PATHS` did not include `core/profiling/`, and there were no source-mode shims for `js_profiler_hooks.c` / `js_thread_profiler.cc` under `webf/ios/Classes/core/profiling/`. Add the missing header path, drop in the two shim files that `#include` the real bridge sources, so consumer Xcode builds compile cleanly. The macOS, Linux, and Android targets already had the equivalent CMake `target_include_directories(quickjs PUBLIC ... core/profiling)` plumbing and were unaffected.
+
+### Maintenance
+
+- Switch the iOS release pipeline from prebuilt-xcframework shipping to source-mode shipping. The published WebF iOS pod now compiles the bridge from the `webf/ios/Classes/` source shims (which symlink into `bridge/`) inside the consumer's Xcode project, giving consumers debug symbols local to their build and letting Xcode optimise for their deployment target instead of a generic fat binary. In the release workflow, disable the `build-ios` job (`if: false`), drop it from the downstream `collect-debug-symbols` and `prepare-and-publish` `needs:` lists, treat missing `artifacts/ios-binaries` as non-fatal in the restore step, replace `npm run use-prebuilt:ios` with `npm run ios:use-source` in packaging, and update the verify step to assert source-mode pod state (Classes shims present, no `Frameworks/` directory). Saves ~10 minutes of CI per release.
+
 ## 0.22.26
 
 ### Features

@@ -30,7 +30,7 @@ Pod::Spec.new do |s|
     'GCC_OPTIMIZATION_LEVEL' => 's', # Enable optimization for size
     'GCC_PREPROCESSOR_DEFINITIONS' => '$(inherited) ' +
       'APP_REV=\\"cf1ca27c7\\" ' +
-      'APP_VERSION=\\"0.22.26\\" ' +
+      'APP_VERSION=\\"0.22.27\\" ' +
       'CONFIG_VERSION=\\"2025-04-26\\" ' +
       'WEBF_QUICK_JS_ENGINE=1 ' +
       'FLUTTER_BACKEND=1 ' +
