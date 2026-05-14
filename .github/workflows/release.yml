@@ -356,6 +356,15 @@ jobs:
   build-ios:
     name: Build iOS Bridge
     runs-on: macos-latest
+    # Disabled — the published WebF iOS pod compiles the bridge from
+    # source (via the symlinks under webf/ios/Classes pointing into
+    # bridge/), so we no longer ship a prebuilt xcframework. End apps
+    # link against the source-mode pod, which keeps debug symbols and
+    # lets Xcode optimise for the consumer's deployment target. The
+    # downstream restore + prepare steps already tolerate missing iOS
+    # artifacts; the pipeline runs `ios:use-source` instead of
+    # `use-prebuilt:ios` during release packaging.
+    if: false
 
     env:
       nodeVersion: "22"
@@ -519,7 +528,7 @@ jobs:
     name: Collect and Upload Debug Symbols to LFS
     runs-on: ubuntu-latest
     # Wait for all bridge builds to complete
-    needs: [build-linux, build-macos, build-ios, build-android]
+    needs: [build-linux, build-macos, build-android]
 
     permissions:
       contents: write
@@ -666,7 +675,7 @@ jobs:
     name: Prepare and Publish WebF Package
     runs-on: ubuntu-latest
     # Wait for all bridge builds and debug symbol collection
-    needs: [build-linux, build-macos, build-ios, build-android, collect-debug-symbols]
+    needs: [build-linux, build-macos, build-android, collect-debug-symbols]
 
     permissions:
       contents: write
@@ -749,14 +758,17 @@ jobs:
             RESTORE_FAILED=true
           fi
 
-          # Restore iOS binaries (maintaining path structure from bridge/build/ios/)
+          # iOS is shipped as source — the published pod compiles the
+          # bridge from webf/ios/Classes (which symlinks into bridge/),
+          # so no prebuilt xcframework artifact is expected. The
+          # `prepare-and-publish` step below runs `ios:use-source`
+          # explicitly to guarantee the source-mode podspec state.
           if [ -d "artifacts/ios-binaries" ]; then
             mkdir -p bridge/build/ios
             cp -r artifacts/ios-binaries/* bridge/build/ios/
-            echo "✅ iOS binaries restored"
+            echo "✅ iOS binaries restored (unused — pod ships as source)"
           else
-            echo "⚠️ iOS binaries not found"
-            RESTORE_FAILED=true
+            echo "⚠️ iOS binaries not found (expected — iOS ships as source)"
           fi
 
           # Restore Android binaries (maintaining path structure from bridge/build/android/)
@@ -799,9 +811,13 @@ jobs:
           echo "📦 macOS binaries..."
           npm run use-prebuilt:macos
 
-          # iOS binaries
-          echo "📦 iOS binaries..."
-          npm run use-prebuilt:ios
+          # iOS — ship from source. The pod compiles the bridge in the
+          # consumer's Xcode project via webf/ios/Classes symlinks into
+          # bridge/, so no xcframework is needed. `ios:use-source` is
+          # idempotent: it removes any stray Frameworks directory and
+          # restores the podspec + Classes symlinks from git.
+          echo "📦 iOS (source mode)..."
+          npm run ios:use-source
 
           # Android binaries
           echo "📦 Android binaries..."
@@ -837,12 +853,20 @@ jobs:
             echo "⚠️ macOS libraries not found"
           fi
 
-          # Check iOS frameworks
+          # iOS ships as source — verify the source-mode pod state
+          # (Classes symlinks present, no Frameworks dir, podspec
+          # unchanged from source mode).
           if [ -d "webf/ios/Frameworks" ]; then
-            echo "✅ iOS frameworks found:"
+            echo "❌ iOS Frameworks directory present — ios:use-source"
+            echo "   should have removed it for source-mode shipping."
             ls -la webf/ios/Frameworks/
+            exit 1
+          fi
+          if [ -L "webf/ios/Classes/webf_bridge.cc" ] || [ -f "webf/ios/Classes/webf_bridge.cc" ]; then
+            echo "✅ iOS pod in source mode (Classes shims present)"
           else
-            echo "⚠️ iOS frameworks not found"
+            echo "⚠️ iOS Classes shims missing — pod will fail to compile in consumer apps"
+            exit 1
           fi
 
           # Check Android libraries

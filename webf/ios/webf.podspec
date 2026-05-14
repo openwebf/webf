@@ -48,6 +48,7 @@ Pod::Spec.new do |s|
       ' "${PODS_TARGET_SRCROOT}/../src/core_rs/include" ' +
       ' "${PODS_TARGET_SRCROOT}/../src/third_party" ' +
       ' "${PODS_TARGET_SRCROOT}/../src/core" ' +
+      ' "${PODS_TARGET_SRCROOT}/../src/core/profiling" ' +
       ' "${PODS_TARGET_SRCROOT}/../src/bindings" '
   }
   s.swift_version = '5.0'
