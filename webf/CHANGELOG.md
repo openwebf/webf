@@ -1,3 +1,9 @@
+## 0.22.28
+
+### Fixes
+
+- Materialise `webf/src` as a real directory in the published pub package so the iOS source-mode pod compiles in consumer Xcode projects. In dev, `webf/src` is a symbolic link pointing at `../bridge`; the previous `prepare-release` script simply removed this symlink, which was fine when iOS shipped a prebuilt xcframework but broke 0.22.27's source-mode shipping (the iOS pod's `Classes/*.cc` shims `#include "../../../src/..."` and the symlink target `../bridge` lives outside the package root, so pub strips it). The script now dereferences the symlink and copies the bridge subtrees the iOS pod actually needs (`core/`, `bindings/`, `foundation/`, `code_gen/`, `include/`, `multiple_threading/`, `webf_bridge.cc`, and `third_party/{quickjs,dart,gumbo-parser,modp_b64}/`) into a real `webf/src/` directory, pruning build outputs, CMake artefacts, and test-only third_party deps (`benchmark`, `googletest`). Net published size impact: ~14 MB of bridge source. The release workflow's verify step now asserts `webf/src` is a real directory and contains the critical subtrees before publishing.
+
 ## 0.22.27
 
 ### Fixes
