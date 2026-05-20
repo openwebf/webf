@@ -868,6 +868,23 @@ jobs:
             echo "⚠️ iOS Classes shims missing — pod will fail to compile in consumer apps"
             exit 1
           fi
+          # webf/src must be a real directory (not a symlink) containing
+          # the bridge sources the Classes shims `#include`. `prepare-release`
+          # materialises this from `bridge/` so the published pub package
+          # is self-contained.
+          if [ -L "webf/src" ]; then
+            echo "❌ webf/src is still a symlink — prepare-release did not materialise it."
+            echo "   Consumer Xcode builds will fail with 'file not found' for bridge headers."
+            ls -la webf/src
+            exit 1
+          fi
+          if [ ! -d "webf/src/core" ] || [ ! -d "webf/src/third_party/quickjs" ]; then
+            echo "❌ webf/src is missing critical bridge subtrees (core/ or third_party/quickjs/)."
+            ls -la webf/src 2>/dev/null || echo "   webf/src does not exist"
+            exit 1
+          fi
+          echo "✅ webf/src materialised as real directory:"
+          du -sh webf/src webf/src/core webf/src/third_party/quickjs 2>/dev/null || true
 
           # Check Android libraries
           if [ -d "webf/android/jniLibs" ]; then
