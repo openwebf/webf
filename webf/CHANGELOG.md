@@ -1,3 +1,9 @@
+## 0.22.29
+
+### Fixes
+
+- Generate `bridge/code_gen/` before materialising `webf/src/` in the release pipeline. 0.22.28 shipped without `webf/src/code_gen/` because the `prepare-and-publish` job didn't run `npm run bindgen` (each per-platform build job runs bindgen locally but their `code_gen/` output isn't uploaded as an artifact), so `prepare-release` saw an empty `bridge/code_gen/` directory and silently skipped it. Consumer iOS Xcode builds then failed with unresolved `qjs_*` symbol references for every generated binding. Add an explicit `npm run bindgen` step in the publish job, harden `prepare_release.js` to exit with a non-zero status when a required subtree (`core`, `bindings`, `foundation`, `code_gen`, `include`) is missing or empty, and add a verify step that fails the CI run if `webf/src/code_gen/` is absent or empty before publishing.
+
 ## 0.22.28
 
 ### Fixes
