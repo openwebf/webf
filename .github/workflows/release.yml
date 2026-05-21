@@ -790,6 +790,15 @@ jobs:
             exit 1
           fi
 
+      - name: Generate binding code
+        # Each per-platform build job runs `bindgen` locally before building
+        # the bridge binary, but their outputs (`bridge/code_gen/`) are not
+        # uploaded as artifacts. The `prepare-release` step below copies
+        # `bridge/code_gen/` into `webf/src/code_gen/` for the published pod;
+        # without this step the directory would be empty and consumer iOS
+        # builds would fail with missing `qjs_*` symbol references.
+        run: npm run bindgen
+
       - name: Prepare package for release
         run: |
           echo "🧹 Preparing package for release..."
@@ -881,6 +890,12 @@ jobs:
           if [ ! -d "webf/src/core" ] || [ ! -d "webf/src/third_party/quickjs" ]; then
             echo "❌ webf/src is missing critical bridge subtrees (core/ or third_party/quickjs/)."
             ls -la webf/src 2>/dev/null || echo "   webf/src does not exist"
+            exit 1
+          fi
+          if [ ! -d "webf/src/code_gen" ] || [ -z "$(ls -A webf/src/code_gen 2>/dev/null)" ]; then
+            echo "❌ webf/src/code_gen is missing or empty — bindgen output was not"
+            echo "   materialised into the published pod. Ensure 'npm run bindgen'"
+            echo "   runs before 'npm run prepare-release' in this job."
             exit 1
           fi
           echo "✅ webf/src materialised as real directory:"
