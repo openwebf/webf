@@ -357,6 +357,10 @@ export class Response extends Body {
 
 export type Fetch = (input: Request | string, init?: RequestInit) => Promise<Response>;
 
+// Monotonic counter used to give every fetch a unique request id, so aborting
+// one request never cancels other concurrent requests on the native side.
+let fetchRequestId = 0;
+
 export const fetch: Fetch = (input: Request | string, init?: RequestInit): Promise<Response> => {
   return new Promise((resolve, reject) => {
     let request = new Request(input, init);
@@ -366,14 +370,17 @@ export const fetch: Fetch = (input: Request | string, init?: RequestInit): Promi
     }
     let headers = request.headers || new Headers();
 
+    const requestId = `fetch_${++fetchRequestId}`;
+
     function abortRequest() {
-      webf.invokeModule('Fetch', 'abortRequest');
+      webf.invokeModule('Fetch', 'abortRequest', requestId);
     }
 
     const params = [
       init?.body,
       (headers as Headers).map,
-      init?.method
+      init?.method,
+      requestId
     ];
 
     webf.invokeModuleAsync('Fetch', request.url, ...params).then((data: any) => {
