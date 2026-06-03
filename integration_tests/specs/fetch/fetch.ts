@@ -479,4 +479,31 @@ describe('AbortController', () => {
       abortController.abort();
     }, 200);
   });
+
+  it('should only abort the request whose signal was aborted, not other concurrent requests', (done) => {
+    const controller1 = new AbortController();
+    const controller2 = new AbortController();
+
+    let result1 = '';
+    let result2 = '';
+
+    const p1 = fetch(`http://localhost:${location.port}/delay?ms=2000`, { signal: controller1.signal })
+      .then(() => { result1 = 'resolved'; })
+      .catch(() => { result1 = 'rejected'; });
+
+    const p2 = fetch(`http://localhost:${location.port}/delay?ms=2000`, { signal: controller2.signal })
+      .then(() => { result2 = 'resolved'; })
+      .catch(() => { result2 = 'rejected'; });
+
+    // Abort only the first request while both are still in-flight.
+    setTimeout(() => {
+      controller1.abort();
+    }, 200);
+
+    Promise.all([p1, p2]).then(() => {
+      expect(result1).toBe('rejected');
+      expect(result2).toBe('resolved');
+      done();
+    });
+  });
 });

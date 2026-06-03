@@ -40,7 +40,11 @@ class FetchModule extends BaseModule {
     return client;
   })();
   HttpClient get httpClient => _sharedHttpClient;
-  CancelToken? _dioCancelToken;
+
+  // In-flight requests keyed by the request id supplied from JS. Keying by id
+  // ensures aborting one request never cancels other concurrent requests.
+  final Map<String, CancelToken> _pendingCancelTokens = {};
+  final Map<String, HttpClientRequest> _pendingRequests = {};
 
   Uri _resolveUri(String input) {
     final Uri parsedUri = Uri.parse(input);
@@ -103,15 +107,28 @@ class FetchModule extends BaseModule {
     });
   }
 
-  HttpClientRequest? _currentRequest;
+  void _abortRequest(String? requestId) {
+    if (requestId == null) {
+      // Backward compatibility with an older bridge that sends no request id:
+      // abort every in-flight request as a best-effort fallback.
+      if (WebFControllerManager.instance.useDioForNetwork) {
+        for (final token in _pendingCancelTokens.values) {
+          token.cancel('aborted');
+        }
+        _pendingCancelTokens.clear();
+      } else {
+        for (final request in _pendingRequests.values) {
+          request.abort();
+        }
+        _pendingRequests.clear();
+      }
+      return;
+    }
 
-  void _abortRequest() {
     if (WebFControllerManager.instance.useDioForNetwork) {
-      _dioCancelToken?.cancel('aborted');
-      _dioCancelToken = null;
+      _pendingCancelTokens.remove(requestId)?.cancel('aborted');
     } else {
-      _currentRequest?.abort();
-      _currentRequest = null;
+      _pendingRequests.remove(requestId)?.abort();
     }
   }
 
@@ -123,6 +140,7 @@ class FetchModule extends BaseModule {
     final body = params[0];
     final headers = params[1];
     final requestMethod = params[2] ?? 'GET';
+    final String? requestId = params.length > 3 ? params[3] as String? : null;
 
     dynamic requestBody;
 
@@ -139,6 +157,7 @@ class FetchModule extends BaseModule {
     }
 
     handleError(Object error, StackTrace? stackTrace) {
+      if (requestId != null) _pendingRequests.remove(requestId);
       // Record the fetch error in LoadingState
       if (moduleManager != null) {
         final contextId = moduleManager!.contextId;
@@ -161,7 +180,7 @@ class FetchModule extends BaseModule {
 
       getRequest(uri, requestMethod, headers, requestBody).then((HttpClientRequest request) {
         if (_disposed) return Future.value(null);
-        _currentRequest = request;
+        if (requestId != null) _pendingRequests[requestId] = request;
         return request.close();
       }).then((HttpClientResponse? res) {
         if (res == null) {
@@ -171,6 +190,7 @@ class FetchModule extends BaseModule {
           return consolidateHttpClientResponseBytes(res);
         }
       }).then((Uint8List? bytes) {
+        if (requestId != null) _pendingRequests.remove(requestId);
         if (bytes != null) {
           completer.complete([EMPTY_STRING, response?.statusCode, bytes]);
         } else {
@@ -185,7 +205,8 @@ class FetchModule extends BaseModule {
   @override
   dynamic invoke(String method, List<dynamic> params) {
     if (method == 'abortRequest') {
-      _abortRequest();
+      final String? requestId = params.isNotEmpty ? params[0] as String? : null;
+      _abortRequest(requestId);
       return '';
     }
 
@@ -206,6 +227,7 @@ class FetchModule extends BaseModule {
     // Mark as XHR/fetch so downstream can treat accordingly.
     headers['X-WebF-Request-Type'] = 'fetch';
     final requestMethod = (params[2] ?? 'GET') as String;
+    final String? requestId = params.length > 3 ? params[3] as String? : null;
 
     // Prepare body
     Uint8List? bodyBytes;
@@ -221,6 +243,9 @@ class FetchModule extends BaseModule {
       bodyBytes = Uint8List.fromList(utf8.encode(body));
     }
 
+    final cancelToken = CancelToken();
+    if (requestId != null) _pendingCancelTokens[requestId] = cancelToken;
+
     try {
       final dio = await getOrCreateWebFDio(
         contextId: moduleManager!.contextId,
@@ -228,7 +253,6 @@ class FetchModule extends BaseModule {
         // Fetch semantics: resolve with Response for all HTTP statuses
         validateStatus: (_) => true,
       );
-      _dioCancelToken = CancelToken();
 
       // LoadingState tracking for fetch via Dio
       final contextId = moduleManager?.contextId;
@@ -264,7 +288,7 @@ class FetchModule extends BaseModule {
           followRedirects: true,
           validateStatus: (_) => true,
         ),
-        cancelToken: _dioCancelToken,
+        cancelToken: cancelToken,
         onReceiveProgress: (received, total) {
           if (!responseStartedEmitted && received > 0) {
             responseStartedEmitted = true;
@@ -331,6 +355,8 @@ class FetchModule extends BaseModule {
       } else {
         completer.completeError(e, st);
       }
+    } finally {
+      if (requestId != null) _pendingCancelTokens.remove(requestId);
     }
 
     return completer.future;

@@ -32,6 +32,14 @@ app.get('/unresponse', (req, res) => {
     // This route intentionally doesn't respond
 });
 
+// Responds after a delay (ms via ?ms=). Used to keep requests concurrently in-flight.
+app.get('/delay', (req, res) => {
+    const delayMs = parseInt(req.query.ms) || 1000;
+    setTimeout(() => {
+        res.json({ delayed: true, ms: delayMs });
+    }, delayMs);
+});
+
 app.get('/verify_cookie', (req, res) => {
     const query = req.query;
     const value = req.cookies[query.id];
