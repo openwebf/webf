@@ -1,3 +1,9 @@
+## 0.22.30
+
+### Fixes
+
+- Scope `AbortController` aborts to the request that owns the signal so concurrent `fetch()` calls no longer cancel each other. `FetchModule` is a singleton per WebF context but tracked the in-flight request in single-value fields (`_currentRequest` for the `HttpClient` path, `_dioCancelToken` for the Dio path), and the JS `fetch` polyfill called `invokeModule('Fetch', 'abortRequest')` with no request identity. When a second fetch started before the first completed it overwrote those fields, so aborting any controller cancelled whichever request had started most recently instead of the intended one — a user could abort request A and silently kill an unrelated in-flight request B while A kept running. The polyfill now generates a unique request id per `fetch()` and threads it through both `invokeModuleAsync` and `abortRequest`; the Dart side keys pending `HttpClientRequest`/`CancelToken` instances by that id in maps and aborts/cleans up only the matching entry. Both the `HttpClient` and Dio networking paths are covered, with a null-id fallback that preserves the previous abort-all behaviour for an older bridge. Verified with a new Dart unit test (HttpClient path) and an end-to-end integration test (Dio path).
+
 ## 0.22.29
 
 ### Fixes
