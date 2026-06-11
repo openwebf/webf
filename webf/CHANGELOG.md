@@ -1,147 +1,27 @@
-## 0.22.29
-
-### Fixes
-
-- Generate `bridge/code_gen/` before materialising `webf/src/` in the release pipeline. 0.22.28 shipped without `webf/src/code_gen/` because the `prepare-and-publish` job didn't run `npm run bindgen` (each per-platform build job runs bindgen locally but their `code_gen/` output isn't uploaded as an artifact), so `prepare-release` saw an empty `bridge/code_gen/` directory and silently skipped it. Consumer iOS Xcode builds then failed with unresolved `qjs_*` symbol references for every generated binding. Add an explicit `npm run bindgen` step in the publish job, harden `prepare_release.js` to exit with a non-zero status when a required subtree (`core`, `bindings`, `foundation`, `code_gen`, `include`) is missing or empty, and add a verify step that fails the CI run if `webf/src/code_gen/` is absent or empty before publishing.
-
-## 0.22.28
-
-### Fixes
-
-- Materialise `webf/src` as a real directory in the published pub package so the iOS source-mode pod compiles in consumer Xcode projects. In dev, `webf/src` is a symbolic link pointing at `../bridge`; the previous `prepare-release` script simply removed this symlink, which was fine when iOS shipped a prebuilt xcframework but broke 0.22.27's source-mode shipping (the iOS pod's `Classes/*.cc` shims `#include "../../../src/..."` and the symlink target `../bridge` lives outside the package root, so pub strips it). The script now dereferences the symlink and copies the bridge subtrees the iOS pod actually needs (`core/`, `bindings/`, `foundation/`, `code_gen/`, `include/`, `multiple_threading/`, `webf_bridge.cc`, and `third_party/{quickjs,dart,gumbo-parser,modp_b64}/`) into a real `webf/src/` directory, pruning build outputs, CMake artefacts, and test-only third_party deps (`benchmark`, `googletest`). Net published size impact: ~14 MB of bridge source. The release workflow's verify step now asserts `webf/src` is a real directory and contains the critical subtrees before publishing.
-
-## 0.22.27
-
-### Fixes
-
-- Fix iOS pod compile failure introduced when the C++ JS profiler hooks landed. `quickjs.c` now unconditionally `#include`s `js_profiler_hooks.h`, but the iOS `webf.podspec` `HEADER_SEARCH_PATHS` did not include `core/profiling/`, and there were no source-mode shims for `js_profiler_hooks.c` / `js_thread_profiler.cc` under `webf/ios/Classes/core/profiling/`. Add the missing header path, drop in the two shim files that `#include` the real bridge sources, so consumer Xcode builds compile cleanly. The macOS, Linux, and Android targets already had the equivalent CMake `target_include_directories(quickjs PUBLIC ... core/profiling)` plumbing and were unaffected.
-
-### Maintenance
-
-- Switch the iOS release pipeline from prebuilt-xcframework shipping to source-mode shipping. The published WebF iOS pod now compiles the bridge from the `webf/ios/Classes/` source shims (which symlink into `bridge/`) inside the consumer's Xcode project, giving consumers debug symbols local to their build and letting Xcode optimise for their deployment target instead of a generic fat binary. In the release workflow, disable the `build-ios` job (`if: false`), drop it from the downstream `collect-debug-symbols` and `prepare-and-publish` `needs:` lists, treat missing `artifacts/ios-binaries` as non-fatal in the restore step, replace `npm run use-prebuilt:ios` with `npm run ios:use-source` in packaging, and update the verify step to assert source-mode pod state (Classes shims present, no `Frameworks/` directory). Saves ~10 minutes of CI per release.
-
-## 0.22.26
+## 0.22.40
 
 ### Features
 
-- Track DOM node lifecycle in the DevTools performance tracker to detect wasted DOM work during init. Every `domConstruction` span now carries per-batch tallies as metadata (`created` / `inserted` / `removed` / `disposed` / `setAttribute` / `setStyle` / `setProperty` / `event` / `cloneNode` / `ephemeralInBatch`), and the exported profile JSON gains a top-level `domLifecycle` summary with session-wide aggregates: `orphans` (created → never inserted → disposed), `ephemerals` (created → inserted → removed), `stillborn` (created → never inserted → still pending), and a per-tag breakdown for each category. Identity is keyed on the C++ `NativeBindingObject` pointer; the map is capped at 200k entries with a `capacityReached`/`droppedCreates` flag in the export so the analysis script knows when the picture is partial. The new `DomLifecycleTracker` auto-resets on each new profiling session by observing `PerformanceTracker.sessionStart`, avoiding an import cycle with the tracker itself.
+- Add a DevTools performance waterfall built on an entry-rooted span model: the full rendering pipeline (CSS parse, style flush, style recalc, style apply, layout, paint) is instrumented with hierarchical spans, milestone markers (FP, FCP, LCP, Attach), and per-stage drill-downs with self-time vs child-time. Profiles can be exported and re-imported for offline analysis.
+- Add multi-threaded JS function profiling via QuickJS instrumentation, with a JS thread swim lane (script eval, timer, event, rAF, microtask, DOM mutation) and a JS/C flame chart drill-down that shows individual call frames with depth and duration, grafted under the matching Dart entry.
+- Track DOM node lifecycle in the profiler to surface wasted DOM work during init — created/inserted/removed/disposed tallies per batch, plus session-wide `orphans` / `ephemerals` / `stillborn` summaries with a per-tag breakdown in the exported profile.
 
 ### Performance
 
-- Skip the DevTools profiler entirely in release builds. The Dart-side `PerformanceTracker.startSession()` call inside `WebFController.initialize()` is now gated on `!kReleaseMode`, so release builds never enable the tracker, never install the C++ `JSThreadProfiler` hooks, never allocate the 10M-span Dart list, and never run the periodic 10ms drain timer. Profiling still runs automatically in debug AND profile builds (`flutter run --profile`) so DevTools-attached performance measurement works as expected. Host apps can still opt in to profiling a release build by calling `PerformanceTracker.instance.startSession()` manually after WebF init.
-- Short-circuit per-batch DOM tallies and `DomLifecycleTracker` calls in `execUICommands` when the profiler is disabled: snapshot `PerformanceTracker.instance.enabled` once at the top of the batch and gate every counter increment, set add, lifecycle record, and the trailing metadata payload on that flag. Reduces per-command release overhead to a single bool read with no Set allocations, no map writes, and no span object.
+- Route `HTMLImageElement.src` writes through the async binding path so each `img.src = url` no longer forces a synchronous `FlushUICommand` and FFI round-trip; subsequent JS reads still flush first, preserving observed semantics.
+- Skip `FlushUICommand` before invoking DOM-independent modules (`Fetch`, `AsyncStorage`, `LocalStorage`, `SessionStorage`, `Clipboard`, `TextCodec`, `Navigator`), avoiding an unnecessary sync JS-to-Dart round trip on common calls.
+- Skip the DevTools profiler entirely in release builds (gated on `!kReleaseMode`): no C++ hook installation, no large Dart span allocation, no periodic drain timer. Profiling still runs in debug and profile builds, and host apps can opt in manually.
 
 ### Fixes
 
-- Handle `JS_TAG_STRING_ROPE` in `ScriptValue::ToNative` so route parameters whose values are QuickJS rope strings (created when concatenating short strings) are converted to `NativeString` instead of falling through to the default branch and arriving on the Dart side as undefined / empty.
-- Use the inserted child pointer (`nativePtr2`) — not the parent target (`nativePtr`) — when recording `insertAdjacentNode` in the DOM lifecycle tracker. Previously the tracker keyed on the parent's address, which silently failed to pair with the corresponding `create` event and inflated the `stillborn` and `orphans` counts by the depth of the parent stack. Also start tallying `createDocument` and `createWindow` so the document / window roots are accounted for in the session totals.
-
-## 0.22.25
-
-### Performance
-
-- Route `HTMLImageElement.src` writes through the async binding path so each `img.src = url` no longer forces a synchronous `FlushUICommand` and FFI round-trip before the assignment. The actual image load is async on the Dart side regardless, and subsequent JS reads of `img.src` still flush before reading so observed semantics are preserved. In the heavy-render hot path, 59 sync `setProperty(src)` calls per route burst previously triggered 59 flush-driven styleRecalc cascades (~16,500 recalc spans / ~1.69s self-time per session); folding these writes into the next natural flush removes that overhead.
-
-### Fixes
-
-- Cancel the `scheduleFrameCallback` registered by `WebFViewController._scheduleDrawFrameWrapping` on `dispose()` and `detachFromFlutter()`, and stop the post-frame loop from re-registering once the controller is detached. Previously the self-rescheduling transient callback always left one queued, which tripped flutter_test's `_verifyInvariants` with "An animation is still running even after the widget tree was disposed".
+- Scope `AbortController` to its own `fetch` request so aborting one controller no longer cancels an unrelated concurrent request. A unique request id is threaded from `fetch.ts` through `invokeModuleAsync` and `abortRequest`, and the in-flight `HttpClientRequest`/`CancelToken` are keyed by that id on the Dart side so abort and cleanup only touch the matching entry. Covers both the `HttpClient` and Dio paths, with a null-id fallback for older bridges.
+- Handle `JS_TAG_STRING_ROPE` in `ScriptValue::ToNative` so route parameters whose values are QuickJS rope strings (created when concatenating short strings) convert to `NativeString` instead of arriving on the Dart side as undefined/empty.
+- Cancel the `scheduleFrameCallback` registered by `WebFViewController` on `dispose()` and `detachFromFlutter()`, and stop the post-frame loop from re-registering once detached — fixes flutter_test's "An animation is still running even after the widget tree was disposed".
+- Declare the `http` package as a dependency in `webf`'s `pubspec.yaml`. `conversion_layer_adapter.dart` imports `package:http/http.dart` but the dependency was missing, so pub.dev rejected publishing.
 
 ### Maintenance
 
-- Repair the Flutter test suite (342 failures → 0): update `HttpCacheController.getCacheDirectory()` call sites for the new `Uri` signature and per-origin cache directory layout, pass the now-required `uri:` to `getOrCreateWebFDio` in dio pool/header tests (skipped on iOS/macOS where dio_client constructs `URLSessionConfiguration` eagerly under `flutter test`), set `tester.view.physicalSize` to the requested viewport so flex containers measure against 360px instead of the 800×600 default surface, and relax a flaky `elapsed == 0` timing assertion to `< 50ms`.
-- Drop `module_manager_no_flush_test.cc`: the unit test referenced bridge-test helpers (`initTestFramework`, `JSThreadState`, `WebFTestContext`) that aren't available in the bridge test fixture and broke the build on all three platforms. The underlying no-flush optimization (0.22.24) remains in place.
-- Temporarily disable the Windows bridge build in the release pipeline and treat missing Windows artifacts as non-fatal in the restore step so Linux/macOS/iOS/Android releases can complete while the Windows build is being repaired. Re-enable by removing the `if: false` on `build-windows` and restoring it to the downstream `needs` lists.
-- Add compressed debug symbols for the 0.22.24 build artifacts.
-
-## 0.22.24
-
-### Features
-
-- Track Dart-side `invokeModule` calls in the DevTools performance waterfall and graft them under the JS-side `__webf_invoke_module__` bridge span. Sync invokes close on synchronous return; async invokes (Fetch, AsyncStorage, …) use `asyncSpanning` and close when the module delivers its result via `invokeModuleCallback`, so the entry's wall-clock duration captures end-to-end latency. Graftable entries are hidden from the overview while async entries that overflow their JS bridge window stay visible as Dart Thread rows so latency information is preserved.
-
-### Performance
-
-- Skip `FlushUICommand` before invoking DOM-independent modules (`Fetch`, `AsyncStorage`, `LocalStorage`, `SessionStorage`, `Clipboard`, `TextCodec`, and `Navigator`), avoiding an unnecessary synchronous JS-to-Dart round trip for common network, storage, codec, clipboard, and navigator calls.
-- Remove the Dart-side WebSocket listener gate so WebSocket events no longer require extra synchronous `invokeModule` checks before dispatch.
-
-### Maintenance
-
-- Add waterfall test coverage for `invokeModule` tracking — a distinct flame color, sync-vs-async semantics, and the conditional overview-suppression rule that keeps async entries visible when the graft can't attach them.
-- Add compressed Android and macOS debug symbols for the 0.22.23 build artifacts.
-
-## 0.22.23
-
-### Features
-
-- Rework the DevTools performance tracker around an entry-rooted span model: every span now belongs to a top-level entry (`drawFrame`, `flushUICommand`, `dispatchEvent`, `evaluateModule`, `invokeBindingMethodFromNative`, `invokeModuleEvent`, `asyncCallback`, `imageLoadComplete`, `scriptLoadComplete`, `networkResponse`, `htmlParse`, `cssParse`) so a span's origin is structural instead of guessed by time overlap.
-- Stamp `current_entry_id` into every C++ `JSThreadSpan` at function entry so JS-thread spans graft under the matching Dart entry deterministically on drain, instead of relying on wall-clock containment.
-- Add `ScopedDispatchEntryId` in the C++ profiler plus a JS-thread-local override field so Dart→JS sync dispatches (`dispatchEvent`, `evaluateModule/ByteCode/Scripts`, `invokeBindingMethodFromNative`, `invokeModuleEvent`) keep correct JS-span attribution even when concurrent async Dart entries overwrite the shared `current_entry_id_` atomic before JS runs.
-- Graft JS→Dart cross-call stacks inside the flame drilldown: a `jsBindingSyncCall` or `jsFlushUICommand` span now shows the matching Dart subtree (`invokeBindingMethodFromNative`, `flushUICommand`, etc.) nested directly beneath it, with chain-grafting for further sync calls.
-- Graft concurrent same-thread JS activity into a drilldown's "Concurrent" lane when the target is async: root-level spans whose window fits inside the drilldown target (dispatchEvent, jsMicrotask, jsTimer, jsRAF, jsEvent, evaluate*, invoke*, asyncCallback) render below the target's own subtree so the microtask drains servicing `await` gaps become visible.
-- Switch `PerformanceSpan` timing to monotonic `offsetUs` with a stopwatch + C++ `steady_clock` synchronised at session start, eliminating JS-span drift from wall-clock skew.
-- Bump the profile JSON format to v5: `jsThreadSpans` is no longer a separate array — JS spans are grafted into the main tree at drain time. v4 imports are rejected with a clear error.
-- Add waterfall phase sub-tabs that split the timeline into an init-to-attach and attach-to-paint view, with a phase filter applied to entries, milestones, and frame boundaries.
-- Add cluster focus mode to the flame chart so tapping a depth-0 bar in a multi-root cluster (e.g. 700+ drawFrames merged by the 50ms-gap rule) narrows the flame chart to that single root; the back button exits focus before exiting flame mode.
-- Split the waterfall overview into Network / Dart Thread / JS Thread sections with color-coded headers (green / blue / orange) matching the underlying bar colors.
-- Render image, font, script, and network requests as one row per request in the Network section (labelled with each URL) instead of clustering them into a single merged bar.
-- Deduplicate loader roots against raw HTTP request rows in the Network section — each fetch shows up once with its DNS/Connect/TLS/Waiting/Download breakdown.
-- Split `drawFrame` into one overview row per pipeline stage (domConstruction, build, styleFlush, styleRecalc, styleApply, layout, paint) directly below the drawFrame row, colour-matched to the flame chart.
-- Add distinct flame-chart colours for every span subType (Dart lifecycle, Dart bridges, Dart loaders, JS-thread categories) so cross-language stacks read at a glance instead of every frame appearing in the same grey-blue default.
-- Raise the flame/overview zoom ceiling from 6400% to 102400% for inspecting µs-scale spans inside long drilldowns.
-- Auto-fit the full drilldown duration to the viewport at zoom 1.0 (dropping the prior 2px/ms floor) so nothing is scrolled off-screen by default on long drilldowns.
-- Render a "no inner spans tracked" panel with a back button when drilling into a leaf entry (e.g. `imageLoadComplete` wrapping an uninstrumented `await`), instead of a lone bar over empty canvas.
-- Drain the C++ JS span ring buffer on a 10ms periodic timer while a session is active, not just during `flushUICommand` — prevents span loss during long JS-only bursts (module loads, heavy compute) with no UI activity.
-- Add a `jsBindingSyncCall` span category, a binding name registry, and property accessor name hints (`get foo` / `set foo`) so sync binding calls show the real method name in the flame chart.
-- Add a `debugLogDrilldown` tracker flag that logs a concise target summary (time window, subtree size, integrity-violation count, first N children) each time the user drills into a span.
-- Expose `setJSProfilerCurrentEntryId` / `getJSProfilerCurrentEntryId` / `getSteadyClockNowUs` on the Dart FFI and C bridge for tracker integration.
-
-### Fixes
-
-- Fix `_popEntry` restoring `_currentSpan` from the live entry stack (rather than the popped span's stale `parent` pointer) — eliminates 200-deep `drawFrame → drawFrame → drawFrame` chains observed under multi-view / frame-callback races that buried `flushUICommand` and its style/layout/paint subtree.
-- Require full `[start..end]` containment (with a sub-millisecond tolerance for profiler timestamp jitter) when picking an insertion parent, so a late-ending span no longer nests under a shorter sibling and overflows its parent's end.
-- Reject stale `entry_id` stamps whose resolved entry has already closed before the new span's end, preventing 200ms+ JS spans from being falsely nested under short-lived Dart entries.
-- Reject `entry_id` stamps that resolve to pure-Dart entries (drawFrame, flushUICommand, htmlParse, imageLoadComplete, cssParse): concurrent JS-thread activity no longer false-parents under a coincidentally-matching Dart window.
-- Restrict JS-span adoption to JS-thread siblings only; a long-running JS function no longer adopts closed `drawFrame`, `imageLoadComplete`, and `invokeBindingMethodFromNative` entries that happened to overlap its window.
-- Skip still-open siblings during adoption so a long-running `drawFrame` (`endOffsetUs == null`) isn't treated as a zero-duration point and swallowed into a later JS span.
-- Don't adopt autonomous JS spans (entry_id=0 timers / microtasks / events) under a time-overlapping Dart root — they run on a different thread and share no causal relation with Dart work.
-- Capture `entry_id` at JS span entry instead of exit so a span ending after an unrelated Dart entry has been pushed doesn't inherit the new id.
-- Hide `invokeBindingMethodFromNative` from the overview's Dart Thread rows (it's the Dart tail of a JS-initiated call, not a standalone entry); it still appears grafted under its calling `jsBindingSyncCall` inside drilldowns.
-- Group raw HTTP request rows under the Network section header (was leaking into Dart Thread because the subType string was `'network'` rather than `kSubTypeNetworkResponse`).
-- Fix duplicate time-ruler labels at sub-second tick intervals (e.g. `3.2s / 3.3s / 3.3s / 3.4s / 3.4s`) by scaling label precision with the interval.
-- Restore the back button on the empty-state flame chart drilldown — leaf entries no longer leave the user stranded with no way to return to the overview.
-- Give each concurrent-lane root its own row range so multiple overlapping `dispatchEvent` subtrees in an async drilldown don't stack on the same rows.
-- Align monotonic spans with the wall-clock timeline in the waterfall (was drifting for JS spans captured before the C++ clock was synchronised).
-- Shift `attachOffset` with the session's minimum start so drawFrame survives the attach→paint phase filter even when the first span doesn't start at t=0.
-- Hoist `importedPhases` onto the tracker so post-attach sub-tab unlocks correctly after a profile is imported.
-- Extend the CSS load entry over its post-fetch parse-and-flush phase so the entry's duration matches the actual CSS work (was closing at fetch completion).
-
-## 0.22.22
-
-### Features
-
-- Add multi-threaded JS function profiling via QuickJS instrumentation with per-function name resolution.
-- Add JS thread swim lane to waterfall chart showing script eval, timer, event, rAF, microtask, and DOM mutation spans.
-- Add JS flame chart drill-down displaying individual JS/C function calls with call depth and duration.
-- Instrument text layout (paragraphLayout, textLayout) and inline formatting context layout for better coverage of rendering gaps.
-- Add frame boundary indicators to the waterfall chart with dropped frame highlighting (>16.67ms).
-- Use Flutter's persistent frame callback for accurate frame boundary detection instead of paint-end heuristics.
-- Support independent zoom and scroll state between overview and flame chart modes.
-
-### Fixes
-
-- Fix JS function name resolution for C functions and anonymous JS functions via property lookup fallback.
-- Fix per-frame clustering of paint/build/layout spans to avoid merging all spans into one giant bar across frames.
-
-## 0.22.21
-
-### Features
-
-- Add waterfall performance chart to DevTools inspector panel with overview and flame chart modes.
-- Instrument full rendering pipeline (CSS parse, style flush, style recalc, style apply, layout, paint) with hierarchical span tracking.
-- Add milestone markers (FP, FCP, LCP, Attach) and preload/display stage headers to the waterfall timeline.
-- Add flame chart drill-down for recursive stages (style recalc, flex/flow layout, paint) with self-time vs child-time visualization.
-- Add profile export/import with adb pull commands for Android devices.
-- Auto-record performance spans during page load with zero-cost tracking when disabled.
+- Switch the iOS release pipeline from prebuilt-xcframework shipping to source-mode shipping: the published WebF iOS pod now compiles the bridge from `webf/ios/Classes/` source shims inside the consumer's Xcode project. `webf/src` is materialised as a real directory in the published package (it is a symlink to `../bridge` in dev), copying the bridge subtrees the pod needs and pruning build outputs and test-only deps. The release workflow runs `npm run bindgen` before packaging so `webf/src/code_gen/` ships, and verifies source-mode pod state before publishing.
 
 ## 0.22.20
 

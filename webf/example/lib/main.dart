@@ -32,7 +32,7 @@ import 'custom_elements/form.dart';
 import 'custom_elements/gesture_detector.dart';
 import 'custom_elements/flutter_sliver_listview.dart';
 import 'keyboard_case/popup.dart';
-import 'package:webf_cupertino_ui/webf_cupertino_ui.dart';
+// import 'package:webf_cupertino_ui/webf_cupertino_ui.dart';
 
 import 'package:day_night_switcher/day_night_switcher.dart';
 import 'package:adaptive_theme/adaptive_theme.dart';
@@ -54,7 +54,6 @@ void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   final savedThemeMode = await AdaptiveTheme.getThemeMode();
 
-  installWebFCupertinoUI();
 
   // Initialize the controller manager
   WebFControllerManager.instance.initialize(WebFControllerManagerConfig(
