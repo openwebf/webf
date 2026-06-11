@@ -4,6 +4,8 @@
  */
 #include "event_listener_map.h"
 
+#include <algorithm>
+
 namespace webf {
 
 EventListenerMap::EventListenerMap() {}

@@ -3,6 +3,7 @@
  * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
 #include "executing_context.h"
+#include <algorithm>
 #include <sstream>
 #include <vector>
 #include <condition_variable>
