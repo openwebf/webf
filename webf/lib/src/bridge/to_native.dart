@@ -839,6 +839,7 @@ void flushUICommandWithContextId(double contextId, Pointer<NativeBindingObject> 
 
 void flushUICommand(WebFViewController view, Pointer<NativeBindingObject> selfPointer) {
   if (view.disposed) return;
+  if (view.isFlushingUICommands) return;
   assert(_allocatedPages.containsKey(view.contextId));
 
   if (view.rootController.isFontsLoading) {
@@ -848,7 +849,12 @@ void flushUICommand(WebFViewController view, Pointer<NativeBindingObject> selfPo
     return;
   }
 
-  List<UICommand> commands = nativeUICommandToDartFFI(view.contextId);
-  execUICommands(view, commands);
+  view.isFlushingUICommands = true;
+  try {
+    List<UICommand> commands = nativeUICommandToDartFFI(view.contextId);
+    execUICommands(view, commands);
+  } finally {
+    view.isFlushingUICommands = false;
+  }
   SchedulerBinding.instance.scheduleFrame();
 }

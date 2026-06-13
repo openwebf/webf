@@ -39,6 +39,7 @@ class WebFViewController with Diagnosticable implements WidgetsBindingObserver {
   List<Cookie>? initialCookies;
 
   final List<List<UICommand>> pendingUICommands = [];
+  bool isFlushingUICommands = false;
 
   Color? background;
   WebFThread runningThread;
