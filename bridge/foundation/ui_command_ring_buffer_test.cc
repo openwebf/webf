@@ -88,6 +88,72 @@ TEST_F(UICommandRingBufferTest, OverflowHandling) {
   }
 }
 
+// Genuinely exercise the overflow path. kMinCapacity clamps small requests up to
+// 1024, so the named-but-misleading OverflowHandling test above never actually
+// overflows. Pushing well past 1024 forces items into the overflow buffer and
+// guards against the FIFO violation where overflow was drained before the ring.
+TEST_F(UICommandRingBufferTest, OverflowPreservesFifoOrder) {
+  const int kTotal = 3000;  // > kMinCapacity (1024) so overflow is used
+  UICommandRingBuffer buffer(1024);
+
+  for (int i = 0; i < kTotal; i++) {
+    UICommandItem item(i, nullptr, nullptr, nullptr);
+    buffer.Push(item);
+  }
+  EXPECT_EQ(buffer.Size(), static_cast<size_t>(kTotal));
+
+  std::vector<int> drained;
+  UICommandItem out[256];
+  while (true) {
+    size_t n = buffer.PopBatch(out, 256);
+    if (n == 0) break;
+    for (size_t j = 0; j < n; j++) drained.push_back(out[j].type);
+  }
+
+  ASSERT_EQ(drained.size(), static_cast<size_t>(kTotal));
+  for (int i = 0; i < kTotal; i++) {
+    EXPECT_EQ(drained[i], i) << "overflow reordered at index " << i;
+  }
+}
+
+// Interleaving pops and pushes is the case that the simple "drain ring then
+// overflow" rule alone cannot satisfy: once the ring drains below full while the
+// overflow still holds older items, a new push must stay in overflow (sticky) to
+// keep global FIFO order.
+TEST_F(UICommandRingBufferTest, OverflowInterleavedPreservesFifoOrder) {
+  UICommandRingBuffer buffer(1024);  // capacity 1024 -> holds 1023 before overflow
+  int next_push = 0;
+  std::vector<int> drained;
+  UICommandItem out[2048];  // must be >= the largest max_count passed to PopBatch below
+
+  auto push_n = [&](int n) {
+    for (int i = 0; i < n; i++) {
+      UICommandItem item(next_push++, nullptr, nullptr, nullptr);
+      buffer.Push(item);
+    }
+  };
+  auto pop_n = [&](size_t n) {
+    size_t got = buffer.PopBatch(out, n);
+    for (size_t j = 0; j < got; j++) drained.push_back(out[j].type);
+  };
+
+  push_n(1100);  // fills the ring and spills the remainder into overflow
+  pop_n(500);    // drains from the ring head (oldest)
+  push_n(200);   // overflow is non-empty -> these must stick to overflow
+
+  // Drain everything that remains.
+  while (true) {
+    size_t before = drained.size();
+    pop_n(256);
+    if (drained.size() == before) break;
+  }
+
+  ASSERT_EQ(drained.size(), static_cast<size_t>(next_push));
+  for (int i = 0; i < next_push; i++) {
+    EXPECT_EQ(drained[i], i) << "interleaved overflow reordered at index " << i;
+  }
+}
+
 // Test concurrent producer/consumer
 TEST_F(UICommandRingBufferTest, ConcurrentProducerConsumer) {
   UICommandRingBuffer buffer(1024);

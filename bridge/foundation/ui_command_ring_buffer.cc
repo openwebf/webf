@@ -42,10 +42,22 @@ UICommandRingBuffer::~UICommandRingBuffer() = default;
 bool UICommandRingBuffer::Push(const UICommandItem& item) {
   // Use producer mutex for simplicity and correctness with multiple producers
   std::lock_guard<std::mutex> lock(producer_mutex_);
-  
+
+  // Once the overflow buffer holds items, every later item must also go to the
+  // overflow buffer. Otherwise a newer item written to the ring would be popped
+  // before the older overflow items (PopBatch drains the ring before overflow),
+  // breaking FIFO order.
+  {
+    std::lock_guard<std::mutex> overflow_lock(overflow_mutex_);
+    if (!overflow_buffer_.empty()) {
+      overflow_buffer_.push_back(item);
+      return true;
+    }
+  }
+
   size_t current_head = producer_.head.load(std::memory_order_relaxed);
   size_t next_head = NextIndex(current_head);
-  
+
   // Check if buffer is full
   if (next_head == consumer_.tail.load(std::memory_order_acquire)) {
     // Buffer is full, use overflow buffer
@@ -78,35 +90,36 @@ size_t UICommandRingBuffer::PopBatch(UICommandItem* items, size_t max_count) {
   if (!items || max_count == 0) return 0;
   
   size_t count = 0;
-  
-  // First, drain overflow buffer if any
+
+  // Drain the ring buffer first. The ring always holds the oldest items: the
+  // overflow buffer is only appended to once the ring is full, and the producer
+  // keeps using overflow until it fully drains (see Push), so overflow items are
+  // always newer than anything still in the ring.
+  size_t current_tail = consumer_.tail.load(std::memory_order_relaxed);
+  size_t current_head = producer_.head.load(std::memory_order_acquire);
+
+  while (current_tail != current_head && max_count > 0) {
+    items[count++] = buffer_[current_tail];
+    current_tail = NextIndex(current_tail);
+    max_count--;
+  }
+
+  consumer_.tail.store(current_tail, std::memory_order_release);
+
+  if (max_count == 0) return count;
+
+  // Then drain the overflow buffer (FIFO within the vector).
   {
     std::lock_guard<std::mutex> lock(overflow_mutex_);
     if (!overflow_buffer_.empty()) {
       size_t overflow_count = std::min(max_count, overflow_buffer_.size());
-      std::memcpy(items, overflow_buffer_.data(), overflow_count * sizeof(UICommandItem));
+      std::memcpy(items + count, overflow_buffer_.data(), overflow_count * sizeof(UICommandItem));
       overflow_buffer_.erase(overflow_buffer_.begin(), overflow_buffer_.begin() + overflow_count);
-      count = overflow_count;
-      items += overflow_count;
-      max_count -= overflow_count;
+      count += overflow_count;
     }
   }
-  
-  if (max_count == 0) return count;
-  
-  // Then drain ring buffer
-  size_t current_tail = consumer_.tail.load(std::memory_order_relaxed);
-  size_t current_head = producer_.head.load(std::memory_order_acquire);
-  
-  size_t ring_count = 0;
-  while (current_tail != current_head && max_count > 0) {
-    items[ring_count++] = buffer_[current_tail];
-    current_tail = NextIndex(current_tail);
-    max_count--;
-  }
-  
-  consumer_.tail.store(current_tail, std::memory_order_release);
-  return count + ring_count;
+
+  return count;
 }
 
 size_t UICommandRingBuffer::Size() const {
@@ -277,9 +290,23 @@ void UICommandPackageRingBuffer::FlushCurrentPackage() {
 }
 
 void UICommandPackageRingBuffer::PushPackage(std::unique_ptr<UICommandPackage> package) {
+  // Once the overflow holds packages, every later package must also go to the
+  // overflow. Otherwise a newer package written to the ring would be popped
+  // before the older overflow packages (PopPackage drains the ring before
+  // overflow), breaking FIFO order — which can let an insertAdjacentNode run
+  // before the createElement it depends on, failing the Dart hasBindingObject
+  // assertion.
+  {
+    std::lock_guard<std::mutex> lock(overflow_mutex_);
+    if (!overflow_packages_.empty()) {
+      overflow_packages_.push_back(std::move(package));
+      return;
+    }
+  }
+
   size_t write_idx = write_index_.load(std::memory_order_relaxed);
   size_t next_write_idx = (write_idx + 1) & capacity_mask_;
-  
+
   // Check if buffer is full
   if (next_write_idx == read_index_.load(std::memory_order_acquire)) {
     // Buffer full, use overflow
@@ -298,7 +325,22 @@ void UICommandPackageRingBuffer::PushPackage(std::unique_ptr<UICommandPackage> p
 }
 
 std::unique_ptr<UICommandPackage> UICommandPackageRingBuffer::PopPackage() {
-  // First check overflow
+  // Drain the ring first: it always holds the oldest packages. Overflow is only
+  // appended to once the ring is full and stays in use until it drains (see
+  // PushPackage), so overflow packages are always newer than ring packages.
+  size_t read_idx = read_index_.load(std::memory_order_relaxed);
+  if (packages_[read_idx].ready.load(std::memory_order_acquire)) {
+    auto package = std::move(packages_[read_idx].package);
+    packages_[read_idx].ready.store(false, std::memory_order_release);
+
+    // Update read index
+    size_t next_read_idx = (read_idx + 1) & capacity_mask_;
+    read_index_.store(next_read_idx, std::memory_order_release);
+
+    return package;
+  }
+
+  // Ring is empty — drain overflow (FIFO within the vector).
   {
     std::lock_guard<std::mutex> lock(overflow_mutex_);
     if (!overflow_packages_.empty()) {
@@ -308,22 +350,8 @@ std::unique_ptr<UICommandPackage> UICommandPackageRingBuffer::PopPackage() {
       return package;
     }
   }
-  
-  // Then check ring buffer
-  size_t read_idx = read_index_.load(std::memory_order_relaxed);
-  
-  if (!packages_[read_idx].ready.load(std::memory_order_acquire)) {
-    return nullptr;  // No package available
-  }
-  
-  auto package = std::move(packages_[read_idx].package);
-  packages_[read_idx].ready.store(false, std::memory_order_release);
-  
-  // Update read index
-  size_t next_read_idx = (read_idx + 1) & capacity_mask_;
-  read_index_.store(next_read_idx, std::memory_order_release);
-  
-  return package;
+
+  return nullptr;
 }
 
 size_t UICommandPackageRingBuffer::PackageCount() const {
