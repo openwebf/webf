@@ -188,5 +188,53 @@ void main() {
       expect(tester.takeException(), isNull,
           reason: 'prerender timeout surfaced as an unhandled exception in the mount path');
     });
+
+    testWidgets('C: an initial hybrid route is awaited at mount, not reported missing immediately',
+        (WidgetTester tester) async {
+      tester.view.physicalSize = const Size(360, 640);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+
+      const route = '/modal_popup';
+      final name = 'prerender-c-${DateTime.now().millisecondsSinceEpoch}';
+
+      await tester.runAsync(() async {
+        final controller = await WebFControllerManager.instance.addWithPrerendering(
+          name: name,
+          createController: () => WebFController(viewportWidth: 360, viewportHeight: 640),
+          // The bundle does not register the $route hybrid router view, so the
+          // route-load future stays pending (the JS app would register it shortly
+          // after). The mount must wait for it rather than declaring it missing.
+          bundle: WebFBundle.fromContent(
+            '<html><body><div>home</div></body></html>',
+            url: 'test://$name/',
+            contentType: htmlContentType,
+          ),
+        );
+        await controller!.controlledInitCompleter.future;
+      });
+
+      final webf = WebF.fromControllerName(controllerName: name, initialRoute: route);
+      await tester.pumpWidget(webf);
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 200));
+      await tester.pumpFrames(webf, const Duration(milliseconds: 300));
+
+      // While the route is still loading, WebF must NOT render the "route not
+      // found" error. In prerender mode (evaluated == true) the FutureBuilder
+      // guard used to skip waiting and build the root view immediately.
+      expect(find.textContaining('was not found'), findsNothing,
+          reason: 'prerender reported the initial route missing before it finished loading');
+      expect(tester.takeException(), isNull,
+          reason: 'building the route-not-found error widget threw before the route finished loading');
+
+      // Unmount and flush the pending route-load (20s) and perf (10s) fallback
+      // timers so the test does not fail on pending timers. The route is never
+      // registered here (the JS app would register it), so we just let them lapse
+      // with the widget detached.
+      await tester.pumpWidget(const SizedBox());
+      await tester.pump(const Duration(seconds: 21));
+    });
   });
 }

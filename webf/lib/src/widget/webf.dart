@@ -582,7 +582,15 @@ class WebFState extends State<WebF> with RouteAware {
           future: Future.wait(pendingFutures),
           key: widget.controller.key,
           builder: (context, snapshot) {
-            if (!widget.controller.evaluated && snapshot.connectionState != ConnectionState.done) {
+            // When an initial hybrid route is requested we must wait for its load
+            // future (in pendingFutures) regardless of `evaluated`. In prerendering
+            // mode `evaluated` is already true before mount, so the old
+            // `!evaluated` short-circuit skipped the wait and built the root view
+            // before the route was registered, surfacing a spurious
+            // "route path ... was not found".
+            final bool waitingForInitialRoute = hasInitialRoute && initialRoute != '/';
+            if (snapshot.connectionState != ConnectionState.done &&
+                (!widget.controller.evaluated || waitingForInitialRoute)) {
               return widget.loadingWidget ??
                   const SizedBox(
                     width: 50,
