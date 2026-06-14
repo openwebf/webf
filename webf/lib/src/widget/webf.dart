@@ -783,7 +783,16 @@ class WebFStateElement extends StatefulElement {
     flushUICommand(controller.view, nullptr);
 
     if (controller.evaluated) {
-      _resumeForLoaded();
+      // A controller that finished prerendering before this widget mounted still
+      // needs its mount-time event sequence (resize → DOMContentLoaded → load →
+      // prerendered) dispatched with real geometry. _loadingInPreRenderingMode is
+      // otherwise unreachable on this path, which would leave resize/prerendered
+      // never firing and DOMContentLoaded/load fired early during prerender.
+      if (controller.mode == WebFLoadingMode.preRendering && !controller.preRenderingMountDispatched) {
+        await _loadingInPreRenderingMode();
+      } else {
+        _resumeForLoaded();
+      }
       return;
     }
 
@@ -837,6 +846,19 @@ class WebFStateElement extends StatefulElement {
     WebFController controller = widget.controller;
 
     await controller.controllerPreRenderingCompleter.future;
+
+    // Idempotency guard: the mount sequence must run exactly once. The check and
+    // the set are synchronous (no await between them), so concurrent callers that
+    // resumed from the await above all observe the flag and bail — only the first
+    // proceeds. dispatchWindowResizeEvent has no one-shot guard, so a second run
+    // would dispatch a spurious resize and re-run the animation resume.
+    if (controller.preRenderingMountDispatched) return;
+
+    // We are now past the prerender boundary and about to perform the real
+    // mount-time dispatch. Mark it so checkCompleted stops deferring the window
+    // DOMContentLoaded/load events (the dispatch below fires them in order).
+    controller.preRenderingMountDispatched = true;
+
     // Make sure fontSize of HTMLElement are correct
     await controller.dispatchWindowResizeEvent();
 

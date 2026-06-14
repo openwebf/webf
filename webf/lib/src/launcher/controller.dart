@@ -1650,6 +1650,12 @@ class WebFController with Diagnosticable {
     _evaluated = value;
   }
 
+  // True once the prerendering mount-time event sequence (resize → DOMContentLoaded
+  // → load → prerendered) has been dispatched by _loadingInPreRenderingMode. While
+  // false in preRendering mode, checkCompleted defers the window DOMContentLoaded/load
+  // events so they fire on mount with real geometry instead of during prerender.
+  bool preRenderingMountDispatched = false;
+
   // https://github.com/WebKit/WebKit/blob/main/Source/WebCore/loader/FrameLoader.cpp#L840
   // Check whether the document has been loaded, such as html has parsed (main of JS has evaled) and images/scripts has loaded.
   void checkCompleted() {
@@ -1661,8 +1667,18 @@ class WebFController with Diagnosticable {
 
     if (_isDOMComplete) return;
 
+    // While prerendering before the widget mounts, the window-facing
+    // DOMContentLoaded/load events must be deferred until mount so geometry is
+    // real when their handlers run. _loadingInPreRenderingMode dispatches the
+    // full sequence (resize → DOMContentLoaded → load → prerendered) at mount.
+    // Here we still advance readyState and complete the internal completers, but
+    // skip the dispatch so the one-shot guards stay unset for the mount dispatch.
+    final bool deferWindowEventsUntilMount = mode == WebFLoadingMode.preRendering && !preRenderingMountDispatched;
+
     _view!.document.readyState = DocumentReadyState.interactive;
-    dispatchDOMContentLoadedEvent();
+    if (!deferWindowEventsUntilMount) {
+      dispatchDOMContentLoadedEvent();
+    }
     _isDOMComplete = true;
 
     controllerOnDOMContentLoadedCompleter.complete();
@@ -1679,7 +1695,9 @@ class WebFController with Diagnosticable {
     _isComplete = true;
     controllerOnLoadCompleter.complete();
 
-    dispatchWindowLoadEvent();
+    if (!deferWindowEventsUntilMount) {
+      dispatchWindowLoadEvent();
+    }
     _view!.document.readyState = DocumentReadyState.complete;
 
     if (mode == WebFLoadingMode.preRendering) {
