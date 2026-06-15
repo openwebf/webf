@@ -1,3 +1,17 @@
+## 0.22.41
+
+### Fixes
+
+- Prevent re-entrant `flushUICommand` from dropping DOM elements. In dedicated-thread mode, an `asyncCaller` command processed during a flush could trigger a nested `flushUICommand` that drained the UI command ring buffer mid-batch, reordering commands so an `insertAdjacentNode` ran before the `createElement` that registers its target's binding object — surfacing as a Dart `hasBindingObject(selfPointer)` assertion and missing DOM nodes. A re-entrancy guard now makes nested flushes no-ops, so the deferred commands are processed in order by the next top-level flush.
+- Preserve FIFO order when the UI command ring buffer overflows. When the ring filled, commands spilled into an overflow buffer that the consumer drained *before* the ring; because overflow items are always newer than ring items, this reordered commands under backpressure (an `insertAdjacentNode` package could be delivered before the `createElement` it depends on). Both the command- and package-level ring buffers now keep overflow sticky on push and drain the ring before overflow on pop, with regression tests.
+- Prerendering: fire `resize → DOMContentLoaded → load → prerendered` exactly once, at mount, with real geometry. In the `addWithPrerendering` flow the controller finished prerendering (`evaluated == true`) before the widget mounted, so the mount-time dispatch was skipped entirely: `resize` and `prerendered` never fired, and `DOMContentLoaded`/`load` fired during the prerender phase while layout was still deferred (so `clientWidth` / `getBoundingClientRect` returned `0` inside their handlers). The four events are now dispatched on mount, in order, once.
+- Prerendering: await an initial hybrid route at mount instead of reporting it missing. Opening a prerendered controller with a non-default `initialRoute` (e.g. `/modal_popup`) failed with "The route path for … was not found" because the root view's loading guard was skipped once `evaluated == true`, building the root view before the route's load future resolved. WebF now waits for the initial hybrid route to load before building the root view.
+- Routing: remove a hybrid build context by its `BuildContext` identity rather than by route path. A single controller can back several simultaneously-mounted route widgets — a root `WebF` view plus `WebFRouterView` sub-routes on an inner `Navigator` — that share one build-context stack and can legitimately hold two entries with the same path. `popBuildContext` removed *every* entry matching the path, so unmounting one route deleted a still-mounted sibling, emptied the stack, and left `currentBuildContext` null for a visible page — which made `HybridHistory` navigation throw "Could not invoke HybridHistory API when flutter context was not attached" (the popup mask showed but its content/navigation failed). Each route now removes only its own entry, and a route's metrics are disposed only when no remaining entry uses that path.
+
+### Maintenance
+
+- Add the missing `#include <algorithm>` to `form_data.cc`, `executing_context.cc`, and `event_listener_map.cc` for `std::remove_if` / `std::find_if`. GCC 14 / libstdc++ no longer pulls `<algorithm>` in transitively, which broke the Linux bridge build after it was re-enabled in the release pipeline (macOS/Android were unaffected because libc++ still provided it transitively).
+
 ## 0.22.40
 
 ### Features
