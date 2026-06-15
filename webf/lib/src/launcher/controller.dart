@@ -642,27 +642,34 @@ class WebFController with Diagnosticable {
   }
 
   void popBuildContext({BuildContext? context, String? routePath}) {
-    if (_buildContextStack.isNotEmpty) {
-      String? removedPath;
-      if (context != null) {
-        assert(routePath != null);
-        _buildContextStack.removeWhere((ctx) {
-          if (ctx.path == routePath) {
-            removedPath = ctx.path;
-            return true;
-          }
-          return false;
-        });
-      } else {
-        final removed = _buildContextStack.removeLast();
-        removedPath = removed.path;
-      }
+    if (_buildContextStack.isEmpty) return;
 
-      // Clean up metrics for the removed route
-      if (removedPath != null && _routeMetrics.containsKey(removedPath)) {
-        _routeMetrics[removedPath]?.dispose();
-        _routeMetrics.remove(removedPath);
+    HybridRoutePageContext? removed;
+    if (context != null) {
+      // Remove the entry for THIS specific context, not every entry that happens
+      // to share the route path. A single controller can back several
+      // simultaneously-mounted route widgets (the root WebF view plus
+      // WebFRouterView sub-routes on an inner Navigator), and they can even share
+      // the same path. Removing by path would delete a sibling that is still
+      // mounted, emptying the stack and leaving currentBuildContext null for a
+      // visible page — which makes HybridHistory navigation throw
+      // "context not attached".
+      final index = _buildContextStack.lastIndexWhere((ctx) => identical(ctx.context, context));
+      if (index != -1) {
+        removed = _buildContextStack.removeAt(index);
       }
+    } else {
+      removed = _buildContextStack.removeLast();
+    }
+
+    // Clean up metrics for the removed route only when no remaining entry still
+    // uses that path.
+    final removedPath = removed?.path;
+    if (removedPath != null &&
+        !_buildContextStack.any((ctx) => ctx.path == removedPath) &&
+        _routeMetrics.containsKey(removedPath)) {
+      _routeMetrics[removedPath]?.dispose();
+      _routeMetrics.remove(removedPath);
     }
   }
 

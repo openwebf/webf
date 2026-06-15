@@ -1,0 +1,82 @@
+/*
+ * Copyright (C) 2022-present The WebF authors. All rights reserved.
+ *
+ * Repro for the hybrid-history "context not attached" bug.
+ *
+ * A single controller can back several simultaneously-mounted WebF route widgets
+ * (the root `WebF` view plus `WebFRouterView` sub-routes on an inner Navigator,
+ * as in the mini-program page). They all push/pop into one build-context stack.
+ *
+ * `popBuildContext` removes entries by `routePath` rather than by the specific
+ * `BuildContext`, so unmounting one route deletes EVERY entry sharing that path —
+ * including a sibling route that is still mounted. The stack ends up empty while
+ * a route is still on screen, so `currentBuildContext` is null and
+ * `HybridHistory` navigation throws "context not attached".
+ */
+
+import 'package:flutter/widgets.dart';
+import 'package:flutter_test/flutter_test.dart';
+import 'package:webf/webf.dart';
+import 'package:webf/launcher.dart';
+
+import '../../setup.dart';
+import '../foundation/mock_bundle.dart';
+
+// Avoids the real Flutter attach which needs a live BuildContext.
+class _TestWebFController extends WebFController {
+  @override
+  bool get isFlutterAttached => true;
+  @override
+  void attachToFlutter(BuildContext context) {}
+  @override
+  void detachFromFlutter(BuildContext? context) {}
+}
+
+class _FakeBuildContext extends Fake implements BuildContext {}
+
+void main() {
+  setUp(() {
+    setupTest();
+  });
+
+  setUp(() {
+    final manager = WebFControllerManager.instance;
+    manager.disposeAll();
+    manager.initialize(const WebFControllerManagerConfig(maxAliveInstances: 5, maxAttachedInstances: 3));
+  });
+
+  tearDown(() async {
+    await WebFControllerManager.instance.disposeAll();
+  });
+
+  group('Build context stack', () {
+    test('popping one route keeps a still-mounted sibling on the same path', () async {
+      final controller = await WebFControllerManager.instance.addWithPreload(
+        name: 'bcs-test',
+        createController: () => _TestWebFController(),
+        bundle: MockTimedBundle.fast(content: 'console.log("ok")'),
+      );
+
+      // Two distinct mounted route widgets sharing the controller, both on '/p2p'
+      // (root WebF view + a re-pushed '/p2p' sub-route).
+      final ctxRoot = _FakeBuildContext();
+      final ctxSubRoute = _FakeBuildContext();
+
+      controller!.pushNewBuildContext(context: ctxRoot, routePath: '/p2p', state: null);
+      controller.pushNewBuildContext(context: ctxSubRoute, routePath: '/p2p', state: null);
+
+      // The top sub-route unmounts and removes ITS entry.
+      controller.popBuildContext(context: ctxSubRoute, routePath: '/p2p');
+
+      // The root route is still mounted, so currentBuildContext must remain it.
+      expect(controller.currentBuildContext, isNotNull,
+          reason: 'popping a sibling route emptied the build-context stack');
+      expect(controller.currentBuildContext?.context, same(ctxRoot),
+          reason: 'popBuildContext removed the wrong entry (matched by path, not by BuildContext)');
+
+      // Clear the remaining entry so controller disposal doesn't process the fake.
+      controller.popBuildContext(context: ctxRoot, routePath: '/p2p');
+      expect(controller.currentBuildContext, isNull);
+    });
+  });
+}
