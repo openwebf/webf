@@ -1,3 +1,9 @@
+## 0.22.42
+
+### Fixes
+
+- Stop the loading widget from flashing over already-rendered content on an unrelated widget-tree rebuild, for prerendered controllers with an initial hybrid route. The 0.22.41 initial-route wait was gated on the root view's `FutureBuilder` `connectionState`, which resets to `waiting` every time `Future.wait(...)` is recreated in `build()` (e.g. a `WebFState` `setState`), so any rebuild re-showed the loading widget. The wait is now gated on whether the route is actually registered (a signal that is stable across rebuilds); the load future's completion still serves as the timeout escape hatch when the route never registers.
+
 ## 0.22.41
 
 ### Fixes
