@@ -177,7 +177,13 @@ class LogicInlineBox {
 
   double getChildAscent(double marginTop, double marginBottom) {
     // Distance from top to baseline of child.
-    double? childAscent = renderObject.getDistanceToBaseline(TextBaseline.alphabetic, onlyReal: true);
+    // getDistanceToBaseline asserts the render object is attached (it reads
+    // `owner!`). flushLayout can lay out a detached subtree (owner == null) via
+    // performLayout — during prerender (not yet mounted) or a FlutterBoost
+    // teardown where JS still reads offsetTop. Skip the baseline query when
+    // detached and fall back to the margin box below.
+    double? childAscent =
+        renderObject.attached ? renderObject.getDistanceToBaseline(TextBaseline.alphabetic, onlyReal: true) : null;
     Size? childSize = getChildSize();
     double baseline = renderObject.parent is RenderFlowLayout
         ? marginTop + childSize!.height + marginBottom
