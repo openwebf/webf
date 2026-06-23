@@ -1,3 +1,14 @@
+## 0.22.43
+
+### Fixes
+
+This release fixes a cluster of crashes that share one root: while a WebF page is being torn down (e.g. a FlutterBoost container pop) or before it is mounted, the JS thread keeps running and forces geometry/layout/image work on a render tree or DOM element that is no longer attached to the Flutter pipeline.
+
+- Guard the DevTools inspector floating panel against a zero-size viewport. On the first frame / prerender→mount transition `MediaQuery.size` can be `Size.zero` (Android/iOS physical devices at first load), which inverted the position clamp (`clamp(0, size.width - 60)` → `clamp(0, -60)`) and threw `ArgumentError: Invalid argument(s): 0.0`. The panel now renders nothing until the viewport has a size. Debug-only widget.
+- Guard `Element.getRootViewport()` against a torn-down build context. During a container pop the stored `currentBuildContext` can outlive its element's active state while JS reads geometry such as `offsetTop`; `findRenderObject()` then threw "Cannot get renderObject of inactive element". It now returns null when the context is unmounted or deactivated.
+- Harden flow-layout baseline and size computation against detached children. `flushLayout` can lay out a pipeline-detached subtree (`owner == null`) via `performLayout` during a teardown or pre-attach; the baseline code then dereferenced `owner!` in `getDistanceToBaseline` and force-unwrapped a null child size. Both `LogicInlineBox.getChildAscent` and `RenderFlowLayout._getChildAscent`/`calculateChildCrossAxisExtent` (and the vertical-align cases) now skip the baseline query for a detached child and fall back for a null size. The child-size unwraps were real null-checks that could crash release builds too.
+- Guard `BoxFitImage` against a disposed target element. An `<img>`'s load is deferred to mount during prerender; if the element is genuinely removed from the DOM before the deferred load runs, its binding object is gone and the load force-unwrapped a null element. It now fails the load gracefully (a handled error the image framework reports) instead of crashing the frame.
+
 ## 0.22.42
 
 ### Fixes
