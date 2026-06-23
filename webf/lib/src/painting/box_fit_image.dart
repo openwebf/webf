@@ -105,7 +105,16 @@ class BoxFitImage extends ImageProvider<BoxFitImageKey> {
       if (controller == null) {
         throw StateError('Could not load the image, controller: $contextId were not exist');
       }
-      response = await _loadImage(controller.view.getBindingObject<Element>(targetElementPtr)!, url);
+      // The <img> element may have been disposed (binding object removed from the
+      // registry) before this deferred load runs — e.g. its page is torn down
+      // while the load is still pending. Fail gracefully instead of force-
+      // unwrapping a null element; the image framework turns this into a load
+      // error rather than crashing the frame.
+      final Element? targetElement = controller.view.getBindingObject<Element>(targetElementPtr);
+      if (targetElement == null) {
+        throw StateError('Could not load the image, target element for context $contextId was disposed');
+      }
+      response = await _loadImage(targetElement, url);
 
       final bytes = response.bytes;
       if (bytes.isEmpty) {
