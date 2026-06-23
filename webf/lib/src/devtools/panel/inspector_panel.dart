@@ -1972,6 +1972,13 @@ class _WebFInspectorFloatingPanelState extends State<WebFInspectorFloatingPanel>
 
     final size = MediaQuery.of(context).size;
 
+    // On the first frame / prerender->mount transition the Flutter view may not
+    // have a size yet (MediaQuery reports Size.zero on Android/iOS physical
+    // devices at first load). With width/height == 0 the clamp bounds below
+    // invert (e.g. clamp(0, size.width - 60) == clamp(0, -60)), which throws an
+    // ArgumentError. Skip rendering until the viewport is established.
+    if (size.isEmpty) return const SizedBox.shrink();
+
     // Ensure the button stays within screen bounds
     double x = _position.dx.clamp(0, size.width - 60);
     double y = _position.dy.clamp(50, size.height - 100);
