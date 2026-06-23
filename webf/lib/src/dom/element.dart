@@ -855,7 +855,19 @@ abstract class Element extends ContainerNode
   }
 
   RenderViewportBox? getRootViewport() {
-    return ownerDocument.controller.currentBuildContext?.context.findRenderObject() as RenderViewportBox?;
+    final context = ownerDocument.controller.currentBuildContext?.context;
+    // During teardown (e.g. a FlutterBoost container pop) the stored build
+    // context can outlive its element's active state while JS is still running.
+    // findRenderObject() asserts the element is active and otherwise throws
+    // "Cannot get renderObject of inactive element" — for both the unmounted
+    // (mounted == false) and the deactivated-but-mounted case. Guard the former
+    // with `mounted` and the latter by treating the assert as "no viewport".
+    if (context == null || !context.mounted) return null;
+    try {
+      return context.findRenderObject() as RenderViewportBox?;
+    } on FlutterError {
+      return null;
+    }
   }
 
   RenderBoxModel? getRootRenderBoxModel() {

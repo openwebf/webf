@@ -78,5 +78,44 @@ void main() {
       controller.popBuildContext(context: ctxRoot, routePath: '/p2p');
       expect(controller.currentBuildContext, isNull);
     });
+
+    testWidgets('getRootViewport returns null instead of throwing when the build context is dead',
+        (WidgetTester tester) async {
+      // Capture a real BuildContext, then remove it from the tree so its element
+      // is torn down — like a FlutterBoost container pop. findRenderObject() on
+      // such an element throws "Cannot get renderObject of inactive element".
+      late BuildContext deadContext;
+      await tester.pumpWidget(
+        Directionality(
+          textDirection: TextDirection.ltr,
+          child: Builder(builder: (c) {
+            deadContext = c;
+            return const SizedBox.shrink();
+          }),
+        ),
+      );
+      await tester.pumpWidget(const SizedBox.shrink());
+      expect(deadContext.mounted, isFalse);
+
+      late WebFController controller;
+      await tester.runAsync(() async {
+        controller = (await WebFControllerManager.instance.addWithPreload(
+          name: 'gv-test',
+          createController: () => _TestWebFController(),
+          bundle: MockTimedBundle.fast(content: 'console.log("ok")'),
+        ))!;
+        await controller.controlledInitCompleter.future;
+      });
+
+      // Drive navigation/geometry through the now-dead build context.
+      controller.pushNewBuildContext(context: deadContext, routePath: '/p2p', state: null);
+
+      final el = controller.view.document.documentElement;
+      expect(el, isNotNull);
+      // Before the fix this threw; now it returns null for a dead context.
+      expect(el!.getRootViewport(), isNull);
+
+      controller.popBuildContext(context: deadContext, routePath: '/p2p');
+    });
   });
 }
