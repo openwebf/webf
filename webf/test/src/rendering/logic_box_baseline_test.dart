@@ -42,4 +42,18 @@ void main() {
     final double ascent = inline.getChildAscent(0, 0);
     expect(ascent, 20);
   });
+
+  test('getChildAscent falls back for a detached child with no size', () {
+    // A detached child that was never laid out: getChildSize() returns null.
+    // Both the baseline query (owner!) and the child-size unwrap would crash
+    // before the fix; now it falls back to 0.
+    final RenderConstrainedBox box =
+        RenderConstrainedBox(additionalConstraints: const BoxConstraints.tightFor(width: 10, height: 20));
+
+    expect(box.hasSize, isFalse);
+    expect(box.owner, isNull);
+
+    final LogicInlineBox inline = LogicInlineBox(renderObject: box);
+    expect(inline.getChildAscent(0, 0), 0);
+  });
 }

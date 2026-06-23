@@ -657,7 +657,13 @@ class RenderFlowLayout extends RenderLayoutBox {
       double childMarginTop = getChildMarginTop(child);
       double childMarginBottom = getChildMarginBottom(child);
 
-      Size childSize = box.getChildSize()!;
+      // getChildSize() is null for a detached/unsized child during a teardown
+      // or pre-attach flushLayout. Skip this child's cross-axis extent instead
+      // of force-unwrapping (this method already returns null to opt out).
+      Size? childSize = box.getChildSize();
+      if (childSize == null) {
+        return null;
+      }
       // When baseline of children not found, use boundary of margin bottom as baseline.
       double childAscent = box.getChildAscent(childMarginTop, childMarginBottom);
       double extentAboveBaseline = childAscent;
@@ -962,13 +968,13 @@ class RenderFlowLayout extends RenderLayoutBox {
               childLineExtent = 0;
               break;
             case VerticalAlign.bottom:
-              childLineExtent = (lineBoxHeight ?? usefulRunCrossAxisExtent) - childSize!.height;
+              childLineExtent = (lineBoxHeight ?? usefulRunCrossAxisExtent) - (childSize?.height ?? 0);
               break;
             case VerticalAlign.middle:
               // @TODO: Vertical align middle needs to calculate the baseline of the parent box plus
               //  half the x-height of the parent from W3C spec currently flutter lack the api to calculate x-height of glyph.
               // For now, use a simple center alignment
-              childLineExtent = ((lineBoxHeight ?? usefulRunCrossAxisExtent) - childSize!.height) / 2;
+              childLineExtent = ((lineBoxHeight ?? usefulRunCrossAxisExtent) - (childSize?.height ?? 0)) / 2;
               break;
             case VerticalAlign.textTop:
               childLineExtent = 0;
@@ -1175,7 +1181,10 @@ class RenderFlowLayout extends RenderLayoutBox {
   // Get distance from top to baseline of child including margin.
   double _getChildAscent(RenderBox child) {
     // Distance from top to baseline of child.
-    double? childAscent = child.getDistanceToBaseline(TextBaseline.alphabetic, onlyReal: true);
+    // getDistanceToBaseline asserts the child is attached (reads owner!), and a
+    // detached/unsized child can be laid out via flushLayout during a teardown
+    // or pre-attach. Guard both reads instead of crashing.
+    double? childAscent = child.attached ? child.getDistanceToBaseline(TextBaseline.alphabetic, onlyReal: true) : null;
     double? childMarginTop = 0;
     double? childMarginBottom = 0;
     if (child is RenderBoxModel) {
@@ -1183,11 +1192,11 @@ class RenderFlowLayout extends RenderLayoutBox {
       childMarginBottom = getChildMarginBottom(child);
     }
 
-    Size? childSize = _getChildSize(child);
+    double childHeight = _getChildSize(child)?.height ?? 0;
 
     double baseline = renderStyle.isParentRenderFlowLayout()
-        ? childMarginTop + childSize!.height + childMarginBottom
-        : childMarginTop + childSize!.height;
+        ? childMarginTop + childHeight + childMarginBottom
+        : childMarginTop + childHeight;
     // When baseline of children not found, use boundary of margin bottom as baseline.
     double extentAboveBaseline = childAscent ?? baseline;
 

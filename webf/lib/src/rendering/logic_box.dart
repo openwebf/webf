@@ -184,10 +184,12 @@ class LogicInlineBox {
     // detached and fall back to the margin box below.
     double? childAscent =
         renderObject.attached ? renderObject.getDistanceToBaseline(TextBaseline.alphabetic, onlyReal: true) : null;
-    Size? childSize = getChildSize();
+    // getChildSize() can be null for a detached/unsized child (same teardown /
+    // pre-attach layout as above); fall back to 0 instead of force-unwrapping.
+    double childHeight = getChildSize()?.height ?? 0;
     double baseline = renderObject.parent is RenderFlowLayout
-        ? marginTop + childSize!.height + marginBottom
-        : marginTop + childSize!.height;
+        ? marginTop + childHeight + marginBottom
+        : marginTop + childHeight;
 
     // When baseline of children not found, use boundary of margin bottom as baseline.
     double extentAboveBaseline = (childAscent != null && childAscent > 0) ? childAscent  : baseline;
