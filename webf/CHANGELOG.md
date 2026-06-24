@@ -1,3 +1,13 @@
+## 0.22.44
+
+### Fixes
+
+Follow-up to 0.22.43's teardown/prerender hardening, addressing the root cause of the prerendering image-load and geometry crashes: during prerender the WebF render tree is built but not attached to a Flutter pipeline, yet deferred image loads and JS geometry reads ran layout against it.
+
+- Run deferred (prerender) image loads after the first frame instead of synchronously inside `attachToFlutter`. `attachToFlutter` runs from `WebFStateElement.mount`, before the widget builds its render tree, assigns `view.viewport`, and lays out — so the queued `<img>` loads read `viewport.boxSize` while the viewport was still null, throwing "Null check operator used on a null value" while building the WebF widget. They now run in a post-frame callback, with a built and laid-out viewport, so they also measure against real dimensions.
+- Don't lay out pipeline-detached render objects in `flushLayout`. When JS read geometry (`offsetTop` → `getOffset` → `flushLayout`) during prerender or a teardown, `flushLayout` ran `performLayout()` directly on render objects with no pipeline (`owner == null`), bypassing Flutter's layout protocol — `RenderBox.size=` asserted ("size setter called from outside layout") and the flow-layout baseline code dereferenced a null owner. Such render objects are now skipped; geometry APIs return their pre-layout (0) values during prerender per the documented contract and resolve once the tree is attached and laid out.
+- Defense-in-depth: null-safe the viewport reads when computing content-box width/height before layout (`render_style.dart`), so a not-yet-laid-out viewport leaves the size uncomputed instead of crashing.
+
 ## 0.22.43
 
 ### Fixes
