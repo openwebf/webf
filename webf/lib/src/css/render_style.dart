@@ -898,9 +898,15 @@ abstract class RenderStyle extends DiagnosticableTree with Diagnosticable {
     everyRenderBox((_, renderObject) {
       if (renderObject.attached) {
         renderObject.owner!.flushLayout();
-      } else if (renderObject.parent != null) {
-        renderObject.performLayout();
       }
+      // Skip render objects not attached to a Flutter pipeline (owner == null):
+      // during prerender (before mount) or a teardown the WebF render tree
+      // exists but has no pipeline. Laying it out via a direct performLayout()
+      // bypasses the framework layout protocol — debugDoingThisLayout is unset
+      // (RenderBox.size= asserts) and the baseline code dereferences a null
+      // owner. Geometry reads return their pre-layout (0) values during
+      // prerender by contract; they resolve once the tree is attached and laid
+      // out.
       return true;
     });
   }
