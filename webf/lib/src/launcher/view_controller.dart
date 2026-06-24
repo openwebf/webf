@@ -228,10 +228,23 @@ class WebFViewController with Diagnosticable implements WidgetsBindingObserver {
     _registerPlatformBrightnessChange();
     // Resume animation timeline when attached back to Flutter
     document.animationTimeline.resume();
-    for (int i = 0; i < _onFlutterAttached.length; i++) {
-      _onFlutterAttached[i]();
+
+    // Run the flutter-attached callbacks AFTER the first frame. This method runs
+    // from WebFStateElement.mount, before the widget builds its render tree and
+    // assigns view.viewport (webf.dart, RootRenderViewportBox creation) and
+    // before the first layout. The callbacks are deferred (prerender) image
+    // loads that read layout geometry (e.g. img.width -> viewport.boxSize), so
+    // they need a built, laid-out viewport — otherwise viewport is null here.
+    if (_onFlutterAttached.isNotEmpty) {
+      final List<ui.VoidCallback> callbacks = List.of(_onFlutterAttached);
+      _onFlutterAttached.clear();
+      SchedulerBinding.instance.addPostFrameCallback((_) {
+        for (final ui.VoidCallback callback in callbacks) {
+          callback();
+        }
+      });
+      SchedulerBinding.instance.scheduleFrame();
     }
-    _onFlutterAttached.clear();
   }
 
   void detachFromFlutter() {
